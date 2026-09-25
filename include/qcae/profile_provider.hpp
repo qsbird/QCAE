@@ -13,7 +13,7 @@ struct ProfileDefinition {
 };
 
 class IProfileProvider {
-public:
+  public:
     virtual ~IProfileProvider() = default;
     [[nodiscard]] virtual const ProfileDefinition& definition() const noexcept = 0;
 };

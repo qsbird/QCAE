@@ -34,7 +34,7 @@ For cleanup/refactoring, write a short plan and protect existing behavior before
 
 ## Checks and commits
 
-Checks: `python3 tools/check_design.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. M0/M1 remain memory-only. Nastran text import/export previews are a strict documented subset; do not claim durable recovery, file publication, solver execution, GUI or real AI integration.
+Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. M0/M1 remain memory-only. Nastran text import/export previews are a strict documented subset; do not claim durable recovery, file publication, solver execution, GUI or real AI integration.
 
 New branches default to `codex/`. Every commit uses the Lore protocol: intent-first subject, context, and useful Git trailers such as `Constraint`, `Rejected`, `Confidence`, `Scope-risk`, `Directive`, `Tested`, and `Not-tested`. Never fabricate validation evidence.
 

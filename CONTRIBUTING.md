@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-M0的材料内存切片及本地IPC已经实现，见[M0说明](docs/implementation/m0.md)。后续从[开发计划](docs/baseline/development-plan.md)的M1接续；完整P0尚未完成。现有依赖使用本机安装，本轮没有安装新组件。
+M0的材料内存切片及本地IPC、M1的文档与受控格式切片已经实现，见[M0说明](docs/implementation/m0.md)和[M1说明](docs/implementation/m1.md)。后续按[开发计划](docs/baseline/development-plan.md)接续；完整P0尚未完成。
 
 开始一个开发切片前，读取对应需求、架构边界和验收ID，先定义该切片的完成证据。不要一次性生成所有模块空壳或扩大未列功能。
 
@@ -40,6 +40,13 @@ Not-tested: External solver integration
 当前文档基线：`python3 tools/check_design.py` 和 `git diff --check`。
 
 当前还需按[M0说明](docs/implementation/m0.md)运行CMake/CTest；后续按切片补充：核心单元/契约、事务故障注入、IPC/生命周期、选择显示、格式往返、真实求解和AI联合验收。现有构建配置与命令已由M0记录；不要在文档里报告未运行的测试。
+
+## 代码可读性门禁
+
+- 所有手写C++源码和头文件（`include/`、`src/`、`apps/`、`tests/`）遵守仓库根目录的`.clang-format`。运行`python3 tools/check_cpp_format.py`；脚本要求clang-format 21，缺少工具或存在格式差异均为失败。CTest也运行同一检查；构建目录生成文件不属于手写源码。
+- 修改代码时先保持相关回归测试通过，再做机械格式化；格式化和语义改动分开审查。可用`QCAE_CLANG_FORMAT=/path/to/clang-format-21`选择本机程序，然后对改动文件执行`clang-format -i`。
+- 格式检查只能证明排版一致。审查者还须能沿入口、应用服务、领域和适配器追踪修改路径，说明状态所有者、错误处理和测试依据；命名含糊、职责混杂、重复业务规则或需要逐行猜测的压缩表达应阻止阶段通过。例外必须在审查记录中指明具体文件、理由和后续处理，不以测试通过替代可读性审查。
+- 每个开发切片完成时记录格式检查、编译/测试与人工可读性审查结果；任一项未完成，该切片的工程质量门禁不通过。对应验收口径见[质量门禁](docs/baseline/acceptance.md#8-代码可读性门禁)。
 
 ## 环境门禁
 

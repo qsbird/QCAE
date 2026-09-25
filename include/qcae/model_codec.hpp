@@ -3,9 +3,15 @@
 #include <map>
 
 namespace qcae {
-struct TextResource { std::string path; std::string text; };
+struct TextResource {
+    std::string path;
+    std::string text;
+};
 struct FormatIssue {
-    std::string code; std::string message; std::string resource; std::size_t line{};
+    std::string code;
+    std::string message;
+    std::string resource;
+    std::size_t line{};
     bool blocking{true};
 };
 struct ImportRequest {
@@ -21,9 +27,14 @@ struct ImportReport {
     std::size_t supported_records{};
     bool complete{false};
 };
-struct ImportOutcome { std::optional<Model> candidate; ImportReport report; };
+struct ImportOutcome {
+    std::optional<Model> candidate;
+    ImportReport report;
+};
 struct ExportIdentifier {
-    EntityId entity; std::string name_space; std::uint64_t number{};
+    EntityId entity;
+    std::string name_space;
+    std::uint64_t number{};
 };
 struct ExportReport {
     ProfileRef profile;
@@ -37,11 +48,15 @@ struct ArtifactPlan {
     EntityId analysis;
     ProfileRef profile;
 };
-struct ExportOutcome { std::optional<ArtifactPlan> artifact; ExportReport report; };
+struct ExportOutcome {
+    std::optional<ArtifactPlan> artifact;
+    ExportReport report;
+};
 class IModelCodec {
-public:
+  public:
     virtual ~IModelCodec() = default;
     virtual ImportOutcome decode(const ImportRequest&) const = 0;
-    virtual ExportOutcome encode(const Model&, const EntityId& analysis, const ProfileRef& expected) const = 0;
+    virtual ExportOutcome
+    encode(const Model&, const EntityId& analysis, const ProfileRef& expected) const = 0;
 };
 } // namespace qcae

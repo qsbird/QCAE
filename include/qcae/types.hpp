@@ -11,7 +11,11 @@ template <class Tag> struct Id {
     explicit Id(std::string text = {}) : value(std::move(text)) {}
     auto operator<=>(const Id&) const = default;
 };
-struct DocumentTag; struct EpochTag; struct EntityTag; struct PreviewTag; struct TransactionTag;
+struct DocumentTag;
+struct EpochTag;
+struct EntityTag;
+struct PreviewTag;
+struct TransactionTag;
 using DocumentId = Id<DocumentTag>;
 using DocumentEpoch = Id<EpochTag>;
 using EntityId = Id<EntityTag>;
@@ -36,24 +40,48 @@ struct Quantity {
 };
 enum class Status { success, needs_input, conflict, failed };
 enum class ErrorCode {
-    missing_input, invalid_input, invalid_unit, entity_not_found,
-    document_not_found, document_already_open, document_epoch_expired,
-    revision_conflict, preview_expired, idempotency_key_conflict,
-    nothing_to_undo, nothing_to_redo, resource_limit, unsupported_capability
+    missing_input,
+    invalid_input,
+    invalid_unit,
+    entity_not_found,
+    document_not_found,
+    document_already_open,
+    document_epoch_expired,
+    revision_conflict,
+    preview_expired,
+    idempotency_key_conflict,
+    nothing_to_undo,
+    nothing_to_redo,
+    resource_limit,
+    unsupported_capability
 };
-struct Diagnostic { ErrorCode code; std::string message; std::string field; };
+struct Diagnostic {
+    ErrorCode code;
+    std::string message;
+    std::string field;
+};
 
 template <class T> struct Result {
     Status status{Status::failed};
     std::optional<T> value;
     std::optional<Diagnostic> error;
-    [[nodiscard]] bool ok() const { return status == Status::success && value.has_value(); }
+    [[nodiscard]] bool ok() const {
+        return status == Status::success && value.has_value();
+    }
 };
 
 // Supplied by a trusted host, never decoded from request parameters.
-struct Caller { std::string principal; };
-struct DocumentRef { DocumentId id; DocumentEpoch epoch; };
-struct WriteContext { DocumentRef document; Revision expected_revision{}; };
+struct Caller {
+    std::string principal;
+};
+struct DocumentRef {
+    DocumentId id;
+    DocumentEpoch epoch;
+};
+struct WriteContext {
+    DocumentRef document;
+    Revision expected_revision{};
+};
 struct Material {
     EntityId id;
     std::string name;

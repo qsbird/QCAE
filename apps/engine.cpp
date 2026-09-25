@@ -25,9 +25,12 @@ void send(QLocalSocket* socket, const QJsonObject& response) {
     auto bytes = QJsonDocument(response).toJson(QJsonDocument::Compact) + '\n';
     if (bytes.size() > qcae::transport::max_frame_bytes) {
         auto id = response.value("request_id").toString();
-        if (id.toUtf8().size() > 128) id.clear();
-        bytes = QJsonDocument(qcae::ipc::failure(id, "RESOURCE_LIMIT", "Response exceeds the M0 frame limit"))
-                    .toJson(QJsonDocument::Compact) + '\n';
+        if (id.toUtf8().size() > 128)
+            id.clear();
+        bytes = QJsonDocument(
+                    qcae::ipc::failure(id, "RESOURCE_LIMIT", "Response exceeds the M0 frame limit"))
+                    .toJson(QJsonDocument::Compact) +
+                '\n';
     }
     if (socket->bytesToWrite() + bytes.size() > qcae::transport::max_frame_bytes * 2) {
         socket->abort();
@@ -35,25 +38,30 @@ void send(QLocalSocket* socket, const QJsonObject& response) {
     }
     socket->write(bytes);
 }
-}
+} // namespace
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("QCAE");
     QCommandLineParser parser;
-    parser.setApplicationDescription("QCAE M1 in-memory local engine; no persistence or solver support");
+    parser.setApplicationDescription(
+        "QCAE M1 in-memory local engine; no persistence or solver support");
     parser.addHelpOption();
     parser.addOption({{"s", "socket"}, "Local endpoint path", "path"});
     parser.process(app);
-    const QString endpoint = parser.isSet("socket") ? parser.value("socket") : qcae::transport::default_endpoint();
-    if (endpoint.isEmpty() || !QFileInfo(endpoint).isAbsolute() || !QFileInfo(QFileInfo(endpoint).absolutePath()).isDir()) {
-        QTextStream(stderr) << "A valid absolute socket path with an existing parent directory is required\n";
+    const QString endpoint =
+        parser.isSet("socket") ? parser.value("socket") : qcae::transport::default_endpoint();
+    if (endpoint.isEmpty() || !QFileInfo(endpoint).isAbsolute() ||
+        !QFileInfo(QFileInfo(endpoint).absolutePath()).isDir()) {
+        QTextStream(stderr)
+            << "A valid absolute socket path with an existing parent directory is required\n";
         return 2;
     }
     QLockFile lock(endpoint + ".lock");
     lock.setStaleLockTime(0);
     if (!lock.tryLock(0)) {
-        QTextStream(stderr) << "Another engine owns this endpoint, or its lock cannot be acquired\n";
+        QTextStream(stderr)
+            << "Another engine owns this endpoint, or its lock cannot be acquired\n";
         return 4;
     }
 #ifdef Q_OS_UNIX
@@ -70,11 +78,13 @@ int main(int argc, char** argv) {
             QTextStream(stderr) << "An active server already owns this socket\n";
             return 4;
         }
-        if (probe.error() != QLocalSocket::ConnectionRefusedError && probe.error() != QLocalSocket::ServerNotFoundError) {
+        if (probe.error() != QLocalSocket::ConnectionRefusedError &&
+            probe.error() != QLocalSocket::ServerNotFoundError) {
             QTextStream(stderr) << "Cannot safely classify an existing endpoint\n";
             return 4;
         }
-        if (!QLocalServer::removeServer(endpoint)) return 4;
+        if (!QLocalServer::removeServer(endpoint))
+            return 4;
     }
 #endif
     QLocalServer server;
@@ -88,7 +98,8 @@ int main(int argc, char** argv) {
     // M0 is a single local OS-user host. Request JSON cannot choose this identity.
     const qcae::Caller caller{"local-user"};
     const auto engine_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    const auto version = QString::fromUtf8(qcae::api_version.data(), static_cast<qsizetype>(qcae::api_version.size()));
+    const auto version = QString::fromUtf8(qcae::api_version.data(),
+                                           static_cast<qsizetype>(qcae::api_version.size()));
     QObject::connect(&server, &QLocalServer::newConnection, &app, [&] {
         while (auto* socket = server.nextPendingConnection()) {
             socket->setReadBufferSize(qcae::transport::max_frame_bytes + 1);
@@ -100,7 +111,9 @@ int main(int argc, char** argv) {
                     const auto newline = connection->buffer.indexOf('\n');
                     if (newline < 0) {
                         if (connection->buffer.size() > qcae::transport::max_frame_bytes) {
-                            send(client, qcae::ipc::failure({}, "FRAME_TOO_LARGE", "Request exceeds frame limit"));
+                            send(client,
+                                 qcae::ipc::failure(
+                                     {}, "FRAME_TOO_LARGE", "Request exceeds frame limit"));
                             client->disconnectFromServer();
                         }
                         return;
@@ -114,36 +127,59 @@ int main(int argc, char** argv) {
                     QJsonParseError parse_error;
                     const auto document = QJsonDocument::fromJson(line, &parse_error);
                     if (parse_error.error != QJsonParseError::NoError || !document.isObject()) {
-                        send(client, qcae::ipc::failure({}, "INVALID_JSON", "Expected one JSON object per line"));
+                        send(client,
+                             qcae::ipc::failure(
+                                 {}, "INVALID_JSON", "Expected one JSON object per line"));
                         continue;
                     }
                     const auto request = document.object();
                     const auto id = request.value("request_id").toString();
                     if (id.isEmpty() || id.toUtf8().size() > 128) {
-                        send(client, qcae::ipc::failure({}, "INVALID_INPUT", "request_id must contain 1..128 UTF-8 bytes"));
+                        send(client,
+                             qcae::ipc::failure({},
+                                                "INVALID_INPUT",
+                                                "request_id must contain 1..128 UTF-8 bytes"));
                         continue;
                     }
                     if (request.value("operation").toString() == "runtime.handshake") {
-                        if (!request.value("api_version").isString() || request.value("api_version").toString() != version) {
-                            send(client, qcae::ipc::failure(id, "API_VERSION_UNSUPPORTED", "Expected API version " + version));
+                        if (!request.value("api_version").isString() ||
+                            request.value("api_version").toString() != version) {
+                            send(client,
+                                 qcae::ipc::failure(id,
+                                                    "API_VERSION_UNSUPPORTED",
+                                                    "Expected API version " + version));
                             client->disconnectFromServer();
                             return;
                         }
                         connection->ready = true;
-                        send(client, QJsonObject{{"request_id", id}, {"status", "success"}, {"data", QJsonObject{
-                            {"api_version", version}, {"engine_instance_id", engine_id},
-                            {"pid", QString::number(QCoreApplication::applicationPid())},
-                            {"storage_mode", "memory"}, {"durable", false}}}});
+                        send(client,
+                             QJsonObject{
+                                 {"request_id", id},
+                                 {"status", "success"},
+                                 {"data",
+                                  QJsonObject{
+                                      {"api_version", version},
+                                      {"engine_instance_id", engine_id},
+                                      {"pid", QString::number(QCoreApplication::applicationPid())},
+                                      {"storage_mode", "memory"},
+                                      {"durable", false}}}});
                     } else if (!connection->ready) {
-                        send(client, qcae::ipc::failure(id, "HANDSHAKE_REQUIRED", "Perform runtime.handshake first"));
-                    } else send(client, qcae::ipc::dispatch(core, request, caller, &codec, &codec.definition()));
+                        send(client,
+                             qcae::ipc::failure(
+                                 id, "HANDSHAKE_REQUIRED", "Perform runtime.handshake first"));
+                    } else
+                        send(client,
+                             qcae::ipc::dispatch(
+                                 core, request, caller, &codec, &codec.definition()));
                 }
             };
             QObject::connect(socket, &QLocalSocket::readyRead, &app, consume);
             QObject::connect(socket, &QLocalSocket::disconnected, socket, &QObject::deleteLater);
-            if (socket->bytesAvailable()) consume();
+            if (socket->bytesAvailable())
+                consume();
         }
     });
-    QTextStream(stderr) << "QCAE M1 engine ready: " << endpoint << " (memory only; data lost on exit)\n";
+    QTextStream(stderr) << "QCAE M1 engine ready: " << endpoint
+                        << " (memory only; data lost on exit)\n";
     return app.exec();
 }

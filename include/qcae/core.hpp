@@ -22,9 +22,17 @@ struct DocumentInfo {
     bool dirty{};
     bool durable{false};
 };
-struct ModelSnapshot : Model { DocumentInfo info; };
-struct CreateMaterial { std::string name; Quantity young_modulus; };
-struct SetYoungModulus { EntityId id; Quantity young_modulus; };
+struct ModelSnapshot : Model {
+    DocumentInfo info;
+};
+struct CreateMaterial {
+    std::string name;
+    Quantity young_modulus;
+};
+struct SetYoungModulus {
+    EntityId id;
+    Quantity young_modulus;
+};
 using MaterialCommand = std::variant<CreateMaterial, SetYoungModulus>;
 struct ChangePreview {
     PreviewId id;
@@ -40,8 +48,16 @@ struct ChangeReceipt {
     std::string current_content_state;
     bool replayed{};
 };
-struct HistoryItem { TransactionId transaction; std::string label; bool applied{}; };
-struct HistorySnapshot { std::vector<HistoryItem> items; std::size_t cursor{}; Revision revision{}; };
+struct HistoryItem {
+    TransactionId transaction;
+    std::string label;
+    bool applied{};
+};
+struct HistorySnapshot {
+    std::vector<HistoryItem> items;
+    std::size_t cursor{};
+    Revision revision{};
+};
 struct Limits {
     std::size_t max_materials{10000};
     std::size_t max_history_entries{128};
@@ -54,28 +70,34 @@ struct Limits {
 
 // One in-memory document; no storage/recovery claims. All writes serialize internally.
 class MemoryApplication {
-public:
+  public:
     explicit MemoryApplication(Limits limits = {});
     ~MemoryApplication();
     MemoryApplication(const MemoryApplication&) = delete;
     MemoryApplication& operator=(const MemoryApplication&) = delete;
 
-    Result<DocumentInfo> create_document(const Caller&, const std::string& name,
-                                         const std::string& idempotency_key);
+    Result<DocumentInfo>
+    create_document(const Caller&, const std::string& name, const std::string& idempotency_key);
     Result<ModelSnapshot> snapshot(const DocumentRef&) const;
     Result<ChangePreview> preview(const Caller&, const WriteContext&, const MaterialCommand&);
     // Import into an empty document only. No direct replacement/write bypass.
     Result<ChangePreview> preview_import(const Caller&, const WriteContext&, const Model&);
     Result<ChangePreview> preview_edit(const Caller&, const WriteContext&, const ModelEdit&);
-    Result<ChangeReceipt> commit(const Caller&, const WriteContext&, const PreviewId&,
-                                const std::string& idempotency_key);
-    Result<ChangeReceipt> undo(const Caller&, const WriteContext&, const std::string& idempotency_key);
-    Result<ChangeReceipt> redo(const Caller&, const WriteContext&, const std::string& idempotency_key);
+    Result<ChangeReceipt> commit(const Caller&,
+                                 const WriteContext&,
+                                 const PreviewId&,
+                                 const std::string& idempotency_key);
+    Result<ChangeReceipt>
+    undo(const Caller&, const WriteContext&, const std::string& idempotency_key);
+    Result<ChangeReceipt>
+    redo(const Caller&, const WriteContext&, const std::string& idempotency_key);
     Result<HistorySnapshot> history(const DocumentRef&) const;
-    Result<ChangeReceipt> operation(const Caller&, const DocumentRef&,
-                                   const std::string& operation_name, const std::string& idempotency_key) const;
+    Result<ChangeReceipt> operation(const Caller&,
+                                    const DocumentRef&,
+                                    const std::string& operation_name,
+                                    const std::string& idempotency_key) const;
 
-private:
+  private:
     struct State;
     std::unique_ptr<State> state_;
 };

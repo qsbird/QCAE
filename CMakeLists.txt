@@ -49,6 +49,8 @@ target_link_libraries(qcae_nastran PUBLIC qcae_core)
 qcae_warnings(qcae_nastran)
 
 if(BUILD_TESTING)
+  add_test(NAME cpp_format COMMAND Python3::Interpreter
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_cpp_format.py")
   foreach(suite model nastran)
     add_executable(qcae_${suite}_tests tests/${suite}_tests.cpp)
     if(suite STREQUAL "nastran")
