@@ -1,18 +1,18 @@
 # 模块职责、接口与依赖
 
-状态：设计基线1.0；实现尚未开始。本文细化 [架构总览](README.md)。以下为计划目录和逻辑模块，尚未创建产品源代码；不要求每个目录单独生成库。
+状态：设计基线1.1；实现尚未开始。本文细化 [架构总览](README.md)。以下为计划目录和逻辑模块，尚未创建产品源代码；不要求每个目录单独生成库。
 
 ## 1. 核心模型与数据归属
 
 ### domain/document
 
-维护 DocumentSnapshot 与稳定 EntityId。节点坐标、连接等密集数据使用有明确所有权的数组；P0 先以中小模型验证，容器布局允许后续分块优化。内部引用使用 EntityId，Nastran ID 由明确类别/命名空间映射。
+维护 DocumentSnapshot 与稳定 EntityId。节点坐标、连接等密集数据使用有明确所有权的数组；P0 先以中小模型验证，容器布局允许后续分块优化。内部引用只使用EntityId；原始编号保存在SourceIdentifier，导出编号保存在按目标/命名空间/运行冻结的ExportIdentityMap，见[求解器能力包](solver-profiles.md)。
 
 子域包括：
 
 - Mesh：Node、Element、必要坐标系；连接及局部方向。
 - Organization：Part、Assembly、EntitySet、IncludeDocument。
-- Physics：Material、Property、Load、Constraint、AnalysisCase。
+- Physics：Material、Property、Load、Constraint、AnalysisDefinition及受控NativeExtension。
 - Context：单位、分析意图、输入来源、假设、场景版本。
 
 装配层次、部件归属、集合成员、文件归属和物理引用分别记录；UI 模型树是投影。共享节点不能为满足树归属而复制。P0 装配先按层级组织，不悄然包含多实例变换系统。
@@ -23,21 +23,23 @@ P0确定的最小对象职责字段（概念字段，不是已冻结的C++结构
 
 | 对象 | 关键字段/关系 |
 |---|---|
-| Node | EntityId、SolverId、坐标、必要坐标系引用 |
-| Element | EntityId、SolverId、类型、节点引用、属性引用、必要局部方向 |
-| Material / Property | EntityId、SolverId、受支持卡片类型、强类型字段、材料引用 |
+| Node | EntityId、坐标、必要坐标系引用；不内嵌单值求解器编号 |
+| Element | EntityId、拓扑/公共物理类别、节点引用、截面/属性引用、局部方向；求解器实现选项归分析目标 |
+| Material / Property | EntityId、公共材料/截面语义、强类型字段和引用；卡片投影由profile/codec负责 |
 | Part / Assembly | 稳定身份、名称、部件成员、装配层级；不隐含复制共享节点 |
 | EntitySet | 名称、实体类别、明确成员；P0查询保存为成员快照，不默认动态规则集合 |
 | IncludeDocument | 来源资源、相对路径基准、包含关系、实体归属；检测循环及重复定义 |
 | Load / Constraint | 类型、目标实体/集合、量值与单位、坐标系、必要自由度 |
-| AnalysisCase | 分析类型、载荷/约束引用、场景版本、输入/假设来源 |
+| AnalysisDefinition | analysis_id、模型和物理设置引用、场景版本、输入/假设来源、TargetBinding |
+| TargetBinding / NativeExtension | 不可变ProfileRef、目标实现选择及带schema/引用的专有数据 |
+| SourceIdentifier / ExportIdentityMap | 有来源模型和namespace的原编号；按导出/运行冻结的目标编号映射 |
 | DocumentSnapshot | DocumentId/Epoch/Revision、ContentStateId、实体表/数组、组织关系、分析上下文 |
 
-这些对象组成可查询的关系图；持久化时才映射为SQLite表/块数据。数值字段的合法性属于受支持卡片/场景定义，不能用任意字符串属性包替代核心物理类型。
+这些对象组成可查询的关系图；持久化时才映射为SQLite表/块数据。数值字段的合法性由公共物理类型及已绑定目标/场景规则共同定义，不能用任意字符串属性包替代核心物理类型。
 
 ### contracts 与 types
 
-types：稳定 ID、Quantity、Revision、ContentStateId、基础错误类型。
+types：稳定ID、Quantity、Revision、ContentStateId、ProfileRef、基础错误类型。
 
 contracts：命令/查询/任务 DTO、批量数据描述、能力定义、诊断与事件。使用标准 C++ 类型；JSON/MCP只是边缘编码。边界中的大整数身份使用字符串表达。
 
@@ -62,6 +64,12 @@ history 管理线性逻辑编辑与游标；undo/redo 产生补偿变更，交�
 维护 AnalysisIntent、AnalysisSetup、InputEvidence、Assumption、场景版本及输入完整性。悬臂梁场景将受控输入转换为核心支持的命令计划，并提供缺参问题、检查目标与解释用事实。
 
 不调用大模型、不把提示词当物理规则、不直接写模型。外部 AI 负责自然语言，analysis 模块负责可验证的场景语义和适用范围。
+
+### solver_profiles
+
+纯C++注册/解析逻辑；定义ProfileDefinition、能力与扩展schema版本，按AnalysisDefinition的TargetBinding解析不可变ProfileRef。它不依赖具体Nastran实现；IProfileProvider由ports定义，宿主静态注册profile_nastran。
+
+公共字段、专有字段及派生投影只有一个权威来源。目标字段、引用、校验和复杂编辑行为在GUI/AI共用服务中执行。P0只提供一个Nastran profile，目标版本未配置时明确不可用；不做全局当前求解器或动态插件体系。
 
 ### validation
 
@@ -91,7 +99,7 @@ jobs 不直接写领域模型。任务完成后应用层同时校验DocumentId�
 
 ### ports
 
-只为实际外部边界定义接口：IWorkspaceStore、IProjectSnapshotStore、IModelCodec、ISolverRunner、IResultReader、IArtifactStore、IExecutorPort、IVisibilityQueryPort、ISnapshotRenderer。
+只为实际外部边界定义接口：IProfileProvider、IWorkspaceStore、IProjectSnapshotStore、IModelCodec、ISolverRunner、IResultReader、IArtifactStore、IExecutorPort、IVisibilityQueryPort、ISnapshotRenderer。
 
 方法形状以实际用例决定。不要为每个函数新增抽象。适配器依赖 ports 及相关类型，核心不 include 适配器；运行宿主负责注入。
 
@@ -99,9 +107,10 @@ jobs 不直接写领域模型。任务完成后应用层同时校验DocumentId�
 |---|---|
 | IWorkspaceStore | PreparedCommit→持久化CommitReceipt；恢复请求→已提交状态/历史/操作结果 |
 | IProjectSnapshotStore | 固定内容与save intent→临时工程及快照清单；发布/核对→保存结果 |
-| IModelCodec | 输入资源→DraftModel及诊断；冻结模型→BDF/INCLUDE产物计划 |
-| ISolverRunner | 固定求解配置与输入资源→进程运行句柄；查询/取消/核实→真实状态 |
-| IResultReader | 已核验运行清单→带单位与实体映射的位移/反力及解析诊断 |
+| IProfileProvider | 不可变ProfileDefinition、能力/扩展schema与目标校验；P0为静态Nastran提供者 |
+| IModelCodec | 输入资源＋来源目标→候选模型/来源映射/报告；冻结分析＋ProfileRef→目标格式ArtifactPlan/导出映射/报告；P0为BDF/INCLUDE |
+| ISolverRunner | 已核验目标产物＋兼容RunConfiguration→进程运行句柄；查询/取消/核实→真实状态 |
+| IResultReader | 固定运行/编号映射与结果资源→带量纲、位置、坐标基、工况/采样及来源的ResultBundle；P0只读位移/反力 |
 | IArtifactStore | 临时资源→发布清单；资源ID→受控读取及可用性 |
 | IVisibilityQueryPort | RenderPacket与ViewSpec/候选范围→精确可见实体ID及版本 |
 | ISnapshotRenderer | RenderPacket与ViewSpec→图片资源及模型/视图版本 |
@@ -114,6 +123,7 @@ PreparedCommit包括模型差量、历史、幂等、修订和相关任务结果
 |---|---|---|
 | adapters/storage_sqlite | 工作库事务、工程快照、save intent、恢复读取、历史/幂等记录 | 不决定领域命令是否合法 |
 | adapters/artifacts_local | 运行目录、临时产物、发布清单、hash与资源读取 | 不凭文件存在就判定求解成功 |
+| profiles/nastran | 提供一个版本化能力包、字段/规则/映射描述，由宿主静态注册 | 不改核心公共类型，不直接提交模型 |
 | adapters/nastran_codec | 支持子集读写、INCLUDE解析、编号映射、文件/行诊断 | 不在解析中直接改活动模型 |
 | adapters/solver_local | 固定可执行配置、进程启动/取消、日志与退出信息 | 不执行AI给出的任意shell串 |
 | adapters/result_reader | 位移/反力读取及输入运行关联 | 不输出无依据的工程结论 |
@@ -146,7 +156,7 @@ PreparedCommit包括模型差量、历史、幂等、修订和相关任务结果
 
 ## 5. 依赖规则
 
-基础类型无外部依赖；domain与contracts只依赖基础类型。query、commands、history、analysis、validation、jobs 是纯C++业务模块。application汇总它们及ports；适配器实现ports；apps只做组装。
+基础类型无外部依赖；domain与contracts只依赖基础类型。query、commands、history、analysis、solver_profiles、validation、jobs 是纯C++业务模块。application汇总它们及ports；适配器实现ports；apps只做组装。
 
 GUI依赖contracts、client SDK和消费端VTK显示适配，不链接application/domain或engine侧render_data。MCP依赖契约/传输桥而不链接领域核心；若MCP SDK采用另一语言，复用协议契约而不强求链接同一C++客户端二进制。测试可直接链接核心服务，以最小依赖验证业务；进程级测试另覆盖真实IPC。
 
@@ -157,8 +167,9 @@ GUI依赖contracts、client SDK和消费端VTK显示适配，不链接applicatio
 ```text
 src/
   types/  contracts/  domain/
-  query/  commands/  history/  analysis/  validation/  jobs/
+  query/  commands/  history/  analysis/  solver_profiles/  validation/  jobs/
   application/  ports/
+  profiles/nastran/
   adapters/
     storage_sqlite/  artifacts_local/  nastran_codec/
     solver_local/  result_reader/  runtime_local/  ipc_local/  graphics_local/
@@ -176,10 +187,15 @@ tests/
 该目录是后续实施布局，不在本轮创建空壳源代码。核心接口与一致性规则优先，避免先造完整目录再补行为。
 
 
-## 设计基线1.0吸收的接口规则
+## 设计基线1.1吸收的接口规则
 
 OperationDescriptor由contracts定义、application登记实际处理器，向GUI/CLI/MCP提供一致参数、单位、错误和能力描述；不为每个入口手工复制业务语义。
 
 ImportReport/ExportReport属于格式适配结果，由validation/application决定是否允许提交或发布；未知/丢失语义不能只记录日志后返回成功。
 
 ChangeImpact在PreparedChange中记录，沿实际引用传播到分析输入、诊断和显示缓存。只改变相机不触发物理重算，载荷引用的集合成员变化必须使相关分析结果过期。
+
+
+## 1.1 补充规则
+
+目标能力、编号映射、公共/专有字段所有权、绑定与转换、版本及结果语义以[求解器能力包设计](solver-profiles.md)为准。P0只实现一个Nastran包；共享对象变更必须诊断全部受影响分析，不以当前GUI分析为唯一范围。

@@ -1,6 +1,6 @@
 # 运行时、事务与持久化设计
 
-本文件属于 [设计基线1.0](README.md)，定义P0应实现和验证的行为，尚无运行实现。
+本文件属于 [设计基线1.1](README.md)，定义P0应实现和验证的行为，尚无运行实现。
 
 ## 1. 引擎发现、所有权与生命周期
 
@@ -25,7 +25,8 @@ MCP桥可以被每个外部AI客户端独立启动，但桥始终连接同一个
 | DocumentEpoch | 每次打开/恢复激活产生的新代号，阻止旧会话请求作用于重新打开的模型 |
 | Revision | 当前激活文档中的单调提交序号；undo也递增 |
 | ContentStateId | 模型、组织及分析上下文的业务内容状态，用于clean/dirty；不含保存路径、ProjectId或相机 |
-| AnalysisFingerprint | 物理输入、编号映射、单位、场景/导出规则等的确定性摘要 |
+| AnalysisFingerprint | 物理输入、TargetBinding/ProfileRef、单位、场景及映射/导出规则等的确定性摘要 |
+| ProfileRef | profile_id、profile_version、definition_digest；不与本机RunConfiguration混用 |
 | ViewSessionId / ViewRevision | 相机、裁切、显隐与临时选择所属视图及其版本 |
 
 从.qcae正常建立工作副本时生成新的DocumentId及DocumentEpoch，不激活快照中旧的运行幂等命名空间或未完成任务。可携带历史作为历史数据加载；活动任务只能由其原工作库恢复。从现有workingDB故障恢复时保留DocumentId、幂等和任务事实，仅产生新DocumentEpoch。SaveAs仍是同一活动工作文档，保留DocumentId及幂等记录。
@@ -161,13 +162,13 @@ sequenceDiagram
     J-->>C: 任务完成 / 结果来源
 ```
 
-所有任务输入和PreparedChange绑定(DocumentId, DocumentEpoch, Revision)。会修改模型的任务提交时三者一起检查；旧任务不能仅凭相同数字修订写入重新打开的文档。求解旧输入允许完成，但只登记原AnalysisRun。
+所有任务输入和PreparedChange绑定(DocumentId, DocumentEpoch, Revision)。目标相关任务/预览另外冻结analysis_id、ProfileRef及能力摘要；提交时复查这些定义，不能因为文档修订没变就忽略profile升级。成功操作的幂等重试返回原事实，不重新按新版规则执行。会修改模型的任务提交时三者一起检查；旧任务不能仅凭相同数字修订写入重新打开的文档。求解旧输入允许完成，但只登记原AnalysisRun。
 
 任务状态为queued、running、cancel_requested、committing、succeeded、failed、cancelled、interrupted，以及必要的reconciling。客户端请求取消不等于已经取消；模型短提交区不可被任意打断。
 
 求解前持久化启动意图，启动后记录进程身份与开始时间；不能只靠PID判定。启动与记录之间崩溃时，进入核实/中断状态，不自动再次启动。P0不宣称外部进程恰好执行一次。
 
-每次任务有独立run_id目录。产物先临时生成，经检查后发布清单，再登记有效结果。结果包含输入快照、AnalysisFingerprint、求解器和运行配置摘要、解析器版本、物理检查证据。退出码0不等于结果完整或检查通过。
+每次任务有独立run_id目录。产物先临时生成，经检查后发布清单，再登记有效结果。结果包含输入快照、AnalysisFingerprint、ProfileRef与映射/导出规则版本、冻结ExportIdentityMap、实际求解器和RunConfiguration摘要、解析器版本、物理检查证据；ResultField记录单位、值形状、实体/积分位置、坐标基和工况/采样信息。退出码0不等于结果完整或检查通过。
 
 求解期间用户修改模型不污染旧任务输入。旧结果仍可查看，但标记适用的输入/版本。重用结果要求输入和求解配置均匹配；纯相机变化不使结果失效。
 
@@ -184,3 +185,8 @@ sequenceDiagram
 ## 9. 必须验证的运行时场景
 
 GUI先启动、AI先启动、同时启动、多个AI客户端；同一工程重复打开；GUI关闭而任务继续；重连丢事件；engine在事务不同窗口崩溃；另存中断；旧epoch请求；undo后请求重试；不依赖显示设备的完整悬臂梁流程。详细验收及规划见 [决策与验证](decisions-and-verification.md)。
+
+
+## 10. 能力包与分析目标
+
+AnalysisDefinition持有TargetBinding，UI切换编辑上下文不修改文档。实际变更绑定/profile升级必须显式预览与事务；扩展字段和其引用参加同一工作库提交/历史。旧任务继续使用冻结profile及输入，配置升级不能暗改既有运行。编号查询必须区分来源模型/namespace和目标导出映射，不能按单值SolverId读取其他目标结果。具体规则见[求解器能力包](solver-profiles.md)。

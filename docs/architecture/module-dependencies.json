@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "status": "accepted design dependency graph; product build targets not implemented",
   "direction": "module depends on listed dependencies; runtime injection reverses interface implementation ownership",
   "notes": [
@@ -7,7 +7,8 @@
     "A non-C++ MCP bridge can implement the same client protocol instead of linking the C++ client SDK; its SDK language/runtime is fixed by ENV-06 before M5.",
     "Only composition hosts wire concrete adapters into application ports.",
     "engine_host must not transitively depend on VTK or QtWidgets.",
-    "GUI and MCP must not transitively depend on domain or application."
+    "GUI and MCP must not transitively depend on domain or application.",
+    "Only one production profile is planned for P0; core solver_profiles must not depend on concrete profile_nastran or nastran_codec."
   ],
   "modules": [
     {
@@ -42,12 +43,24 @@
       "external_dependencies": []
     },
     {
+      "name": "solver_profiles",
+      "layer": "core",
+      "dependencies": [
+        "types",
+        "domain",
+        "contracts",
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
       "name": "query",
       "layer": "core",
       "dependencies": [
         "domain",
         "contracts",
-        "ports"
+        "ports",
+        "solver_profiles"
       ],
       "external_dependencies": []
     },
@@ -57,7 +70,8 @@
       "dependencies": [
         "domain",
         "query",
-        "contracts"
+        "contracts",
+        "solver_profiles"
       ],
       "external_dependencies": []
     },
@@ -68,7 +82,8 @@
         "domain",
         "query",
         "validation",
-        "contracts"
+        "contracts",
+        "solver_profiles"
       ],
       "external_dependencies": []
     },
@@ -88,7 +103,8 @@
         "domain",
         "query",
         "validation",
-        "contracts"
+        "contracts",
+        "solver_profiles"
       ],
       "external_dependencies": []
     },
@@ -114,7 +130,8 @@
         "analysis",
         "validation",
         "jobs",
-        "ports"
+        "ports",
+        "solver_profiles"
       ],
       "external_dependencies": []
     },
@@ -267,7 +284,8 @@
         "runtime_local",
         "ipc_local",
         "graphics_local",
-        "render_data"
+        "render_data",
+        "profile_nastran"
       ],
       "external_dependencies": [
         "QtCore"
@@ -303,6 +321,16 @@
       "dependencies": [
         "render_vtk",
         "ipc_local",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "profile_nastran",
+      "layer": "adapter",
+      "dependencies": [
+        "ports",
+        "domain",
         "contracts"
       ],
       "external_dependencies": []

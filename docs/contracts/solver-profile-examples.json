@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.1",
+  "status": "design fixtures only; synthetic target is not a production solver",
+  "p0_scope": {
+    "production_backend_count": 1,
+    "solver_family": "nastran",
+    "analysis_kind": "linear_static"
+  },
+  "profile_ref": {
+    "profile_id": "qcae.nastran.linear_static.p0",
+    "profile_version": "1.0.0",
+    "definition_digest": "example-definition-digest-1"
+  },
+  "analysis_definition": {
+    "analysis_id": "analysis-static-01",
+    "model_ref": "mesh-01",
+    "target_binding": {
+      "profile_ref": {
+        "profile_id": "qcae.nastran.linear_static.p0",
+        "profile_version": "1.0.0",
+        "definition_digest": "example-definition-digest-1"
+      },
+      "analysis_kind": "linear_static",
+      "extensions": []
+    }
+  },
+  "run_configuration": {
+    "run_config_id": "configured-local-nastran",
+    "executable_resource": "local-config-only",
+    "configured": false
+  },
+  "source_identifiers": [
+    {
+      "entity_id": "node-A",
+      "source_model_id": "import-model-01",
+      "source_resource": "mesh.inc",
+      "namespace": "node",
+      "external_id": "101"
+    },
+    {
+      "entity_id": "material-A",
+      "source_model_id": "import-model-01",
+      "source_resource": "material.inc",
+      "namespace": "material",
+      "external_id": "101"
+    }
+  ],
+  "export_identity_maps": [
+    {
+      "map_id": "export-map-nastran-01",
+      "profile_ref": {
+        "profile_id": "qcae.nastran.linear_static.p0",
+        "profile_version": "1.0.0",
+        "definition_digest": "example-definition-digest-1"
+      },
+      "test_only": false,
+      "entries": [
+        {
+          "entity_id": "node-A",
+          "namespace": "node",
+          "external_id": "101"
+        }
+      ]
+    },
+    {
+      "map_id": "export-map-synthetic-01",
+      "profile_ref": {
+        "profile_id": "test.only.synthetic-target",
+        "profile_version": "0.0.1",
+        "definition_digest": "test-only-digest"
+      },
+      "test_only": true,
+      "entries": [
+        {
+          "entity_id": "node-A",
+          "namespace": "node",
+          "external_id": "9001"
+        }
+      ]
+    }
+  ],
+  "field_ownership": [
+    {
+      "semantic_field": "material.young_modulus",
+      "owner": "core",
+      "native_projection": "MAT1.E",
+      "projection_authority": "derived",
+      "independently_writable": false
+    }
+  ],
+  "conversion_reports": [
+    {
+      "item": "beam.section",
+      "equivalence": "exact",
+      "resolved": true,
+      "publishable": true
+    },
+    {
+      "item": "synthetic.unmapped-option",
+      "equivalence": "unsupported",
+      "resolved": false,
+      "publishable": false
+    }
+  ],
+  "result_field": {
+    "quantity_id": "displacement",
+    "unit": "mm",
+    "shape": "vector",
+    "component_names": [
+      "x",
+      "y",
+      "z"
+    ],
+    "location": "node",
+    "coordinate_basis": "global",
+    "analysis_case": "static-01",
+    "sample_axis": null,
+    "export_identity_map_id": "export-map-nastran-01",
+    "reader_version": "reader-v1",
+    "values_resource": "example-values-resource",
+    "derivation": []
+  },
+  "missing_schema_policy": "reject_affected_edit_or_explicit_diagnostic_read_only"
+}

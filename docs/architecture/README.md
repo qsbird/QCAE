@@ -1,10 +1,11 @@
-# QCAE P0 模块与架构设计 1.0
+# QCAE P0 模块与架构设计 1.1
 
 状态：已确定的开发设计基线，未实现。依据已确认的本地中小模型、底层优先、Nastran 悬臂梁闭环、GUI 与外部 AI 共用能力的范围。本文作为当前架构依据，需求和验收以 ../baseline/ 下的基线文档配套；不恢复远程亿级路线。
 
 ## 文档入口
 
 - [模块职责、接口与依赖](modules.md)
+- [求解器能力包与多目标扩展边界](solver-profiles.md)
 - [运行时、事务与持久化](runtime-and-data.md)
 - [关键决策、实施顺序与架构验收](decisions-and-verification.md)
 - [机器可检查的模块依赖清单](module-dependencies.json)
@@ -66,6 +67,7 @@ flowchart TB
     App --> Query[查询 / 选择]
     App --> Tx[命令 / 事务 / 历史]
     App --> Analysis[分析设置 / 场景 / 证据]
+    App --> Profiles[求解器能力与规则解析]
     App --> Jobs[任务 / 配额 / 运行状态]
     App --> Check[检查与诊断]
     Query --> Domain[领域模型与不变量]
@@ -88,6 +90,7 @@ flowchart TB
 | 文档模型 | 节点、单元、材料、属性、组织关系、引用不变量 | 已提交文档快照 |
 | 查询与选择 | 条件组合、关系/空间查询、集合运算、分页 | 带版本的结果集与句柄 |
 | 命令与事务 | 预览、提交协调、幂等、历史、undo/redo | 变更集、事务、修订与历史游标 |
+| 求解器能力包 | 按分析目标解析不可变定义、能力、专有schema、校验/映射规则 | ProfileRef与目标能力；P0只注册Nastran |
 | 分析与场景 | 悬臂梁输入、单位、事实/假设、适用范围 | AnalysisSetup、场景状态与输入摘要 |
 | 检查与诊断 | 基础模型检查、结果数值检查 | 带版本及依据的检查报告 |
 | 任务与资源 | 队列、进度、取消、状态、配额 | Job 与资源引用；不直接修改模型 |
@@ -129,4 +132,9 @@ OCCT、Netgen/Gmsh、HDF5 等不因架构预留就立即接入，保持按实际
 
 ## 后续参考研究
 
-[Gmsh、CalculiX与FreeCAD FEM参考](../research/Gmsh-CalculiX-FreeCAD架构参考-v0.8.md)提供API定义、格式能力报告及变化影响分类建议。其中OperationDescriptor、格式转换报告、按引用传播的ChangeImpact已在设计基线1.0吸收；其余建议仍不自动引入依赖。
+[Gmsh、CalculiX与FreeCAD FEM参考](../research/Gmsh-CalculiX-FreeCAD架构参考-v0.8.md)提供API定义、格式能力报告及变化影响分类建议。其中OperationDescriptor、格式转换报告、按引用传播的ChangeImpact已在设计基线1.1吸收；其余建议仍不自动引入依赖。
+
+
+## 设计基线1.1补充
+
+已接受[能力包边界](solver-profiles.md)：实体不内嵌单值求解器编号，分析绑定目标，公共物理类型与受控专有扩展分开，输入/结果端口通用化，profile/映射版本进入预览、报告与运行依据。P0仍只有Nastran受控子集，不承诺跨求解器转换或无损往返。

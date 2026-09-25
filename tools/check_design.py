@@ -91,6 +91,11 @@ def check_dependencies(root: Path) -> int:
     engine_external = {dep for name in closures["engine_host"]
                        for dep in modules[name]["external_dependencies"]}
     require(not {"VTK", "QtWidgets"} & engine_external, "Engine depends on graphics")
+    require("solver_profiles" in modules and "profile_nastran" in modules,
+            "Missing profile registry/provider boundary")
+    require(not {"profile_nastran", "nastran_codec"} & closures["solver_profiles"],
+            "Generic profile registry depends on a concrete solver")
+    require("profile_nastran" in closures["engine_host"], "Host does not assemble the P0 profile")
     return len(modules)
 
 
@@ -107,6 +112,10 @@ def check_contracts(root: Path) -> tuple[int, int]:
             require(all(row[key] for key in ("requires_document", "requires_epoch",
                                             "requires_revision", "requires_idempotency_key")),
                     f"Model write lacks consistency fields: {name}")
+        require(row["target_context"] in {"none", "optional_profile", "source_profile", "analysis",
+                                          "conditional", "from_preview", "from_run", "from_history"},
+                f"Invalid target context: {name}")
+        require(type(row["requires_profile_match"]) is bool, f"Invalid profile flag: {name}")
 
     samples = load_json(root / "docs/contracts/current-examples.json")["examples"]
     examples = {row["name"]: row for row in samples}
@@ -117,11 +126,19 @@ def check_contracts(root: Path) -> tuple[int, int]:
         request, response = row["request"], row["response"]
         operation = request["operation"]
         require(operation in operations, f"Example references unknown operation: {operation}")
-        require(request["api_version"] == "1.0", "Unexpected API version")
+        require(request["api_version"] == registry["api_version"] == "1.1", "Unexpected API version")
         require(response["request_id"] == request["request_id"], "Response correlation mismatch")
         for flag, field in required_fields.items():
             if operations[operation][flag]:
                 require(bool(request.get(field)), f"Missing {field}: {row['name']}")
+        if operations[operation]["target_context"] == "analysis":
+            require(bool(request["parameters"].get("analysis_id")), f"Missing analysis identity: {row['name']}")
+        if operations[operation]["requires_profile_match"]:
+            ref = request["parameters"].get("expected_profile_ref", {})
+            require(all(ref.get(key) for key in ("profile_id", "profile_version", "definition_digest")),
+                    f"Missing immutable profile reference: {row['name']}")
+        require("solver_profile_id" not in request["parameters"],
+                f"Semantic profile conflated with local run configuration: {row['name']}")
         require(response["status"] in {"success", "needs_input", "conflict", "accepted", "failed"},
                 f"Unknown response status: {row['name']}")
 
@@ -150,19 +167,74 @@ def check_contracts(root: Path) -> tuple[int, int]:
     for name in ("project.create", "project.open", "project.close"):
         require(operations[name].get("idempotency_scope") == "host",
                 f"Missing host lifecycle idempotency: {name}")
+    start = examples["job_start"]
+    require(bool(start["request"]["parameters"].get("run_config_id")), "Missing local run configuration")
+    require(start["request"]["parameters"]["expected_profile_ref"] == start["response"]["data"]["profile_ref"],
+            "Run does not freeze its semantic profile")
+    for key in ("export_identity_map_id", "mapping_rules_version", "codec_version"):
+        require(bool(start["response"]["data"].get(key)), f"Run lacks {key}")
+    require(examples["stale_result"]["response"]["data"]["export_identity_map_id"]
+            == start["response"]["data"]["export_identity_map_id"],
+            "Result switched away from its run's frozen identity map")
+    capability = examples["target_capabilities"]["response"]["data"]
+    require(capability["production_backend_count"] == 1 and not capability["validated"],
+            "Design example claims a validated or additional production backend")
+    require(examples["profile_mismatch"]["response"]["error"]["code"] == "PROFILE_MISMATCH",
+            "Inconsistent expected profile is not rejected")
     return len(operations), len(examples)
+
+
+def check_profile_fixtures(root: Path) -> None:
+    fixture = load_json(root / "docs/contracts/solver-profile-examples.json")
+    require(fixture["schema_version"] == "1.1", "Unexpected profile fixture version")
+    scope = fixture["p0_scope"]
+    require(scope["production_backend_count"] == 1 and scope["solver_family"] == "nastran",
+            "P0 silently expands the production solver scope")
+    require(fixture["analysis_definition"]["target_binding"]["profile_ref"] == fixture["profile_ref"],
+            "Target is not bound to the analysis definition")
+    source_keys = [(entry["source_model_id"], entry["namespace"], entry["external_id"])
+                   for entry in fixture["source_identifiers"]]
+    require(len(source_keys) == len(set(source_keys)), "Source identifier namespace collision")
+    maps = fixture["export_identity_maps"]
+    require(sum(not item["test_only"] for item in maps) == 1, "More than one production mapping in P0 fixture")
+    reference_entities = {entry["entity_id"] for entry in maps[0]["entries"]}
+    for item in maps:
+        keys = [(entry["namespace"], entry["external_id"]) for entry in item["entries"]]
+        require(len(keys) == len(set(keys)), f"Ambiguous P0 export identifiers: {item['map_id']}")
+        require({entry["entity_id"] for entry in item["entries"]} == reference_entities,
+                "Fixture renumbers platform entities when changing export targets")
+        if not item["test_only"]:
+            require(item["profile_ref"] == fixture["profile_ref"], "Production map uses the wrong profile")
+    fields = fixture["field_ownership"]
+    require(len({field["semantic_field"] for field in fields}) == len(fields), "Multiple owners of one field")
+    for field in fields:
+        require(field["owner"] in {"core", "extension", "derived"}, "Unknown field authority")
+        if field["owner"] == "core":
+            require(field["projection_authority"] == "derived" and not field["independently_writable"],
+                    "Native projection competes with its core field")
+    for report in fixture["conversion_reports"]:
+        require(report["equivalence"] in {"exact", "conditional", "approximate", "unsupported"},
+                "Invalid mapping equivalence")
+        if report["equivalence"] == "unsupported" or not report["resolved"]:
+            require(not report["publishable"], "Unresolved conversion can be published as valid")
+    result = fixture["result_field"]
+    for key in ("quantity_id", "unit", "shape", "component_names", "location", "coordinate_basis",
+                "analysis_case", "export_identity_map_id", "reader_version", "values_resource"):
+        require(bool(result.get(key)), f"Missing result semantics: {key}")
+    require(result["export_identity_map_id"] in {item["map_id"] for item in maps}, "Unknown result identity map")
+    require("sample_axis" in result and "derivation" in result, "Implicit result sampling or derivation")
 
 
 def check_traceability(root: Path) -> tuple[int, int]:
     requirements = (root / "docs/baseline/requirements.md").read_text(encoding="utf-8")
     acceptance = (root / "docs/baseline/acceptance.md").read_text(encoding="utf-8")
     req_rows = re.findall(r"^\| (REQ-\d{2}) \|", requirements, re.MULTILINE)
-    require(len(req_rows) == len(set(req_rows)) == 18, "Expected 18 unique requirements")
-    require(set(req_rows) == {f"REQ-{n:02}" for n in range(1, 19)}, "Requirement ID gap")
-    tests = re.findall(r"^\| (TST-[FAI]\d{2})\b", acceptance, re.MULTILINE)
-    expected = {f"TST-{kind}{n:02}" for kind, count in (("F", 8), ("A", 12), ("I", 10))
+    require(len(req_rows) == len(set(req_rows)) == 20, "Expected 20 unique requirements")
+    require(set(req_rows) == {f"REQ-{n:02}" for n in range(1, 21)}, "Requirement ID gap")
+    tests = re.findall(r"^\| (TST-[FAIP]\d{2})\b", acceptance, re.MULTILINE)
+    expected = {f"TST-{kind}{n:02}" for kind, count in (("F", 8), ("A", 12), ("I", 10), ("P", 8))
                 for n in range(1, count + 1)}
-    require(len(tests) == len(set(tests)) == 30 and set(tests) == expected, "Acceptance ID mismatch")
+    require(len(tests) == len(set(tests)) == 38 and set(tests) == expected, "Acceptance ID mismatch")
     for req in req_rows:
         require(re.search(rf"^\| {req} [^|]*\| TST-", acceptance, re.MULTILINE) is not None,
                 f"Missing coverage mapping: {req}")
@@ -184,6 +256,7 @@ def main() -> int:
             load_json(path)
         modules = check_dependencies(root)
         operations, examples = check_contracts(root)
+        check_profile_fixtures(root)
         requirements, tests = check_traceability(root)
     except (DesignError, KeyError, TypeError, OSError) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)

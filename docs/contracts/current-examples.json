@@ -5,7 +5,7 @@
     {
       "name": "missing_unit",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "document_id": "doc-cantilever-demo",
         "request_id": "request-01",
         "operation": "analysis.update_inputs",
@@ -14,6 +14,12 @@
         "parameters": {
           "length": {
             "value": 1000
+          },
+          "analysis_id": "analysis-static-01",
+          "expected_profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
           }
         },
         "document_epoch": "epoch-06"
@@ -40,7 +46,7 @@
     {
       "name": "shared_property_preview",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "document_id": "doc-cantilever-demo",
         "request_id": "request-02",
         "operation": "changes.preview",
@@ -54,7 +60,13 @@
               "unit": "mm^2"
             }
           },
-          "selection_id": "selection-last-10"
+          "selection_id": "selection-last-10",
+          "analysis_id": "analysis-static-01",
+          "expected_profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          }
         },
         "document_epoch": "epoch-06"
       },
@@ -69,7 +81,12 @@
           "affected_element_count": 20,
           "impact_scope": "all_references_to_property-101",
           "requires_input": false,
-          "reversible": true
+          "reversible": true,
+          "profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          }
         },
         "mutation_committed": false,
         "document_id": "doc-cantilever-demo",
@@ -79,7 +96,7 @@
     {
       "name": "commit_once",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "document_id": "doc-cantilever-demo",
         "request_id": "request-03",
         "operation": "changes.commit",
@@ -106,7 +123,7 @@
     {
       "name": "retry_same_intent",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "document_id": "doc-cantilever-demo",
         "request_id": "request-04",
         "operation": "changes.commit",
@@ -134,7 +151,7 @@
     {
       "name": "stale_preview",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "document_id": "doc-cantilever-demo",
         "request_id": "request-05",
         "operation": "changes.commit",
@@ -163,7 +180,7 @@
     {
       "name": "job_start",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "document_id": "doc-cantilever-demo",
         "request_id": "request-06",
         "operation": "analysis.start",
@@ -171,7 +188,12 @@
         "idempotency_key": "intent-run-01",
         "parameters": {
           "analysis_id": "analysis-static-01",
-          "solver_profile_id": "configured-solver-profile"
+          "expected_profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          },
+          "run_config_id": "configured-local-nastran"
         },
         "document_epoch": "epoch-06"
       },
@@ -183,7 +205,15 @@
         "data": {
           "input_snapshot_id": "snapshot-18",
           "analysis_fingerprint": "demo-input-digest-18",
-          "state": "queued"
+          "state": "queued",
+          "profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          },
+          "export_identity_map_id": "export-map-run-03",
+          "mapping_rules_version": "map-v1",
+          "codec_version": "codec-v1"
         },
         "document_id": "doc-cantilever-demo",
         "document_epoch": "epoch-06"
@@ -192,7 +222,7 @@
     {
       "name": "stale_result",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "document_id": "doc-cantilever-demo",
         "request_id": "request-07",
         "operation": "analysis.results",
@@ -217,7 +247,15 @@
           "resources": [
             "resource-run-03-displacements",
             "resource-run-03-log"
-          ]
+          ],
+          "profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          },
+          "run_config_id": "configured-local-nastran",
+          "export_identity_map_id": "export-map-run-03",
+          "reader_version": "reader-v1"
         },
         "document_id": "doc-cantilever-demo",
         "document_epoch": "epoch-06"
@@ -226,7 +264,7 @@
     {
       "name": "expired_document_epoch",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "request_id": "request-08",
         "operation": "changes.commit",
         "document_id": "doc-cantilever-demo",
@@ -253,7 +291,7 @@
     {
       "name": "save_as_metadata_only",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "request_id": "request-09",
         "operation": "project.save_as",
         "document_id": "doc-cantilever-demo",
@@ -283,7 +321,7 @@
     {
       "name": "lookup_lost_open_response",
       "request": {
-        "api_version": "1.0",
+        "api_version": "1.1",
         "request_id": "request-10",
         "operation": "operations.get",
         "parameters": {
@@ -304,6 +342,80 @@
           "replayed": true
         }
       }
+    },
+    {
+      "name": "target_capabilities",
+      "request": {
+        "api_version": "1.1",
+        "request_id": "request-11",
+        "operation": "capabilities.list",
+        "parameters": {
+          "profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          }
+        }
+      },
+      "response": {
+        "status": "success",
+        "request_id": "request-11",
+        "data": {
+          "profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          },
+          "declared": true,
+          "configured": false,
+          "validated": false,
+          "production_backend_count": 1,
+          "reason": "ENV-02/05 not resolved in this design example"
+        }
+      }
+    },
+    {
+      "name": "profile_mismatch",
+      "request": {
+        "api_version": "1.1",
+        "request_id": "request-12",
+        "operation": "analysis.start",
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06",
+        "expected_revision": "19",
+        "idempotency_key": "intent-run-mismatch",
+        "parameters": {
+          "analysis_id": "analysis-static-01",
+          "expected_profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          },
+          "run_config_id": "configured-local-nastran"
+        }
+      },
+      "response": {
+        "status": "conflict",
+        "request_id": "request-12",
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06",
+        "revision": "19",
+        "mutation_committed": false,
+        "error": {
+          "code": "PROFILE_MISMATCH",
+          "expected_profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.0",
+            "definition_digest": "example-definition-digest-1"
+          },
+          "current_profile_ref": {
+            "profile_id": "qcae.nastran.linear_static.p0",
+            "profile_version": "1.0.1",
+            "definition_digest": "example-definition-digest-2"
+          },
+          "next_action": "read_target_and_generate_new_preview"
+        }
+      }
     }
   ],
   "notes": [
@@ -312,7 +424,8 @@
     "needs_input does not record a committed idempotency result; corrected parameters use a new logical intent key to avoid ambiguity.",
     "Successful replay reports the original committed outcome without creating another transaction or revision.",
     "A capability to edit only selected elements must use property copy/reassignment when the original property is shared, or return unsupported.",
-    "Normal open creates a new document namespace; fault recovery keeps the document and prior outcomes but issues a new epoch. SaveAs keeps the live document and model revision."
+    "Normal open creates a new document namespace; fault recovery keeps the document and prior outcomes but issues a new epoch. SaveAs keeps the live document and model revision.",
+    "Samples are independent scenarios. Configured run samples assume a compatible environment; target_capabilities intentionally illustrates unresolved environment. No real provider has been implemented or verified."
   ],
-  "api_version": "1.0"
+  "api_version": "1.1"
 }

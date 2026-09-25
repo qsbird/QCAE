@@ -1,12 +1,13 @@
 # 文档索引
 
-## 当前开发依据：设计基线 1.0
+## 当前开发依据：设计基线 1.1
 
 | 文档 | 用途 |
 |---|---|
 | [基线入口](baseline/README.md) | 确定决策、范围、文档优先级 |
 | [需求](baseline/requirements.md) | P0功能、约束和非目标 |
 | [模块架构](architecture/README.md) | 模块、调用、依赖与运行部署 |
+| [求解器能力包](architecture/solver-profiles.md) | 多求解器差异的职责与数据边界；P0只实现Nastran |
 | [运行时与数据](architecture/runtime-and-data.md) | 文档身份、事务、保存、恢复、任务 |
 | [接口契约](contracts/README.md) | OperationDescriptor、请求/响应、语义报告 |
 | [组件与环境](baseline/components-and-environment.md) | 固定组件角色及开发环境门禁 |

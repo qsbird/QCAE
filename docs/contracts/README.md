@@ -1,4 +1,4 @@
-# 业务契约基线 1.0
+# 业务契约基线 1.1
 
 这是应用服务契约，不是MCP原始报文。GUI、CLI与MCP桥调用相同业务；传输适配器编码/解码后进入同一Dispatcher。当前目录为设计资产，没有可调用服务。
 
@@ -49,3 +49,21 @@ ImportReport/ExportReport至少包含识别/写出类型与计数、支持范围
 | GRAPHICS_UNAVAILABLE | 图形能力不可用，不静默改成另一种选择语义 |
 
 更多运行约束见 [运行时设计](../architecture/runtime-and-data.md)。
+
+
+## 基线1.1：分析目标上下文
+
+`ProfileRef={profile_id, profile_version, definition_digest}`固定语义定义。目标属于AnalysisDefinition的TargetBinding；`RunConfiguration`只表达本机执行配置。不能从文件扩展名或GUI全局选择推断全部目标语义。
+
+OperationDescriptor新增target_context（none、optional_profile、source_profile、analysis、conditional、from_preview、from_run、from_history）及requires_profile_match。analysis上下文要求parameters.analysis_id；需要匹配时要求expected_profile_ref。只读获取设置可以返回当前绑定供后续使用；提交、运行和导出需固定定义。conditional按命令/筛选是否依赖目标判断；from_preview/run/history由已登记对象解析并核对，不另取GUI当前模板。
+
+`capabilities.list`无目标时列出已声明包与配置/验证状态，给定profile_ref或analysis_id时返回该目标能力；按analysis_id查询还必须提供对应document_id/document_epoch，不能从全局活动窗口推断；同时指定两者必须一致。P0只有一个Nastran包。`analysis.start`使用analysis_id、expected_profile_ref和run_config_id；原示例中含混的solver_profile_id已移除。
+
+当前样例为api_version 1.1（设计契约修订，并非已发布运行协议迁移）。新增[能力包与映射样例](solver-profile-examples.json)说明单生产目标范围、编号空间、唯一字段权威和通用结果元数据。所有digest均为示意，不是实际软件验证证据。
+
+格式端口输出目标ArtifactPlan、ExportIdentityMap和转换报告；结果端口输出ResultBundle，P0仅实现BDF、位移/反力。目标报告/预览/运行包含ProfileRef、映射/导出/解析版本；未处理条件或不支持项不得以成功掩盖。详见[架构补充](../architecture/solver-profiles.md)。
+
+新增错误语义：TARGET_NOT_CONFIGURED、TARGET_VERSION_UNSUPPORTED、PROFILE_MISMATCH、PROFILE_DEFINITION_UNAVAILABLE、EXTENSION_SCHEMA_UNSUPPORTED、MAPPING_REQUIRES_DECISION；仍通过现有failed/needs_input/conflict响应承载，扩展不绕过通用事务。
+
+
+目标上下文的补充约束：source_profile要求导入参数source_context中的格式/profile定义；conditional按实际命令/查询判定，不依赖当前GUI状态，共享对象变更由服务端收集所有受影响分析；from_history恢复扩展时需要兼容的schema/规则，否则明确拒绝而不猜测；from_run始终使用原运行上下文，允许查询历史结果但不得冒充当前结果。
