@@ -1,4 +1,5 @@
 #include "qcae/ipc_api.hpp"
+#include "qcae/ipc_model.hpp"
 #include "qcae/operations.hpp"
 
 #include <QJsonArray>
@@ -67,7 +68,7 @@ QJsonObject receipt_json(const ChangeReceipt& receipt) {
             {"replayed", receipt.replayed}};
 }
 bool supported(std::string_view name) {
-    return name == "project.create" || name == "project.status" || name == "model.summary" ||
+    return name == "entity.query" || name == "entity.references" || name == "model.export_preview" || name == "project.create" || name == "project.status" || name == "model.summary" ||
            name == "changes.preview" || name == "changes.commit" || name == "history.list" ||
            name == "history.undo" || name == "history.redo" || name == "operations.get" || name == "capabilities.list";
 }
@@ -77,7 +78,8 @@ QJsonObject failure(const QString& id, const QString& code, const QString& messa
     return {{"request_id", id}, {"status", status}, {"error", QJsonObject{{"code", code}, {"message", message}}}};
 }
 
-QJsonObject dispatch(MemoryApplication& app, const QJsonObject& request, const Caller& caller) {
+QJsonObject dispatch(MemoryApplication& app, const QJsonObject& request, const Caller& caller,
+                     const IModelCodec* codec, const ProfileDefinition* profile) {
     const QString id = request.value("request_id").isString() ? request.value("request_id").toString() : QString{};
     if (id.toUtf8().size() > 128) return failure({}, "INVALID_INPUT", "request_id exceeds 128 UTF-8 bytes");
     try {
@@ -88,9 +90,10 @@ QJsonObject dispatch(MemoryApplication& app, const QJsonObject& request, const C
             return failure(id, "API_VERSION_UNSUPPORTED", "Expected API version " + qs(api_version));
         const auto op = string_field(request, "operation").toStdString();
         if (!find_operation(op) || !supported(op))
-            return failure(id, "UNSUPPORTED_CAPABILITY", "Operation is not implemented in the M0 memory slice");
+            return failure(id, "UNSUPPORTED_CAPABILITY", "Operation is not implemented in the current memory slice");
         if (!request.value("parameters").isObject()) throw InvalidRequest("parameters must be an object");
         const auto params = request.value("parameters").toObject();
+        if (const auto model_response = dispatch_model(app, request, caller, codec, profile)) return *model_response;
         QJsonObject response;
         if (op == "capabilities.list") {
             fields(params, {});
@@ -104,15 +107,15 @@ QJsonObject dispatch(MemoryApplication& app, const QJsonObject& request, const C
                     {"requires_profile_match", descriptor.requires_profile_match},
                     {"implementation_status", supported(descriptor.name) ? "partial" : "planned"}};
                 if (descriptor.name == "changes.preview")
-                    entry.insert("supported_commands", QJsonArray{"material.create", "material.set_young_modulus"});
+                    entry.insert("supported_commands", QJsonArray{"material.create", "material.set_young_modulus", "model.import", "part.upsert", "assembly.upsert", "set.upsert", "node.move", "entity.delete"});
                 if (descriptor.name == "operations.get") entry.insert("supported_scope", "document_change_outcomes");
                 if (descriptor.name == "capabilities.list") entry.insert("supported_scope", "global_catalog_only");
                 catalog.append(entry);
             }
             const QJsonObject data{{"operations", catalog}, {"storage_mode", "memory"}, {"durable", false},
-                {"implementation_scope", "M0 material-only memory slice; no file IO, solver, persistent history or model recovery"},
+                {"implementation_scope", "M1 in-memory entity/organization and controlled text codec slice; no file publication, solver, persistence or recovery"},
                 {"max_name_bytes", 1024},
-                {"configured_solver_profiles", QJsonArray{}}, {"supported_pressure_units", QJsonArray{"Pa", "kPa", "MPa", "GPa"}}};
+                {"configured_solver_profiles", QJsonArray{}}, {"declared_solver_profiles", profile ? QJsonArray{profile_json(*profile)} : QJsonArray{}}, {"supported_pressure_units", QJsonArray{"Pa", "kPa", "MPa", "GPa"}}};
             response = {{"request_id", id}, {"status", "success"}, {"data", data}};
         } else if (op == "project.create") {
             fields(params, {"name"});
@@ -128,6 +131,14 @@ QJsonObject dispatch(MemoryApplication& app, const QJsonObject& request, const C
                         materials.append(QJsonObject{{"entity_id", qs(material.id.value)}, {"name", qs(material.name)},
                                                      {"young_modulus_mpa", material.young_modulus_mpa}});
                     data.insert("materials", materials);
+                    data.insert("node_count", static_cast<qint64>(snapshot.nodes.size()));
+                    data.insert("beam_count", static_cast<qint64>(snapshot.beams.size()));
+                    data.insert("section_count", static_cast<qint64>(snapshot.sections.size()));
+                    data.insert("part_count", static_cast<qint64>(snapshot.parts.size()));
+                    data.insert("assembly_count", static_cast<qint64>(snapshot.assemblies.size()));
+                    data.insert("set_count", static_cast<qint64>(snapshot.sets.size()));
+                    data.insert("include_count", static_cast<qint64>(snapshot.includes.size()));
+                    data.insert("analysis_count", static_cast<qint64>(snapshot.analyses.size()));
                 }
                 return data;
             });

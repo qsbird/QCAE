@@ -2,7 +2,7 @@
 
 面向本地中小规模模型的 CAE 前处理平台。P0 聚焦受控 Nastran 悬臂梁流程，提供桌面 GUI 与外部 AI 共用的无界面业务接口；服务器和亿级实现后置。
 
-**当前状态：设计基线1.1，M0内存核心和本地IPC已实现。** 已打通CLI到engine的材料参数预览、提交和undo/redo；完整P0、持久化、GUI、Nastran与AI接入尚未实现。运行入口见[M0说明](docs/implementation/m0.md)。
+**当前状态：设计基线1.1，M0及M1文档/受控格式切片已实现。** CLI与engine共用实体、组织关系、预览/提交和undo/redo；提供受控Nastran文本导入及导出预览。完整P0、持久化、GUI、真实求解与AI接入尚未实现。范围见[M1说明](docs/implementation/m1.md)，构建入口见[M0说明](docs/implementation/m0.md)。
 
 ## 从这里开始
 
@@ -46,7 +46,7 @@ ctest --test-dir build-core --output-on-failure
 | `docs/design/` | 界面概念图及生成提示词 |
 | `docs/research/` | 架构参考研究，非依赖源码 |
 | `docs/*-v0.*.md` | 历史讨论，不作为与当前基线冲突时的依据 |
-| `include/`、`src/`、`apps/` | M0纯C++核心及本地Qt IPC入口 |
+| `include/`、`src/`、`apps/` | 纯C++核心、格式适配及本地Qt IPC入口 |
 | `tests/` | 核心、契约、分配失败和真实IPC回归 |
 | `tools/` | 操作描述生成与设计一致性检查 |
 

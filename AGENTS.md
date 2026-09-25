@@ -11,7 +11,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Root-level versioned `docs/*-v0.*.md` are historical research. `.omx/` is local runtime context, not canonical project documentation and not committed.
 
-The user has now requested M0 implementation. The material-only in-memory core and local IPC slice are implemented; see docs/implementation/m0.md. Follow-up work continues from the development plan without repeating the interview. Current user instructions override earlier research assumptions.
+M0 and the M1 entity/organization/controlled-text-codec slice are implemented; see docs/implementation/m0.md and docs/implementation/m1.md. Follow-up work continues from the development plan without repeating the interview. Current user instructions override earlier research assumptions.
 
 ## Binding architecture
 
@@ -34,7 +34,7 @@ For cleanup/refactoring, write a short plan and protect existing behavior before
 
 ## Checks and commits
 
-Checks: `python3 tools/check_design.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. M0 is memory-only; do not claim persistent recovery, GUI, Nastran or real AI integration is implemented.
+Checks: `python3 tools/check_design.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. M0/M1 remain memory-only. Nastran text import/export previews are a strict documented subset; do not claim durable recovery, file publication, solver execution, GUI or real AI integration.
 
 New branches default to `codex/`. Every commit uses the Lore protocol: intent-first subject, context, and useful Git trailers such as `Constraint`, `Rejected`, `Confidence`, `Scope-risk`, `Directive`, `Tested`, and `Not-tested`. Never fabricate validation evidence.
 

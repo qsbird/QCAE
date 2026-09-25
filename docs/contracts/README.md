@@ -67,3 +67,7 @@ OperationDescriptor新增target_context（none、optional_profile、source_profi
 
 
 目标上下文的补充约束：source_profile要求导入参数source_context中的格式/profile定义；conditional按实际命令/查询判定，不依赖当前GUI状态，共享对象变更由服务端收集所有受影响分析；from_history恢复扩展时需要兼容的schema/规则，否则明确拒绝而不猜测；from_run始终使用原运行上下文，允许查询历史结果但不得冒充当前结果。
+
+## M1运行子集补充
+
+增加 `model.export_preview`：带文档/epoch/expected_revision、analysis_id和expected_profile_ref的只读编码查询，返回文本资源及冻结编号映射，不产生作业或发布文件。已有 `model.import`/`model.export` 后台作业契约保持 planned。同步受控导入通过 `changes.preview` 的 `model.import` 命令生成候选，再使用既有 `changes.commit` 提交。新领域查询和命令边界见 [M1说明](../implementation/m1.md)。完整设计目录现为28项，运行能力按 `implementation_status` 及具体 scope 判断。

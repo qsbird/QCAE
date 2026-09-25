@@ -1,4 +1,5 @@
 #include "qcae/ipc_api.hpp"
+#include "qcae/nastran_codec.hpp"
 #include "qcae/local_endpoint.hpp"
 #include "qcae/operations.hpp"
 
@@ -40,7 +41,7 @@ int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("QCAE");
     QCommandLineParser parser;
-    parser.setApplicationDescription("QCAE M0 in-memory local engine; no persistence or solver support");
+    parser.setApplicationDescription("QCAE M1 in-memory local engine; no persistence or solver support");
     parser.addHelpOption();
     parser.addOption({{"s", "socket"}, "Local endpoint path", "path"});
     parser.process(app);
@@ -83,6 +84,7 @@ int main(int argc, char** argv) {
         return 4;
     }
     qcae::MemoryApplication core;
+    const qcae::NastranCodec codec;
     // M0 is a single local OS-user host. Request JSON cannot choose this identity.
     const qcae::Caller caller{"local-user"};
     const auto engine_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -134,7 +136,7 @@ int main(int argc, char** argv) {
                             {"storage_mode", "memory"}, {"durable", false}}}});
                     } else if (!connection->ready) {
                         send(client, qcae::ipc::failure(id, "HANDSHAKE_REQUIRED", "Perform runtime.handshake first"));
-                    } else send(client, qcae::ipc::dispatch(core, request, caller));
+                    } else send(client, qcae::ipc::dispatch(core, request, caller, &codec, &codec.definition()));
                 }
             };
             QObject::connect(socket, &QLocalSocket::readyRead, &app, consume);
@@ -142,6 +144,6 @@ int main(int argc, char** argv) {
             if (socket->bytesAvailable()) consume();
         }
     });
-    QTextStream(stderr) << "QCAE M0 engine ready: " << endpoint << " (memory only; data lost on exit)\n";
+    QTextStream(stderr) << "QCAE M1 engine ready: " << endpoint << " (memory only; data lost on exit)\n";
     return app.exec();
 }

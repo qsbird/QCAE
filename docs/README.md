@@ -19,7 +19,9 @@
 
 ## 当前实现
 
-[M0运行与验证](implementation/m0.md)：纯C++内存核心、Qt本地engine/CLI、真实集成测试及明确限制。
+[M0运行与验证](implementation/m0.md)：纯C++内存核心、Qt本地engine/CLI。
+
+[M1文档与格式](implementation/m1.md)：实体/组织/引用、受控Nastran导入与导出预览、统一事务及限制。
 
 ## 界面参考
 

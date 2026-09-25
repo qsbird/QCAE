@@ -83,6 +83,8 @@ struct Prepared {
     EntityId entity;
     std::string name;
     double modulus{};
+    std::optional<Model> after;
+    std::string label;
 };
 
 std::string commit_signature(const WriteContext& context, const PreviewId& preview,
@@ -99,7 +101,7 @@ std::string commit_signature(const WriteContext& context, const PreviewId& previ
 struct HistoryEntry {
     TransactionId transaction;
     std::string label;
-    std::vector<Material> after;
+    Model after;
     std::string content_state;
 };
 
@@ -113,7 +115,7 @@ struct Data {
     std::string application_nonce;
     std::uint64_t next_id{1};
     std::optional<DocumentInfo> document;
-    std::vector<Material> materials;
+    Model model;
     std::string initial_content_state;
     std::vector<HistoryEntry> history;
     std::size_t cursor{};
@@ -158,8 +160,66 @@ ChangeReceipt current_receipt(const Data& data, ChangeReceipt recorded, bool rep
 }
 
 void update_document(Data& data) {
-    data.document->material_count = data.materials.size();
+    data.document->material_count = data.model.materials.size();
     data.document->dirty = data.document->content_state != data.initial_content_state;
+}
+
+std::size_t entity_count(const Model& model) {
+    return model.materials.size() + model.nodes.size() + model.sections.size() +
+           model.beams.size() + model.parts.size() + model.assemblies.size() +
+           model.sets.size() + model.includes.size() + model.forces.size() +
+           model.constraints.size() + model.analyses.size();
+}
+
+std::size_t relation_count(const Model& model) {
+    std::size_t count = model.sources.size() * 2;
+    for (const auto& beam : model.beams) { (void)beam; count += 3; }
+    for (const auto& section : model.sections) { (void)section; ++count; }
+    for (const auto& force : model.forces) { (void)force; ++count; }
+    for (const auto& part : model.parts) count += part.members.size();
+    for (const auto& assembly : model.assemblies) count += assembly.children.size();
+    for (const auto& set : model.sets) count += set.members.size();
+    for (const auto& include : model.includes) count += include.members.size() + (include.parent ? 1 : 0);
+    for (const auto& constraint : model.constraints) count += constraint.nodes.size();
+    for (const auto& analysis : model.analyses) count += analysis.forces.size() + analysis.constraints.size();
+    return count;
+}
+
+bool has_control(const std::string& value) {
+    return std::any_of(value.begin(), value.end(), [](unsigned char c) { return c < 32 || c == 127; });
+}
+
+std::optional<Diagnostic> validate_candidate(const Model& model, const Limits& limits) {
+    if (model.materials.size() > limits.max_materials)
+        return Diagnostic{ErrorCode::resource_limit, "Material limit reached", "materials"};
+    if (entity_count(model) > limits.max_entities)
+        return Diagnostic{ErrorCode::resource_limit, "Entity limit reached", "model"};
+    if (relation_count(model) > limits.max_relations)
+        return Diagnostic{ErrorCode::resource_limit, "Relation limit reached", "model"};
+    for (const auto& entity : model_entities(model)) {
+        if (entity.name.size() > limits.max_name_bytes)
+            return Diagnostic{ErrorCode::resource_limit, "Entity name exceeds byte limit", entity.id.value};
+        if (has_control(entity.name))
+            return Diagnostic{ErrorCode::invalid_input, "Entity name contains control characters", entity.id.value};
+    }
+    for (const auto& include : model.includes)
+        if (include.path.size() > limits.max_name_bytes)
+            return Diagnostic{ErrorCode::resource_limit, "Include path exceeds byte limit", include.id.value};
+        else if (has_control(include.path))
+            return Diagnostic{ErrorCode::invalid_input, "Include path contains control characters", include.id.value};
+    for (const auto& diagnostic : validate_model(model)) return diagnostic;
+    return std::nullopt;
+}
+
+Result<ChangePreview> stage_preview(Data& data, Prepared prepared) {
+    Data candidate = data;
+    PreviewId id(new_id(candidate, "preview"));
+    ChangePreview response{id, prepared.context, prepared.entity, prepared.modulus, prepared.create};
+    candidate.previews.emplace(id.value, std::move(prepared));
+    auto result = success(std::move(response));
+    using std::swap;
+    swap(data, candidate);
+    return result;
 }
 
 void drop_expired_previews(Data& data) {
@@ -231,7 +291,10 @@ Result<ModelSnapshot> MemoryApplication::snapshot(const DocumentRef& ref) const 
     std::lock_guard lock(state_->mutex);
     const Data& data = state_->data;
     if (auto error = check_document<ModelSnapshot>(data, ref)) return *error;
-    return success(ModelSnapshot{*data.document, data.materials});
+    ModelSnapshot snapshot;
+    static_cast<Model&>(snapshot) = data.model;
+    snapshot.info = *data.document;
+    return success(std::move(snapshot));
 }
 
 Result<ChangePreview> MemoryApplication::preview(const Caller& caller,
@@ -259,7 +322,7 @@ Result<ChangePreview> MemoryApplication::preview(const Caller& caller,
         if (create->name.size() > current.limits.max_name_bytes)
             return failure<ChangePreview>(Status::failed, ErrorCode::resource_limit,
                                           "Material name exceeds byte limit", "name");
-        if (current.materials.size() >= current.limits.max_materials)
+        if (current.model.materials.size() >= current.limits.max_materials)
             return failure<ChangePreview>(Status::failed, ErrorCode::resource_limit,
                                           "Material limit reached");
         prepared.create = true;
@@ -267,9 +330,9 @@ Result<ChangePreview> MemoryApplication::preview(const Caller& caller,
         normalized = normalize(create->young_modulus);
     } else {
         const auto& change = std::get<SetYoungModulus>(command);
-        const auto found = std::find_if(current.materials.begin(), current.materials.end(),
+        const auto found = std::find_if(current.model.materials.begin(), current.model.materials.end(),
                                         [&](const Material& material) { return material.id == change.id; });
-        if (found == current.materials.end())
+        if (found == current.model.materials.end())
             return failure<ChangePreview>(Status::failed, ErrorCode::entity_not_found,
                                           "Material does not exist", "id");
         prepared.entity = change.id;
@@ -280,13 +343,144 @@ Result<ChangePreview> MemoryApplication::preview(const Caller& caller,
         return {normalized.status, std::nullopt, normalized.error};
     prepared.modulus = *normalized.value;
     Data candidate = current;
-    if (prepared.create) prepared.entity = EntityId(new_id(candidate, "entity"));
-    PreviewId id(new_id(candidate, "preview"));
-    ChangePreview response{id, context, prepared.entity, prepared.modulus, prepared.create};
-    candidate.previews.emplace(id.value, std::move(prepared));
-    auto result = success(std::move(response));
+    if (prepared.create) {
+        const auto entities = model_entities(candidate.model);
+        do { prepared.entity = EntityId(new_id(candidate, "entity")); }
+        while (std::any_of(entities.begin(), entities.end(), [&](const EntitySummary& value) {
+            return value.id == prepared.entity;
+        }));
+    }
+    Model after = candidate.model;
+    if (prepared.create) {
+        after.materials.push_back(Material{prepared.entity, prepared.name, prepared.modulus, std::nullopt});
+        prepared.label = "Create material";
+    } else {
+        auto found = std::find_if(after.materials.begin(), after.materials.end(),
+                                  [&](const Material& material) { return material.id == prepared.entity; });
+        found->young_modulus_mpa = prepared.modulus;
+        prepared.label = "Set Young modulus";
+    }
+    if (auto diagnostic = validate_candidate(after, current.limits))
+        return {Status::failed, std::nullopt, std::move(diagnostic)};
+    prepared.after = std::move(after);
+    auto result = stage_preview(candidate, std::move(prepared));
     using std::swap;
     swap(state_->data, candidate);
+    return result;
+}
+
+Result<ChangePreview> MemoryApplication::preview_import(const Caller& caller,
+                                                         const WriteContext& context,
+                                                         const Model& imported) {
+    std::lock_guard lock(state_->mutex);
+    Data& data = state_->data;
+    if (blank(caller.principal))
+        return failure<ChangePreview>(Status::needs_input, ErrorCode::missing_input, "Caller is required");
+    if (auto error = check_document<ChangePreview>(data, context.document)) return *error;
+    if (auto error = check_revision<ChangePreview>(data, context)) return *error;
+    if (data.previews.size() >= data.limits.max_previews)
+        return failure<ChangePreview>(Status::failed, ErrorCode::resource_limit, "Preview limit reached");
+    if (entity_count(data.model) != 0 || !data.model.sources.empty())
+        return failure<ChangePreview>(Status::conflict, ErrorCode::invalid_input,
+                                      "Import requires an empty model");
+    if (auto diagnostic = validate_candidate(imported, data.limits))
+        return {Status::failed, std::nullopt, std::move(diagnostic)};
+    Prepared prepared;
+    prepared.caller = caller;
+    prepared.context = context;
+    prepared.after = imported;
+    prepared.label = "Import model";
+    return stage_preview(data, std::move(prepared));
+}
+
+Result<ChangePreview> MemoryApplication::preview_edit(const Caller& caller,
+                                                       const WriteContext& context,
+                                                       const ModelEdit& edit) {
+    std::lock_guard lock(state_->mutex);
+    Data& data = state_->data;
+    if (blank(caller.principal))
+        return failure<ChangePreview>(Status::needs_input, ErrorCode::missing_input, "Caller is required");
+    if (auto error = check_document<ChangePreview>(data, context.document)) return *error;
+    if (auto error = check_revision<ChangePreview>(data, context)) return *error;
+    if (data.previews.size() >= data.limits.max_previews)
+        return failure<ChangePreview>(Status::failed, ErrorCode::resource_limit, "Preview limit reached");
+    Data candidate = data;
+    Model after = data.model;
+    Prepared prepared;
+    prepared.caller = caller;
+    prepared.context = context;
+    auto all_entities = model_entities(after);
+    auto kind_of = [&](const EntityId& id) -> std::string {
+        const auto found = std::find_if(all_entities.begin(), all_entities.end(),
+                                        [&](const EntitySummary& value) { return value.id == id; });
+        return found == all_entities.end() ? "" : found->kind;
+    };
+    auto upsert = [&](auto& values, auto value, const char* kind) -> bool {
+        if (value.id.value.empty()) {
+            do { value.id = EntityId(new_id(candidate, "entity")); }
+            while (!kind_of(value.id).empty());
+            prepared.create = true;
+        } else if (kind_of(value.id) != kind) return false;
+        prepared.entity = value.id;
+        const auto found = std::find_if(values.begin(), values.end(),
+                                         [&](const auto& existing) { return existing.id == value.id; });
+        if (found == values.end()) values.push_back(std::move(value));
+        else *found = std::move(value);
+        return true;
+    };
+    bool valid = true;
+    std::visit([&](const auto& change) {
+        using T = std::decay_t<decltype(change)>;
+        if constexpr (std::is_same_v<T, UpsertPart>) {
+            valid = upsert(after.parts, change.value, "part");
+            prepared.label = "Upsert part";
+        } else if constexpr (std::is_same_v<T, UpsertAssembly>) {
+            valid = upsert(after.assemblies, change.value, "assembly");
+            prepared.label = "Upsert assembly";
+        } else if constexpr (std::is_same_v<T, UpsertSet>) {
+            valid = upsert(after.sets, change.value, "set");
+            prepared.label = "Upsert set";
+        } else if constexpr (std::is_same_v<T, MoveNode>) {
+            prepared.entity = change.id;
+            prepared.label = "Move node";
+            const auto found = std::find_if(after.nodes.begin(), after.nodes.end(),
+                                            [&](const Node& node) { return node.id == change.id; });
+            if (found == after.nodes.end()) valid = false;
+            else found->position = change.position;
+        } else if constexpr (std::is_same_v<T, DeleteEntity>) {
+            prepared.entity = change.id;
+            prepared.label = "Delete entity";
+            if (kind_of(change.id).empty()) { valid = false; return; }
+            for (const auto& ref : model_references(after)) {
+                if (ref.to == change.id && ref.from != change.id && ref.role != "include.member") {
+                    valid = false;
+                    return;
+                }
+            }
+            auto erase = [&](auto& values) {
+                values.erase(std::remove_if(values.begin(), values.end(),
+                    [&](const auto& item) { return item.id == change.id; }), values.end());
+            };
+            erase(after.materials); erase(after.nodes); erase(after.sections); erase(after.beams);
+            erase(after.parts); erase(after.assemblies); erase(after.sets); erase(after.includes);
+            erase(after.forces); erase(after.constraints); erase(after.analyses);
+            for (auto& include : after.includes)
+                include.members.erase(std::remove(include.members.begin(), include.members.end(), change.id),
+                                      include.members.end());
+            after.sources.erase(std::remove_if(after.sources.begin(), after.sources.end(),
+                [&](const SourceIdentifier& source) { return source.entity == change.id; }),
+                after.sources.end());
+        }
+    }, edit);
+    if (!valid)
+        return failure<ChangePreview>(Status::failed, ErrorCode::invalid_input,
+                                      "Edit entity is missing, has the wrong kind, or is referenced", "id");
+    if (auto diagnostic = validate_candidate(after, data.limits))
+        return {Status::failed, std::nullopt, std::move(diagnostic)};
+    prepared.after = std::move(after);
+    auto result = stage_preview(candidate, std::move(prepared));
+    using std::swap;
+    swap(data, candidate);
     return result;
 }
 
@@ -331,29 +525,18 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
     if (current.cursor >= current.limits.max_history_entries)
         return failure<ChangeReceipt>(Status::failed, ErrorCode::resource_limit,
                                       "History entry limit reached");
-    if (prepared.create && current.materials.size() >= current.limits.max_materials)
-        return failure<ChangeReceipt>(Status::failed, ErrorCode::resource_limit,
-                                      "Material limit reached");
-
     Data candidate = current;
     candidate.history.resize(candidate.cursor);
-    if (prepared.create) {
-        candidate.materials.push_back(Material{prepared.entity, prepared.name, prepared.modulus});
-    } else {
-        auto entity = std::find_if(candidate.materials.begin(), candidate.materials.end(),
-                                   [&](const Material& material) { return material.id == prepared.entity; });
-        if (entity == candidate.materials.end())
-            return failure<ChangeReceipt>(Status::failed, ErrorCode::entity_not_found,
-                                          "Material no longer exists", "id");
-        entity->young_modulus_mpa = prepared.modulus;
-    }
+    if (!prepared.after)
+        return failure<ChangeReceipt>(Status::failed, ErrorCode::invalid_input,
+                                      "Preview has no candidate model");
+    candidate.model = *prepared.after;
     TransactionId transaction(new_id(candidate, "transaction"));
     candidate.document->content_state = new_id(candidate, "state");
     ++candidate.document->revision;
     update_document(candidate);
-    candidate.history.push_back(HistoryEntry{transaction,
-                                              prepared.create ? "Create material" : "Set Young modulus",
-                                              candidate.materials, candidate.document->content_state});
+    candidate.history.push_back(HistoryEntry{transaction, prepared.label,
+                                              candidate.model, candidate.document->content_state});
     candidate.cursor = candidate.history.size();
     ChangeReceipt receipt{transaction, candidate.document->revision,
                           candidate.document->revision, candidate.document->content_state, false};
@@ -394,11 +577,11 @@ Result<ChangeReceipt> move_history(Data& data, const Caller& caller,
     if (undo) --candidate.cursor;
     else ++candidate.cursor;
     if (candidate.cursor == 0) {
-        candidate.materials.clear();
+        candidate.model = {};
         candidate.document->content_state = candidate.initial_content_state;
     } else {
         const auto& entry = candidate.history[candidate.cursor - 1];
-        candidate.materials = entry.after;
+        candidate.model = entry.after;
         candidate.document->content_state = entry.content_state;
     }
     ++candidate.document->revision;

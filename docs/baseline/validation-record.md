@@ -38,3 +38,18 @@ git diff --check
 ## M0 实现验证
 
 纯核心Release 5/5、ASan/UBSan核心5/5、本地Qt Debug测试集6项；真实IPC联调、错误响应ID、并发自动启动和原子修改失败注入均有测试代码。独立Astra审查提出的发布后分配、操作名映射、帧上限及响应归属问题已修复。实际版本、命令和范围见[M0实现记录](../implementation/m0.md)。本轮未验证GUI、SQLite恢复、Nastran、AI或P0性能。
+
+## M1 文档与格式切片验证
+
+日期：2026-09-25，环境延续M0的macOS arm64、Apple clang 21.0.0、Qt6 Core/Network 6.11.1，无新增产品依赖。
+
+- `cmake --build build-core && ctest --test-dir build-core --output-on-failure`：Release 8/8通过。
+- `cmake --build build-sanitized && ctest --test-dir build-sanitized --output-on-failure`：ASan/UBSan 8/8通过。
+- `cmake --build build-local`及`ctest --test-dir build-local --output-on-failure`：Debug 10/10通过，含原M0和新M1真实CLI/engine通信。测试使用临时本地套接字，获得本机监听权限后执行；测试清理自身进程。
+- 领域测试覆盖稳定实体/分离组织、跨文件引用、循环/悬空引用拒绝、全模型撤销与重做、旧修订/错误调用者、配额，以及导入后的commit/undo/redo逐分配位置失败原子性。
+- 格式测试覆盖受控多文件语义往返、独立编号空间、目标摘要匹配、未知卡片与不支持语法、精度拒绝、MAT1派生剪切模量及FORCE变换溢出/下溢、G0/方向向量区分、INCLUDE路径与范围、平台信息损失报告。
+- M1 IPC测试覆盖候选导入/统一提交、部件/装配/集合编辑、组织视角与实体身份、引用与影响、节点修改/undo/redo、冻结导出预览及失败不污染活动模型。
+- 独立Astra源码审查与临时ASan/UBSan探针完成；已修复审查发现的自由度、组织查询边界、重复控制语句、路径及数值语义问题，最终审查范围内无未解决发现。
+- 最终设计检查通过：28项操作描述、12个契约样例、20项需求、38项验收映射；生成操作目录及profile摘要检查通过；`git diff --check`通过。
+
+范围及复现入口见[M1说明](../implementation/m1.md)。仅支持文本资源包与内存ArtifactPlan：未验证实际工程磁盘保存/恢复、多文件发布、真实求解器、pyNastran交叉验证、GUI、Windows、AI或容量/交互性能。ENV-02的真实目标二进制兼容性及完整P0验收仍待完成。

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "qcae/model.hpp"
+
 #include <compare>
 #include <cstdint>
 #include <memory>
@@ -11,60 +13,6 @@
 
 namespace qcae {
 
-template <class Tag> struct Id {
-    std::string value;
-    explicit Id(std::string text = {}) : value(std::move(text)) {}
-    auto operator<=>(const Id&) const = default;
-};
-struct DocumentTag; struct EpochTag; struct EntityTag; struct PreviewTag; struct TransactionTag;
-using DocumentId = Id<DocumentTag>;
-using DocumentEpoch = Id<EpochTag>;
-using EntityId = Id<EntityTag>;
-using PreviewId = Id<PreviewTag>;
-using TransactionId = Id<TransactionTag>;
-using Revision = std::uint64_t;
-
-struct ProfileRef {
-    std::string profile_id;
-    std::string profile_version;
-    std::string definition_digest;
-    bool operator==(const ProfileRef&) const = default;
-};
-struct TargetBinding {
-    ProfileRef profile;
-    std::string analysis_kind;
-    bool operator==(const TargetBinding&) const = default;
-};
-struct Quantity {
-    double value{};
-    std::string unit;
-};
-enum class Status { success, needs_input, conflict, failed };
-enum class ErrorCode {
-    missing_input, invalid_input, invalid_unit, entity_not_found,
-    document_not_found, document_already_open, document_epoch_expired,
-    revision_conflict, preview_expired, idempotency_key_conflict,
-    nothing_to_undo, nothing_to_redo, resource_limit, unsupported_capability
-};
-struct Diagnostic { ErrorCode code; std::string message; std::string field; };
-
-template <class T> struct Result {
-    Status status{Status::failed};
-    std::optional<T> value;
-    std::optional<Diagnostic> error;
-    [[nodiscard]] bool ok() const { return status == Status::success && value.has_value(); }
-};
-
-// Supplied by a trusted host, never decoded from request parameters.
-struct Caller { std::string principal; };
-struct DocumentRef { DocumentId id; DocumentEpoch epoch; };
-struct WriteContext { DocumentRef document; Revision expected_revision{}; };
-struct Material {
-    EntityId id;
-    std::string name;
-    double young_modulus_mpa{};
-    bool operator==(const Material&) const = default;
-};
 struct DocumentInfo {
     DocumentRef document;
     Revision revision{};
@@ -74,7 +22,7 @@ struct DocumentInfo {
     bool dirty{};
     bool durable{false};
 };
-struct ModelSnapshot { DocumentInfo info; std::vector<Material> materials; };
+struct ModelSnapshot : Model { DocumentInfo info; };
 struct CreateMaterial { std::string name; Quantity young_modulus; };
 struct SetYoungModulus { EntityId id; Quantity young_modulus; };
 using MaterialCommand = std::variant<CreateMaterial, SetYoungModulus>;
@@ -100,6 +48,8 @@ struct Limits {
     std::size_t max_previews{128};
     std::size_t max_idempotency_records{4096};
     std::size_t max_name_bytes{1024};
+    std::size_t max_entities{100000};
+    std::size_t max_relations{500000};
 };
 
 // One in-memory document; no storage/recovery claims. All writes serialize internally.
@@ -114,6 +64,9 @@ public:
                                          const std::string& idempotency_key);
     Result<ModelSnapshot> snapshot(const DocumentRef&) const;
     Result<ChangePreview> preview(const Caller&, const WriteContext&, const MaterialCommand&);
+    // Import into an empty document only. No direct replacement/write bypass.
+    Result<ChangePreview> preview_import(const Caller&, const WriteContext&, const Model&);
+    Result<ChangePreview> preview_edit(const Caller&, const WriteContext&, const ModelEdit&);
     Result<ChangeReceipt> commit(const Caller&, const WriteContext&, const PreviewId&,
                                 const std::string& idempotency_key);
     Result<ChangeReceipt> undo(const Caller&, const WriteContext&, const std::string& idempotency_key);

@@ -49,3 +49,7 @@ OCCT、Netgen/Gmsh在首次实际CAD/网格用例时接入；ParaView/trame、Qt
 ## 求解器能力包边界
 
 具体方言/版本能力在ENV-02形成一个静态注册Nastran profile，运行时二进制与选项在ENV-05形成独立RunConfiguration。P0没有第二求解器或动态加载依赖。领域类型和结果端口的通用表述遵循[基线1.1能力包设计](../architecture/solver-profiles.md)。
+
+## M1文本格式环境记录
+
+已实现一个静态 `qcae.nastran.linear-static` 0.1.0 codec，语义按 MSC 官方版本化文档核对；支持矩阵见 [Nastran子集](../implementation/nastran-subset.md)。ProfileRef 的 SHA-256 摘要由代码/声明/矩阵生成。ENV-02的codec语义部分有测试证据，但尚无本机求解器方言/二进制版本验证；`configured=false`、`validated=false`。没有新增产品依赖，也未使用pyNastran交叉验证。

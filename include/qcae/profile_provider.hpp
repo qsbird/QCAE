@@ -1,9 +1,9 @@
 #pragma once
 
-#include "qcae/core.hpp"
+#include "qcae/types.hpp"
 
 namespace qcae {
-// Metadata contract only in M0. No production solver profile is installed yet.
+// Codec availability is separate from configured/validated solver execution.
 struct ProfileDefinition {
     ProfileRef reference;
     std::string solver_family;

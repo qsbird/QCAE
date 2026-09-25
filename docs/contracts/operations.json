@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1",
-  "status": "accepted design catalog; operations are not implemented",
-  "operation_count": 27,
+  "status": "accepted design catalog; runtime capability discovery reports implemented subsets",
+  "operation_count": 28,
   "notes": [
     "Names and consistency rules form the baseline. Concrete DTO/schema implementations are an M0 task.",
     "Effect metadata is not an authorization decision.",
@@ -364,6 +364,19 @@
       "output_type": "JobReceipt",
       "target_context": "none",
       "requires_profile_match": false
+    },
+    {
+      "name": "model.export_preview",
+      "effect": "query",
+      "description": "Encode a frozen supported model into an in-memory artifact plan and loss report; does not publish files",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "ExportPreview",
+      "output_type": "ArtifactPlanPreview",
+      "target_context": "analysis",
+      "requires_profile_match": true
     }
   ],
   "api_version": "1.1"
