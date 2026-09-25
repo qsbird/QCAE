@@ -263,7 +263,7 @@ def main() -> int:
         return 1
     print(f"PASS: {links} portable links; {len(json_files)} JSON files; {modules}-module acyclic graph")
     print(f"PASS: {operations} operation descriptors; {examples} contract examples; {requirements} requirements; {tests} acceptance cases")
-    print("Design checks only. Product builds, solver runs and AI acceptance have not been performed.")
+    print("Design checks only. This command does not run product builds, solver runs or AI acceptance.")
     return 0
 
 

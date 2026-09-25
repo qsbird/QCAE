@@ -1,6 +1,6 @@
 # 业务契约基线 1.1
 
-这是应用服务契约，不是MCP原始报文。GUI、CLI与MCP桥调用相同业务；传输适配器编码/解码后进入同一Dispatcher。当前目录为设计资产，没有可调用服务。
+这是应用服务契约，不是MCP原始报文。GUI、CLI与MCP桥调用相同业务；传输适配器编码/解码后进入同一Dispatcher。本目录定义完整P0目标；M0已有部分内存服务，实际实现范围由capabilities.list的implementation_status/implementation_scope标识。未实现操作不冒充可用。
 
 ## OperationDescriptor
 

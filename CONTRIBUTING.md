@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-本仓库处于设计基线阶段。后续明确的实现任务从 [开发计划](docs/baseline/development-plan.md) 的 M0 开始；无需重启整轮需求访谈。尚未安装产品依赖，也没有可运行产品。
+M0的材料内存切片及本地IPC已经实现，见[M0说明](docs/implementation/m0.md)。后续从[开发计划](docs/baseline/development-plan.md)的M1接续；完整P0尚未完成。现有依赖使用本机安装，本轮没有安装新组件。
 
 开始一个开发切片前，读取对应需求、架构边界和验收ID，先定义该切片的完成证据。不要一次性生成所有模块空壳或扩大未列功能。
 
@@ -39,7 +39,7 @@ Not-tested: External solver integration
 
 当前文档基线：`python3 tools/check_design.py` 和 `git diff --check`。
 
-实施后按切片补充：核心单元/契约、事务故障注入、IPC/生命周期、选择显示、格式往返、真实求解和AI联合验收。构建配置与命令由 M0 实际创建并记录；不要在文档里报告未运行的测试。
+当前还需按[M0说明](docs/implementation/m0.md)运行CMake/CTest；后续按切片补充：核心单元/契约、事务故障注入、IPC/生命周期、选择显示、格式往返、真实求解和AI联合验收。现有构建配置与命令已由M0记录；不要在文档里报告未运行的测试。
 
 ## 环境门禁
 

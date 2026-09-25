@@ -1,6 +1,6 @@
 # QCAE 验收基线 1.1
 
-状态：测试设计，**全部待实现、待执行**。文档检查通过不等于产品验收通过。
+状态：完整P0验收仍待完成；M0已执行核心和IPC子集，证据见[实现记录](../implementation/m0.md)。文档检查或M0通过不等于完整P0通过。
 
 依据：[需求基线](requirements.md)、[架构总览](../architecture/README.md)、[运行与数据规则](../architecture/runtime-and-data.md)。本文件固定测试身份、需求映射和完成证据。
 

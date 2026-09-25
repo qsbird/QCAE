@@ -11,7 +11,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Root-level versioned `docs/*-v0.*.md` are historical research. `.omx/` is local runtime context, not canonical project documentation and not committed.
 
-The user has authorized a design baseline and repository preparation. Product implementation starts when a subsequent task requests it; that request does not require repeating the complete interview. Current user instructions override earlier research assumptions.
+The user has now requested M0 implementation. The material-only in-memory core and local IPC slice are implemented; see docs/implementation/m0.md. Follow-up work continues from the development plan without repeating the interview. Current user instructions override earlier research assumptions.
 
 ## Binding architecture
 
@@ -34,7 +34,7 @@ For cleanup/refactoring, write a short plan and protect existing behavior before
 
 ## Checks and commits
 
-Current check: `python3 tools/check_design.py`. Also run `git diff --check`. Product builds/tests are introduced by M0; do not claim those exist yet.
+Checks: `python3 tools/check_design.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. M0 is memory-only; do not claim persistent recovery, GUI, Nastran or real AI integration is implemented.
 
 New branches default to `codex/`. Every commit uses the Lore protocol: intent-first subject, context, and useful Git trailers such as `Constraint`, `Rejected`, `Confidence`, `Scope-risk`, `Directive`, `Tested`, and `Not-tested`. Never fabricate validation evidence.
 

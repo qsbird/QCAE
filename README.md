@@ -2,7 +2,7 @@
 
 面向本地中小规模模型的 CAE 前处理平台。P0 聚焦受控 Nastran 悬臂梁流程，提供桌面 GUI 与外部 AI 共用的无界面业务接口；服务器和亿级实现后置。
 
-**当前状态：设计基线 1.1，尚无产品实现。** 本仓库已保存需求、架构、接口契约、验收标准、参考研究和界面概念图。程序名称和源目录布局均为后续开发目标。
+**当前状态：设计基线1.1，M0内存核心和本地IPC已实现。** 已打通CLI到engine的材料参数预览、提交和undo/redo；完整P0、持久化、GUI、Nastran与AI接入尚未实现。运行入口见[M0说明](docs/implementation/m0.md)。
 
 ## 从这里开始
 
@@ -24,15 +24,17 @@ flowchart LR
     Engine --> Solver[Nastran 求解器进程]
 ```
 
-## 当前可执行的检查
+## 构建与测试
 
-需要 Python 3.10 或以上，无第三方 Python 依赖：
+纯核心需要C++20编译器、CMake 3.24+和Python 3.10+，不需要Qt或其他产品框架：
 
 ```sh
-python3 tools/check_design.py
+cmake -S . -B build-core -DCMAKE_BUILD_TYPE=Release -DQCAE_BUILD_IPC=OFF
+cmake --build build-core
+ctest --test-dir build-core --output-on-failure
 ```
 
-检查文档链接、JSON、依赖图、接口示例和需求追溯；不代表产品已编译或通过求解测试。当前不要运行尚不存在的 `qcae-engine` 或 CMake 产品构建命令。
+本地engine/CLI构建另需Qt6 Core/Network，启用`QCAE_BUILD_IPC=ON`，详见[M0运行与验证](docs/implementation/m0.md)。运行数据仅在内存，进程退出即丢失。设计检查仍可单独运行`python3 tools/check_design.py`。
 
 ## 仓库内容
 
@@ -44,6 +46,8 @@ python3 tools/check_design.py
 | `docs/design/` | 界面概念图及生成提示词 |
 | `docs/research/` | 架构参考研究，非依赖源码 |
 | `docs/*-v0.*.md` | 历史讨论，不作为与当前基线冲突时的依据 |
-| `tools/` | 文档与设计一致性检查 |
+| `include/`、`src/`、`apps/` | M0纯C++核心及本地Qt IPC入口 |
+| `tests/` | 核心、契约、分配失败和真实IPC回归 |
+| `tools/` | 操作描述生成与设计一致性检查 |
 
 完整导航见 [文档索引](docs/README.md)。开发前阅读 [贡献与验证约定](CONTRIBUTING.md)。
