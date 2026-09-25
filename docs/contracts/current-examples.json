@@ -1,0 +1,318 @@
+{
+  "status": "current design examples; not executable endpoints, MCP wire messages, or actual solver results",
+  "request_id_policy": "unique per transport attempt; idempotency_key reused for retries of one logical side effect",
+  "examples": [
+    {
+      "name": "missing_unit",
+      "request": {
+        "api_version": "1.0",
+        "document_id": "doc-cantilever-demo",
+        "request_id": "request-01",
+        "operation": "analysis.update_inputs",
+        "expected_revision": "17",
+        "idempotency_key": "intent-input-01",
+        "parameters": {
+          "length": {
+            "value": 1000
+          }
+        },
+        "document_epoch": "epoch-06"
+      },
+      "response": {
+        "status": "needs_input",
+        "request_id": "request-01",
+        "revision": "17",
+        "missing_fields": [
+          {
+            "path": "parameters.length.unit",
+            "question": "梁长1000使用什么单位？",
+            "allowed_values": [
+              "mm",
+              "m"
+            ]
+          }
+        ],
+        "mutation_committed": false,
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06"
+      }
+    },
+    {
+      "name": "shared_property_preview",
+      "request": {
+        "api_version": "1.0",
+        "document_id": "doc-cantilever-demo",
+        "request_id": "request-02",
+        "operation": "changes.preview",
+        "expected_revision": "17",
+        "parameters": {
+          "command": "property.update",
+          "target_id": "property-101",
+          "fields": {
+            "area": {
+              "value": 800,
+              "unit": "mm^2"
+            }
+          },
+          "selection_id": "selection-last-10"
+        },
+        "document_epoch": "epoch-06"
+      },
+      "response": {
+        "status": "success",
+        "request_id": "request-02",
+        "revision": "17",
+        "data": {
+          "preview_id": "preview-08",
+          "command": "property.update",
+          "selected_count": 10,
+          "affected_element_count": 20,
+          "impact_scope": "all_references_to_property-101",
+          "requires_input": false,
+          "reversible": true
+        },
+        "mutation_committed": false,
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06"
+      }
+    },
+    {
+      "name": "commit_once",
+      "request": {
+        "api_version": "1.0",
+        "document_id": "doc-cantilever-demo",
+        "request_id": "request-03",
+        "operation": "changes.commit",
+        "expected_revision": "17",
+        "idempotency_key": "intent-change-09",
+        "parameters": {
+          "preview_id": "preview-08"
+        },
+        "document_epoch": "epoch-06"
+      },
+      "response": {
+        "status": "success",
+        "request_id": "request-03",
+        "revision": "18",
+        "transaction_id": "transaction-12",
+        "data": {
+          "affected_element_count": 20
+        },
+        "mutation_committed": true,
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06"
+      }
+    },
+    {
+      "name": "retry_same_intent",
+      "request": {
+        "api_version": "1.0",
+        "document_id": "doc-cantilever-demo",
+        "request_id": "request-04",
+        "operation": "changes.commit",
+        "expected_revision": "17",
+        "idempotency_key": "intent-change-09",
+        "parameters": {
+          "preview_id": "preview-08"
+        },
+        "document_epoch": "epoch-06"
+      },
+      "response": {
+        "status": "success",
+        "request_id": "request-04",
+        "revision": "18",
+        "transaction_id": "transaction-12",
+        "replayed": true,
+        "mutation_committed": true,
+        "data": {
+          "affected_element_count": 20
+        },
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06"
+      }
+    },
+    {
+      "name": "stale_preview",
+      "request": {
+        "api_version": "1.0",
+        "document_id": "doc-cantilever-demo",
+        "request_id": "request-05",
+        "operation": "changes.commit",
+        "expected_revision": "17",
+        "idempotency_key": "intent-change-10",
+        "parameters": {
+          "preview_id": "preview-08"
+        },
+        "document_epoch": "epoch-06"
+      },
+      "response": {
+        "status": "conflict",
+        "request_id": "request-05",
+        "revision": "18",
+        "error": {
+          "code": "REVISION_CONFLICT",
+          "expected_revision": "17",
+          "current_revision": "18",
+          "next_action": "read_latest_state_and_create_new_preview"
+        },
+        "mutation_committed": false,
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06"
+      }
+    },
+    {
+      "name": "job_start",
+      "request": {
+        "api_version": "1.0",
+        "document_id": "doc-cantilever-demo",
+        "request_id": "request-06",
+        "operation": "analysis.start",
+        "expected_revision": "18",
+        "idempotency_key": "intent-run-01",
+        "parameters": {
+          "analysis_id": "analysis-static-01",
+          "solver_profile_id": "configured-solver-profile"
+        },
+        "document_epoch": "epoch-06"
+      },
+      "response": {
+        "status": "accepted",
+        "request_id": "request-06",
+        "revision": "18",
+        "job_id": "job-03",
+        "data": {
+          "input_snapshot_id": "snapshot-18",
+          "analysis_fingerprint": "demo-input-digest-18",
+          "state": "queued"
+        },
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06"
+      }
+    },
+    {
+      "name": "stale_result",
+      "request": {
+        "api_version": "1.0",
+        "document_id": "doc-cantilever-demo",
+        "request_id": "request-07",
+        "operation": "analysis.results",
+        "parameters": {
+          "job_id": "job-03"
+        },
+        "document_epoch": "epoch-06"
+      },
+      "response": {
+        "status": "success",
+        "request_id": "request-07",
+        "revision": "19",
+        "data": {
+          "job_id": "job-03",
+          "source_revision": "18",
+          "analysis_fingerprint": "demo-input-digest-18",
+          "current_model_match": false,
+          "solver_status": "succeeded",
+          "result_parse_status": "complete",
+          "verification_status": "not_evaluated",
+          "interpretation_status": "historical_only",
+          "resources": [
+            "resource-run-03-displacements",
+            "resource-run-03-log"
+          ]
+        },
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06"
+      }
+    },
+    {
+      "name": "expired_document_epoch",
+      "request": {
+        "api_version": "1.0",
+        "request_id": "request-08",
+        "operation": "changes.commit",
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-05",
+        "expected_revision": "17",
+        "idempotency_key": "intent-expired-01",
+        "parameters": {
+          "preview_id": "preview-before-reopen"
+        }
+      },
+      "response": {
+        "status": "conflict",
+        "request_id": "request-08",
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06",
+        "revision": "19",
+        "mutation_committed": false,
+        "error": {
+          "code": "DOCUMENT_EPOCH_EXPIRED",
+          "next_action": "refresh_context_then_query_original_operation"
+        }
+      }
+    },
+    {
+      "name": "save_as_metadata_only",
+      "request": {
+        "api_version": "1.0",
+        "request_id": "request-09",
+        "operation": "project.save_as",
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06",
+        "expected_revision": "19",
+        "idempotency_key": "intent-save-as-01",
+        "parameters": {
+          "target_resource_id": "configured-save-destination"
+        }
+      },
+      "response": {
+        "status": "success",
+        "request_id": "request-09",
+        "document_id": "doc-cantilever-demo",
+        "document_epoch": "epoch-06",
+        "revision": "19",
+        "data": {
+          "project_id": "project-fork-02",
+          "source_project_id": "project-source-01",
+          "content_state_id": "content-19",
+          "saved_content_state_id": "content-19",
+          "clean": true,
+          "model_history_added": false
+        }
+      }
+    },
+    {
+      "name": "lookup_lost_open_response",
+      "request": {
+        "api_version": "1.0",
+        "request_id": "request-10",
+        "operation": "operations.get",
+        "parameters": {
+          "lookup_scope": "host",
+          "original_operation": "project.open",
+          "idempotency_key": "intent-open-01"
+        }
+      },
+      "response": {
+        "status": "success",
+        "request_id": "request-10",
+        "data": {
+          "state": "completed",
+          "original_operation": "project.open",
+          "document_id": "doc-open-result-01",
+          "document_epoch": "epoch-open-01",
+          "revision": "0",
+          "replayed": true
+        }
+      }
+    }
+  ],
+  "notes": [
+    "Authorization and actor identity are established by the host, not accepted from AI-authored approval fields.",
+    "Demo fingerprints and IDs are illustrative, not real solver artifacts.",
+    "needs_input does not record a committed idempotency result; corrected parameters use a new logical intent key to avoid ambiguity.",
+    "Successful replay reports the original committed outcome without creating another transaction or revision.",
+    "A capability to edit only selected elements must use property copy/reassignment when the original property is shared, or return unsupported.",
+    "Normal open creates a new document namespace; fault recovery keeps the document and prior outcomes but issues a new epoch. SaveAs keeps the live document and model revision."
+  ],
+  "api_version": "1.0"
+}

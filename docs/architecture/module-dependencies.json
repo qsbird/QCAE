@@ -1,0 +1,311 @@
+{
+  "schema_version": "1.0",
+  "status": "accepted design dependency graph; product build targets not implemented",
+  "direction": "module depends on listed dependencies; runtime injection reverses interface implementation ownership",
+  "notes": [
+    "Logical modules may be merged into fewer build targets.",
+    "A non-C++ MCP bridge can implement the same client protocol instead of linking the C++ client SDK; its SDK language/runtime is fixed by ENV-06 before M5.",
+    "Only composition hosts wire concrete adapters into application ports.",
+    "engine_host must not transitively depend on VTK or QtWidgets.",
+    "GUI and MCP must not transitively depend on domain or application."
+  ],
+  "modules": [
+    {
+      "name": "types",
+      "layer": "core",
+      "dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "name": "contracts",
+      "layer": "core",
+      "dependencies": [
+        "types"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "domain",
+      "layer": "core",
+      "dependencies": [
+        "types"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "ports",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "query",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "contracts",
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "validation",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "query",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "commands",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "query",
+        "validation",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "history",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "types"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "analysis",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "query",
+        "validation",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "jobs",
+      "layer": "core",
+      "dependencies": [
+        "types",
+        "contracts",
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "application",
+      "layer": "core",
+      "dependencies": [
+        "contracts",
+        "domain",
+        "query",
+        "commands",
+        "history",
+        "analysis",
+        "validation",
+        "jobs",
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "storage_sqlite",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": [
+        "SQLite"
+      ]
+    },
+    {
+      "name": "artifacts_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "nastran_codec",
+      "layer": "adapter",
+      "dependencies": [
+        "ports",
+        "domain"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "solver_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": [
+        "QtCore"
+      ]
+    },
+    {
+      "name": "result_reader",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "runtime_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": [
+        "QtCore"
+      ]
+    },
+    {
+      "name": "ipc_local",
+      "layer": "adapter",
+      "dependencies": [
+        "contracts"
+      ],
+      "external_dependencies": [
+        "QtCore",
+        "QtNetwork"
+      ]
+    },
+    {
+      "name": "graphics_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports",
+        "ipc_local",
+        "runtime_local"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "render_data",
+      "layer": "adapter",
+      "dependencies": [
+        "domain",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "render_vtk",
+      "layer": "adapter",
+      "dependencies": [
+        "contracts"
+      ],
+      "external_dependencies": [
+        "VTK"
+      ]
+    },
+    {
+      "name": "client_sdk",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "ipc_local"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "desktop",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "client_sdk",
+        "render_vtk"
+      ],
+      "external_dependencies": [
+        "QtWidgets"
+      ]
+    },
+    {
+      "name": "mcp",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "client_sdk"
+      ],
+      "external_dependencies": [
+        "MCP_SDK"
+      ]
+    },
+    {
+      "name": "cli",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "client_sdk"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "engine_host",
+      "layer": "composition",
+      "dependencies": [
+        "application",
+        "storage_sqlite",
+        "artifacts_local",
+        "nastran_codec",
+        "solver_local",
+        "result_reader",
+        "runtime_local",
+        "ipc_local",
+        "graphics_local",
+        "render_data"
+      ],
+      "external_dependencies": [
+        "QtCore"
+      ]
+    },
+    {
+      "name": "desktop_host",
+      "layer": "composition",
+      "dependencies": [
+        "desktop"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "mcp_host",
+      "layer": "composition",
+      "dependencies": [
+        "mcp"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "cli_host",
+      "layer": "composition",
+      "dependencies": [
+        "cli"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "snapshot_host",
+      "layer": "composition",
+      "dependencies": [
+        "render_vtk",
+        "ipc_local",
+        "contracts"
+      ],
+      "external_dependencies": []
+    }
+  ]
+}

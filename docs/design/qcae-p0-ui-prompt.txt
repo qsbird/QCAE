@@ -1,0 +1,24 @@
+Use case: ui-mockup.
+Create ONE high fidelity, extremely crisp desktop CAE preprocessor application interface concept screenshot, wide 16:10 landscape at high resolution. This is a feasible Qt-style engineering desktop application called QCAE, entirely in Simplified Chinese with Latin engineering identifiers. Flat straight-on screenshot filling the frame, no physical monitor, no perspective applied to the UI, no marketing background. Concept only, not a running product. Add a small visible tag “P0 界面概念” in the title bar. Prioritize beautiful restrained professional industrial software, legible accurate Chinese, strong information hierarchy, thin dividers, clean modern sans serif, compact but comfortable density. Light cool-gray chrome and side panels, dark blue-charcoal 3D viewport, teal primary actions, amber selected elements, white secondary text. No oversized dashboard cards, no cloud/AI features, no stress contour, no simulation results plot.
+
+Layout:
+Top title bar: small restrained QCAE wordmark, project name “悬臂梁.qcae”, tiny unsaved-change dot, concept tag. Below a short menu strip with exactly “文件  编辑  视图  模型  检查  帮助”. Below a compact toolbar: open, save, clear undo/redo icons, labels “撤销”, “重做”, “框选”, “条件选择”, “隔离”, “显示全部”, “检查”, “导出 BDF”. A right-aligned unobtrusive command search field “搜索命令…”.
+
+Left panel about 20% width, title “模型”, search field “搜索名称或 ID”. A “查看方式” dropdown currently “部件 / 装配”, with tiny alternate tabs “属性”, “集合”, “INCLUDE”. Clean hierarchical model tree with small line icons and visibility eyes, project “悬臂梁”, assembly “装配 01”, children “梁段 A” and selected “梁段 B”. Further top-level categories “材料”, “属性”, “集合”, “INCLUDE”, “载荷与约束”; visible children “Steel · MAT1”, “Section · PBAR”, “固定端”, “自由端”, “model.bdf”, “mesh.bdf”, “FORCE 1”, “SPC1 1”. Do not depict subtrees as duplicate model copies. Bottom of left panel compact statistics “节点 21    单元 20”.
+
+Center 58% width: large usable dark 3D viewport. Top slim bar “主视图” and selection controls “单元”, toggle “穿透” on, “包含隐藏” off. Render an undeformed straight 1D cantilever finite-element beam, 20 equal beam elements and nodes along a single straight axis, diagonally from lower-left toward upper-right in the viewport. Show the square section as a restrained translucent steel-blue extruded visualization around the 1D centerline, NOT a solid finite-element tetrahedral or hexahedral mesh. Make the far half of the beam 10 selected elements warm amber with visible amber node points, near half steel-blue. Show a clear small fixed support symbol at its left/root end and a vivid red downward force arrow at the free right tip labeled “F = 100 N”. Subtle perspective ground grid, light engineering ambient shading, crisp element borders and no dramatic photorealistic lighting. Reference orientation axes at viewport lower left, small view cube at upper right, a minimal fit-view control. Floating small selection summary “已选择 10 个单元” near viewport lower edge, no overlapping geometry. Never show deformed geometry or stress colors.
+
+Right 22% panel: title “属性”, context “梁段 B · 10 个单元”, subtabs “字段” and “引用”. Readable compact property form:
+“单元类型    CBAR”
+“属性        PBAR 101”
+“材料        Steel”
+“A           400 mm²”
+“I₁          13333.33 mm⁴”
+“I₂          13333.33 mm⁴”
+Muted helper “修改将作用于所选单元的共享属性”.
+Buttons “应用” (teal), “取消”.
+Below a concise “引用关系” section with “PBAR 101 → MAT1 1” and a “定位关联单元” action.
+
+Bottom horizontally docked panel below viewport and right panel, about 17% height, tabs “任务”, “检查”, “操作历史”, with “操作历史” active. Show a small timestamped list with three rows: “导入 model.bdf”, “创建集合：自由端”, “修改属性：PBAR 101”. One selected row and a subtle label “可撤销”. Side summary on the same lower panel “后台任务：空闲”. No false performance benchmark or all-tests-passed claims.
+Very bottom status strip “本地工程” “单位：N · mm” “选择：10 / 20” “未保存”.
+Ensure all panel boundaries align, text is legible, no clipped controls, restrained 4–6px radii, consistent thin technical icons. This concept illustrates only basic local P0 features, not implemented server, collaboration, full CAD or post-processing.

@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""Check the versioned design baseline without product or third-party dependencies."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import re
+import sys
+from urllib.parse import unquote, urlsplit
+
+
+class DesignError(Exception):
+    pass
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise DesignError(message)
+
+
+def load_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise DesignError(f"{path}: {exc}") from exc
+
+
+def check_links(root: Path) -> int:
+    canonical = [root / name for name in ("README.md", "CONTRIBUTING.md", "AGENTS.md")]
+    for folder in ("docs/baseline", "docs/architecture", "docs/contracts"):
+        canonical.extend(sorted((root / folder).glob("*.md")))
+    canonical.append(root / "docs/README.md")
+    require((root / "docs/baseline/requirements.md").is_file(), "Missing requirements baseline")
+    require((root / "docs/baseline/acceptance.md").is_file(), "Missing acceptance baseline")
+    count = 0
+    for path in canonical:
+        require(path.is_file(), f"Missing document: {path}")
+        content = path.read_text(encoding="utf-8")
+        require(content.count("```") % 2 == 0, f"Unbalanced code fences: {path}")
+        require(all(line == line.rstrip() for line in content.splitlines()),
+                f"Trailing whitespace: {path}")
+        for raw in re.findall(r"\]\(([^)]+)\)", content):
+            target = raw.strip("<>")
+            parsed = urlsplit(target)
+            if parsed.scheme or target.startswith("#"):
+                continue
+            local = unquote(parsed.path)
+            require(not Path(local).is_absolute(), f"Non-portable baseline link: {path}: {target}")
+            resolved = (path.parent / local).resolve()
+            require(resolved.is_relative_to(root), f"Link escapes repository: {path}: {target}")
+            require(resolved.is_file(), f"Broken baseline link: {path}: {target}")
+            count += 1
+    return count
+
+
+def check_dependencies(root: Path) -> int:
+    graph = load_json(root / "docs/architecture/module-dependencies.json")
+    rows = graph["modules"]
+    modules = {row["name"]: row for row in rows}
+    require(len(rows) == len(modules), "Duplicate module names")
+    active: set[str] = set()
+    visited: set[str] = set()
+    closures: dict[str, set[str]] = {}
+
+    def visit(name: str) -> set[str]:
+        require(name in modules, f"Unknown module: {name}")
+        require(name not in active, f"Dependency cycle at {name}")
+        if name in visited:
+            return closures[name]
+        active.add(name)
+        closure = {name}
+        for dep in modules[name]["dependencies"]:
+            closure.update(visit(dep))
+        active.remove(name)
+        visited.add(name)
+        closures[name] = closure
+        return closure
+
+    for name in modules:
+        visit(name)
+    for name, row in modules.items():
+        if row["layer"] == "core":
+            require(all(modules[dep]["layer"] == "core"
+                        and not modules[dep]["external_dependencies"]
+                        for dep in closures[name]), f"Core framework leakage: {name}")
+    for name in ("desktop", "mcp", "cli", "snapshot_host"):
+        require(not {"domain", "application", "render_data"} & closures[name],
+                f"Client links core implementation: {name}")
+    engine_external = {dep for name in closures["engine_host"]
+                       for dep in modules[name]["external_dependencies"]}
+    require(not {"VTK", "QtWidgets"} & engine_external, "Engine depends on graphics")
+    return len(modules)
+
+
+def check_contracts(root: Path) -> tuple[int, int]:
+    registry = load_json(root / "docs/contracts/operations.json")
+    rows = registry["operations"]
+    operations = {row["name"]: row for row in rows}
+    require(len(rows) == len(operations) == registry["operation_count"],
+            "Operation count mismatch or duplicate name")
+    for name, row in operations.items():
+        for key in ("requires_document", "requires_epoch", "requires_revision", "requires_idempotency_key"):
+            require(type(row[key]) is bool, f"Invalid operation flag: {name}.{key}")
+        if row["effect"] == "model_write":
+            require(all(row[key] for key in ("requires_document", "requires_epoch",
+                                            "requires_revision", "requires_idempotency_key")),
+                    f"Model write lacks consistency fields: {name}")
+
+    samples = load_json(root / "docs/contracts/current-examples.json")["examples"]
+    examples = {row["name"]: row for row in samples}
+    require(len(samples) == len(examples), "Duplicate example names")
+    required_fields = {"requires_document": "document_id", "requires_epoch": "document_epoch",
+                       "requires_revision": "expected_revision", "requires_idempotency_key": "idempotency_key"}
+    for row in samples:
+        request, response = row["request"], row["response"]
+        operation = request["operation"]
+        require(operation in operations, f"Example references unknown operation: {operation}")
+        require(request["api_version"] == "1.0", "Unexpected API version")
+        require(response["request_id"] == request["request_id"], "Response correlation mismatch")
+        for flag, field in required_fields.items():
+            if operations[operation][flag]:
+                require(bool(request.get(field)), f"Missing {field}: {row['name']}")
+        require(response["status"] in {"success", "needs_input", "conflict", "accepted", "failed"},
+                f"Unknown response status: {row['name']}")
+
+    first, retry = examples["commit_once"], examples["retry_same_intent"]
+    require(first["request"]["request_id"] != retry["request"]["request_id"], "Retry reuses correlation ID")
+    for field in ("idempotency_key", "parameters", "document_id", "document_epoch"):
+        require(first["request"][field] == retry["request"][field], f"Retry changes {field}")
+    for field in ("transaction_id", "revision"):
+        require(first["response"][field] == retry["response"][field], f"Retry duplicates {field}")
+    require(not examples["missing_unit"]["response"]["mutation_committed"], "Missing unit commits model")
+    require(examples["stale_preview"]["response"]["status"] == "conflict", "Stale preview not rejected")
+    require(examples["expired_document_epoch"]["response"]["error"]["code"] == "DOCUMENT_EPOCH_EXPIRED",
+            "Expired document context not rejected")
+    require(not examples["stale_result"]["response"]["data"]["current_model_match"], "Old result treated as current")
+    save_as = examples["save_as_metadata_only"]
+    require(save_as["request"]["expected_revision"] == save_as["response"]["revision"],
+            "SaveAs changes model revision")
+    require(not save_as["response"]["data"]["model_history_added"], "SaveAs creates model undo entry")
+    lookup = examples["lookup_lost_open_response"]
+    require(not operations["operations.get"]["requires_document"],
+            "Host operation lookup incorrectly requires an unknown document ID")
+    require("document_id" not in lookup["request"]
+            and lookup["request"]["parameters"]["lookup_scope"] == "host"
+            and bool(lookup["response"]["data"]["document_id"]),
+            "Lost open response cannot recover the document identity")
+    for name in ("project.create", "project.open", "project.close"):
+        require(operations[name].get("idempotency_scope") == "host",
+                f"Missing host lifecycle idempotency: {name}")
+    return len(operations), len(examples)
+
+
+def check_traceability(root: Path) -> tuple[int, int]:
+    requirements = (root / "docs/baseline/requirements.md").read_text(encoding="utf-8")
+    acceptance = (root / "docs/baseline/acceptance.md").read_text(encoding="utf-8")
+    req_rows = re.findall(r"^\| (REQ-\d{2}) \|", requirements, re.MULTILINE)
+    require(len(req_rows) == len(set(req_rows)) == 18, "Expected 18 unique requirements")
+    require(set(req_rows) == {f"REQ-{n:02}" for n in range(1, 19)}, "Requirement ID gap")
+    tests = re.findall(r"^\| (TST-[FAI]\d{2})\b", acceptance, re.MULTILINE)
+    expected = {f"TST-{kind}{n:02}" for kind, count in (("F", 8), ("A", 12), ("I", 10))
+                for n in range(1, count + 1)}
+    require(len(tests) == len(set(tests)) == 30 and set(tests) == expected, "Acceptance ID mismatch")
+    for req in req_rows:
+        require(re.search(rf"^\| {req} [^|]*\| TST-", acceptance, re.MULTILINE) is not None,
+                f"Missing coverage mapping: {req}")
+    for prefix, count in (("AR", 12), ("AI", 10)):
+        for n in range(1, count + 1):
+            require(f"/ {prefix}-{n:02} " in acceptance, f"Missing historical mapping: {prefix}-{n:02}")
+    return len(req_rows), len(tests)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    args = parser.parse_args()
+    root = args.root.resolve()
+    try:
+        links = check_links(root)
+        json_files = list((root / "docs").rglob("*.json"))
+        for path in json_files:
+            load_json(path)
+        modules = check_dependencies(root)
+        operations, examples = check_contracts(root)
+        requirements, tests = check_traceability(root)
+    except (DesignError, KeyError, TypeError, OSError) as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
+        return 1
+    print(f"PASS: {links} portable links; {len(json_files)} JSON files; {modules}-module acyclic graph")
+    print(f"PASS: {operations} operation descriptors; {examples} contract examples; {requirements} requirements; {tests} acceptance cases")
+    print("Design checks only. Product builds, solver runs and AI acceptance have not been performed.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
