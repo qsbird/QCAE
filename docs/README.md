@@ -23,6 +23,8 @@
 
 [M1文档与格式](implementation/m1.md)：实体/组织/引用、受控Nastran导入与导出预览、统一事务及限制。
 
+[M2/M3持久化与桌面](implementation/m2-m3.md)：SQLite工程/恢复、查询/选择、真实Qt/VTK工作区及运行说明。
+
 ## 界面参考
 
 [主工作区概念图](design/qcae-p0-main-v2.png)及[功能说明](P0预期功能与界面说明-v0.4.md)用于说明信息布局，不代表产品已经实现，也不是像素级开发合同。

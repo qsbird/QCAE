@@ -1,5 +1,9 @@
 #include "qcae/ipc_api.hpp"
 #include "qcae/nastran_codec.hpp"
+#include "qcae/query.hpp"
+#ifdef QCAE_HAS_SQLITE
+#include "qcae/sqlite_store.hpp"
+#endif
 #include "qcae/local_endpoint.hpp"
 #include "qcae/operations.hpp"
 
@@ -45,9 +49,10 @@ int main(int argc, char** argv) {
     QCoreApplication::setApplicationName("QCAE");
     QCommandLineParser parser;
     parser.setApplicationDescription(
-        "QCAE M1 in-memory local engine; no persistence or solver support");
+        "QCAE local engine; optional SQLite workspace and shared model services");
     parser.addHelpOption();
     parser.addOption({{"s", "socket"}, "Local endpoint path", "path"});
+    parser.addOption({"workspace", "SQLite working recovery database", "path"});
     parser.process(app);
     const QString endpoint =
         parser.isSet("socket") ? parser.value("socket") : qcae::transport::default_endpoint();
@@ -93,8 +98,28 @@ int main(int argc, char** argv) {
         QTextStream(stderr) << server.errorString() << '\n';
         return 4;
     }
-    qcae::MemoryApplication core;
     const qcae::NastranCodec codec;
+    std::shared_ptr<qcae::IWorkspaceStore> store;
+    std::unique_ptr<qcae::MemoryApplication> application;
+    try {
+        if (parser.isSet("workspace")) {
+#ifdef QCAE_HAS_SQLITE
+            store = std::make_shared<qcae::SqliteWorkspaceStore>(
+                parser.value("workspace").toStdString());
+#else
+            throw std::runtime_error("This build does not include SQLite persistence");
+#endif
+        }
+        application = std::make_unique<qcae::MemoryApplication>(
+            qcae::Limits{}, store, [&](const qcae::ProfileRef& profile) {
+                return profile == codec.definition().reference;
+            });
+    } catch (const std::exception& error) {
+        QTextStream(stderr) << "Workspace initialization failed: " << error.what() << '\n';
+        return 5;
+    }
+    auto& core = *application;
+    qcae::SelectionService selections;
     // M0 is a single local OS-user host. Request JSON cannot choose this identity.
     const qcae::Caller caller{"local-user"};
     const auto engine_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -161,8 +186,8 @@ int main(int argc, char** argv) {
                                       {"api_version", version},
                                       {"engine_instance_id", engine_id},
                                       {"pid", QString::number(QCoreApplication::applicationPid())},
-                                      {"storage_mode", "memory"},
-                                      {"durable", false}}}});
+                                      {"storage_mode", core.durable() ? "sqlite" : "memory"},
+                                      {"durable", core.durable()}}}});
                     } else if (!connection->ready) {
                         send(client,
                              qcae::ipc::failure(
@@ -170,7 +195,7 @@ int main(int argc, char** argv) {
                     } else
                         send(client,
                              qcae::ipc::dispatch(
-                                 core, request, caller, &codec, &codec.definition()));
+                                 core, request, caller, &codec, &codec.definition(), &selections));
                 }
             };
             QObject::connect(socket, &QLocalSocket::readyRead, &app, consume);
@@ -179,7 +204,8 @@ int main(int argc, char** argv) {
                 consume();
         }
     });
-    QTextStream(stderr) << "QCAE M1 engine ready: " << endpoint
-                        << " (memory only; data lost on exit)\n";
+    QTextStream(stderr) << "QCAE engine ready: " << endpoint
+                        << (core.durable() ? " (SQLite; explicit recovery on restart)\n"
+                                           : " (memory; data lost on exit)\n");
     return app.exec();
 }

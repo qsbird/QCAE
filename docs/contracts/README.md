@@ -71,3 +71,9 @@ OperationDescriptor新增target_context（none、optional_profile、source_profi
 ## M1运行子集补充
 
 增加 `model.export_preview`：带文档/epoch/expected_revision、analysis_id和expected_profile_ref的只读编码查询，返回文本资源及冻结编号映射，不产生作业或发布文件。已有 `model.import`/`model.export` 后台作业契约保持 planned。同步受控导入通过 `changes.preview` 的 `model.import` 命令生成候选，再使用既有 `changes.commit` 提交。新领域查询和命令边界见 [M1说明](../implementation/m1.md)。完整设计目录现为28项，运行能力按 `implementation_status` 及具体 scope 判断。
+
+## M2/M3运行子集补充
+
+目录现为35项。持久化宿主支持project.current、normal/recover两种project.open、save/save_as及明确policy的close；只有带SQLite工作库时才声明durable。host作用域的operations.get可查询生命周期结果，恢复的open通过original_mode区分。图形/查询入口增加view.create/update/render_data与selection.evaluate/combine/get；请求明确模型版本和视图版本，详见[M2/M3说明](../implementation/m2-m3.md)及tests/m23_ipc_tests.py。
+
+picker_candidates表示图形客户端给出的明确候选，核心不把它冒充独立遮挡计算；无图形端口的visible_only继续返回不支持。当前RenderPacket走有界JSON而非既定最终批量通道，事件也由显式查询/轮询补偿。这些临时边界见[实施ADR](../architecture/m2-m3-decisions.md)。

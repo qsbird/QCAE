@@ -53,7 +53,10 @@ enum class ErrorCode {
     nothing_to_undo,
     nothing_to_redo,
     resource_limit,
-    unsupported_capability
+    unsupported_capability,
+    storage_failure,
+    storage_uncertain,
+    schema_unsupported
 };
 struct Diagnostic {
     ErrorCode code;

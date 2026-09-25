@@ -1,4 +1,7 @@
 #include "qcae/core.hpp"
+#include "application_state.hpp"
+#include "qcae/model_delta.hpp"
+#include "qcae/state_codec.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -12,6 +15,7 @@
 
 namespace qcae {
 namespace {
+using namespace detail;
 
 template <class T> Result<T> success(T value) {
     return {Status::success, std::move(value), std::nullopt};
@@ -20,15 +24,6 @@ template <class T> Result<T> success(T value) {
 template <class T>
 Result<T> failure(Status status, ErrorCode code, const char* message, const char* field = "") {
     return {status, std::nullopt, Diagnostic{code, message, field}};
-}
-
-std::string nonce() {
-    std::random_device source;
-    std::ostringstream out;
-    out << std::hex << std::setfill('0');
-    for (int i = 0; i != 4; ++i)
-        out << std::setw(8) << source();
-    return out.str();
 }
 
 std::string scoped_key(const Caller& caller, const std::string& operation, const std::string& key) {
@@ -51,6 +46,18 @@ std::string context_signature(const WriteContext& context) {
 
 bool blank(const std::string& text) {
     return text.find_first_not_of(" \t\r\n") == std::string::npos;
+}
+bool profiles_supported(const Model& model,
+                        const std::function<bool(const ProfileRef&)>& supports) {
+    if (!supports)
+        return true;
+    for (const auto& analysis : model.analyses)
+        if (!supports(analysis.target.profile))
+            return false;
+    for (const auto& source : model.sources)
+        if (!supports(source.profile))
+            return false;
+    return true;
 }
 
 Result<double> normalize(Quantity value) {
@@ -87,17 +94,6 @@ Result<double> normalize(Quantity value) {
     return success(normalized);
 }
 
-struct Prepared {
-    Caller caller;
-    WriteContext context;
-    bool create{};
-    EntityId entity;
-    std::string name;
-    double modulus{};
-    std::optional<Model> after;
-    std::string label;
-};
-
 std::string
 commit_signature(const WriteContext& context, const PreviewId& preview, const Prepared& prepared) {
     std::string result = context_signature(context);
@@ -109,30 +105,14 @@ commit_signature(const WriteContext& context, const PreviewId& preview, const Pr
     return result;
 }
 
-struct HistoryEntry {
-    TransactionId transaction;
-    std::string label;
-    Model after;
-    std::string content_state;
-};
-
-struct RecordedOperation {
-    std::string signature;
-    ChangeReceipt receipt;
-};
-
-struct Data {
-    Limits limits;
-    std::string application_nonce;
-    std::uint64_t next_id{1};
-    std::optional<DocumentInfo> document;
-    Model model;
-    std::string initial_content_state;
-    std::vector<HistoryEntry> history;
-    std::size_t cursor{};
-    std::map<std::string, Prepared> previews;
-    std::map<std::string, RecordedOperation> operations;
-    std::map<std::string, std::pair<std::string, DocumentInfo>> creates;
+struct ProjectLeaseGuard {
+    IWorkspaceStore* store;
+    std::string keep_path;
+    bool release{true};
+    ~ProjectLeaseGuard() {
+        if (release)
+            store->release_projects_except(keep_path);
+    }
 };
 
 std::string new_id(Data& data, const char* prefix) {
@@ -146,7 +126,7 @@ bool same_document(const DocumentRef& a, const DocumentRef& b) {
 
 template <class T>
 std::optional<Result<T>> check_document(const Data& data, const DocumentRef& ref) {
-    if (!data.document || data.document->document.id != ref.id)
+    if (!data.document || data.recoverable || data.document->document.id != ref.id)
         return failure<T>(
             Status::failed, ErrorCode::document_not_found, "Document is not active", "document_id");
     if (data.document->document.epoch != ref.epoch)
@@ -172,81 +152,6 @@ ChangeReceipt current_receipt(const Data& data, ChangeReceipt recorded, bool rep
     recorded.current_content_state = data.document->content_state;
     recorded.replayed = replayed;
     return recorded;
-}
-
-void update_document(Data& data) {
-    data.document->material_count = data.model.materials.size();
-    data.document->dirty = data.document->content_state != data.initial_content_state;
-}
-
-std::size_t entity_count(const Model& model) {
-    return model.materials.size() + model.nodes.size() + model.sections.size() +
-           model.beams.size() + model.parts.size() + model.assemblies.size() + model.sets.size() +
-           model.includes.size() + model.forces.size() + model.constraints.size() +
-           model.analyses.size();
-}
-
-std::size_t relation_count(const Model& model) {
-    std::size_t count = model.sources.size() * 2;
-    for (const auto& beam : model.beams) {
-        (void)beam;
-        count += 3;
-    }
-    for (const auto& section : model.sections) {
-        (void)section;
-        ++count;
-    }
-    for (const auto& force : model.forces) {
-        (void)force;
-        ++count;
-    }
-    for (const auto& part : model.parts)
-        count += part.members.size();
-    for (const auto& assembly : model.assemblies)
-        count += assembly.children.size();
-    for (const auto& set : model.sets)
-        count += set.members.size();
-    for (const auto& include : model.includes)
-        count += include.members.size() + (include.parent ? 1 : 0);
-    for (const auto& constraint : model.constraints)
-        count += constraint.nodes.size();
-    for (const auto& analysis : model.analyses)
-        count += analysis.forces.size() + analysis.constraints.size();
-    return count;
-}
-
-bool has_control(const std::string& value) {
-    return std::any_of(
-        value.begin(), value.end(), [](unsigned char c) { return c < 32 || c == 127; });
-}
-
-std::optional<Diagnostic> validate_candidate(const Model& model, const Limits& limits) {
-    if (model.materials.size() > limits.max_materials)
-        return Diagnostic{ErrorCode::resource_limit, "Material limit reached", "materials"};
-    if (entity_count(model) > limits.max_entities)
-        return Diagnostic{ErrorCode::resource_limit, "Entity limit reached", "model"};
-    if (relation_count(model) > limits.max_relations)
-        return Diagnostic{ErrorCode::resource_limit, "Relation limit reached", "model"};
-    for (const auto& entity : model_entities(model)) {
-        if (entity.name.size() > limits.max_name_bytes)
-            return Diagnostic{
-                ErrorCode::resource_limit, "Entity name exceeds byte limit", entity.id.value};
-        if (has_control(entity.name))
-            return Diagnostic{ErrorCode::invalid_input,
-                              "Entity name contains control characters",
-                              entity.id.value};
-    }
-    for (const auto& include : model.includes)
-        if (include.path.size() > limits.max_name_bytes)
-            return Diagnostic{
-                ErrorCode::resource_limit, "Include path exceeds byte limit", include.id.value};
-        else if (has_control(include.path))
-            return Diagnostic{ErrorCode::invalid_input,
-                              "Include path contains control characters",
-                              include.id.value};
-    for (const auto& diagnostic : validate_model(model))
-        return diagnostic;
-    return std::nullopt;
 }
 
 Result<ChangePreview> stage_preview(Data& data, Prepared prepared) {
@@ -275,11 +180,27 @@ void drop_expired_previews(Data& data) {
 struct MemoryApplication::State {
     mutable std::mutex mutex;
     Data data;
+    std::shared_ptr<IWorkspaceStore> store;
+    std::function<bool(const ProfileRef&)> profile_supported;
+    std::uint64_t generation{};
+    bool poisoned{};
 };
 
-MemoryApplication::MemoryApplication(Limits limits) : state_(std::make_unique<State>()) {
+MemoryApplication::MemoryApplication(Limits limits,
+                                     std::shared_ptr<IWorkspaceStore> store,
+                                     std::function<bool(const ProfileRef&)> profile_supported)
+    : state_(std::make_unique<State>()) {
     state_->data.limits = limits;
     state_->data.application_nonce = nonce();
+    state_->store = std::move(store);
+    state_->profile_supported = std::move(profile_supported);
+    if (state_->store) {
+        if (auto loaded = state_->store->load()) {
+            state_->data = decode_data(loaded->payload, limits);
+            state_->generation = loaded->generation;
+            state_->data.recoverable = state_->data.document.has_value();
+        }
+    }
 }
 MemoryApplication::~MemoryApplication() = default;
 
@@ -300,19 +221,20 @@ Result<DocumentInfo> MemoryApplication::create_document(const Caller& caller,
         return failure<DocumentInfo>(
             Status::failed, ErrorCode::resource_limit, "Document name exceeds byte limit", "name");
     const auto key = scoped_key(caller, "create_document", idempotency_key);
-    if (const auto found = current.creates.find(key); found != current.creates.end()) {
-        if (found->second.first != name)
+    if (const auto found = current.host_operations.find(key);
+        found != current.host_operations.end()) {
+        if (found->second.signature != name)
             return failure<DocumentInfo>(Status::conflict,
                                          ErrorCode::idempotency_key_conflict,
                                          "Key was used with another document name",
                                          "idempotency_key");
-        return success(found->second.second);
+        return success(found->second.result);
     }
     if (current.document)
         return failure<DocumentInfo>(Status::conflict,
                                      ErrorCode::document_already_open,
                                      "An active document already exists");
-    if (current.creates.size() + current.operations.size() >=
+    if (current.host_operations.size() + current.operations.size() >=
         current.limits.max_idempotency_records)
         return failure<DocumentInfo>(
             Status::failed, ErrorCode::resource_limit, "Idempotency record limit reached");
@@ -322,9 +244,12 @@ Result<DocumentInfo> MemoryApplication::create_document(const Caller& caller,
     info.document.epoch = DocumentEpoch(new_id(candidate, "epoch"));
     info.content_state = new_id(candidate, "state");
     info.name = name;
+    info.durable = static_cast<bool>(state_->store);
     candidate.initial_content_state = info.content_state;
     candidate.document = info;
-    candidate.creates.emplace(key, std::make_pair(name, info));
+    candidate.host_operations.emplace(key, HostOperation{name, info});
+    if (auto error = persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+        return {Status::failed, std::nullopt, std::move(error)};
     auto result = success(std::move(info));
     static_assert(std::is_nothrow_swappable_v<Data>);
     using std::swap;
@@ -610,6 +535,9 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
     }
     if (auto error = check_revision<ChangeReceipt>(current, context))
         return *error;
+    if (current.save_intent)
+        return failure<ChangeReceipt>(
+            Status::conflict, ErrorCode::storage_uncertain, "Save intent needs reconciliation");
     const auto preview = current.previews.find(preview_id.value);
     if (preview == current.previews.end())
         return failure<ChangeReceipt>(Status::conflict,
@@ -628,7 +556,7 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
                                       ErrorCode::preview_expired,
                                       "Preview context does not match",
                                       "preview_id");
-    if (current.creates.size() + current.operations.size() >=
+    if (current.host_operations.size() + current.operations.size() >=
         current.limits.max_idempotency_records)
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::resource_limit, "Idempotency record limit reached");
@@ -645,8 +573,10 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
     candidate.document->content_state = new_id(candidate, "state");
     ++candidate.document->revision;
     update_document(candidate);
-    candidate.history.push_back(HistoryEntry{
-        transaction, prepared.label, candidate.model, candidate.document->content_state});
+    candidate.history.push_back(HistoryEntry{transaction,
+                                             prepared.label,
+                                             model_delta(current.model, candidate.model),
+                                             candidate.document->content_state});
     candidate.cursor = candidate.history.size();
     ChangeReceipt receipt{transaction,
                           candidate.document->revision,
@@ -657,6 +587,8 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
         key, RecordedOperation{commit_signature(context, preview_id, prepared), receipt});
     drop_expired_previews(candidate);
     auto result = success(std::move(receipt));
+    if (auto error = persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+        return {Status::failed, std::nullopt, std::move(error)};
     using std::swap;
     swap(state_->data, candidate);
     return result;
@@ -664,6 +596,9 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
 
 namespace {
 Result<ChangeReceipt> move_history(Data& data,
+                                   IWorkspaceStore* store,
+                                   std::uint64_t& generation,
+                                   bool& poisoned,
                                    const Caller& caller,
                                    const WriteContext& context,
                                    const std::string& idempotency_key,
@@ -687,25 +622,33 @@ Result<ChangeReceipt> move_history(Data& data,
     }
     if (auto error = check_revision<ChangeReceipt>(data, context))
         return *error;
+    if (data.save_intent)
+        return failure<ChangeReceipt>(
+            Status::conflict, ErrorCode::storage_uncertain, "Save intent needs reconciliation");
     if (undo ? data.cursor == 0 : data.cursor == data.history.size())
         return failure<ChangeReceipt>(Status::conflict,
                                       undo ? ErrorCode::nothing_to_undo
                                            : ErrorCode::nothing_to_redo,
                                       undo ? "Nothing to undo" : "Nothing to redo");
-    if (data.creates.size() + data.operations.size() >= data.limits.max_idempotency_records)
+    if (data.host_operations.size() + data.operations.size() >= data.limits.max_idempotency_records)
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::resource_limit, "Idempotency record limit reached");
     Data candidate = data;
-    if (undo)
+    if (undo) {
+        candidate.model = apply_model_delta(
+            candidate.model, candidate.history[candidate.cursor - 1].delta, false);
         --candidate.cursor;
-    else
+    } else {
+        candidate.model =
+            apply_model_delta(candidate.model, candidate.history[candidate.cursor].delta, true);
         ++candidate.cursor;
+    }
+    if (auto diagnostic = validate_candidate(candidate.model, candidate.limits))
+        return {Status::failed, std::nullopt, std::move(diagnostic)};
     if (candidate.cursor == 0) {
-        candidate.model = {};
         candidate.document->content_state = candidate.initial_content_state;
     } else {
         const auto& entry = candidate.history[candidate.cursor - 1];
-        candidate.model = entry.after;
         candidate.document->content_state = entry.content_state;
     }
     ++candidate.document->revision;
@@ -719,6 +662,8 @@ Result<ChangeReceipt> move_history(Data& data,
     candidate.operations.emplace(key, RecordedOperation{signature, receipt});
     drop_expired_previews(candidate);
     auto result = success(std::move(receipt));
+    if (auto error = persist(candidate, store, generation, poisoned))
+        return {Status::failed, std::nullopt, std::move(error)};
     using std::swap;
     swap(data, candidate);
     return result;
@@ -729,14 +674,28 @@ Result<ChangeReceipt> MemoryApplication::undo(const Caller& caller,
                                               const WriteContext& context,
                                               const std::string& idempotency_key) {
     std::lock_guard lock(state_->mutex);
-    return move_history(state_->data, caller, context, idempotency_key, true);
+    return move_history(state_->data,
+                        state_->store.get(),
+                        state_->generation,
+                        state_->poisoned,
+                        caller,
+                        context,
+                        idempotency_key,
+                        true);
 }
 
 Result<ChangeReceipt> MemoryApplication::redo(const Caller& caller,
                                               const WriteContext& context,
                                               const std::string& idempotency_key) {
     std::lock_guard lock(state_->mutex);
-    return move_history(state_->data, caller, context, idempotency_key, false);
+    return move_history(state_->data,
+                        state_->store.get(),
+                        state_->generation,
+                        state_->poisoned,
+                        caller,
+                        context,
+                        idempotency_key,
+                        false);
 }
 
 Result<HistorySnapshot> MemoryApplication::history(const DocumentRef& ref) const {
@@ -778,6 +737,390 @@ Result<ChangeReceipt> MemoryApplication::operation(const Caller& caller,
     return success(current_receipt(data, found->second.receipt, true));
 }
 
+bool MemoryApplication::durable() const noexcept {
+    return static_cast<bool>(state_->store);
+}
+bool MemoryApplication::recovery_available() const {
+    std::lock_guard lock(state_->mutex);
+    return state_->data.recoverable || state_->poisoned;
+}
+Result<DocumentInfo> MemoryApplication::current_document() const {
+    std::lock_guard lock(state_->mutex);
+    const auto& data = state_->data;
+    if (!data.document || data.recoverable)
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::document_not_found, "No active document");
+    return success(*data.document);
+}
+Result<DocumentInfo> MemoryApplication::host_operation(const Caller& caller,
+                                                       const std::string& operation_name,
+                                                       const std::string& idempotency_key) const {
+    std::lock_guard lock(state_->mutex);
+    if (blank(caller.principal) || blank(idempotency_key))
+        return failure<DocumentInfo>(
+            Status::needs_input, ErrorCode::missing_input, "Caller and key are required");
+    if (operation_name != "create_document" && operation_name != "open_document" &&
+        operation_name != "recover_document" && operation_name != "save_document" &&
+        operation_name != "close_document")
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::invalid_input, "Unknown host operation");
+    const auto key = scoped_key(caller, operation_name, idempotency_key);
+    const auto found = state_->data.host_operations.find(key);
+    if (found == state_->data.host_operations.end())
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::entity_not_found, "Operation is not recorded");
+    return success(found->second.result);
+}
+Result<DocumentInfo> MemoryApplication::open_document(const Caller& caller,
+                                                      const std::string& path,
+                                                      const std::string& idempotency_key) {
+    std::lock_guard lock(state_->mutex);
+    if (blank(caller.principal) || blank(path) || blank(idempotency_key))
+        return failure<DocumentInfo>(
+            Status::needs_input, ErrorCode::missing_input, "Caller, path and key are required");
+    const auto key = scoped_key(caller, "open_document", idempotency_key);
+    if (const auto existing = state_->data.host_operations.find(key);
+        existing != state_->data.host_operations.end()) {
+        if (existing->second.signature != path)
+            return failure<DocumentInfo>(Status::conflict,
+                                         ErrorCode::idempotency_key_conflict,
+                                         "Key was used with another path");
+        return success(existing->second.result);
+    }
+    if (state_->data.document)
+        return failure<DocumentInfo>(
+            Status::conflict, ErrorCode::document_already_open, "A document already exists");
+    if (!state_->store)
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::unsupported_capability, "Project storage unavailable");
+    if (state_->data.host_operations.size() + state_->data.operations.size() >=
+        state_->data.limits.max_idempotency_records)
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::resource_limit, "Operation record limit reached");
+    try {
+        const auto canonical = state_->store->acquire_project(path);
+        ProjectLeaseGuard lease{state_->store.get(), ""};
+        const auto project = state_->store->read_project(canonical);
+        Data candidate = state_->data;
+        Data opened = decode_project(project.payload, candidate.limits);
+        if (!profiles_supported(opened.model, state_->profile_supported))
+            return failure<DocumentInfo>(Status::failed,
+                                         ErrorCode::schema_unsupported,
+                                         "Project requires an unavailable solver profile");
+        candidate.model = std::move(opened.model);
+        candidate.history.clear();
+        candidate.cursor = 0;
+        candidate.operations.clear();
+        candidate.save_intent.reset();
+        candidate.recoverable = false;
+        auto info = *opened.document;
+        info.document.id = DocumentId(new_id(candidate, "doc"));
+        info.document.epoch = DocumentEpoch(new_id(candidate, "epoch"));
+        info.saved_path = canonical;
+        info.saved_content_state = info.content_state;
+        info.durable = true;
+        candidate.document = info;
+        candidate.initial_content_state = info.content_state;
+        update_document(candidate);
+        candidate.host_operations.emplace(key, HostOperation{path, *candidate.document});
+        if (auto error =
+                persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+            return {Status::failed, std::nullopt, std::move(error)};
+        using std::swap;
+        swap(state_->data, candidate);
+        state_->store->release_projects_except(canonical);
+        lease.release = false;
+        return success(*state_->data.document);
+    } catch (const state_codec::CodecError& error) {
+        return failure<DocumentInfo>(Status::failed, ErrorCode::schema_unsupported, error.what());
+    } catch (const StorageError& error) {
+        return failure<DocumentInfo>(Status::failed,
+                                     error.uncertain() ? ErrorCode::storage_uncertain
+                                                       : ErrorCode::storage_failure,
+                                     error.what());
+    }
+}
+Result<DocumentInfo> MemoryApplication::recover_document(const Caller& caller,
+                                                         const std::string& idempotency_key) {
+    std::lock_guard lock(state_->mutex);
+    if (blank(caller.principal) || blank(idempotency_key))
+        return failure<DocumentInfo>(
+            Status::needs_input, ErrorCode::missing_input, "Caller and key are required");
+    if (state_->poisoned && state_->store) {
+        try {
+            const auto loaded = state_->store->load();
+            if (!loaded)
+                return failure<DocumentInfo>(
+                    Status::failed, ErrorCode::storage_failure, "No durable workspace to recover");
+            Data restored = decode_data(loaded->payload, state_->data.limits);
+            restored.recoverable = restored.document.has_value();
+            state_->data = std::move(restored);
+            state_->generation = loaded->generation;
+            state_->poisoned = false;
+        } catch (const state_codec::CodecError& error) {
+            return failure<DocumentInfo>(
+                Status::failed, ErrorCode::schema_unsupported, error.what());
+        } catch (const StorageError& error) {
+            return failure<DocumentInfo>(Status::failed,
+                                         error.uncertain() ? ErrorCode::storage_uncertain
+                                                           : ErrorCode::storage_failure,
+                                         error.what());
+        }
+    }
+    const auto key = scoped_key(caller, "recover_document", idempotency_key);
+    if (const auto existing = state_->data.host_operations.find(key);
+        existing != state_->data.host_operations.end())
+        return success(existing->second.result);
+    if (!state_->store || !state_->data.document || !state_->data.recoverable)
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::document_not_found, "No retained document to recover");
+    if (state_->data.host_operations.size() + state_->data.operations.size() >=
+        state_->data.limits.max_idempotency_records)
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::resource_limit, "Operation record limit reached");
+    try {
+        Data candidate = state_->data;
+        if (!profiles_supported(candidate.model, state_->profile_supported))
+            return failure<DocumentInfo>(Status::failed,
+                                         ErrorCode::schema_unsupported,
+                                         "Recovery requires an unavailable solver profile");
+        if (!candidate.document->saved_path.empty())
+            candidate.document->saved_path =
+                state_->store->acquire_project(candidate.document->saved_path);
+        if (candidate.save_intent) {
+            const auto& intent = *candidate.save_intent;
+            const auto canonical = state_->store->acquire_project(intent.path);
+            try {
+                const auto project = state_->store->read_project(canonical);
+                if (project.save_token == intent.token && project.payload == intent.snapshot) {
+                    candidate.document->saved_path = canonical;
+                    candidate.document->project_id = intent.project_id;
+                    candidate.document->saved_content_state = candidate.document->content_state;
+                    update_document(candidate);
+                    candidate.host_operations.emplace(
+                        intent.host_key, HostOperation{intent.signature, *candidate.document});
+                    candidate.save_intent.reset();
+                } else
+                    candidate.save_intent.reset(); // Target changed; preserve the working model.
+            } catch (const StorageError& error) {
+                if (std::string_view(error.what()) != "project_not_found")
+                    throw;
+            }
+        }
+        candidate.document->document.epoch = DocumentEpoch(new_id(candidate, "epoch"));
+        candidate.document->durable = true;
+        candidate.recoverable = false;
+        candidate.previews.clear();
+        candidate.host_operations.emplace(key, HostOperation{"", *candidate.document});
+        if (auto error =
+                persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+            return {Status::failed, std::nullopt, std::move(error)};
+        using std::swap;
+        swap(state_->data, candidate);
+        state_->store->release_projects_except(state_->data.document->saved_path);
+        return success(*state_->data.document);
+    } catch (const StorageError& error) {
+        return failure<DocumentInfo>(Status::failed,
+                                     error.uncertain() ? ErrorCode::storage_uncertain
+                                                       : ErrorCode::storage_failure,
+                                     error.what());
+    }
+}
+Result<DocumentInfo> MemoryApplication::save_document(const Caller& caller,
+                                                      const WriteContext& context,
+                                                      const std::string& path,
+                                                      bool save_as,
+                                                      const std::string& idempotency_key) {
+    std::lock_guard lock(state_->mutex);
+    if (blank(caller.principal) || blank(idempotency_key))
+        return failure<DocumentInfo>(
+            Status::needs_input, ErrorCode::missing_input, "Caller and key are required");
+    const auto key = scoped_key(caller, "save_document", idempotency_key);
+    std::string signature = context_signature(context);
+    append_part(signature, path);
+    append_part(signature, save_as ? "save_as" : "save");
+    if (const auto existing = state_->data.host_operations.find(key);
+        existing != state_->data.host_operations.end()) {
+        if (existing->second.signature != signature)
+            return failure<DocumentInfo>(Status::conflict,
+                                         ErrorCode::idempotency_key_conflict,
+                                         "Key was used with other save parameters");
+        return success(existing->second.result);
+    }
+    const bool retry_pending = state_->data.save_intent &&
+                               state_->data.save_intent->host_key == key &&
+                               state_->data.save_intent->signature == signature;
+    if (!retry_pending) {
+        if (auto error = check_document<DocumentInfo>(state_->data, context.document))
+            return *error;
+        if (auto error = check_revision<DocumentInfo>(state_->data, context))
+            return *error;
+    }
+    if (!state_->store)
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::unsupported_capability, "Project storage unavailable");
+    if (state_->data.host_operations.size() + state_->data.operations.size() >=
+        state_->data.limits.max_idempotency_records)
+        return failure<DocumentInfo>(
+            Status::failed, ErrorCode::resource_limit, "Operation record limit reached");
+    const std::string target = path.empty() ? state_->data.document->saved_path : path;
+    if (blank(target))
+        return failure<DocumentInfo>(
+            Status::needs_input, ErrorCode::missing_input, "Save path required");
+    if (!save_as && !state_->data.document->saved_path.empty() &&
+        target != state_->data.document->saved_path)
+        return failure<DocumentInfo>(
+            Status::conflict, ErrorCode::invalid_input, "Use save-as for a new path");
+    try {
+        const auto canonical = state_->store->acquire_project(target);
+        ProjectLeaseGuard lease{state_->store.get(),
+                                state_->data.save_intent ? state_->data.save_intent->path
+                                                         : state_->data.document->saved_path};
+        Data candidate = state_->data;
+        if (candidate.save_intent)
+            lease.release = false; // Retain both source and pending target leases.
+        if (candidate.save_intent && (candidate.save_intent->host_key != key ||
+                                      candidate.save_intent->signature != signature))
+            return failure<DocumentInfo>(
+                Status::conflict, ErrorCode::idempotency_key_conflict, "Another save is pending");
+        if (candidate.save_intent && candidate.save_intent->path != canonical)
+            return failure<DocumentInfo>(Status::conflict,
+                                         ErrorCode::idempotency_key_conflict,
+                                         "Save target resolved to a different path");
+        if (!candidate.save_intent) {
+            // Reject an unrelated or unreadable target before recording a durable
+            // intent. Otherwise a definite conflict would strand the document.
+            try {
+                const auto old = state_->store->read_project(canonical);
+                if (save_as)
+                    return failure<DocumentInfo>(Status::conflict,
+                                                 ErrorCode::invalid_input,
+                                                 "Save-as target already exists");
+                const auto old_data = decode_project(old.payload, candidate.limits);
+                if (candidate.document->project_id.empty() ||
+                    old_data.document->project_id != candidate.document->project_id)
+                    return failure<DocumentInfo>(Status::conflict,
+                                                 ErrorCode::invalid_input,
+                                                 "Save target belongs to another project");
+            } catch (const StorageError& error) {
+                if (std::string_view(error.what()) != "project_not_found")
+                    throw;
+            }
+            SaveIntent intent;
+            intent.host_key = key;
+            intent.signature = signature;
+            intent.path = canonical;
+            intent.token = new_id(candidate, "save");
+            intent.project_id = save_as || candidate.document->project_id.empty()
+                                    ? new_id(candidate, "project")
+                                    : candidate.document->project_id;
+            intent.snapshot = encode_project(candidate, intent.project_id);
+            intent.save_as = save_as;
+            candidate.save_intent = std::move(intent);
+            if (auto error =
+                    persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+                return {Status::failed, std::nullopt, std::move(error)};
+            using std::swap;
+            swap(state_->data, candidate);
+        }
+        lease.release = false; // The durable intent retains its target lease.
+        const auto intent = *state_->data.save_intent;
+        bool published = false;
+        try {
+            const auto old = state_->store->read_project(canonical);
+            if (old.save_token == intent.token && old.payload == intent.snapshot)
+                published = true;
+            else if (old.save_token == intent.token || (save_as && !old.payload.empty()))
+                return failure<DocumentInfo>(Status::conflict,
+                                             ErrorCode::idempotency_key_conflict,
+                                             "Save target contains another snapshot");
+            else {
+                const auto old_data = decode_project(old.payload, state_->data.limits);
+                if (old_data.document->project_id != state_->data.document->project_id)
+                    return failure<DocumentInfo>(Status::conflict,
+                                                 ErrorCode::invalid_input,
+                                                 "Save target belongs to another project");
+            }
+        } catch (const StorageError& error) {
+            if (std::string_view(error.what()) != "project_not_found")
+                throw;
+        }
+        if (!published)
+            state_->store->publish_project(canonical, StoredProject{intent.token, intent.snapshot});
+        Data finished = state_->data;
+        finished.document->saved_path = canonical;
+        finished.document->project_id = intent.project_id;
+        finished.document->saved_content_state = finished.document->content_state;
+        update_document(finished);
+        finished.host_operations.emplace(key, HostOperation{signature, *finished.document});
+        finished.save_intent.reset();
+        if (auto error =
+                persist(finished, state_->store.get(), state_->generation, state_->poisoned))
+            return {Status::failed, std::nullopt, std::move(error)};
+        using std::swap;
+        swap(state_->data, finished);
+        state_->store->release_projects_except(canonical);
+        return success(*state_->data.document);
+    } catch (const state_codec::CodecError& error) {
+        return failure<DocumentInfo>(Status::failed, ErrorCode::schema_unsupported, error.what());
+    } catch (const StorageError& error) {
+        if (error.uncertain())
+            state_->poisoned = true;
+        return failure<DocumentInfo>(Status::failed,
+                                     error.uncertain() ? ErrorCode::storage_uncertain
+                                                       : ErrorCode::storage_failure,
+                                     error.what());
+    }
+}
+Result<DocumentInfo> MemoryApplication::close_document(const Caller& caller,
+                                                       const WriteContext& context,
+                                                       ClosePolicy policy,
+                                                       const std::string& idempotency_key) {
+    std::lock_guard lock(state_->mutex);
+    if (blank(caller.principal) || blank(idempotency_key))
+        return failure<DocumentInfo>(
+            Status::needs_input, ErrorCode::missing_input, "Caller and key are required");
+    const auto key = scoped_key(caller, "close_document", idempotency_key);
+    auto signature = context_signature(context);
+    append_part(signature, policy == ClosePolicy::discard ? "discard" : "keep");
+    if (const auto existing = state_->data.host_operations.find(key);
+        existing != state_->data.host_operations.end()) {
+        if (existing->second.signature != signature)
+            return failure<DocumentInfo>(Status::conflict,
+                                         ErrorCode::idempotency_key_conflict,
+                                         "Key was used with other close parameters");
+        return success(existing->second.result);
+    }
+    if (auto error = check_document<DocumentInfo>(state_->data, context.document))
+        return *error;
+    if (auto error = check_revision<DocumentInfo>(state_->data, context))
+        return *error;
+    if (state_->data.save_intent)
+        return failure<DocumentInfo>(
+            Status::conflict, ErrorCode::storage_uncertain, "Save intent needs reconciliation");
+    Data candidate = state_->data;
+    const auto result = *candidate.document;
+    candidate.host_operations.emplace(key, HostOperation{signature, result});
+    candidate.previews.clear();
+    if (policy == ClosePolicy::keep_recovery && state_->store)
+        candidate.recoverable = true;
+    else {
+        candidate.document.reset();
+        candidate.model = {};
+        candidate.history.clear();
+        candidate.cursor = 0;
+        candidate.operations.clear();
+        candidate.initial_content_state.clear();
+        candidate.recoverable = false;
+    }
+    if (auto error = persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+        return {Status::failed, std::nullopt, std::move(error)};
+    using std::swap;
+    swap(state_->data, candidate);
+    if (state_->store)
+        state_->store->release_projects_except("");
+    return success(result);
+}
 const char* status_name(Status status) {
     switch (status) {
     case Status::success:
@@ -822,6 +1165,12 @@ const char* error_name(ErrorCode code) {
         return "RESOURCE_LIMIT";
     case ErrorCode::unsupported_capability:
         return "UNSUPPORTED_CAPABILITY";
+    case ErrorCode::storage_failure:
+        return "STORAGE_FAILURE";
+    case ErrorCode::storage_uncertain:
+        return "STORAGE_UNCERTAIN";
+    case ErrorCode::schema_unsupported:
+        return "SCHEMA_UNSUPPORTED";
     }
     return "UNKNOWN";
 }

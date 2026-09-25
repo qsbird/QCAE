@@ -1,5 +1,6 @@
 #include "qcae/ipc_api.hpp"
 #include "qcae/ipc_model.hpp"
+#include "qcae/ipc_selection.hpp"
 #include "qcae/operations.hpp"
 
 #include <QJsonArray>
@@ -66,7 +67,10 @@ QJsonObject info_json(const DocumentInfo& info) {
             {"name", qs(info.name)},
             {"material_count", static_cast<qint64>(info.material_count)},
             {"dirty", info.dirty},
-            {"durable", info.durable}};
+            {"durable", info.durable},
+            {"project_id", qs(info.project_id)},
+            {"saved_path", qs(info.saved_path)},
+            {"saved_content_state", qs(info.saved_content_state)}};
 }
 template <class T, class Convert>
 QJsonObject result_json(const QString& id, const Result<T>& result, Convert convert) {
@@ -92,11 +96,15 @@ QJsonObject receipt_json(const ChangeReceipt& receipt) {
             {"replayed", receipt.replayed}};
 }
 bool supported(std::string_view name) {
-    return name == "entity.query" || name == "entity.references" ||
-           name == "model.export_preview" || name == "project.create" || name == "project.status" ||
-           name == "model.summary" || name == "changes.preview" || name == "changes.commit" ||
-           name == "history.list" || name == "history.undo" || name == "history.redo" ||
-           name == "operations.get" || name == "capabilities.list";
+    return name == "project.current" || name == "project.open" || name == "project.close" ||
+           name == "project.save" || name == "project.save_as" || name == "view.create" ||
+           name == "view.update" || name == "view.render_data" || name == "selection.evaluate" ||
+           name == "selection.combine" || name == "selection.get" || name == "entity.query" ||
+           name == "entity.references" || name == "model.export_preview" ||
+           name == "project.create" || name == "project.status" || name == "model.summary" ||
+           name == "changes.preview" || name == "changes.commit" || name == "history.list" ||
+           name == "history.undo" || name == "history.redo" || name == "operations.get" ||
+           name == "capabilities.list";
 }
 } // namespace
 
@@ -111,7 +119,8 @@ QJsonObject dispatch(MemoryApplication& app,
                      const QJsonObject& request,
                      const Caller& caller,
                      const IModelCodec* codec,
-                     const ProfileDefinition* profile) {
+                     const ProfileDefinition* profile,
+                     SelectionService* selections) {
     const QString id =
         request.value("request_id").isString() ? request.value("request_id").toString() : QString{};
     if (id.toUtf8().size() > 128)
@@ -138,6 +147,11 @@ QJsonObject dispatch(MemoryApplication& app,
         if (!request.value("parameters").isObject())
             throw InvalidRequest("parameters must be an object");
         const auto params = request.value("parameters").toObject();
+        if (selections) {
+            if (const auto selection_response =
+                    dispatch_selection(app, *selections, request, caller))
+                return *selection_response;
+        }
         if (const auto model_response = dispatch_model(app, request, caller, codec, profile))
             return *model_response;
         QJsonObject response;
@@ -169,24 +183,67 @@ QJsonObject dispatch(MemoryApplication& app,
                                             "node.move",
                                             "entity.delete"});
                 if (descriptor.name == "operations.get")
-                    entry.insert("supported_scope", "document_change_outcomes");
+                    entry.insert("supported_scope", "host_lifecycle_and_document_change_outcomes");
                 if (descriptor.name == "capabilities.list")
                     entry.insert("supported_scope", "global_catalog_only");
                 catalog.append(entry);
             }
             const QJsonObject data{
                 {"operations", catalog},
-                {"storage_mode", "memory"},
-                {"durable", false},
+                {"storage_mode", app.durable() ? "sqlite" : "memory"},
+                {"durable", app.durable()},
+                {"recovery_available", app.recovery_available()},
                 {"implementation_scope",
-                 "M1 in-memory entity/organization and controlled text codec slice; no file "
-                 "publication, solver, persistence or recovery"},
+                 "M2 workspace/save/recovery and M3 query/render contracts; no solver execution or "
+                 "AI bridge"},
                 {"max_name_bytes", 1024},
                 {"configured_solver_profiles", QJsonArray{}},
                 {"declared_solver_profiles",
                  profile ? QJsonArray{profile_json(*profile)} : QJsonArray{}},
                 {"supported_pressure_units", QJsonArray{"Pa", "kPa", "MPa", "GPa"}}};
             response = {{"request_id", id}, {"status", "success"}, {"data", data}};
+        } else if (op == "project.current") {
+            fields(params, {});
+            response = result_json(id, app.current_document(), info_json);
+        } else if (op == "project.open") {
+            fields(params, {"mode", "path"});
+            const auto mode = string_field(params, "mode");
+            const auto key = string_field(request, "idempotency_key").toStdString();
+            if (mode == "normal") {
+                response = result_json(
+                    id,
+                    app.open_document(caller, string_field(params, "path").toStdString(), key),
+                    info_json);
+            } else if (mode == "recover" && !params.contains("path")) {
+                response = result_json(id, app.recover_document(caller, key), info_json);
+            } else
+                throw InvalidRequest("Use mode normal with path, or recover without path");
+        } else if (op == "project.save" || op == "project.save_as") {
+            fields(params, {"path"});
+            const auto path = params.contains("path")
+                                  ? string_field(params, "path", true).toStdString()
+                                  : std::string{};
+            response = result_json(
+                id,
+                app.save_document(caller,
+                                  context(request),
+                                  path,
+                                  op == "project.save_as",
+                                  string_field(request, "idempotency_key").toStdString()),
+                info_json);
+        } else if (op == "project.close") {
+            fields(params, {"policy"});
+            const auto policy = string_field(params, "policy");
+            if (policy != "discard" && policy != "keep_recovery")
+                throw InvalidRequest("Unknown close policy");
+            response = result_json(
+                id,
+                app.close_document(caller,
+                                   context(request),
+                                   policy == "discard" ? ClosePolicy::discard
+                                                       : ClosePolicy::keep_recovery,
+                                   string_field(request, "idempotency_key").toStdString()),
+                info_json);
         } else if (op == "project.create") {
             fields(params, {"name"});
             response = result_json(
@@ -276,12 +333,35 @@ QJsonObject dispatch(MemoryApplication& app,
                                        {"revision", number(history.revision)}};
                 });
         } else if (op == "operations.get") {
-            fields(params, {"lookup_scope", "original_operation", "idempotency_key"});
-            if (string_field(params, "lookup_scope") != "document")
-                return failure(id,
-                               "UNSUPPORTED_CAPABILITY",
-                               "M0 supports document change outcome lookup; create retry uses its "
-                               "original key");
+            fields(params,
+                   {"lookup_scope", "original_operation", "original_mode", "idempotency_key"});
+            const auto lookup_scope = string_field(params, "lookup_scope");
+            if (lookup_scope == "host") {
+                auto original = string_field(params, "original_operation");
+                if (original == "project.create")
+                    original = "create_document";
+                else if (original == "project.open") {
+                    const auto mode = params.contains("original_mode")
+                                          ? string_field(params, "original_mode")
+                                          : QStringLiteral("normal");
+                    if (mode != "normal" && mode != "recover")
+                        throw InvalidRequest("Invalid original_mode");
+                    original = mode == "recover" ? "recover_document" : "open_document";
+                } else if (original == "project.save" || original == "project.save_as")
+                    original = "save_document";
+                else if (original == "project.close")
+                    original = "close_document";
+                else
+                    throw InvalidRequest("Unknown lifecycle operation");
+                return result_json(
+                    id,
+                    app.host_operation(caller,
+                                       original.toStdString(),
+                                       string_field(params, "idempotency_key").toStdString()),
+                    info_json);
+            }
+            if (lookup_scope != "document")
+                throw InvalidRequest("Unknown lookup_scope");
             auto original = string_field(params, "original_operation").toStdString();
             if (original == "changes.commit")
                 original = "commit";

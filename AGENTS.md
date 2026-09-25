@@ -11,7 +11,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Root-level versioned `docs/*-v0.*.md` are historical research. `.omx/` is local runtime context, not canonical project documentation and not committed.
 
-M0 and the M1 entity/organization/controlled-text-codec slice are implemented; see docs/implementation/m0.md and docs/implementation/m1.md. Follow-up work continues from the development plan without repeating the interview. Current user instructions override earlier research assumptions.
+M0/M1 plus the M2 persistence and M3 Qt/VTK desktop slices are implemented; see docs/implementation/m2-m3.md for current runtime and limits. Follow-up work continues from the development plan without repeating the interview. Current user instructions override earlier research assumptions.
 
 ## Binding architecture
 
@@ -34,7 +34,7 @@ For cleanup/refactoring, write a short plan and protect existing behavior before
 
 ## Checks and commits
 
-Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. M0/M1 remain memory-only. Nastran text import/export previews are a strict documented subset; do not claim durable recovery, file publication, solver execution, GUI or real AI integration.
+Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. The engine is durable only with an explicit SQLite workspace. Project snapshots/recovery and a small-model Qt/VTK GUI exist; Nastran export is still an in-memory preview. Do not claim solver execution, real AI integration, headless graphical selection, large-model performance or complete P0 acceptance.
 
 New branches default to `codex/`. Every commit uses the Lore protocol: intent-first subject, context, and useful Git trailers such as `Constraint`, `Rejected`, `Confidence`, `Scope-risk`, `Directive`, `Tested`, and `Not-tested`. Never fabricate validation evidence.
 

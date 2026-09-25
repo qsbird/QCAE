@@ -61,3 +61,24 @@ git diff --check
 - QG-01：`python3 tools/check_cpp_format.py`通过；`git diff --check`通过。CTest现包含`cpp_format`，缺工具或格式不一致会失败。临时放入一份格式错误的C++探针，检查确实失败；移除探针后恢复通过。
 - QG-03：整理后Release纯核心9/9、ASan/UBSan纯核心9/9、本地Qt 11/11通过；生成的操作目录与Nastran能力摘要检查通过。能力摘要目前哈希原始源码，因此纯格式改动也会生成新digest；尚无已发布工程格式或持久模型需要迁移。
 - QG-02：格式整理改善了布局，但存量结构审查仍发现`src/ipc_model.cpp`的`dispatch_model`合并导入、编辑、查询及导出分派，`src/nastran_codec.cpp`的读取/编码路径仍较长。它们是后续结构整理的具体审查对象；格式和测试通过不能代替职责拆分审查。当前不将存量代码标记为已通过完整人工可读性门禁。
+
+## M2/M3 实现验证
+
+日期：2026-09-26。已有可读性整理被保留为独立基线提交 `a4d7dda`，以下为本轮最终实现证据。
+
+| 构建/检查 | 结果 | 范围 |
+|---|---|---|
+| Release纯核心，IPC/Storage/Desktop全部OFF | 12/12 CTest | 领域、差量、模拟存储故障、查询、格式及既有回归 |
+| Debug ASan/UBSan，Storage ON、IPC/Desktop OFF | 13/13 CTest | 上述核心加真实SQLite适配、别名锁及崩溃窗口 |
+| Debug本地IPC＋Storage | 16/16 CTest | 原M0/M1及新增M2恢复/M3选择跨进程流程 |
+| Release桌面＋IPC＋Storage＋Qt/VTK | 18/18 CTest | 全部核心/存储/IPC测试、Qt交互、实际GUI截图冒烟 |
+| QG-01 | 45个手写C++文件格式通过 | clang-format 21；git diff --check通过 |
+| 设计与契约 | 35项操作目录及生成输出通过 | 32模块DAG、12个设计例子、20项需求、38项验收映射 |
+
+核心故障证据包括数据库提交前/后的确定性注入、未完成保存意图、发布后丢失保存标记、相同键重试、另存不改变模型修订、旧Epoch拒绝、损坏状态/历史/配额校验和不支持Profile拒绝激活。SQLite适配测试包括实际子进程中止及路径/符号链接/硬链接锁。新增m23_ipc测试实际强制结束engine，再用同一工作库恢复，验证历史、操作事实、dirty保存点和普通打开的新文档身份。
+
+图形证据来自实际VTK OpenGL上下文：QtTest验证可见/穿透框选、隐藏端点仍显示所属梁、请求关联、回调重入和回调中同步销毁客户端；desktop_smoke测试由CLI向真实engine导入仓库夹具，GUI读取同一模型并退出，断言DocId和修订未改变。最终[截图](../implementation/m3-workspace.png)已目视检查：实体名称回退、组织下拉框、真实梁显示和共享历史均可见。engine动态依赖检查只有QtCore/Network与SQLite等系统库，没有QtWidgets/VTK。
+
+QG-02审查确认：detail::Data是模型/历史/宿主操作事实权威；application_state.cpp分离状态格式与校验，core.cpp负责生命周期/事务；SQLite适配器只负责字节事务、锁与发布；SelectionService维护可丢弃会话；GUI/VTK只消费协议投影。审查发现的保存、恢复、重试、损坏输入、配额、别名锁、图形选择及回调生命周期问题已修复并回归。
+
+一次Release 1000节点盒查询测量为504微秒，仅为合成单次样例，不是分位性能/容量验收。未验证真实求解、AI、Windows/打包、磁盘硬件掉电、批量传输、完整事件订阅或完整M3/P0性能。详细实现边界及构建命令见[M2/M3说明](../implementation/m2-m3.md)。

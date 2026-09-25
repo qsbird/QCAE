@@ -2,7 +2,7 @@
 
 面向本地中小规模模型的 CAE 前处理平台。P0 聚焦受控 Nastran 悬臂梁流程，提供桌面 GUI 与外部 AI 共用的无界面业务接口；服务器和亿级实现后置。
 
-**当前状态：设计基线1.1，M0及M1文档/受控格式切片已实现。** CLI与engine共用实体、组织关系、预览/提交和undo/redo；提供受控Nastran文本导入及导出预览。完整P0、持久化、GUI、真实求解与AI接入尚未实现。范围见[M1说明](docs/implementation/m1.md)，构建入口见[M0说明](docs/implementation/m0.md)。
+**当前状态：M2持久工作库与M3桌面工作区已实现。** 支持工程保存/另存/恢复、共享历史、条件选择、Qt/VTK节点与梁显示；保留受控Nastran文本读写。真实求解、AI接入和完整容量/性能验收尚未完成。入口及边界见[M2/M3说明](docs/implementation/m2-m3.md)。
 
 ## 从这里开始
 
@@ -34,7 +34,7 @@ cmake --build build-core
 ctest --test-dir build-core --output-on-failure
 ```
 
-本地engine/CLI构建另需Qt6 Core/Network，启用`QCAE_BUILD_IPC=ON`，详见[M0运行与验证](docs/implementation/m0.md)。运行数据仅在内存，进程退出即丢失。设计检查仍可单独运行`python3 tools/check_design.py`。
+本地engine/CLI启用`QCAE_BUILD_IPC=ON`，SQLite持久化启用`QCAE_BUILD_STORAGE=ON`，桌面另启用`QCAE_BUILD_DESKTOP=ON`并配置带Qt支持的VTK。运行`./build-desktop/qcae-desktop`启动工作区，详见[M2/M3构建与运行](docs/implementation/m2-m3.md)。不传`--workspace`的独立engine仍为内存模式。
 
 ## 仓库内容
 
@@ -46,7 +46,7 @@ ctest --test-dir build-core --output-on-failure
 | `docs/design/` | 界面概念图及生成提示词 |
 | `docs/research/` | 架构参考研究，非依赖源码 |
 | `docs/*-v0.*.md` | 历史讨论，不作为与当前基线冲突时的依据 |
-| `include/`、`src/`、`apps/` | 纯C++核心、格式适配及本地Qt IPC入口 |
+| `include/`、`src/`、`apps/` | 核心、存储/格式适配、IPC及Qt/VTK桌面 |
 | `tests/` | 核心、契约、分配失败和真实IPC回归 |
 | `tools/` | 操作描述生成与设计一致性检查 |
 

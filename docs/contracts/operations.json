@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1",
   "status": "accepted design catalog; runtime capability discovery reports implemented subsets",
-  "operation_count": 28,
+  "operation_count": 35,
   "notes": [
     "Names and consistency rules form the baseline. Concrete DTO/schema implementations are an M0 task.",
     "Effect metadata is not an authorization decision.",
@@ -377,6 +377,97 @@
       "output_type": "ArtifactPlanPreview",
       "target_context": "analysis",
       "requires_profile_match": true
+    },
+    {
+      "name": "project.current",
+      "effect": "query",
+      "description": "Read the active document identity, revision, persistence mode and saved metadata",
+      "requires_document": false,
+      "requires_epoch": false,
+      "requires_revision": false,
+      "requires_idempotency_key": false,
+      "input_type": "CurrentProject",
+      "output_type": "DocumentContext",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "view.create",
+      "effect": "session_write",
+      "description": "Create a caller-owned view for an explicit model version and hidden-entity set",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "CreateView",
+      "output_type": "ViewSession",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "view.update",
+      "effect": "session_write",
+      "description": "Update hidden entities and camera fingerprint, invalidating older view selections",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "UpdateView",
+      "output_type": "ViewSession",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "view.render_data",
+      "effect": "query",
+      "description": "Read a versioned display packet with true entity identity mappings",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "RenderDataQuery",
+      "output_type": "RenderPacket",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "selection.evaluate",
+      "effect": "session_write",
+      "description": "Evaluate typed predicates within an explicit visibility and candidate scope",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "SelectionQuery",
+      "output_type": "SelectionHandle",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "selection.combine",
+      "effect": "session_write",
+      "description": "Combine compatible versioned selections by union, intersection or difference",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "SelectionCombination",
+      "output_type": "SelectionHandle",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "selection.get",
+      "effect": "query",
+      "description": "Read a bounded page from a caller-owned selection, rejecting stale model or view versions",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": false,
+      "requires_idempotency_key": false,
+      "input_type": "SelectionPageQuery",
+      "output_type": "SelectionPage",
+      "target_context": "none",
+      "requires_profile_match": false
     }
   ],
   "api_version": "1.1"

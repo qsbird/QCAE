@@ -58,6 +58,7 @@ int main(int argc, char** argv) {
     parser.addOption({{"s", "socket"}, "Local endpoint path", "path"});
     parser.addOption({"no-start", "Do not automatically start the sibling qcae-engine"});
     parser.addOption({"engine", "Engine executable for automatic startup", "path"});
+    parser.addOption({"workspace", "SQLite workspace for auto-started engine", "path"});
     parser.process(app);
     const auto endpoint =
         parser.isSet("socket") ? parser.value("socket") : qcae::transport::default_endpoint();
@@ -91,7 +92,10 @@ int main(int argc, char** argv) {
 #endif
         QProcess launcher;
         launcher.setProgram(executable);
-        launcher.setArguments({"--socket", endpoint});
+        QStringList engine_args{"--socket", endpoint};
+        if (parser.isSet("workspace"))
+            engine_args << "--workspace" << parser.value("workspace");
+        launcher.setArguments(engine_args);
         launcher.setStandardInputFile(QProcess::nullDevice());
         launcher.setStandardOutputFile(QProcess::nullDevice());
         launcher.setStandardErrorFile(QProcess::nullDevice());

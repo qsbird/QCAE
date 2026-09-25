@@ -52,7 +52,7 @@ P0装配为部件层级组织；重复变换实例、复杂CAD/网格、完整�
 
 ## 交付与预算
 
-当前已交付设计基线、[M0内存/IPC闭环](../implementation/m0.md)和[M1文档/格式切片](../implementation/m1.md)。文档保存/恢复、文件产物发布、真实Nastran求解、GUI和AI仍按[计划](development-plan.md)进入后续阶段。
+当前已交付设计基线、[M0内存/IPC闭环](../implementation/m0.md)和[M1文档/格式切片](../implementation/m1.md)。[M2/M3](../implementation/m2-m3.md)已增加文档保存/恢复与桌面工作区；文件产物发布、真实Nastran求解、AI及完整性能仍按[计划](development-plan.md)进入后续阶段。
 
 完整本地P0＋限定外部AI场景仍使用500万—1000万累计研发输入/输出token作为低置信度规划区间；不是已耗用量或自动执行上限。首次运行时/事务切片完成后重估，运行时AI推理成本另计。历史推导见 [v0.6方案](../P0-AI接口与悬臂梁交付方案-v0.6.md)。
 

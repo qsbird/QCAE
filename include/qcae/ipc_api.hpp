@@ -5,6 +5,9 @@
 #include "qcae/profile_provider.hpp"
 #include <QJsonObject>
 
+namespace qcae {
+class SelectionService;
+}
 namespace qcae::ipc {
 QJsonObject failure(const QString& request_id,
                     const QString& code,
@@ -14,5 +17,6 @@ QJsonObject dispatch(MemoryApplication&,
                      const QJsonObject&,
                      const Caller& trusted_caller,
                      const IModelCodec* codec = nullptr,
-                     const ProfileDefinition* profile = nullptr);
+                     const ProfileDefinition* profile = nullptr,
+                     SelectionService* selections = nullptr);
 } // namespace qcae::ipc

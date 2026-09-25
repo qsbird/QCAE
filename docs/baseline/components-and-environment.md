@@ -53,3 +53,9 @@ OCCT、Netgen/Gmsh在首次实际CAD/网格用例时接入；ParaView/trame、Qt
 ## M1文本格式环境记录
 
 已实现一个静态 `qcae.nastran.linear-static` 0.1.0 codec，语义按 MSC 官方版本化文档核对；支持矩阵见 [Nastran子集](../implementation/nastran-subset.md)。ProfileRef 的 SHA-256 摘要由代码/声明/矩阵生成。ENV-02的codec语义部分有测试证据，但尚无本机求解器方言/二进制版本验证；`configured=false`、`validated=false`。没有新增产品依赖，也未使用pyNastran交叉验证。
+
+## M2/M3已验证环境
+
+已使用SQLite 3.51.0、Qt6 6.11.1 Widgets/OpenGLWidgets/Network/Test及VTK 9.7.0，在macOS 26.6.2 arm64上构建工作库/桌面。VTK源码与二进制隔离在被忽略的build-vtk-deps目录；归档校验和、配置及运行入口见[M2/M3说明](../implementation/m2-m3.md)。
+
+ENV-03已固定当前数量/字节配额、WAL/FULL、明确恢复与拒绝超限策略；未覆盖任务资源配额（M4）。ENV-04已有真实小模型图形测试和初步单次查询测量，尚无完整硬件分档、分位延迟和容量验收。Qt/VTK桌面依赖未进入engine的图形依赖，纯核心可同时关闭Qt/VTK/SQLite。
