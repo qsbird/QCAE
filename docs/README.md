@@ -17,6 +17,10 @@
 
 冲突时以最新用户明确指令及这些基线文档为准。历史方案不能重新扩大P0。
 
+## 工程化重构提案
+
+[以简单场景验收平台骨架](architecture/engineering-skeleton-proposal.md)：实际结构问题、目标模块、实体/操作扩展机制、完整核心链路、迁移顺序和EXT-01—05验收。当前为设计提案，尚未执行重构。
+
 ## 当前实现
 
 [M0运行与验证](implementation/m0.md)：纯C++内存核心、Qt本地engine/CLI。
