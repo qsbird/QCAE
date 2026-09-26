@@ -1,0 +1,783 @@
+{
+  "schema_version": "1.0",
+  "kind": "target_specification_not_results",
+  "status": "pending_implementation",
+  "gates": [
+    {
+      "id": "SK-01",
+      "title": "参考覆盖",
+      "required": true,
+      "metrics": [
+        {
+          "id": "ap01_20_contract_count",
+          "operator": "eq",
+          "target": 20,
+          "unit": "count"
+        },
+        {
+          "id": "ap_contract_required_fields",
+          "operator": "eq",
+          "target": 8,
+          "unit": "fields_per_contract"
+        },
+        {
+          "id": "ap_contract_missing_fields",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "inventory_mapping_ratio",
+          "operator": "eq",
+          "target": 1,
+          "unit": "ratio"
+        },
+        {
+          "id": "inventory_unclassified_count",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "ap_level2_count",
+          "operator": "eq",
+          "target": 20,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-02",
+      "title": "模块与依赖",
+      "required": true,
+      "metrics": [
+        {
+          "id": "unowned_product_translation_units",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "dependency_cycles",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "forbidden_dependency_edges",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "cross_module_private_includes",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "public_api_consumer_pass_ratio",
+          "operator": "eq",
+          "target": 1,
+          "unit": "ratio"
+        },
+        {
+          "id": "negative_dependency_cases_detected",
+          "operator": "eq",
+          "target": 8,
+          "unit": "cases"
+        },
+        {
+          "id": "core_no_framework_build_pass",
+          "operator": "eq",
+          "target": true,
+          "unit": "boolean"
+        }
+      ]
+    },
+    {
+      "id": "SK-03",
+      "title": "实体与生成",
+      "required": true,
+      "metrics": [
+        {
+          "id": "entity_specific_type_refs_in_protected_sources",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "repeat_generation_diff_bytes",
+          "operator": "eq",
+          "target": 0,
+          "unit": "bytes"
+        },
+        {
+          "id": "registration_order_identity_mismatches",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "schema_validation_cases_passed",
+          "operator": "eq",
+          "target": 8,
+          "unit": "cases"
+        },
+        {
+          "id": "current_old_schema_fixture_pass_ratio",
+          "operator": "eq",
+          "target": 1,
+          "unit": "ratio"
+        }
+      ]
+    },
+    {
+      "id": "SK-04",
+      "title": "操作与入口",
+      "required": true,
+      "metrics": [
+        {
+          "id": "registered_operation_contract_ratio",
+          "operator": "eq",
+          "target": 1,
+          "unit": "ratio"
+        },
+        {
+          "id": "advertised_available_missing_handlers",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "document_writes_bypassing_coordinator",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "cross_entry_runs_passed",
+          "operator": "eq",
+          "target": 9,
+          "unit": "runs"
+        },
+        {
+          "id": "cross_entry_semantic_mismatches",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-05",
+      "title": "几何网格身份",
+      "required": true,
+      "metrics": [
+        {
+          "id": "line_meshing_fixture_pass",
+          "operator": "eq",
+          "target": true,
+          "unit": "boolean"
+        },
+        {
+          "id": "geometry_mesh_alias_id_count",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "organization_generated_duplicate_nodes",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "unreported_invalid_geometry_bindings",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "replacement_reference_mismatches",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-06",
+      "title": "事务历史恢复",
+      "required": true,
+      "metrics": [
+        {
+          "id": "fault_cases_passed",
+          "operator": "eq",
+          "target": 22,
+          "unit": "cases"
+        },
+        {
+          "id": "fault_runs_passed",
+          "operator": "eq",
+          "target": 220,
+          "unit": "runs"
+        },
+        {
+          "id": "partial_commit_count",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "duplicate_commit_count",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "history_100_rounds_mismatches",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "legacy_project_fixture_pass_ratio",
+          "operator": "eq",
+          "target": 1,
+          "unit": "ratio"
+        },
+        {
+          "id": "legacy_inputs_modified_bytes",
+          "operator": "eq",
+          "target": 0,
+          "unit": "bytes"
+        },
+        {
+          "id": "legacy_fixture_total",
+          "operator": "ge",
+          "target": 6,
+          "unit": "fixtures"
+        },
+        {
+          "id": "legacy_version_coverage_ratio",
+          "operator": "eq",
+          "target": 1,
+          "unit": "ratio"
+        },
+        {
+          "id": "legacy_fixture_empty_set",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-07",
+      "title": "任务与产物",
+      "required": true,
+      "metrics": [
+        {
+          "id": "real_task_runs_passed",
+          "operator": "eq",
+          "target": 30,
+          "unit": "runs"
+        },
+        {
+          "id": "cancel_before_commit_model_mutations",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "stale_task_result_commits",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "invalid_artifacts_marked_success",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "queue_limit_violations",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "active_worker_limit_violations",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-08",
+      "title": "参数分析检查",
+      "required": true,
+      "metrics": [
+        {
+          "id": "parameter_analysis_issue_fixture_pass",
+          "operator": "eq",
+          "target": true,
+          "unit": "boolean"
+        },
+        {
+          "id": "unit_coordinate_value_mismatches",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "issue_entity_resolution_errors",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "stale_issues_marked_current",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "repair_operations_bypassing_coordinator",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-09",
+      "title": "结果语义",
+      "required": true,
+      "metrics": [
+        {
+          "id": "result_fixture_value_mismatches",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "result_metadata_missing_fields",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "old_results_marked_current",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "wrong_location_or_mapping_accepted",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "fixture_results_labeled_solver_runs",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-10",
+      "title": "交互显示",
+      "required": true,
+      "metrics": [
+        {
+          "id": "tool_lifecycle_runs_passed",
+          "operator": "eq",
+          "target": 30,
+          "unit": "runs"
+        },
+        {
+          "id": "cancelled_preview_revision_increments",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "picking_cases_passed",
+          "operator": "eq",
+          "target": 12,
+          "unit": "cases"
+        },
+        {
+          "id": "stale_selection_accepted",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "layout_roundtrip_mismatches",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "layout_changes_model_revision_increments",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-11",
+      "title": "完整能力包",
+      "required": true,
+      "metrics": [
+        {
+          "id": "nastran_contribution_categories",
+          "operator": "eq",
+          "target": 6,
+          "unit": "categories"
+        },
+        {
+          "id": "package_disabled_core_build_pass",
+          "operator": "eq",
+          "target": true,
+          "unit": "boolean"
+        },
+        {
+          "id": "disabled_package_false_available_operations",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "format_only_semantic_digest_changes",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "incompatible_semantics_silently_accepted",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        }
+      ]
+    },
+    {
+      "id": "SK-12",
+      "title": "数据量与交互",
+      "required": true,
+      "metrics": [
+        {
+          "id": "bulk_resource_roundtrip_bytes",
+          "operator": "ge",
+          "target": 4194304,
+          "unit": "bytes"
+        },
+        {
+          "id": "bulk_chunk_payload_bytes_max",
+          "operator": "le",
+          "target": 262144,
+          "unit": "bytes"
+        },
+        {
+          "id": "locality_fixture_sizes_passed",
+          "operator": "eq",
+          "target": 3,
+          "unit": "sizes"
+        },
+        {
+          "id": "locality_measurement_runs_passed",
+          "operator": "eq",
+          "target": 60,
+          "unit": "runs"
+        },
+        {
+          "id": "locality_payload_bound_violations",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "whole_document_serialization_calls_on_local_edit",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "event_gap_silent_stale_views",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "rotation_frame_p95_ms",
+          "operator": "le",
+          "target": 33,
+          "unit": "ms"
+        },
+        {
+          "id": "zoom_frame_p95_ms",
+          "operator": "le",
+          "target": 33,
+          "unit": "ms"
+        },
+        {
+          "id": "input_feedback_p95_ms",
+          "operator": "le",
+          "target": 100,
+          "unit": "ms"
+        },
+        {
+          "id": "task_ack_p95_ms",
+          "operator": "le",
+          "target": 100,
+          "unit": "ms"
+        }
+      ]
+    },
+    {
+      "id": "SK-13",
+      "title": "扩展成本",
+      "required": true,
+      "metrics": [
+        {
+          "id": "extension_exercises_passed",
+          "operator": "eq",
+          "target": 5,
+          "unit": "cases"
+        },
+        {
+          "id": "ext01_protected_files_changed",
+          "operator": "eq",
+          "target": 0,
+          "unit": "files"
+        },
+        {
+          "id": "ext02_protected_files_changed",
+          "operator": "eq",
+          "target": 0,
+          "unit": "files"
+        },
+        {
+          "id": "ext03_protected_files_changed",
+          "operator": "eq",
+          "target": 0,
+          "unit": "files"
+        },
+        {
+          "id": "ext01_handwritten_product_files_changed",
+          "operator": "le",
+          "target": 6,
+          "unit": "files"
+        },
+        {
+          "id": "ext02_handwritten_product_files_changed",
+          "operator": "le",
+          "target": 6,
+          "unit": "files"
+        },
+        {
+          "id": "ext03_handwritten_product_files_changed",
+          "operator": "le",
+          "target": 10,
+          "unit": "files"
+        },
+        {
+          "id": "independent_extension_runs_passed",
+          "operator": "ge",
+          "target": 1,
+          "unit": "runs"
+        },
+        {
+          "id": "independent_initial_context_bytes",
+          "operator": "le",
+          "target": 65536,
+          "unit": "bytes"
+        },
+        {
+          "id": "independent_initial_context_files",
+          "operator": "le",
+          "target": 8,
+          "unit": "files"
+        },
+        {
+          "id": "skeleton_author_product_patches_during_extension",
+          "operator": "eq",
+          "target": 0,
+          "unit": "patches"
+        }
+      ]
+    },
+    {
+      "id": "SK-14",
+      "title": "交付",
+      "required": true,
+      "metrics": [
+        {
+          "id": "prerequisite_gates_passed",
+          "operator": "eq",
+          "target": 13,
+          "unit": "gates"
+        },
+        {
+          "id": "representative_cases_passed",
+          "operator": "eq",
+          "target": 20,
+          "unit": "cases"
+        },
+        {
+          "id": "main_workflow_runs_passed",
+          "operator": "eq",
+          "target": 9,
+          "unit": "runs"
+        },
+        {
+          "id": "baseline_regression_not_run",
+          "operator": "eq",
+          "target": 0,
+          "unit": "cases"
+        },
+        {
+          "id": "applicable_test_failures",
+          "operator": "eq",
+          "target": 0,
+          "unit": "cases"
+        },
+        {
+          "id": "asan_findings",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "ubsan_findings",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "first_party_compiler_warnings",
+          "operator": "eq",
+          "target": 0,
+          "unit": "count"
+        },
+        {
+          "id": "format_diff_files",
+          "operator": "eq",
+          "target": 0,
+          "unit": "files"
+        },
+        {
+          "id": "delivery_artifact_categories",
+          "operator": "eq",
+          "target": 8,
+          "unit": "categories"
+        }
+      ]
+    }
+  ],
+  "fixtures": {
+    "mesh_sizes": [
+      1000,
+      10000,
+      100000
+    ],
+    "local_edits_per_size": 20,
+    "line_segments": 10,
+    "line_start_mm": [
+      0,
+      0,
+      0
+    ],
+    "line_end_mm": [
+      1000,
+      0,
+      0
+    ],
+    "line_node_count": 11,
+    "line_element_count": 10,
+    "node_position_abs_tolerance_mm": 1e-09,
+    "young_modulus_mpa": 210000,
+    "poisson_ratio": 0.3,
+    "beam_area_mm2": 100,
+    "beam_i1_mm4": 833.333,
+    "beam_i2_mm4": 833.333,
+    "beam_torsion_mm4": 1400,
+    "tip_force_n": [
+      0,
+      -1,
+      0
+    ],
+    "fixed_dofs": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "fault_case_count": 22,
+    "fault_repetitions_per_case": 10,
+    "task_workers": 2,
+    "task_queue_capacity": 8,
+    "performance_nodes": 10000,
+    "performance_line_elements": 9999,
+    "framebuffer_pixels": [
+      1280,
+      720
+    ],
+    "warmup_frames": 60,
+    "rotation_samples": 300,
+    "zoom_samples": 300,
+    "input_feedback_samples": 50,
+    "task_ack_samples": 50,
+    "warmup_input_operations": 5,
+    "bulk_resource_bytes": 4194304,
+    "chunk_payload_max_bytes": 262144,
+    "physical_float_abs_tolerance": 1e-09,
+    "dimensionless_float_abs_tolerance": 1e-12,
+    "replacement_policy": "reject_unmapped",
+    "node_block_capacity": 1024,
+    "node_record_encoded_bytes_max": 256,
+    "dirty_node_blocks_max": 2,
+    "material_record_encoded_bytes_max": 4096,
+    "metadata_payload_bytes_max": 65536,
+    "node_edit_payload_bytes_max": 589824,
+    "material_edit_payload_bytes_max": 69632,
+    "legacy_fixture_minimum": 6,
+    "history_initial_edit_count": 1,
+    "history_undo_redo_rounds": 100,
+    "history_total_revision_increment": 201
+  },
+  "report_required_fields": [
+    "source_commit",
+    "spec_sha256",
+    "fixture_sha256",
+    "environment_manifest_sha256",
+    "protected_paths_manifest_sha256",
+    "commands",
+    "exit_codes",
+    "raw_samples_paths",
+    "raw_samples_sha256",
+    "metrics",
+    "evidence_paths",
+    "evidence_sha256",
+    "extension_records"
+  ],
+  "decision": {
+    "missing_metric": "fail",
+    "missing_evidence": "fail",
+    "changed_frozen_environment": "invalid_run",
+    "mixed_source_commits": "invalid_product_run; extension_records separately bind frozen baseline_commit and extension_commit",
+    "aggregate_rule": "all_required_metrics_and_named_assertions_pass",
+    "p95": "ascending_samples[ceil(0.95*N)-1]"
+  }
+}

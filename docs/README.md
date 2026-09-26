@@ -23,6 +23,8 @@
 
 [Archer架构对照与对齐目标](architecture/archer-architecture-parity.md)：20个参考功能域的最低覆盖清单、原提案缺口、指定改进目标及可验收标准；仍属未实施设计。
 
+[骨架检查点与完成预期](baseline/skeleton-acceptance.md)：SK-01—14及97项数值/布尔指标、固定夹具、采样公式、扩展触碰上限与机器可读目标。
+
 ## 当前实现
 
 [M0运行与验证](implementation/m0.md)：纯C++内存核心、Qt本地engine/CLI。
