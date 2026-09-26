@@ -1,0 +1,7 @@
+add_library(qcae_vtk_view STATIC src/vtk_view.cpp include/qcae/vtk_view.hpp)
+target_include_directories(qcae_vtk_view PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_vtk_view PUBLIC cxx_std_20)
+target_link_libraries(qcae_vtk_view PUBLIC qcae_contracts Qt6::Widgets Qt6::OpenGLWidgets ${VTK_LIBRARIES})
+qcae_warnings(qcae_vtk_view)
+set_target_properties(qcae_vtk_view PROPERTIES AUTOMOC ON)
+vtk_module_autoinit(TARGETS qcae_vtk_view MODULES ${VTK_LIBRARIES})

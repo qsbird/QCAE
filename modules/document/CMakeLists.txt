@@ -1,0 +1,5 @@
+add_library(qcae_document STATIC src/model.cpp src/model_delta.cpp src/state_codec.cpp include/qcae/model.hpp include/qcae/model_codec.hpp include/qcae/model_delta.hpp include/qcae/state_codec.hpp include/qcae/read_view.hpp)
+target_include_directories(qcae_document PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_document PUBLIC cxx_std_20)
+target_link_libraries(qcae_document PUBLIC qcae_foundation qcae_contracts)
+qcae_warnings(qcae_document)

@@ -1,3 +1,4 @@
+#include "qcae/core.hpp"
 #include "qcae/query.hpp"
 
 #include <algorithm>

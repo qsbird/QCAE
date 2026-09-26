@@ -1,0 +1,6 @@
+add_library(qcae_sqlite STATIC src/sqlite_store.cpp include/qcae/sqlite_store.hpp)
+target_include_directories(qcae_sqlite PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_sqlite PUBLIC cxx_std_20)
+target_link_libraries(qcae_sqlite PUBLIC qcae_contracts)
+target_link_libraries(qcae_sqlite PRIVATE ${QCAE_SQLITE_TARGET})
+qcae_warnings(qcae_sqlite)

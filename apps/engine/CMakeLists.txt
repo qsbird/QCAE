@@ -1,0 +1,7 @@
+add_executable(qcae-engine main.cpp)
+target_link_libraries(qcae-engine PRIVATE qcae_engine_api qcae_transport_local qcae_nastran)
+qcae_warnings(qcae-engine)
+if(QCAE_BUILD_STORAGE)
+  target_link_libraries(qcae-engine PRIVATE qcae_sqlite)
+  target_compile_definitions(qcae-engine PRIVATE QCAE_HAS_SQLITE)
+endif()

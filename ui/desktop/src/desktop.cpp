@@ -1,3 +1,4 @@
+#include "qcae/desktop.hpp"
 #include "qcae/desktop_client.hpp"
 #include "qcae/local_endpoint.hpp"
 #include "qcae/render_packet.hpp"
@@ -1003,7 +1004,7 @@ class DesktopWindow : public QMainWindow {
 };
 } // namespace
 
-int main(int argc, char** argv) {
+int qcae::run_desktop(int argc, char** argv) {
     QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
     QApplication app(argc, argv);
     QCoreApplication::setApplicationName("QCAE");

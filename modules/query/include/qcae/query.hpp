@@ -1,6 +1,6 @@
 #pragma once
 
-#include "qcae/core.hpp"
+#include "qcae/read_view.hpp"
 #include "qcae/render_packet.hpp"
 
 #include <cstddef>

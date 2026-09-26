@@ -1,0 +1,7 @@
+add_library(qcae_desktop_ui STATIC src/desktop.cpp include/qcae/desktop.hpp)
+target_include_directories(qcae_desktop_ui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_desktop_ui PUBLIC cxx_std_20)
+target_link_libraries(qcae_desktop_ui PUBLIC qcae_desktop_client qcae_vtk_view)
+qcae_warnings(qcae_desktop_ui)
+set_target_properties(qcae_desktop_ui PROPERTIES AUTOMOC ON)
+vtk_module_autoinit(TARGETS qcae_desktop_ui MODULES ${VTK_LIBRARIES})

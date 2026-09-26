@@ -1,0 +1,6 @@
+add_library(qcae_application STATIC src/core.cpp src/application_state.cpp include/qcae/core.hpp)
+target_include_directories(qcae_application PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_application PUBLIC cxx_std_20)
+target_link_libraries(qcae_application PUBLIC qcae_document qcae_contracts)
+target_link_libraries(qcae_application PRIVATE Threads::Threads)
+qcae_warnings(qcae_application)

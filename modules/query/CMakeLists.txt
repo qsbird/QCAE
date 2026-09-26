@@ -1,0 +1,5 @@
+add_library(qcae_query STATIC src/query.cpp include/qcae/query.hpp)
+target_include_directories(qcae_query PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_query PUBLIC cxx_std_20)
+target_link_libraries(qcae_query PUBLIC qcae_document qcae_contracts)
+qcae_warnings(qcae_query)

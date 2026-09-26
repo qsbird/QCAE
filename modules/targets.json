@@ -1,0 +1,409 @@
+{
+  "schema_version": 1,
+  "status": "R1 implemented target ownership; future logical modules remain in the design graph",
+  "targets": [
+    {
+      "target": "qcae_foundation",
+      "path": "modules/foundation",
+      "kind": "INTERFACE",
+      "option": null,
+      "public_include_dirs": [
+        "modules/foundation/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/foundation/include/qcae/types.hpp"
+      ],
+      "sources": [],
+      "public_dependencies": [],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_contracts",
+      "path": "modules/contracts",
+      "kind": "INTERFACE",
+      "option": null,
+      "public_include_dirs": [
+        "modules/contracts/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/contracts/include/qcae/application_types.hpp",
+        "modules/contracts/include/qcae/document_info.hpp",
+        "modules/contracts/include/qcae/profile_provider.hpp",
+        "modules/contracts/include/qcae/render_packet.hpp",
+        "modules/contracts/include/qcae/workspace_store.hpp"
+      ],
+      "sources": [],
+      "public_dependencies": [
+        "qcae_foundation"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_document",
+      "path": "modules/document",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/document/include"
+      ],
+      "private_include_dirs": [
+        "modules/document/src"
+      ],
+      "public_headers": [
+        "modules/document/include/qcae/model.hpp",
+        "modules/document/include/qcae/model_codec.hpp",
+        "modules/document/include/qcae/model_delta.hpp",
+        "modules/document/include/qcae/state_codec.hpp",
+        "modules/document/include/qcae/read_view.hpp"
+      ],
+      "sources": [
+        "modules/document/src/model.cpp",
+        "modules/document/src/model_delta.cpp",
+        "modules/document/src/state_codec.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_foundation",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_application",
+      "path": "modules/application",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/application/include"
+      ],
+      "private_include_dirs": [
+        "modules/application/src"
+      ],
+      "public_headers": [
+        "modules/application/include/qcae/core.hpp"
+      ],
+      "sources": [
+        "modules/application/src/core.cpp",
+        "modules/application/src/application_state.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_document",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [
+        "Threads::Threads"
+      ],
+      "external_dependencies": [
+        "Threads::Threads"
+      ],
+      "private_headers": [
+        "modules/application/src/application_state.hpp"
+      ]
+    },
+    {
+      "target": "qcae_query",
+      "path": "modules/query",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/query/include"
+      ],
+      "private_include_dirs": [
+        "modules/query/src"
+      ],
+      "public_headers": [
+        "modules/query/include/qcae/query.hpp"
+      ],
+      "sources": [
+        "modules/query/src/query.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_document",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_nastran",
+      "path": "profiles/nastran",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "profiles/nastran/include"
+      ],
+      "private_include_dirs": [
+        "profiles/nastran/src"
+      ],
+      "public_headers": [
+        "profiles/nastran/include/qcae/nastran_codec.hpp"
+      ],
+      "sources": [
+        "profiles/nastran/src/nastran_codec.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_document",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_sqlite",
+      "path": "adapters/storage_sqlite",
+      "kind": "STATIC",
+      "option": "QCAE_BUILD_STORAGE",
+      "public_include_dirs": [
+        "adapters/storage_sqlite/include"
+      ],
+      "private_include_dirs": [
+        "adapters/storage_sqlite/src"
+      ],
+      "public_headers": [
+        "adapters/storage_sqlite/include/qcae/sqlite_store.hpp"
+      ],
+      "sources": [
+        "adapters/storage_sqlite/src/sqlite_store.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_contracts"
+      ],
+      "private_dependencies": [
+        "${QCAE_SQLITE_TARGET}"
+      ],
+      "external_dependencies": [
+        "SQLite3::SQLite3",
+        "SQLite::SQLite3"
+      ]
+    },
+    {
+      "target": "qcae_transport_local",
+      "path": "adapters/transport_local",
+      "kind": "INTERFACE",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [
+        "adapters/transport_local/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "adapters/transport_local/include/qcae/local_endpoint.hpp"
+      ],
+      "sources": [],
+      "public_dependencies": [
+        "qcae_contracts",
+        "Qt6::Core",
+        "Qt6::Network"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": [
+        "Qt6::Core",
+        "Qt6::Network"
+      ]
+    },
+    {
+      "target": "qcae_engine_api",
+      "path": "adapters/engine_api",
+      "kind": "STATIC",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [
+        "adapters/engine_api/include"
+      ],
+      "private_include_dirs": [
+        "adapters/engine_api/src"
+      ],
+      "public_headers": [
+        "adapters/engine_api/include/qcae/ipc_api.hpp",
+        "adapters/engine_api/include/qcae/ipc_model.hpp",
+        "adapters/engine_api/include/qcae/ipc_selection.hpp"
+      ],
+      "sources": [
+        "adapters/engine_api/src/ipc_api.cpp",
+        "adapters/engine_api/src/ipc_model.cpp",
+        "adapters/engine_api/src/ipc_selection.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_application",
+        "qcae_query",
+        "qcae_contracts",
+        "Qt6::Core"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": [
+        "Qt6::Core"
+      ]
+    },
+    {
+      "target": "qcae_desktop_client",
+      "path": "modules/clients",
+      "kind": "STATIC",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [
+        "modules/clients/include"
+      ],
+      "private_include_dirs": [
+        "modules/clients/src"
+      ],
+      "public_headers": [
+        "modules/clients/include/qcae/desktop_client.hpp"
+      ],
+      "sources": [
+        "modules/clients/src/desktop_client.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_transport_local",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_vtk_view",
+      "path": "adapters/rendering_vtk",
+      "kind": "STATIC",
+      "option": "QCAE_BUILD_DESKTOP",
+      "public_include_dirs": [
+        "adapters/rendering_vtk/include"
+      ],
+      "private_include_dirs": [
+        "adapters/rendering_vtk/src"
+      ],
+      "public_headers": [
+        "adapters/rendering_vtk/include/qcae/vtk_view.hpp"
+      ],
+      "sources": [
+        "adapters/rendering_vtk/src/vtk_view.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_contracts",
+        "Qt6::Widgets",
+        "Qt6::OpenGLWidgets",
+        "${VTK_LIBRARIES}"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": [
+        "Qt6::Widgets",
+        "Qt6::OpenGLWidgets",
+        "${VTK_LIBRARIES}"
+      ]
+    },
+    {
+      "target": "qcae_desktop_ui",
+      "path": "ui/desktop",
+      "kind": "STATIC",
+      "option": "QCAE_BUILD_DESKTOP",
+      "public_include_dirs": [
+        "ui/desktop/include"
+      ],
+      "private_include_dirs": [
+        "ui/desktop/src"
+      ],
+      "public_headers": [
+        "ui/desktop/include/qcae/desktop.hpp"
+      ],
+      "sources": [
+        "ui/desktop/src/desktop.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_desktop_client",
+        "qcae_vtk_view"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae-engine",
+      "path": "apps/engine",
+      "kind": "EXECUTABLE",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [],
+      "private_include_dirs": [],
+      "public_headers": [],
+      "sources": [
+        "apps/engine/main.cpp"
+      ],
+      "public_dependencies": [],
+      "private_dependencies": [
+        "qcae_engine_api",
+        "qcae_transport_local",
+        "qcae_nastran"
+      ],
+      "external_dependencies": [],
+      "conditional_dependencies": {
+        "QCAE_BUILD_STORAGE": [
+          "qcae_sqlite"
+        ]
+      }
+    },
+    {
+      "target": "qcae-cli",
+      "path": "apps/cli",
+      "kind": "EXECUTABLE",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [],
+      "private_include_dirs": [],
+      "public_headers": [],
+      "sources": [
+        "apps/cli/main.cpp"
+      ],
+      "public_dependencies": [],
+      "private_dependencies": [
+        "qcae_transport_local",
+        "qcae_contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae-desktop",
+      "path": "apps/desktop",
+      "kind": "EXECUTABLE",
+      "option": "QCAE_BUILD_DESKTOP",
+      "public_include_dirs": [],
+      "private_include_dirs": [],
+      "public_headers": [],
+      "sources": [
+        "apps/desktop/main.cpp"
+      ],
+      "public_dependencies": [],
+      "private_dependencies": [
+        "qcae_desktop_ui"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_core",
+      "path": ".",
+      "kind": "INTERFACE",
+      "option": null,
+      "public_include_dirs": [],
+      "private_include_dirs": [],
+      "public_headers": [],
+      "sources": [],
+      "public_dependencies": [
+        "qcae_application",
+        "qcae_query"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_ipc",
+      "path": ".",
+      "kind": "INTERFACE",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [],
+      "private_include_dirs": [],
+      "public_headers": [],
+      "sources": [],
+      "public_dependencies": [
+        "qcae_engine_api",
+        "qcae_transport_local"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+add_library(qcae_desktop_client STATIC src/desktop_client.cpp include/qcae/desktop_client.hpp)
+target_include_directories(qcae_desktop_client PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_desktop_client PUBLIC cxx_std_20)
+target_link_libraries(qcae_desktop_client PUBLIC qcae_transport_local qcae_contracts)
+qcae_warnings(qcae_desktop_client)
+set_target_properties(qcae_desktop_client PROPERTIES AUTOMOC ON)

@@ -1,0 +1,5 @@
+add_library(qcae_engine_api STATIC src/ipc_api.cpp src/ipc_model.cpp src/ipc_selection.cpp include/qcae/ipc_api.hpp include/qcae/ipc_model.hpp include/qcae/ipc_selection.hpp)
+target_include_directories(qcae_engine_api PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_engine_api PUBLIC cxx_std_20)
+target_link_libraries(qcae_engine_api PUBLIC qcae_application qcae_query qcae_contracts Qt6::Core)
+qcae_warnings(qcae_engine_api)
