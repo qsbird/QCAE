@@ -1,0 +1,58 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-07",
+    "title": "Mesh editing/deformation",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-38b52c36724fc027",
+        "path": "ArcherPre/archer-py/model/mmorph.h",
+        "observation": "Mesh editing/deformation responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "features/mesh_editing",
+  "authoritative_data": "Committed mesh stays document authority; edit feature owns selection/constraints/candidate/quality impact only until commit.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "PreviewMoveNodes(SelectionVersion,Delta:Length3)->ReadOnlyPreview.",
+      "MoveNodes(ids,delta,ExpectedRevision)->OneChangeSet.",
+      "ReplaceMesh(candidate,mapping)->ValidatedCompositeChangeSet with reject_unmapped policy."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "domain",
+      "query",
+      "validation",
+      "contracts",
+      "solver_profiles"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Typed feature operations provide bounded edit/deformation algorithms and quality validation.",
+    "Advanced morph/renumber providers register availability and mapping contracts."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Move nodes 4 and 5 by (0,1,0)mm changes exactly two records in one commit; one undo restores both.",
+    "Cancelled preview increments no revision and leaves committed model intact.",
+    "Outdated selection/candidate revision rejects; quality failures cannot partially apply.",
+    "Operation semantics/version and complete reverse deltas are recorded in persistent history."
+  ],
+  "acceptance_case_ids": [
+    "BP-07",
+    "SK-04",
+    "F03",
+    "F15",
+    "F21"
+  ]
+}

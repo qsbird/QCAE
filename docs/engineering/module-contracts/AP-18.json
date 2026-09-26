@@ -1,0 +1,72 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-18",
+    "title": "SDK/script/CLI/AI entry",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-62d198f22a6b886d",
+        "path": "ArcherPreConsole/main.cpp",
+        "observation": "SDK/script/CLI/AI entry responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-fd402a32df8a60bf",
+        "path": "ArcherModelcore/src/mappwrapperpy.cpp",
+        "observation": "SDK/script/CLI/AI entry responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-848eba8496d4f447",
+        "path": "ArcherPythonInterpreter/pyinterpreter.cpp",
+        "observation": "SDK/script/CLI/AI entry responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-ea9770f6e233369f",
+        "path": "cloud/server_rendering.proto",
+        "observation": "SDK/script/CLI/AI entry responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "clients/extensions",
+  "authoritative_data": "GUI/CLI/thin script/AI clients own requests and transient resources; one local engine owns document state, services, transactions and history.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "ClientSDK.invoke(OperationId,Version,Identity,TypedInput)->StructuredResult.",
+      "CapabilityDiscovery()->Descriptors/TruthfulAvailability for every entry.",
+      "ResourceSubscription(sequence,version)->DeltaOrResnapshot and structured logs."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "contracts",
+      "client_sdk",
+      "ipc_local"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Language bindings/MCP adapt the same protocol/descriptor schemas.",
+    "Transport adapters are replaceable; remote servers and real AI integration remain outside this inventory delivery."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "GUI/CLI/thin script representative sequences produce identical semantics through the same handlers.",
+    "Entries do not instantiate a second authoritative model or bypass write coordinator.",
+    "Disconnect/delayed replies preserve commit facts/idempotency; gaps cause snapshot refresh.",
+    "Wire/operation/schema versions and supported capability negotiation reject unknown or incompatible inputs."
+  ],
+  "acceptance_case_ids": [
+    "BP-18",
+    "SK-04",
+    "EXT-05",
+    "F05",
+    "F16",
+    "F17"
+  ]
+}

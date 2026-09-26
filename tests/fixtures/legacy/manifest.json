@@ -1,0 +1,312 @@
+{
+  "baseline_commit": "62e2b1d",
+  "capture_command": "python3 tools/capture_legacy_fixtures.py --engine <pinned-legacy-engine> --cli <pinned-legacy-cli>",
+  "declared_legacy_schemas": {
+    "model_records": [
+      1
+    ],
+    "project": [
+      1
+    ],
+    "sqlite_envelope": [
+      1
+    ],
+    "workspace": [
+      2
+    ]
+  },
+  "fixtures": [
+    {
+      "bytes": 8192,
+      "counts": {},
+      "expectation_path": "saved-empty.expected.json",
+      "expectation_sha256": "5a3ab93350ce3c5bb98fab820747d7c11307de6fb050a7a28f9f132507511b22",
+      "fixture_id": "saved-empty",
+      "kind": "project",
+      "path": "saved-empty.qcae",
+      "profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      },
+      "schema": {
+        "capture": "writer-exited; WAL checkpoint; SQLite API backup validated; exact-byte copy",
+        "checkpoint_result": [
+          0,
+          -1,
+          -1
+        ],
+        "integrity_check": "ok",
+        "model_record_schema": 1,
+        "payload_bytes": 251,
+        "payload_marker": "QCAE-PROJECT",
+        "payload_sha256": "fb3e6eba2fe9fbea7e0b7f612bdca741cea2146ebb278a1d19ae4978dcea87ba",
+        "payload_version": 1,
+        "sqlite_application_id": 1363362128,
+        "sqlite_user_version": 1
+      },
+      "sha256": "a7b872b00663a60c9c2a740c50daa9d12056020326109e5932c60002c7c43eb3",
+      "transcript_path": "saved-empty.ipc.json",
+      "transcript_sha256": "a201031a4ed61381ba11d5b05255dc71ef249414d7378be63aeb3cceed5e0c49"
+    },
+    {
+      "bytes": 12288,
+      "counts": {
+        "analysis": 1,
+        "beam": 1,
+        "constraint": 1,
+        "force": 1,
+        "include": 4,
+        "material": 1,
+        "node": 2,
+        "section": 1
+      },
+      "expectation_path": "saved-beam.expected.json",
+      "expectation_sha256": "bcdf75ae41a05faa4e59eb515c7a24f693733b9da87735285d12002d25997a93",
+      "fixture_id": "saved-beam",
+      "kind": "project",
+      "path": "saved-beam.qcae",
+      "profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      },
+      "schema": {
+        "capture": "writer-exited; WAL checkpoint; SQLite API backup validated; exact-byte copy",
+        "checkpoint_result": [
+          0,
+          -1,
+          -1
+        ],
+        "integrity_check": "ok",
+        "model_record_schema": 1,
+        "payload_bytes": 5095,
+        "payload_marker": "QCAE-PROJECT",
+        "payload_sha256": "25714bbd32f67539f9c53d2bd96ccb42649da7f06f55df36253a4000ef015329",
+        "payload_version": 1,
+        "sqlite_application_id": 1363362128,
+        "sqlite_user_version": 1
+      },
+      "sha256": "d479172fe3f1eee7eb896b188af8200edc99a9b04bf01bf90e9fb429301e4400",
+      "transcript_path": "saved-beam.ipc.json",
+      "transcript_sha256": "5b143f2aba80bee6c371c7b55350e1fa19b04861cf0edefcda2068f857797454"
+    },
+    {
+      "bytes": 12288,
+      "counts": {
+        "analysis": 1,
+        "assembly": 1,
+        "beam": 1,
+        "constraint": 1,
+        "force": 1,
+        "include": 4,
+        "material": 1,
+        "node": 2,
+        "part": 1,
+        "section": 1,
+        "set": 1
+      },
+      "expectation_path": "saved-organization.expected.json",
+      "expectation_sha256": "caac49539388cb0ea61b2a180da7c6fa0944c9b22fc722d9efb47546c0fa7ad9",
+      "fixture_id": "saved-organization",
+      "kind": "project",
+      "path": "saved-organization.qcae",
+      "profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      },
+      "schema": {
+        "capture": "writer-exited; WAL checkpoint; SQLite API backup validated; exact-byte copy",
+        "checkpoint_result": [
+          0,
+          -1,
+          -1
+        ],
+        "integrity_check": "ok",
+        "model_record_schema": 1,
+        "payload_bytes": 5626,
+        "payload_marker": "QCAE-PROJECT",
+        "payload_sha256": "1176ce7626343ea63b4b75e58d603828d5d51be39db0820517c6b688a357641a",
+        "payload_version": 1,
+        "sqlite_application_id": 1363362128,
+        "sqlite_user_version": 1
+      },
+      "sha256": "6d00dadddaf19d4c1442f5a496493b55bf7162515dfd22bcc9133f016223558a",
+      "transcript_path": "saved-organization.ipc.json",
+      "transcript_sha256": "3990906134335a2f9222ce3c9d234c2cb9148760419f9b872aeefe5d3f935f36"
+    },
+    {
+      "bytes": 32768,
+      "counts": {
+        "analysis": 1,
+        "beam": 1,
+        "constraint": 1,
+        "force": 1,
+        "include": 4,
+        "material": 1,
+        "node": 2,
+        "section": 1
+      },
+      "expectation_path": "unsaved-workspace.expected.json",
+      "expectation_sha256": "63294e435430ae7187d0848e6abe56db27c3ecb425a157a062eb124f9ae3c92c",
+      "fixture_id": "unsaved-workspace",
+      "kind": "workspace",
+      "path": "unsaved-workspace.sqlite",
+      "profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      },
+      "schema": {
+        "capture": "writer-exited; WAL checkpoint; SQLite API backup validated; exact-byte copy",
+        "checkpoint_result": [
+          0,
+          0,
+          0
+        ],
+        "integrity_check": "ok",
+        "model_record_schema": 1,
+        "payload_bytes": 15368,
+        "payload_marker": "QCAE-WORKSPACE",
+        "payload_sha256": "e1e398b3e4f22e8b5f9ea2d79bfd9fe5ac9aaae85fa80027573a08e7a6d6da71",
+        "payload_version": 2,
+        "sqlite_application_id": 1363362135,
+        "sqlite_user_version": 1
+      },
+      "sha256": "a75876fe3f2c5145154edd42401b82d0089ae399c62af3bcd539031d7758f5fe",
+      "transcript_path": "unsaved-workspace.ipc.json",
+      "transcript_sha256": "f42707ef1406b0c1a5e46306df9ba57c5ec1cab6e76fe21bc8f79f58e143160f"
+    },
+    {
+      "bytes": 32768,
+      "counts": {
+        "analysis": 1,
+        "beam": 1,
+        "constraint": 1,
+        "force": 1,
+        "include": 4,
+        "material": 1,
+        "node": 2,
+        "section": 1
+      },
+      "expectation_path": "redo-workspace.expected.json",
+      "expectation_sha256": "e06e6e4988e094f34025b7b7f413030b017df634f3ed1ccaec5cb17fdb2aa55e",
+      "fixture_id": "redo-workspace",
+      "kind": "workspace",
+      "path": "redo-workspace.sqlite",
+      "profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      },
+      "schema": {
+        "capture": "writer-exited; WAL checkpoint; SQLite API backup validated; exact-byte copy",
+        "checkpoint_result": [
+          0,
+          0,
+          0
+        ],
+        "integrity_check": "ok",
+        "model_record_schema": 1,
+        "payload_bytes": 15608,
+        "payload_marker": "QCAE-WORKSPACE",
+        "payload_sha256": "72ffe0964a61abda953f15326905de3af61e51e9278588885a55864e46f2944c",
+        "payload_version": 2,
+        "sqlite_application_id": 1363362135,
+        "sqlite_user_version": 1
+      },
+      "sha256": "75cdfd6d799cf2503405ef8013f07dffa41b1a669f2bd97dfb21e00f0cd8ab0b",
+      "transcript_path": "redo-workspace.ipc.json",
+      "transcript_sha256": "92d89b26e1c72343134796c28998f5c36856bcff3b211ad98bc693b56ea5fb0c"
+    },
+    {
+      "bytes": 12288,
+      "counts": {
+        "analysis": 1,
+        "assembly": 1,
+        "beam": 1,
+        "constraint": 1,
+        "force": 1,
+        "include": 4,
+        "material": 1,
+        "node": 2,
+        "part": 1,
+        "section": 1,
+        "set": 1
+      },
+      "expectation_path": "all-supported-entities.expected.json",
+      "expectation_sha256": "6135e9e05350c63ce50074d6c2187aa11edd7345cbfc2746387ba15123039adb",
+      "fixture_id": "all-supported-entities",
+      "kind": "project",
+      "path": "all-supported-entities.qcae",
+      "profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      },
+      "schema": {
+        "capture": "writer-exited; WAL checkpoint; SQLite API backup validated; exact-byte copy",
+        "checkpoint_result": [
+          0,
+          -1,
+          -1
+        ],
+        "integrity_check": "ok",
+        "model_record_schema": 1,
+        "payload_bytes": 5630,
+        "payload_marker": "QCAE-PROJECT",
+        "payload_sha256": "5af2d5782a1aed8ce85a2a12b7881f3cb4ff3687d668be0f5e9a3f04e64a9dca",
+        "payload_version": 1,
+        "sqlite_application_id": 1363362128,
+        "sqlite_user_version": 1
+      },
+      "sha256": "b9b2bd7c3fd37aaedc25f83e5a7a0a757648f511255f46b8e7cd196e5f7a9d32",
+      "transcript_path": "all-supported-entities.ipc.json",
+      "transcript_sha256": "446046976b7a3f1eacc7ceacbc2ce12c43579de6dce61ee6d076e00b584d4185"
+    }
+  ],
+  "golden_database_exception": "Explicitly authorized immutable legacy test fixtures; ordinary runtime databases remain excluded from commits.",
+  "inputs": [
+    {
+      "path": "inputs/cantilever.bdf",
+      "sha256": "41802721481267814dc89e066c4a919b0250ff85a9fc2beea75e4b6dc6e45f74"
+    },
+    {
+      "path": "inputs/mesh/beams.bdf",
+      "sha256": "d3667ef9f72b90fd71bc4a03c8413fb0716327f7f1a7ae1518cd143d64ff36b9"
+    },
+    {
+      "path": "inputs/mesh/nodes.bdf",
+      "sha256": "4eb841a25a1e65bf630e2d0d5ede5bbea8e5254f772074ead26d02a9cf5c066c"
+    },
+    {
+      "path": "inputs/properties.bdf",
+      "sha256": "bed3e047f509d80a5a6e3dec07dd7eabeffdb76b1e492865e90f0b6769f8e76d"
+    }
+  ],
+  "manifest_version": 1,
+  "producer": {
+    "api_version": "1.1",
+    "binary_origin": "existing build-desktop binaries; no rebuild",
+    "cli_sha256": "78f32e39651588b9fd77aefb85e56dfabb82d2c25222c3531a9e8217fc583825",
+    "engine_sha256": "b4f2cca68f2c83abdfd6d404f70f0d638613dc9890a69cd8a00623d5945b9799",
+    "sqlite_python_version": "3.50.4"
+  },
+  "relocation_policy": "project snapshots open at any new path; workspace fixtures never saved, saved_path empty; old-engine READONLY startup requires WAL sidecars primed by SQLite on a disposable copy; do not rewrite golden bytes",
+  "same_product_source_commit": "afb9829",
+  "supported_entity_kinds": [
+    "node",
+    "beam",
+    "material",
+    "section",
+    "part",
+    "assembly",
+    "set",
+    "include",
+    "force",
+    "constraint",
+    "analysis"
+  ],
+  "validation_scope": "old-engine normal-open/recover/redo on copies and SQLite integrity; migration not tested"
+}

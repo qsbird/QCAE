@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "baseline_commit": "62e2b1d",
+  "branch": "codex/platform-skeleton",
+  "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
+  "updated_utc": "2026-09-26T05:37:25Z",
+  "status": "in_progress",
+  "phases": {
+    "R0": "in_progress",
+    "R1": "in_progress",
+    "R2": "design_in_progress",
+    "R3": "not_started",
+    "R4": "not_started",
+    "R5": "not_started"
+  },
+  "quantitative_gates_passed": [],
+  "assignments": [
+    {"task": "R2 core interfaces and data/transaction design", "model": "gpt-6-astra", "reasoning": "ultra", "agent": "r2_core_architect"},
+    {"task": "R1 module ownership and build isolation", "model": "gpt-6-astra", "reasoning": "high", "agent": "r1_modules"},
+    {"task": "R0 immutable legacy fixtures", "model": "gpt-6-sol", "reasoning": "high", "agent": "r0_legacy_fixtures"},
+    {"task": "R0 reference inventory and contracts", "model": "gpt-6-sol", "reasoning": "high", "agent": "r0_reference_inventory"}
+  ],
+  "verified_evidence": [
+    {"scope": "pre-migration pure-core Release regression", "passed": 12, "total": 12, "note": "R1 agent /private/tmp/qcae-r1-baseline; not a new skeleton gate pass"}
+  ],
+  "notes": [
+    "Existing .idea is preserved and not committed.",
+    "Agents own nonoverlapping files; only coordinator creates git commits.",
+    "Pending or partially implemented metrics are never marked passed."
+  ]
+}

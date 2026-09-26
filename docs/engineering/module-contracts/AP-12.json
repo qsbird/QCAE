@@ -1,0 +1,76 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-12",
+    "title": "Operations/atomic history",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-723016fa400f4655",
+        "path": "ArcherModelcore/public/command.h",
+        "observation": "Operations/atomic history responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-af72d7f1bbe7cfbb",
+        "path": "ArcherModelcore/command/commandmanager.cpp",
+        "observation": "Operations/atomic history responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-91fc55b92f7240fc",
+        "path": "ArcherModelcore/src/mundomanager.cpp",
+        "observation": "Operations/atomic history responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "operations/history",
+  "authoritative_data": "The application commit coordinator owns validated atomic model/history/idempotency publication; history owns apply/reverse deltas without concrete entity dispatch.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "OperationDescriptor(id,version)->TypedParameters/Units/Preconditions/Outputs/Errors/Effects.",
+      "ExecuteOperation(identity,expected_revision,idempotency_key,input)->CommitFact.",
+      "Undo/Redo(identity,expected_revision)->NewRevision and semantically reversible ChangeSet."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "domain",
+      "query",
+      "validation",
+      "contracts",
+      "solver_profiles",
+      "types",
+      "ports"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Operation registrations supply typed handlers and feature-specific candidate validation.",
+    "Generic coordinator/history traversal uses schema/deltas; entity extensions do not add type branches."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Same-key/same-params retry returns original fact; same-key/different-params conflicts.",
+    "Atomic DB/RAM publication prevents half/duplicate commits, including undo then replay of old successful request.",
+    "BP-12 100 undo/redo cycles after one move have exact revision delta 201 and exact golden states.",
+    "Persisted operation/delta/schema versions and history quotas govern recovery; unsupported versions reject."
+  ],
+  "acceptance_case_ids": [
+    "BP-12",
+    "SK-04",
+    "SK-06",
+    "EXT-02",
+    "F03",
+    "F04",
+    "F05",
+    "F06",
+    "F07",
+    "F08",
+    "F09"
+  ]
+}

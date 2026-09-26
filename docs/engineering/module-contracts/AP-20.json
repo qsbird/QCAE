@@ -1,0 +1,72 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-20",
+    "title": "Runtime/configuration/build/delivery",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-77c1a3a49620f50a",
+        "path": "ArcherModelcore/src/mconfigmanager.cpp",
+        "observation": "Runtime/configuration/build/delivery responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-1e7de1ae2d059d21",
+        "path": "CMakeLists.txt",
+        "observation": "Runtime/configuration/build/delivery responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-9b528633a4641368",
+        "path": "ArcherPre/tests/cxx/CMakeLists.txt",
+        "observation": "Runtime/configuration/build/delivery responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "runtime/platform_support",
+  "authoritative_data": "Runtime owns durable Task records/progress/cancellation/event sequences/quotas; platform support owns logs/preferences/resource paths/build dependency configuration, separate from engineering document state.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "SubmitTask(FrozenInput,Limits)->TaskId+QueuedState.",
+      "RequestCancel(TaskId)->CancelRequestedOrCommittedFact.",
+      "TaskStatus/EventCursor(TaskId)->VersionedState/Artifacts/Progress; ConfigureRuntime()->LayeredConfig."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "types",
+      "contracts",
+      "ports"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Task workers and artifact publishers implement ports with bounded resources.",
+    "Optional license/product policy stays a platform adapter.",
+    "Build/packaging variants declare dependencies/resources/regression fixtures without introducing vendor types in core contracts."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Two workers/eight queued tasks: ninth pending request returns RESOURCE_LIMIT; records retain transition/event sequence.",
+    "Accepted precommit cancel commits no model transaction; postcommit cancel does not roll back.",
+    "Restart marks interrupted work explicitly; incomplete artifacts cannot be published as successful.",
+    "Task/event/config/resource and dependency manifest versions are frozen; hardware-dependent performance evidence remains pending."
+  ],
+  "acceptance_case_ids": [
+    "BP-20",
+    "SK-07",
+    "SK-12",
+    "SK-14",
+    "F12",
+    "F13",
+    "F14",
+    "F15",
+    "F16",
+    "F20"
+  ]
+}

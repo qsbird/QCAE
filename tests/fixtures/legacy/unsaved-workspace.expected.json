@@ -1,0 +1,489 @@
+{
+  "snapshot": {
+    "counts": {
+      "analysis": 1,
+      "beam": 1,
+      "constraint": 1,
+      "force": 1,
+      "include": 4,
+      "material": 1,
+      "node": 2,
+      "section": 1
+    },
+    "document": {
+      "content_state": "state-01c8e4088c5714da95e62d5c9e191321-9",
+      "dirty": true,
+      "document_epoch": "epoch-01c8e4088c5714da95e62d5c9e191321-2",
+      "document_id": "doc-01c8e4088c5714da95e62d5c9e191321-1",
+      "durable": true,
+      "material_count": 1,
+      "name": "R0 legacy unsaved-workspace",
+      "project_id": "",
+      "revision": "2",
+      "saved_content_state": "",
+      "saved_path": ""
+    },
+    "entities": [
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1",
+        "kind": "material",
+        "name": "MAT1 1",
+        "poisson_ratio": 0.3,
+        "sources": [
+          {
+            "include_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf",
+            "namespace": "MAT1",
+            "number": "1",
+            "source_model_id": "5fd543de-53ee-431e-be0d-2431b8d3399d"
+          }
+        ],
+        "young_modulus_mpa": 200000
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1",
+        "kind": "node",
+        "name": "",
+        "position_mm": [
+          0,
+          0,
+          0
+        ],
+        "sources": [
+          {
+            "include_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf",
+            "namespace": "GRID",
+            "number": "1",
+            "source_model_id": "5fd543de-53ee-431e-be0d-2431b8d3399d"
+          }
+        ]
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2",
+        "kind": "node",
+        "name": "",
+        "position_mm": [
+          100,
+          0,
+          0
+        ],
+        "sources": [
+          {
+            "include_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf",
+            "namespace": "GRID",
+            "number": "2",
+            "source_model_id": "5fd543de-53ee-431e-be0d-2431b8d3399d"
+          }
+        ]
+      },
+      {
+        "area_mm2": 100,
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1",
+        "i1_mm4": 833.333,
+        "i2_mm4": 1000,
+        "kind": "section",
+        "material_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1",
+        "name": "PBAR 1",
+        "sources": [
+          {
+            "include_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf",
+            "namespace": "PBAR",
+            "number": "1",
+            "source_model_id": "5fd543de-53ee-431e-be0d-2431b8d3399d"
+          }
+        ],
+        "torsion_mm4": 2000
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1",
+        "kind": "beam",
+        "name": "",
+        "nodes": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1",
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2"
+        ],
+        "orientation": [
+          0,
+          0,
+          1
+        ],
+        "section_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1",
+        "sources": [
+          {
+            "include_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/beams.bdf",
+            "namespace": "CBAR",
+            "number": "1",
+            "source_model_id": "5fd543de-53ee-431e-be0d-2431b8d3399d"
+          }
+        ]
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf",
+        "kind": "include",
+        "members": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10",
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20"
+        ],
+        "name": "cantilever.bdf",
+        "path": "cantilever.bdf",
+        "sources": []
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf",
+        "kind": "include",
+        "members": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1",
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2"
+        ],
+        "name": "mesh/nodes.bdf",
+        "parent_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf",
+        "path": "mesh/nodes.bdf",
+        "sources": []
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/beams.bdf",
+        "kind": "include",
+        "members": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1"
+        ],
+        "name": "mesh/beams.bdf",
+        "parent_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf",
+        "path": "mesh/beams.bdf",
+        "sources": []
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf",
+        "kind": "include",
+        "members": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1",
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1"
+        ],
+        "name": "properties.bdf",
+        "parent_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf",
+        "path": "properties.bdf",
+        "sources": []
+      },
+      {
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10",
+        "force_n": [
+          0,
+          -100,
+          0
+        ],
+        "kind": "force",
+        "name": "",
+        "node_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2",
+        "sources": [
+          {
+            "include_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf",
+            "namespace": "FORCE",
+            "number": "10",
+            "source_model_id": "5fd543de-53ee-431e-be0d-2431b8d3399d"
+          }
+        ]
+      },
+      {
+        "dofs": "123456",
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20",
+        "kind": "constraint",
+        "name": "",
+        "nodes": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1"
+        ],
+        "sources": [
+          {
+            "include_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf",
+            "namespace": "SPC1",
+            "number": "20",
+            "source_model_id": "5fd543de-53ee-431e-be0d-2431b8d3399d"
+          }
+        ]
+      },
+      {
+        "constraints": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20"
+        ],
+        "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:ANALYSIS:1",
+        "forces": [
+          "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10"
+        ],
+        "kind": "analysis",
+        "name": "Nastran linear static",
+        "profile_ref": {
+          "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+          "profile_id": "qcae.nastran.linear-static",
+          "profile_version": "0.1.0"
+        },
+        "sources": []
+      }
+    ],
+    "exports": [
+      {
+        "analysis_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:ANALYSIS:1",
+        "export_report": {
+          "complete": true,
+          "issues": [
+            {
+              "blocking": false,
+              "code": "name_loss",
+              "line": 0,
+              "message": "platform names are not represented in BDF",
+              "resource": ""
+            },
+            {
+              "blocking": false,
+              "code": "lexical_normalization",
+              "line": 0,
+              "message": "comments and original numeric formatting are normalized",
+              "resource": ""
+            }
+          ],
+          "profile_ref": {
+            "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+            "profile_id": "qcae.nastran.linear-static",
+            "profile_version": "0.1.0"
+          }
+        },
+        "identities": [
+          {
+            "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1",
+            "namespace": "GRID",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2",
+            "namespace": "GRID",
+            "number": "2"
+          },
+          {
+            "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1",
+            "namespace": "MAT1",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1",
+            "namespace": "PBAR",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1",
+            "namespace": "CBAR",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10",
+            "namespace": "FORCE",
+            "number": "10"
+          },
+          {
+            "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20",
+            "namespace": "SPC1",
+            "number": "20"
+          }
+        ],
+        "profile_ref": {
+          "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+          "profile_id": "qcae.nastran.linear-static",
+          "profile_version": "0.1.0"
+        },
+        "published": false,
+        "resources": [
+          {
+            "path": "cantilever.bdf",
+            "text": "SOL 101\nCEND\nSUBCASE 1\nSPC = 20\nLOAD = 10\nDISPLACEMENT = ALL\nSPCFORCES = ALL\nBEGIN BULK\nINCLUDE 'properties.bdf'\nINCLUDE 'mesh/nodes.bdf'\nFORCE,10,2,0,1.0,0.0,-100.0,0.0\nSPC1,20,123456,1\nENDDATA\n"
+          },
+          {
+            "path": "mesh/beams.bdf",
+            "text": "CBAR,1,1,1,2,0.0,0.0,1.0\n"
+          },
+          {
+            "path": "mesh/nodes.bdf",
+            "text": "INCLUDE 'beams.bdf'\nGRID,1,,0.0,0.0,0.0\nGRID,2,,100.0,0.0,0.0\n"
+          },
+          {
+            "path": "properties.bdf",
+            "text": "MAT1,1,200000.0,,0.3\nPBAR,1,1,100.0,833.333,1000.0,2000.0\n"
+          }
+        ],
+        "revision": "2",
+        "root_resource": "cantilever.bdf"
+      }
+    ],
+    "history": {
+      "cursor": 2,
+      "items": [
+        {
+          "applied": true,
+          "label": "Import model",
+          "transaction_id": "transaction-01c8e4088c5714da95e62d5c9e191321-5"
+        },
+        {
+          "applied": true,
+          "label": "Set Young modulus",
+          "transaction_id": "transaction-01c8e4088c5714da95e62d5c9e191321-8"
+        }
+      ],
+      "revision": "2"
+    },
+    "profile_ref": {
+      "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+      "profile_id": "qcae.nastran.linear-static",
+      "profile_version": "0.1.0"
+    },
+    "references": [
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1",
+        "role": "source.include",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1",
+        "role": "source.include",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2",
+        "role": "source.include",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1",
+        "role": "section.material",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1",
+        "role": "source.include",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1",
+        "role": "beam.section",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1",
+        "role": "beam.node",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1",
+        "role": "beam.node",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1",
+        "role": "source.include",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/beams.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf",
+        "role": "include.member",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf",
+        "role": "include.member",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf",
+        "role": "include.parent",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf",
+        "role": "include.member",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf",
+        "role": "include.member",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/beams.bdf",
+        "role": "include.parent",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/nodes.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:mesh/beams.bdf",
+        "role": "include.member",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:CBAR:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf",
+        "role": "include.parent",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf",
+        "role": "include.member",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:properties.bdf",
+        "role": "include.member",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:PBAR:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10",
+        "role": "force.node",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:2"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10",
+        "role": "source.include",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20",
+        "role": "constraint.node",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:GRID:1"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20",
+        "role": "source.include",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:include:cantilever.bdf"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:ANALYSIS:1",
+        "role": "analysis.force",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:FORCE:10"
+      },
+      {
+        "from": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:ANALYSIS:1",
+        "role": "analysis.constraint",
+        "to": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:SPC1:20"
+      }
+    ],
+    "source_identifier_count": 7,
+    "summary": {
+      "analysis_count": 1,
+      "assembly_count": 0,
+      "beam_count": 1,
+      "content_state": "state-01c8e4088c5714da95e62d5c9e191321-9",
+      "dirty": true,
+      "document_epoch": "epoch-01c8e4088c5714da95e62d5c9e191321-2",
+      "document_id": "doc-01c8e4088c5714da95e62d5c9e191321-1",
+      "durable": true,
+      "include_count": 4,
+      "material_count": 1,
+      "materials": [
+        {
+          "entity_id": "nastran:36:5fd543de-53ee-431e-be0d-2431b8d3399d:MAT1:1",
+          "name": "MAT1 1",
+          "young_modulus_mpa": 200000
+        }
+      ],
+      "name": "R0 legacy unsaved-workspace",
+      "node_count": 2,
+      "part_count": 0,
+      "project_id": "",
+      "revision": "2",
+      "saved_content_state": "",
+      "saved_path": "",
+      "section_count": 1,
+      "set_count": 0
+    }
+  }
+}

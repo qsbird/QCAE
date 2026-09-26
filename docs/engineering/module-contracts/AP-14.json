@@ -1,0 +1,66 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-14",
+    "title": "Validation/issues/repair",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-eb8808613eda7c03",
+        "path": "ArcherPre/gui/guipanel/checkitem.h",
+        "observation": "Validation/issues/repair responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-553a86b2c2a4674d",
+        "path": "ArcherPre/gui/guipanel/checkmanager2d.h",
+        "observation": "Validation/issues/repair responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-8fe99291ea24e025",
+        "path": "ArcherPre/archer-py/model/mfeaturechecker.h",
+        "observation": "Validation/issues/repair responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "validation",
+  "authoritative_data": "RuleCatalog owns rule identity/tolerance/evidence semantics; Issue records retain input revision, entity location, rule version and stale/current status.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "CheckRules(SessionVersion,Scope,RuleIds)->VersionedIssues.",
+      "LocateIssue(IssueId)->EntityIds+Evidence+Tolerance.",
+      "PlanRepair(IssueId)->TypedOperationPlan; execute through shared coordinator."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "domain",
+      "query",
+      "contracts",
+      "solver_profiles"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Packages/features register named rules and optional repair-plan builders.",
+    "Issue UI consumes stable location/evidence and service operations."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Missing-load fixture produces one Issue located on the analysis; repair+recheck clears that rule issue.",
+    "Old issues cannot remain current after relevant input changes.",
+    "Repair never writes the model directly; stale issue repair plans conflict or recompute explicitly.",
+    "Rule/Issue evidence schemas and tolerance versions persist; unsupported rule versions are unavailable."
+  ],
+  "acceptance_case_ids": [
+    "BP-14",
+    "SK-08",
+    "F02",
+    "F03"
+  ]
+}

@@ -1,0 +1,1021 @@
+[
+  {
+    "context": {},
+    "idempotency_key": "create",
+    "operation": "project.create",
+    "parameters": {
+      "name": "R0 legacy saved-beam"
+    },
+    "response": {
+      "data": {
+        "content_state": "state-36065f9fe8c5475a064183c6caec218d-3",
+        "dirty": false,
+        "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+        "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+        "durable": true,
+        "material_count": 0,
+        "name": "R0 legacy saved-beam",
+        "project_id": "",
+        "revision": "0",
+        "saved_content_state": "",
+        "saved_path": ""
+      },
+      "request_id": "ipc-test-3a61036e-2b05-4e95-a122-99ff788995bd",
+      "revision": "0",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "0"
+    },
+    "idempotency_key": null,
+    "operation": "changes.preview",
+    "parameters": {
+      "command": "model.import",
+      "resources": [
+        {
+          "path": "cantilever.bdf",
+          "text": "SOL 101\nCEND\nSUBCASE 1\nSPC = 20\nLOAD = 10\nDISPLACEMENT = ALL\nSPCFORCES = ALL\nBEGIN BULK\nINCLUDE 'mesh/nodes.bdf'\nINCLUDE 'properties.bdf'\nFORCE,10,2,0,100,0,-1,0\nSPC1,20,123456,1\nENDDATA\n"
+        },
+        {
+          "path": "mesh/beams.bdf",
+          "text": "CBAR,1,1,1,2,0.0,0,1\n"
+        },
+        {
+          "path": "mesh/nodes.bdf",
+          "text": "GRID,1,,0,0,0\nGRID,2,,100,0,0\nINCLUDE 'beams.bdf'\n"
+        },
+        {
+          "path": "properties.bdf",
+          "text": "MAT1,1,210000,,0.3\nPBAR,1,1,100,833.333,1000,2000\n"
+        }
+      ],
+      "root_resource": "cantilever.bdf",
+      "source_profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      },
+      "unit_system": "mm-N-MPa"
+    },
+    "response": {
+      "data": {
+        "affected_entity_id": "",
+        "creates_entity": false,
+        "entity_count": 12,
+        "import_report": {
+          "complete": true,
+          "issues": [],
+          "profile_ref": {
+            "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+            "profile_id": "qcae.nastran.linear-static",
+            "profile_version": "0.1.0"
+          },
+          "supported_records": 7
+        },
+        "preview_id": "preview-36065f9fe8c5475a064183c6caec218d-4",
+        "revision": "0"
+      },
+      "request_id": "ipc-test-6eddb42a-e7d2-4dfe-bcb7-512e0b3c6266",
+      "revision": "0",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "0"
+    },
+    "idempotency_key": "import",
+    "operation": "changes.commit",
+    "parameters": {
+      "preview_id": "preview-36065f9fe8c5475a064183c6caec218d-4"
+    },
+    "response": {
+      "data": {
+        "committed_revision": "1",
+        "current_content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "current_revision": "1",
+        "replayed": false,
+        "transaction_id": "transaction-36065f9fe8c5475a064183c6caec218d-5"
+      },
+      "request_id": "ipc-test-1dac4d39-ffb6-42f3-97c2-e9d23f9f9e67",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {},
+    "idempotency_key": null,
+    "operation": "project.current",
+    "parameters": {},
+    "response": {
+      "data": {
+        "content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "dirty": true,
+        "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+        "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+        "durable": true,
+        "material_count": 1,
+        "name": "R0 legacy saved-beam",
+        "project_id": "",
+        "revision": "1",
+        "saved_content_state": "",
+        "saved_path": ""
+      },
+      "request_id": "ipc-test-c4b59dff-dd0a-48e4-a6a8-efb23731dcdc",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": "save",
+    "operation": "project.save",
+    "parameters": {
+      "path": "/var/folders/vf/j_dmv8cd4yb3dt0sqw_29w940000gn/T/qcae-legacy-capture-4a4urtvp/saved-beam.qcae"
+    },
+    "response": {
+      "data": {
+        "content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "dirty": false,
+        "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+        "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+        "durable": true,
+        "material_count": 1,
+        "name": "R0 legacy saved-beam",
+        "project_id": "project-36065f9fe8c5475a064183c6caec218d-8",
+        "revision": "1",
+        "saved_content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "saved_path": "/private/var/folders/vf/j_dmv8cd4yb3dt0sqw_29w940000gn/T/qcae-legacy-capture-4a4urtvp/saved-beam.qcae"
+      },
+      "request_id": "ipc-test-7f9929a8-bf19-4731-845c-d193b7df53ba",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.query",
+    "parameters": {
+      "limit": 1000
+    },
+    "response": {
+      "data": {
+        "entities": [
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1",
+            "kind": "material",
+            "name": "MAT1 1",
+            "poisson_ratio": 0.3,
+            "sources": [
+              {
+                "include_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf",
+                "namespace": "MAT1",
+                "number": "1",
+                "source_model_id": "501a0edc-a8c4-4022-8a00-adc905486cd6"
+              }
+            ],
+            "young_modulus_mpa": 210000
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1",
+            "kind": "node",
+            "name": "",
+            "position_mm": [
+              0,
+              0,
+              0
+            ],
+            "sources": [
+              {
+                "include_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf",
+                "namespace": "GRID",
+                "number": "1",
+                "source_model_id": "501a0edc-a8c4-4022-8a00-adc905486cd6"
+              }
+            ]
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2",
+            "kind": "node",
+            "name": "",
+            "position_mm": [
+              100,
+              0,
+              0
+            ],
+            "sources": [
+              {
+                "include_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf",
+                "namespace": "GRID",
+                "number": "2",
+                "source_model_id": "501a0edc-a8c4-4022-8a00-adc905486cd6"
+              }
+            ]
+          },
+          {
+            "area_mm2": 100,
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1",
+            "i1_mm4": 833.333,
+            "i2_mm4": 1000,
+            "kind": "section",
+            "material_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1",
+            "name": "PBAR 1",
+            "sources": [
+              {
+                "include_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf",
+                "namespace": "PBAR",
+                "number": "1",
+                "source_model_id": "501a0edc-a8c4-4022-8a00-adc905486cd6"
+              }
+            ],
+            "torsion_mm4": 2000
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1",
+            "kind": "beam",
+            "name": "",
+            "nodes": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1",
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2"
+            ],
+            "orientation": [
+              0,
+              0,
+              1
+            ],
+            "section_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1",
+            "sources": [
+              {
+                "include_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/beams.bdf",
+                "namespace": "CBAR",
+                "number": "1",
+                "source_model_id": "501a0edc-a8c4-4022-8a00-adc905486cd6"
+              }
+            ]
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf",
+            "kind": "include",
+            "members": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10",
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20"
+            ],
+            "name": "cantilever.bdf",
+            "path": "cantilever.bdf",
+            "sources": []
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf",
+            "kind": "include",
+            "members": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1",
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2"
+            ],
+            "name": "mesh/nodes.bdf",
+            "parent_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf",
+            "path": "mesh/nodes.bdf",
+            "sources": []
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/beams.bdf",
+            "kind": "include",
+            "members": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1"
+            ],
+            "name": "mesh/beams.bdf",
+            "parent_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf",
+            "path": "mesh/beams.bdf",
+            "sources": []
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf",
+            "kind": "include",
+            "members": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1",
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1"
+            ],
+            "name": "properties.bdf",
+            "parent_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf",
+            "path": "properties.bdf",
+            "sources": []
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10",
+            "force_n": [
+              0,
+              -100,
+              0
+            ],
+            "kind": "force",
+            "name": "",
+            "node_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2",
+            "sources": [
+              {
+                "include_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf",
+                "namespace": "FORCE",
+                "number": "10",
+                "source_model_id": "501a0edc-a8c4-4022-8a00-adc905486cd6"
+              }
+            ]
+          },
+          {
+            "dofs": "123456",
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20",
+            "kind": "constraint",
+            "name": "",
+            "nodes": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1"
+            ],
+            "sources": [
+              {
+                "include_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf",
+                "namespace": "SPC1",
+                "number": "20",
+                "source_model_id": "501a0edc-a8c4-4022-8a00-adc905486cd6"
+              }
+            ]
+          },
+          {
+            "constraints": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20"
+            ],
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1",
+            "forces": [
+              "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10"
+            ],
+            "kind": "analysis",
+            "name": "Nastran linear static",
+            "profile_ref": {
+              "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+              "profile_id": "qcae.nastran.linear-static",
+              "profile_version": "0.1.0"
+            },
+            "sources": []
+          }
+        ],
+        "limit": 1000,
+        "offset": 0,
+        "revision": "1",
+        "total": 12
+      },
+      "request_id": "ipc-test-5d8f5057-6ca9-4502-9b87-e2775605c18f",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1",
+            "role": "source.include",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-431a71be-f816-4849-bc8a-c0c697f006c9",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1",
+            "role": "source.include",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-b2492f76-07b2-4f25-97a4-acf97547e530",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2",
+            "role": "source.include",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-3c3387dc-8baf-458f-9948-1629125b8e21",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1",
+            "role": "section.material",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1",
+            "role": "source.include",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-fb48acc3-52ad-4a1c-895c-f6f671d91119",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1",
+            "role": "beam.section",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1",
+            "role": "beam.node",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1",
+            "role": "beam.node",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1",
+            "role": "source.include",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/beams.bdf"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-f07ac42d-e12e-4d7b-8f0c-981bb42b8540",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf",
+            "role": "include.member",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf",
+            "role": "include.member",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-15c32880-8f45-4771-96e2-fb6322d7389c",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf",
+            "role": "include.parent",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf",
+            "role": "include.member",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf",
+            "role": "include.member",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-751c7192-f44c-4bde-b202-778fef3d84a4",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/beams.bdf"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/beams.bdf",
+            "role": "include.parent",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/nodes.bdf"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:mesh/beams.bdf",
+            "role": "include.member",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-4d87e014-8d57-4f15-b975-533168b27d5c",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf",
+            "role": "include.parent",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf",
+            "role": "include.member",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:properties.bdf",
+            "role": "include.member",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-9b7aa44b-b876-471f-9812-753f8e0d5e31",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10",
+            "role": "force.node",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10",
+            "role": "source.include",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-194082f9-1163-4914-8a9f-f61ee8988c2a",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20",
+            "role": "constraint.node",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20",
+            "role": "source.include",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:include:cantilever.bdf"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-8dc7c6a5-99cc-4df1-94f5-fdd21689c385",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "entity.references",
+    "parameters": {
+      "direction": "outgoing",
+      "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+    },
+    "response": {
+      "data": {
+        "affected_analyses": [
+          "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1"
+        ],
+        "references": [
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1",
+            "role": "analysis.force",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10"
+          },
+          {
+            "from": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1",
+            "role": "analysis.constraint",
+            "to": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-7f3510cf-fa25-4acb-99e9-97d1079a6c6f",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "model.export_preview",
+    "parameters": {
+      "analysis_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1",
+      "expected_profile_ref": {
+        "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+        "profile_id": "qcae.nastran.linear-static",
+        "profile_version": "0.1.0"
+      }
+    },
+    "response": {
+      "data": {
+        "analysis_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:ANALYSIS:1",
+        "export_report": {
+          "complete": true,
+          "issues": [
+            {
+              "blocking": false,
+              "code": "name_loss",
+              "line": 0,
+              "message": "platform names are not represented in BDF",
+              "resource": ""
+            },
+            {
+              "blocking": false,
+              "code": "lexical_normalization",
+              "line": 0,
+              "message": "comments and original numeric formatting are normalized",
+              "resource": ""
+            }
+          ],
+          "profile_ref": {
+            "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+            "profile_id": "qcae.nastran.linear-static",
+            "profile_version": "0.1.0"
+          }
+        },
+        "identities": [
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:1",
+            "namespace": "GRID",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:GRID:2",
+            "namespace": "GRID",
+            "number": "2"
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1",
+            "namespace": "MAT1",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:PBAR:1",
+            "namespace": "PBAR",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:CBAR:1",
+            "namespace": "CBAR",
+            "number": "1"
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:FORCE:10",
+            "namespace": "FORCE",
+            "number": "10"
+          },
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:SPC1:20",
+            "namespace": "SPC1",
+            "number": "20"
+          }
+        ],
+        "profile_ref": {
+          "definition_digest": "sha256:bb856be32336514d1aebf67b524ed0403664291cb4ba9e473e922ae7bb71b662",
+          "profile_id": "qcae.nastran.linear-static",
+          "profile_version": "0.1.0"
+        },
+        "published": false,
+        "resources": [
+          {
+            "path": "cantilever.bdf",
+            "text": "SOL 101\nCEND\nSUBCASE 1\nSPC = 20\nLOAD = 10\nDISPLACEMENT = ALL\nSPCFORCES = ALL\nBEGIN BULK\nINCLUDE 'properties.bdf'\nINCLUDE 'mesh/nodes.bdf'\nFORCE,10,2,0,1.0,0.0,-100.0,0.0\nSPC1,20,123456,1\nENDDATA\n"
+          },
+          {
+            "path": "mesh/beams.bdf",
+            "text": "CBAR,1,1,1,2,0.0,0.0,1.0\n"
+          },
+          {
+            "path": "mesh/nodes.bdf",
+            "text": "INCLUDE 'beams.bdf'\nGRID,1,,0.0,0.0,0.0\nGRID,2,,100.0,0.0,0.0\n"
+          },
+          {
+            "path": "properties.bdf",
+            "text": "MAT1,1,210000.0,,0.3\nPBAR,1,1,100.0,833.333,1000.0,2000.0\n"
+          }
+        ],
+        "revision": "1",
+        "root_resource": "cantilever.bdf"
+      },
+      "request_id": "ipc-test-b534d4eb-6558-4907-846e-efa20fe13905",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "model.summary",
+    "parameters": {},
+    "response": {
+      "data": {
+        "analysis_count": 1,
+        "assembly_count": 0,
+        "beam_count": 1,
+        "content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "dirty": false,
+        "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+        "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+        "durable": true,
+        "include_count": 4,
+        "material_count": 1,
+        "materials": [
+          {
+            "entity_id": "nastran:36:501a0edc-a8c4-4022-8a00-adc905486cd6:MAT1:1",
+            "name": "MAT1 1",
+            "young_modulus_mpa": 210000
+          }
+        ],
+        "name": "R0 legacy saved-beam",
+        "node_count": 2,
+        "part_count": 0,
+        "project_id": "project-36065f9fe8c5475a064183c6caec218d-8",
+        "revision": "1",
+        "saved_content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "saved_path": "/private/var/folders/vf/j_dmv8cd4yb3dt0sqw_29w940000gn/T/qcae-legacy-capture-4a4urtvp/saved-beam.qcae",
+        "section_count": 1,
+        "set_count": 0
+      },
+      "request_id": "ipc-test-826d3f9b-e210-42e4-a045-ca3589280964",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": null,
+    "operation": "history.list",
+    "parameters": {},
+    "response": {
+      "data": {
+        "cursor": 1,
+        "items": [
+          {
+            "applied": true,
+            "label": "Import model",
+            "transaction_id": "transaction-36065f9fe8c5475a064183c6caec218d-5"
+          }
+        ],
+        "revision": "1"
+      },
+      "request_id": "ipc-test-dd2b99fb-d3e9-44c3-a1ce-be7d007e566f",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "context": {
+      "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+      "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+      "expected_revision": "1"
+    },
+    "idempotency_key": "capture-close",
+    "operation": "project.close",
+    "parameters": {
+      "policy": "keep_recovery"
+    },
+    "response": {
+      "data": {
+        "content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "dirty": false,
+        "document_epoch": "epoch-36065f9fe8c5475a064183c6caec218d-2",
+        "document_id": "doc-36065f9fe8c5475a064183c6caec218d-1",
+        "durable": true,
+        "material_count": 1,
+        "name": "R0 legacy saved-beam",
+        "project_id": "project-36065f9fe8c5475a064183c6caec218d-8",
+        "revision": "1",
+        "saved_content_state": "state-36065f9fe8c5475a064183c6caec218d-6",
+        "saved_path": "/private/var/folders/vf/j_dmv8cd4yb3dt0sqw_29w940000gn/T/qcae-legacy-capture-4a4urtvp/saved-beam.qcae"
+      },
+      "request_id": "ipc-test-0a4898a8-e109-499e-8161-f251d4c24aec",
+      "revision": "1",
+      "status": "success"
+    }
+  }
+]

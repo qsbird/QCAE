@@ -1,0 +1,68 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-01",
+    "title": "Application/session/registration",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-c3f8309b2a535e15",
+        "path": "ArcherModelcore/src/mmodule.cpp",
+        "observation": "Application/session/registration responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-8dffdf5c583e6236",
+        "path": "ArcherModelcore/public/mappimp.h",
+        "observation": "Application/session/registration responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "application",
+  "authoritative_data": "The engine owns DocumentId/Epoch/Revision and an immutable capability catalog for the active document; clients hold projections.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "OpenDocument(ProjectRef)->SessionIdentity; normal open allocates DocId.",
+      "RecoverWorkspace(WorkspaceRef)->SessionIdentity; recovery preserves DocId and rotates Epoch.",
+      "DiscoverCapabilities(SessionIdentity)->VersionedOperationCatalog with truthful availability."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "contracts",
+      "domain",
+      "query",
+      "commands",
+      "history",
+      "analysis",
+      "validation",
+      "jobs",
+      "ports",
+      "solver_profiles"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Host composition wires concrete adapters through ports.",
+    "Static module/package registrars expose identity/dependencies/availability; no executable handler means unavailable."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Close disposes tools/read projections before the single document authority.",
+    "Open/recovery errors never activate an editable empty replacement.",
+    "Operation requests carry DocId/Epoch/expected_revision; stale identity rejects atomically.",
+    "API/catalog semantic version is explicit; unknown versions reject."
+  ],
+  "acceptance_case_ids": [
+    "BP-01",
+    "SK-01",
+    "SK-02",
+    "F04",
+    "F18"
+  ]
+}

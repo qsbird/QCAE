@@ -1,0 +1,59 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-03",
+    "title": "Geometry kernel/topology",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-8482eaf861047c52",
+        "path": "ArcherVCAD/include/ar_ivcad.h",
+        "observation": "Geometry kernel/topology responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-1f0a00fad7a993a7",
+        "path": "ArcherVCAD/src/occ/ar_ivcadocc.h",
+        "observation": "Geometry kernel/topology responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "geometry",
+  "authoritative_data": "GeometryId/topological adjacency/orientation and geometry revision belong to document geometry; backend handles stay private to the geometry adapter.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "CreateLine(start:Length3,end:Length3)->GeometryId via operation.",
+      "EvaluateCurve(GeometryId,u,SessionVersion)->Point3 with explicit length unit.",
+      "GeometryTopology(GeometryId)->OrientedAdjacency; projection/discretization report unsupported capabilities explicitly."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "types",
+      "contracts",
+      "ports"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Kernel adapter owns handle mapping, evaluation/projection and resource lifetime.",
+    "Geometry operations contribute typed candidates and replacement maps through transactions."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "The representative is one analytic line; complete CAD Boolean/surface kernels remain unavailable pending real adapters.",
+    "Candidate failure/cancellation releases handles and publishes no document changes.",
+    "Geometry replacement updates resource/manifold references and revision atomically.",
+    "Save/reopen preserves GeometryId; kernel payload/schema versions require explicit migration."
+  ],
+  "acceptance_case_ids": [
+    "BP-03",
+    "SK-05",
+    "F21"
+  ]
+}

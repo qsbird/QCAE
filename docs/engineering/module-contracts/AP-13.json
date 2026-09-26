@@ -1,0 +1,60 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-13",
+    "title": "Interaction/tool lifecycle/picking",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-fc3da668bf7669d0",
+        "path": "ArcherPre/gui/nx_base/templateribbonpanelmanager.h",
+        "observation": "Interaction/tool lifecycle/picking responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-c7e2d4de3bed1cfa",
+        "path": "ArcherPre/archer-py/model/mnodecreator.cpp",
+        "observation": "Interaction/tool lifecycle/picking responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "interaction",
+  "authoritative_data": "Client ToolSession owns transient collection/selection/preview, with explicit source document/view version; committed model remains engine authority.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "ToolSession.enter/collect_pick/preview/apply/cancel/leave lifecycle.",
+      "PickRequest(ViewVersion,Filter,VisibleOrThrough)->SelectionVersion+EntityIds.",
+      "ApplyTool(TypedOperationInput)->ServiceCommitFact; no direct document write."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "contracts",
+      "client_sdk"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Tool contributions register staged collection/filter/preview/apply cleanup.",
+    "Graphical pick backends implement supported visible/through modes behind public selection contracts."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Cancel/leave clears draft preview and subscriptions only; revision stays unchanged.",
+    "Apply commits once; exceptional exit also releases transient graphics resources.",
+    "Model/camera/selection version changes invalidate unsafe staged input; stale selection rejects.",
+    "Tool/pick contracts are versioned; headless visible picking returns UNSUPPORTED_CAPABILITY."
+  ],
+  "acceptance_case_ids": [
+    "BP-13",
+    "SK-10",
+    "F03",
+    "F16",
+    "F17"
+  ]
+}

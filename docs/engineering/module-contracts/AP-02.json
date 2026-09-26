@@ -1,0 +1,56 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-02",
+    "title": "Entities/fields/references/schema",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-1c2aa1ef41032c9b",
+        "path": "ArcherModelcore/public/mentitymanager.h",
+        "observation": "Entities/fields/references/schema responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "document/schema",
+  "authoritative_data": "The document entity catalog/schema owns stable type and field IDs, reference types, requiredness, units and assignment precedence; storage position is not identity.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "EntitySchema(TypeId,Version)->FieldDescriptors.",
+      "QueryEntities(SessionVersion,TypeId,Predicate)->StableEntityIds.",
+      "EditFields(OperationInput)->ValidatedChangeSet; reference deletion/merge semantics are declared by schema."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "types",
+      "contracts"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Handwritten entity schema/registrations generate mechanical enumeration and persistent record codecs.",
+    "Entity-specific validation/deletion rules live in schema/features, never the generic coordinator."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Validation rejects missing/type/unit/range/ref/future-version inputs without model/history changes.",
+    "Type/field persistent IDs do not depend on registrar order.",
+    "A new optional field has an explicit old-schema default; incompatible changes require migration.",
+    "Undo/redo and persistence traverse the same declared field/ref representation."
+  ],
+  "acceptance_case_ids": [
+    "BP-02",
+    "SK-03",
+    "EXT-01",
+    "F01",
+    "F02",
+    "F18"
+  ]
+}

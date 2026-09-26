@@ -1,0 +1,60 @@
+{
+  "reference_evidence": {
+    "ap_id": "AP-04",
+    "title": "Geometry-mesh associations",
+    "status": "L1_draft",
+    "coverage_level": 1,
+    "reliability": "local self-owned source/public contract inspection; SDK-only evidence does not prove implementation",
+    "items": [
+      {
+        "inventory_id": "REF-e1dc6877adebfe08",
+        "path": "ArcherMeshLib/inc/ar_meshdata2.h",
+        "observation": "Geometry-mesh associations responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      },
+      {
+        "inventory_id": "REF-555ed2e60ab506f1",
+        "path": "ArcherMeshLib/include/ar_brep.h",
+        "observation": "Geometry-mesh associations responsibility evidence from the architecture parity audit and current hashed file; no runtime behavior is asserted."
+      }
+    ],
+    "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
+  },
+  "owner_module": "mesh/association",
+  "authoritative_data": "Association records own supporting GeometryId, source geometry revision, support location and replacement lineage; mesh records cannot assume association freshness.",
+  "public_contracts": {
+    "status": "proposed_uncompiled_contract",
+    "interfaces": [
+      "QueryAssociation(MeshEntityId,SessionVersion)->SupportRef/Freshness.",
+      "GeometryReplacementCandidate->AssociationRemapPlan with strict reject_unmapped policy.",
+      "RebuildMesh(binding_revision)->Candidate with updated association revision."
+    ]
+  },
+  "allowed_dependencies": {
+    "logical_design_dependencies": [
+      "types",
+      "contracts",
+      "domain",
+      "validation"
+    ],
+    "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+  },
+  "extension_points": [
+    "Provider-specific support interpretation/remapping is behind geometry/mesh ports.",
+    "Association schema and replacement validation are extensible feature contributions."
+  ],
+  "state_failure_version_rules": [
+    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
+    "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
+    "Changing the line end 1000->1200mm marks the old mesh association stale.",
+    "Unmapped existing reference rejects the entire replacement, preserving model/references/revision.",
+    "Rebuild yields 120mm spacing and records new geometry revision.",
+    "Association/replacement format versions are persisted and migrated with project schema."
+  ],
+  "acceptance_case_ids": [
+    "BP-04",
+    "SK-05",
+    "F21"
+  ]
+}
