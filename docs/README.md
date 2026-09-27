@@ -27,6 +27,10 @@
 
 ## 当前实现
 
+[C2 交接与当前边界](implementation/c2-handoff.md)：当前停止在 C2，记录核心、后台线网格、CLI/薄客户端与保存/恢复已贯通。
+
+[平台框架逐文件导读](engineering/code-walkthrough/README.md)：按四条阅读链说明现有 109 个生产源码与配置文件，区分记录主链、旧兼容边界和尚未贯通的入口。
+
 [M0运行与验证](implementation/m0.md)：纯C++内存核心、Qt本地engine/CLI。
 
 [M1文档与格式](implementation/m1.md)：实体/组织/引用、受控Nastran导入与导出预览、统一事务及限制。

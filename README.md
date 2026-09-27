@@ -13,6 +13,8 @@
 5. [开发计划](docs/baseline/development-plan.md)
 6. [验收标准](docs/baseline/acceptance.md)
 
+阅读现有实现可从[平台框架逐文件导读](docs/engineering/code-walkthrough/README.md)开始，按构建/入口、数据/提交、业务功能、查询/存储/桌面的顺序覆盖 109 个生产源码与配置文件。
+
 ```mermaid
 flowchart LR
     GUI[Qt 桌面与 VTK 视口] -->|本地 IPC| Engine[qcae-engine]
@@ -46,7 +48,8 @@ ctest --test-dir build-core --output-on-failure
 | `docs/design/` | 界面概念图及生成提示词 |
 | `docs/research/` | 架构参考研究，非依赖源码 |
 | `docs/*-v0.*.md` | 历史讨论，不作为与当前基线冲突时的依据 |
-| `include/`、`src/`、`apps/` | 核心、存储/格式适配、IPC及Qt/VTK桌面 |
+| `modules/`、`features/`、`schemas/` | 通用核心、具体业务与生成契约 |
+| `apps/`、`adapters/`、`profiles/`、`ui/` | 进程入口、外部适配、格式能力包及桌面 |
 | `tests/` | 核心、契约、分配失败和真实IPC回归 |
 | `tools/` | 操作描述生成与设计一致性检查 |
 
