@@ -32,6 +32,9 @@ template <class T> T good(Result<T> result) {
         throw std::runtime_error(result.error ? result.error->message : "Missing result");
     return std::move(*result.value);
 }
+template <class T> void bad(const Result<T>& result, ErrorCode code, const char* message) {
+    check(!result.ok() && result.error && result.error->code == code, message);
+}
 RecordDescriptor relation_descriptor() {
     RecordDescriptor descriptor;
     descriptor.type = RecordTraits<QueryRelation>::type_id;
@@ -156,6 +159,147 @@ void queries() {
     check(before.whole_model_serializations == after.whole_model_serializations &&
               before.whole_model_materializations == after.whole_model_materializations,
           "Native query invoked a whole Model bridge");
+}
+void geometry_display_and_selection() {
+    EditSession seed{DocumentView(make_record_registry(),
+                                  {{DocumentId("geometry"), DocumentEpoch("epoch")}, 1})};
+    seed.put(records::GeometryLine{records::GeometryId("crossing-line"), {-2, 0, 0}, {2, 0, 0}, 1});
+    seed.put(records::GeometryLine{records::GeometryId("far-line"), {4, 2, 0}, {6, 2, 0}, 1});
+    const auto records = seed.prepare().candidate;
+    const auto before = record_activity_counters();
+    SelectionService service;
+    const Caller caller{"geometry-reader"};
+    const auto view = good(service.create_view(records, caller));
+    const auto packet = good(service.render_packet(records, caller, view.id));
+    check(packet.document.id == records.version().document.id &&
+              packet.document.epoch == records.version().document.epoch && packet.revision == 1 &&
+              packet.view_session_id == view.id && packet.view_revision == view.view_revision,
+          "Geometry packet lost model or view context");
+    check(packet.points.empty() && packet.beams.empty() && packet.geometry_lines.size() == 2,
+          "Geometry endpoints must not become physical nodes or beams");
+    const auto crossing =
+        std::find_if(packet.geometry_lines.begin(),
+                     packet.geometry_lines.end(),
+                     [](const auto& line) { return line.entity == EntityId("crossing-line"); });
+    check(crossing != packet.geometry_lines.end() &&
+              crossing->start_mm == std::array<double, 3>{-2, 0, 0} &&
+              crossing->end_mm == std::array<double, 3>{2, 0, 0},
+          "Geometry display must carry the real stable ID and millimetre coordinates");
+    bad(produce_render_packet(records, view, 1),
+        ErrorCode::resource_limit,
+        "Visible geometry must consume the packet entity quota");
+
+    QuerySpec query;
+    query.predicate.op = QueryOp::world_box;
+    query.predicate.box = {{-.5, -.5, -.5}, {.5, .5, .5}, BoxRelation::intersects};
+    check(good(execute_query(records, view, query)).ids ==
+              std::vector<EntityId>{EntityId("crossing-line")},
+          "A world box must find a geometry segment with both endpoints outside");
+    query.predicate.box.relation = BoxRelation::contained;
+    check(good(execute_query(records, view, query)).ids.empty(),
+          "Contained geometry selection must require both endpoints inside");
+    query.predicate.box = {{-2, 0, 0}, {2, 0, 0}, BoxRelation::contained};
+    check(good(execute_query(records, view, query)).ids ==
+              std::vector<EntityId>{EntityId("crossing-line")},
+          "Geometry containment must include boundary endpoints");
+
+    query.predicate.op = QueryOp::kind;
+    query.predicate.text = "geometry";
+    query.scope.visibility = VisibilityMode::picker_candidates;
+    query.scope.candidate_ids =
+        std::vector<EntityId>{EntityId("crossing-line"), EntityId("far-line")};
+    const auto both = good(service.select(records, caller, view.id, query));
+    check(both.count == 2, "Picker candidates must retain real geometry identities");
+    const auto hidden =
+        good(service.update_view(records, caller, view.id, {EntityId("far-line")}, "camera"));
+    const auto visible_packet = good(produce_render_packet(records, hidden, 1));
+    check(visible_packet.geometry_lines.size() == 1 &&
+              visible_packet.geometry_lines.front().entity == EntityId("crossing-line"),
+          "Hidden geometry must be absent and must not consume the packet quota");
+    const auto selected = good(service.select(records, caller, view.id, query));
+    check(good(service.page(records, caller, selected.id, 0, 10)).ids ==
+              std::vector<EntityId>{EntityId("crossing-line")},
+          "Picker selection must respect hidden geometry");
+    query.scope.include_hidden = true;
+    check(good(service.select(records, caller, view.id, query)).count == 2,
+          "Explicit hidden selection must remain available for geometry");
+    query.scope.candidate_ids = std::vector<EntityId>{EntityId("absent")};
+    bad(service.select(records, caller, view.id, query),
+        ErrorCode::entity_not_found,
+        "Unknown picker IDs must not become geometry entities");
+    bad(service.page(records, caller, both.id, 0, 10),
+        ErrorCode::revision_conflict,
+        "View changes must invalidate geometry selection handles");
+    const auto revised = records.with_version({records.version().document, 2});
+    bad(produce_render_packet(revised, hidden),
+        ErrorCode::revision_conflict,
+        "Geometry rendering must reject stale model revisions");
+    bad(service.select(revised, caller, view.id, QuerySpec{}),
+        ErrorCode::revision_conflict,
+        "Geometry selection must reject stale model revisions");
+    const auto rebound = good(service.update_view(revised, caller, view.id, {}, "camera"));
+    check(rebound.model_revision == 2 && rebound.view_revision > hidden.view_revision &&
+              good(service.render_packet(revised, caller, view.id)).geometry_lines.size() == 2,
+          "Rebased geometry view must refresh its model and view versions");
+    const auto expired =
+        revised.with_version({{DocumentId("geometry"), DocumentEpoch("next-epoch")}, 2});
+    bad(service.render_packet(expired, caller, view.id),
+        ErrorCode::document_epoch_expired,
+        "Geometry rendering must reject an expired document epoch");
+    const auto after = record_activity_counters();
+    check(before.whole_model_serializations == after.whole_model_serializations &&
+              before.whole_model_materializations == after.whole_model_materializations,
+          "Geometry rendering or selection projected a whole legacy Model");
+}
+void mixed_geometry_rendering() {
+    EditSession seed(fixture());
+    seed.put(records::GeometryLine{records::GeometryId("line"), {-1, 0, 0}, {1, 0, 0}, 1});
+    const auto records = seed.prepare().candidate;
+    const auto before = record_activity_counters();
+    SelectionService service;
+    const Caller caller{"mixed-reader"};
+    auto view = good(service.create_view(records, caller, {EntityId("left")}));
+    const auto packet = good(produce_render_packet(records, view, 5));
+    check(packet.points.size() == 3 && packet.beams.size() == 1 &&
+              packet.geometry_lines.size() == 1,
+          "Adding geometry changed the existing point and beam projection");
+    const auto& beam = packet.beams.front();
+    check(beam.entity == EntityId("beam") &&
+              packet.points[beam.points[0]].entity == EntityId("left") &&
+              !packet.points[beam.points[0]].visible &&
+              packet.points[beam.points[1]].entity == EntityId("right"),
+          "Hidden support points must retain stable beam connectivity");
+    bad(produce_render_packet(records, view, 4),
+        ErrorCode::resource_limit,
+        "Packet quota must count nodes, beams and geometry together");
+    view = good(service.update_view(
+        records,
+        caller,
+        view.id,
+        {EntityId("left"), EntityId("right"), EntityId("solo"), EntityId("beam")},
+        {}));
+    const auto isolated = good(produce_render_packet(records, view, 1));
+    check(isolated.points.empty() && isolated.beams.empty() &&
+              isolated.geometry_lines.size() == 1 &&
+              isolated.geometry_lines.front().entity == EntityId("line"),
+          "Isolating geometry must not expose hidden mesh entities");
+    view = good(service.update_view(
+        records,
+        caller,
+        view.id,
+        {EntityId("left"), EntityId("right"), EntityId("solo"), EntityId("line")},
+        {}));
+    const auto isolated_beam = good(produce_render_packet(records, view, 3));
+    check(isolated_beam.points.size() == 2 && isolated_beam.beams.size() == 1 &&
+              isolated_beam.geometry_lines.empty() &&
+              std::none_of(isolated_beam.points.begin(),
+                           isolated_beam.points.end(),
+                           [](const auto& point) { return point.visible; }),
+          "Isolating a beam must preserve hidden endpoint support without drawing geometry");
+    const auto after = record_activity_counters();
+    check(before.whole_model_serializations == after.whole_model_serializations &&
+              before.whole_model_materializations == after.whole_model_materializations,
+          "Mixed display projection invoked a whole legacy Model bridge");
 }
 void unassigned_beams_and_stable_pages() {
     EditSession seed{DocumentView(make_record_registry(),
@@ -489,13 +633,15 @@ void organization_kinds_are_not_cpp_types() {
 int main() {
     try {
         queries();
+        geometry_display_and_selection();
+        mixed_geometry_rendering();
         unassigned_beams_and_stable_pages();
         legacy_wrapper_scope();
         descriptor_entity_filters();
         organization_entity_filters();
         organization_kinds_are_not_cpp_types();
-        std::cout
-            << "PASS: record queries, stable-ID pages, unassigned beams and legacy wrappers\n";
+        std::cout << "PASS: record queries, geometry display/selection, stable-ID pages, "
+                     "unassigned beams and legacy wrappers\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;

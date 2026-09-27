@@ -165,6 +165,11 @@ if(QCAE_BUILD_IPC)
       --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
     set_tests_properties(ipc m1_ipc PROPERTIES TIMEOUT 60)
     if(QCAE_BUILD_STORAGE)
+      add_test(NAME c3_display_ipc COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/c3_display_ipc_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/c3-evidence/display-ipc")
+      set_tests_properties(c3_display_ipc PROPERTIES TIMEOUT 90)
       add_test(NAME entity_query_ipc COMMAND Python3::Interpreter
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/entity_query_ipc_tests.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
@@ -209,6 +214,29 @@ if(QCAE_BUILD_DESKTOP)
     add_test(NAME desktop COMMAND qcae_desktop_tests)
     set_tests_properties(desktop PROPERTIES TIMEOUT 60)
     if(UNIX)
+      add_executable(qcae_desktop_selection_tests tests/desktop_selection_tests.cpp)
+      set_target_properties(qcae_desktop_selection_tests PROPERTIES AUTOMOC ON)
+      target_link_libraries(qcae_desktop_selection_tests PRIVATE qcae_desktop_ui Qt6::Test)
+      qcae_warnings(qcae_desktop_selection_tests)
+      vtk_module_autoinit(TARGETS qcae_desktop_selection_tests MODULES ${VTK_LIBRARIES})
+      add_test(NAME desktop_selection COMMAND qcae_desktop_selection_tests)
+      set_tests_properties(desktop_selection PROPERTIES TIMEOUT 60)
+      add_executable(qcae_c3_desktop_workflow_tests tests/c3_desktop_workflow_tests.cpp)
+      set_target_properties(qcae_c3_desktop_workflow_tests PROPERTIES AUTOMOC ON)
+      target_link_libraries(qcae_c3_desktop_workflow_tests PRIVATE qcae_desktop_ui Qt6::Test)
+      qcae_warnings(qcae_c3_desktop_workflow_tests)
+      vtk_module_autoinit(TARGETS qcae_c3_desktop_workflow_tests MODULES ${VTK_LIBRARIES})
+      add_test(NAME c3_desktop_workflow COMMAND qcae_c3_desktop_workflow_tests
+        $<TARGET_FILE:qcae-engine> "${CMAKE_CURRENT_BINARY_DIR}/c3-evidence/desktop")
+      set_tests_properties(c3_desktop_workflow PROPERTIES TIMEOUT 90)
+      add_executable(qcae_modeling_tools_tests tests/modeling_tools_tests.cpp)
+      set_target_properties(qcae_modeling_tools_tests PROPERTIES AUTOMOC ON)
+      target_include_directories(qcae_modeling_tools_tests PRIVATE ui/desktop/src)
+      target_link_libraries(qcae_modeling_tools_tests PRIVATE qcae_desktop_ui Qt6::Test)
+      qcae_warnings(qcae_modeling_tools_tests)
+      vtk_module_autoinit(TARGETS qcae_modeling_tools_tests MODULES ${VTK_LIBRARIES})
+      add_test(NAME modeling_tools COMMAND qcae_modeling_tools_tests)
+      set_tests_properties(modeling_tools PROPERTIES TIMEOUT 60)
       add_test(NAME desktop_smoke COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/desktop_smoke.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
         --desktop $<TARGET_FILE:qcae-desktop> --screenshot "${CMAKE_CURRENT_BINARY_DIR}/desktop-smoke.png")

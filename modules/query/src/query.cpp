@@ -407,7 +407,12 @@ Result<RenderPacket> produce_render_packet(const DocumentView& snapshot,
             needed.insert(beam.nodes.begin(), beam.nodes.end());
         }
     });
-    if (needed.size() + visible_beams > max_entities)
+    std::size_t visible_geometry_lines = 0;
+    snapshot.visit(RecordTraits<records::GeometryLine>::type_id, [&](const Record& record) {
+        if (!hidden.contains(record->key().identity))
+            ++visible_geometry_lines;
+    });
+    if (needed.size() + visible_beams + visible_geometry_lines > max_entities)
         return failure<RenderPacket>(
             ErrorCode::resource_limit, "Render packet entity limit exceeded", "max_entities");
     RenderPacket packet;
@@ -437,6 +442,11 @@ Result<RenderPacket> produce_render_packet(const DocumentView& snapshot,
     if (missing)
         return failure<RenderPacket>(
             ErrorCode::entity_not_found, "Visible beam has a missing endpoint", "beam.nodes");
+    snapshot.visit(RecordTraits<records::GeometryLine>::type_id, [&](const Record& record) {
+        const auto& line = record->get<records::GeometryLine>();
+        if (!hidden.contains(line.id.value))
+            packet.geometry_lines.push_back({EntityId(line.id.value), line.start, line.end});
+    });
     return success(std::move(packet));
 }
 

@@ -1,4 +1,5 @@
 #include "qcae/desktop.hpp"
+#include "modeling_tools.hpp"
 #include "qcae/desktop_client.hpp"
 #include "qcae/local_endpoint.hpp"
 #include "qcae/render_packet.hpp"
@@ -38,6 +39,7 @@
 #include <QVBoxLayout>
 #include <QVTKOpenGLNativeWidget.h>
 #include <array>
+#include <cmath>
 #include <functional>
 #include <optional>
 
@@ -116,6 +118,24 @@ decodePacket(const QJsonObject& data, const QString& document, const QString& ep
         packet.beams.push_back({qcae::EntityId{id.toStdString()},
                                 {static_cast<std::size_t>(a), static_cast<std::size_t>(b)}});
     }
+    if (data.contains("geometry_lines") && !data.value("geometry_lines").isArray())
+        return std::nullopt;
+    for (const auto& value : data.value("geometry_lines").toArray()) {
+        const auto row = value.toObject();
+        const auto start = row.value("start_mm").toArray(), end = row.value("end_mm").toArray();
+        const auto id = entityId(row);
+        if (id.isEmpty() || start.size() != 3 || end.size() != 3)
+            return std::nullopt;
+        qcae::RenderGeometryLine line{qcae::EntityId{id.toStdString()}, {}, {}};
+        for (int i = 0; i < 3; ++i) {
+            if (!start[i].isDouble() || !end[i].isDouble() || !std::isfinite(start[i].toDouble()) ||
+                !std::isfinite(end[i].toDouble()))
+                return std::nullopt;
+            line.start_mm[i] = start[i].toDouble();
+            line.end_mm[i] = end[i].toDouble();
+        }
+        packet.geometry_lines.push_back(line);
+    }
     return packet;
 }
 
@@ -187,8 +207,10 @@ class DesktopWindow : public QMainWindow {
                                            : "Connecting to local engine");
             if (ready)
                 pollCurrent();
-            else
-                clearDocument();
+            else {
+                modeling_->suspend();
+                clearDocument(false);
+            }
         });
         connect(&client_, &DesktopClient::transportError, this, [this](const QString& message) {
             statusBar()->showMessage(message, 5000);
@@ -228,7 +250,8 @@ class DesktopWindow : public QMainWindow {
         viewport_ = new VtkView(this);
         setCentralWidget(viewport_);
         connect(viewport_, &VtkView::picked, this, [this](const QStringList& ids, bool through) {
-            validateSelection(ids, through);
+            if (viewportMatchesContext())
+                validateSelection(ids, through);
         });
         connect(viewport_, &VtkView::cameraChanged, this, [this] {
             if (!view_id_.isEmpty())
@@ -245,6 +268,7 @@ class DesktopWindow : public QMainWindow {
         owner_->setToolTip("Owners are listed from the first 1,000 model entities");
         tree_count_ = new QLabel("No active project", left_content);
         tree_ = new QTreeWidget(left_content);
+        tree_->setObjectName("entityTree");
         tree_->setHeaderLabels({"Entity", "Kind"});
         left_layout->addWidget(view_kind_);
         left_layout->addWidget(owner_);
@@ -268,6 +292,7 @@ class DesktopWindow : public QMainWindow {
         auto* right_content = new QWidget(right);
         auto* form = new QFormLayout(right_content);
         selected_label_ = new QLabel("No selection", right_content);
+        selected_label_->setObjectName("selectedEntities");
         property_kind_ = new QLabel(right_content);
         property_x_ = new QLineEdit(right_content);
         property_y_ = new QLineEdit(right_content);
@@ -284,6 +309,25 @@ class DesktopWindow : public QMainWindow {
         right->setWidget(right_content);
         addDockWidget(Qt::RightDockWidgetArea, right);
         connect(apply_, &QPushButton::clicked, this, [this] { applyProperty(); });
+
+        auto* modeling_dock = new QDockWidget("Modeling", this);
+        modeling_dock->setObjectName("modelingDock");
+        modeling_ =
+            new qcae::ModelingTools(client_,
+                                    {[this](const qcae::RenderPreview& preview) {
+                                         viewport_->setPreview(preview);
+                                         viewport_->fit();
+                                     },
+                                     [this] { viewport_->clearPreview(); },
+                                     [this] { pollCurrent(); },
+                                     [this](const QString& operation, const QJsonObject& response) {
+                                         record(operation, response);
+                                     }},
+                                    modeling_dock);
+        modeling_dock->setWidget(modeling_);
+        addDockWidget(Qt::RightDockWidgetArea, modeling_dock);
+        tabifyDockWidget(right, modeling_dock);
+        modeling_dock->raise();
 
         auto* bottom = new QDockWidget("Operations and history", this);
         log_ = new QPlainTextEdit(bottom);
@@ -308,6 +352,11 @@ class DesktopWindow : public QMainWindow {
             edit, "Undo", [this] { historyAction("history.undo"); }, QKeySequence::Undo);
         auto* redo_action = addActionTo(
             edit, "Redo", [this] { historyAction("history.redo"); }, QKeySequence::Redo);
+        auto* model_menu = menuBar()->addMenu("Model");
+        addActionTo(model_menu, "Modeling tools", [modeling_dock] {
+            modeling_dock->show();
+            modeling_dock->raise();
+        });
         auto* display = menuBar()->addMenu("Display");
         auto* fit_action = addActionTo(display, "Fit", [this] { viewport_->fit(); });
         addActionTo(
@@ -365,7 +414,17 @@ class DesktopWindow : public QMainWindow {
         log_->appendPlainText(message);
         statusBar()->showMessage(message, 5000);
     }
-    void clearDocument() {
+    void invalidateSelectionRequests(bool clear_pending) {
+        ++selection_generation_;
+        pending_selection_evaluating_ = false;
+        if (clear_pending)
+            pending_selection_.reset();
+    }
+    void clearDocument(bool reset_tools = true) {
+        invalidateSelectionRequests(true);
+        rendered_version_.reset();
+        if (reset_tools)
+            modeling_->setContext({});
         if (document_id_.isEmpty() && view_id_.isEmpty())
             return;
         document_id_.clear();
@@ -394,6 +453,8 @@ class DesktopWindow : public QMainWindow {
         current_pending_ = true;
         call("project.current", {}, {}, [this](const QJsonObject& response) {
             current_pending_ = false;
+            if (!client_.ready())
+                return;
             if (!succeeded(response)) {
                 if (response.value("error").toObject().value("code") == "DOCUMENT_NOT_FOUND")
                     clearDocument();
@@ -410,12 +471,16 @@ class DesktopWindow : public QMainWindow {
             document_id_ = id;
             epoch_ = epoch;
             revision_ = rev;
+            modeling_->setContext(context(true));
             saved_path_ = data.value("saved_path").toString();
             dirty_ = data.value("dirty").toBool();
             setWindowTitle(data.value("name").toString("QCAE") +
                            (dirty_ ? " * — QCAE" : " — QCAE"));
             if (changed) {
+                invalidateSelectionRequests(true);
+                rendered_version_.reset();
                 selected_ids_.clear();
+                viewport_->setSelectedIds({});
                 selected_label_->setText("No selection");
                 loadSelectedProperty();
                 if (new_document) {
@@ -756,6 +821,8 @@ class DesktopWindow : public QMainWindow {
                      return;
                  }
                  const auto data = response.value("data").toObject();
+                 invalidateSelectionRequests(false);
+                 rendered_version_.reset();
                  view_id_ = data.value("view_session_id").toString();
                  view_revision_ = revisionText(data.value("view_revision"));
                  renderView();
@@ -778,16 +845,22 @@ class DesktopWindow : public QMainWindow {
                      return;
                  }
                  const auto packet = decodePacket(response.value("data").toObject(), doc, epoch);
-                 if (!packet || QString::number(packet->revision) != rev)
+                 if (!packet || QString::number(packet->revision) != rev ||
+                     QString::fromStdString(packet->view_session_id) != view ||
+                     QString::number(packet->view_revision) != view_rev)
                      return;
                  view_revision_ = QString::number(packet->view_revision);
                  viewport_->setPacket(*packet);
+                 rendered_version_ = RenderVersion{doc, epoch, rev, view, view_rev};
                  viewport_->setSelectedIds(selected_ids_);
                  all_ids_.clear();
                  for (const auto& point : packet->points)
                      all_ids_.append(QString::fromStdString(point.entity.value));
                  for (const auto& beam : packet->beams)
                      all_ids_.append(QString::fromStdString(beam.entity.value));
+                 for (const auto& line : packet->geometry_lines)
+                     all_ids_.append(QString::fromStdString(line.entity.value));
+                 evaluatePendingSelection();
              });
     }
     void updateView(const QStringList& hidden) {
@@ -798,6 +871,8 @@ class DesktopWindow : public QMainWindow {
             return;
         }
         view_update_pending_ = true;
+        invalidateSelectionRequests(false);
+        rendered_version_.reset();
         const auto doc = document_id_, epoch = epoch_, rev = revision_, view = view_id_;
         const auto expected_view = view_revision_;
         const auto fingerprint = viewport_->cameraFingerprint();
@@ -858,12 +933,28 @@ class DesktopWindow : public QMainWindow {
                 hidden.append(id);
         updateView(hidden);
     }
+    bool viewportMatchesContext() const {
+        return client_.ready() && !view_update_pending_ && rendered_version_ &&
+               rendered_version_->document == document_id_ && rendered_version_->epoch == epoch_ &&
+               rendered_version_->revision == revision_ && rendered_version_->view == view_id_ &&
+               rendered_version_->view_revision == view_revision_;
+    }
     void validateSelection(const QStringList& ids, bool through) {
-        if (view_id_.isEmpty())
+        if (document_id_.isEmpty())
             return;
+        invalidateSelectionRequests(false);
+        pending_selection_ = PendingSelection{ids, through};
+        evaluatePendingSelection();
+    }
+    void evaluatePendingSelection() {
+        if (!pending_selection_ || pending_selection_evaluating_ || !viewportMatchesContext())
+            return;
+        const auto generation = selection_generation_;
+        const auto through = pending_selection_->through;
         QJsonArray array;
-        for (const auto& id : ids)
+        for (const auto& id : pending_selection_->ids)
             array.append(id);
+        pending_selection_evaluating_ = true;
         auto extra = context(true);
         const auto view = view_id_, view_rev = view_revision_, rev = revision_;
         call("selection.evaluate",
@@ -876,24 +967,30 @@ class DesktopWindow : public QMainWindow {
                            {"visibility", through ? "through" : "picker_candidates"},
                            {"invert", false}}}},
              extra,
-             [this, view, view_rev, rev](const QJsonObject& response) {
-                 if (view != view_id_ || view_rev != view_revision_ || rev != revision_)
+             [this, view, view_rev, rev, generation](const QJsonObject& response) {
+                 if (generation != selection_generation_ || view != view_id_ ||
+                     view_rev != view_revision_ || rev != revision_)
                      return;
                  if (!succeeded(response)) {
+                     pending_selection_evaluating_ = false;
                      record("selection.evaluate", response);
                      return;
                  }
                  const auto handle =
                      response.value("data").toObject().value("selection_handle").toString();
-                 if (handle.isEmpty())
+                 if (handle.isEmpty()) {
+                     pending_selection_evaluating_ = false;
                      return;
+                 }
                  call("selection.get",
                       {{"selection_handle", handle}, {"offset", 0}, {"limit", 1000}},
                       context(),
-                      [this, view, view_rev, rev](const QJsonObject& result) {
-                          if (view != view_id_ || view_rev != view_revision_ || rev != revision_)
+                      [this, view, view_rev, rev, generation](const QJsonObject& result) {
+                          if (generation != selection_generation_ || view != view_id_ ||
+                              view_rev != view_revision_ || rev != revision_)
                               return;
                           if (!succeeded(result)) {
+                              pending_selection_evaluating_ = false;
                               record("selection.get", result);
                               return;
                           }
@@ -901,6 +998,8 @@ class DesktopWindow : public QMainWindow {
                           for (const auto& id :
                                result.value("data").toObject().value("entity_ids").toArray())
                               selected.append(id.toString());
+                          pending_selection_.reset();
+                          pending_selection_evaluating_ = false;
                           selected_ids_ = selected;
                           viewport_->setSelectedIds(selected);
                           selected_label_->setText(selected.isEmpty() ? "No selection"
@@ -910,6 +1009,8 @@ class DesktopWindow : public QMainWindow {
              });
     }
     void loadSelectedProperty() {
+        selected_property_ = {};
+        modeling_->setSelectedGeometry({}, {});
         property_kind_->clear();
         for (auto* field : {property_x_, property_y_, property_z_, property_e_})
             field->clear();
@@ -931,6 +1032,8 @@ class DesktopWindow : public QMainWindow {
                  selected_property_ = rows.at(0).toObject();
                  const auto kind = selected_property_.value("kind").toString();
                  property_kind_->setText(kind);
+                 if (kind == "geometry")
+                     modeling_->setSelectedGeometry(selected_id, entityLabel(selected_property_));
                  const auto xyz = selected_property_.value("position_mm").toArray();
                  if (xyz.size() == 3) {
                      property_x_->setText(QString::number(xyz[0].toDouble(), 'g', 17));
@@ -986,12 +1089,24 @@ class DesktopWindow : public QMainWindow {
     bool current_pending_{};
     bool view_update_pending_{};
     std::optional<QStringList> queued_hidden_;
+    struct RenderVersion {
+        QString document, epoch, revision, view, view_revision;
+    };
+    std::optional<RenderVersion> rendered_version_;
+    struct PendingSelection {
+        QStringList ids;
+        bool through;
+    };
+    std::optional<PendingSelection> pending_selection_;
+    bool pending_selection_evaluating_{};
+    std::uint64_t selection_generation_{};
     QString document_id_, epoch_, revision_, saved_path_, view_id_, view_revision_;
     bool dirty_{};
     QStringList selected_ids_, hidden_ids_, all_ids_;
     QJsonArray owner_rows_;
     QJsonObject selected_property_;
     VtkView* viewport_{};
+    qcae::ModelingTools* modeling_{};
     QComboBox* view_kind_{};
     QComboBox* owner_{};
     QTreeWidget* tree_{};
@@ -1003,6 +1118,10 @@ class DesktopWindow : public QMainWindow {
     QPlainTextEdit* log_{};
 };
 } // namespace
+
+QMainWindow* qcae::create_desktop_window(DesktopClient::Options options) {
+    return new DesktopWindow(std::move(options), false, {});
+}
 
 int qcae::run_desktop(int argc, char** argv) {
     QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());

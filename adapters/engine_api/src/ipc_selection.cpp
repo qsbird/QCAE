@@ -200,12 +200,12 @@ std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
     try {
         const DocumentRef ref{DocumentId{string(request, "document_id")},
                               DocumentEpoch{string(request, "document_epoch")}};
-        const auto snap = app.snapshot(ref);
+        const auto snap = app.record_application().snapshot(ref);
         if (!snap.ok())
             return encode(id, snap, [](const auto&) { return QJsonObject{}; });
-        const auto& snapshot = *snap.value;
+        const auto& snapshot = snap.value->records;
         if (op != "selection.get" &&
-            integer(request, "expected_revision") != snapshot.info.revision)
+            integer(request, "expected_revision") != snapshot.version().revision)
             return failure(id, "REVISION_CONFLICT", "Model changed", "conflict");
         const auto p = request.value("parameters").toObject();
         if (op == "view.create") {
@@ -262,7 +262,7 @@ std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
                 id,
                 selections.render_packet(snapshot, caller, view_id),
                 [](const RenderPacket& packet) {
-                    QJsonArray points, beams;
+                    QJsonArray points, beams, geometry_lines;
                     for (const auto& point : packet.points)
                         points.append(QJsonObject{{"entity_id", text(point.entity.value)},
                                                   {"position_mm",
@@ -276,13 +276,21 @@ std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
                                         {"points",
                                          QJsonArray{static_cast<qint64>(beam.points[0]),
                                                     static_cast<qint64>(beam.points[1])}}});
+                    for (const auto& line : packet.geometry_lines)
+                        geometry_lines.append(QJsonObject{
+                            {"entity_id", text(line.entity.value)},
+                            {"start_mm",
+                             QJsonArray{line.start_mm[0], line.start_mm[1], line.start_mm[2]}},
+                            {"end_mm",
+                             QJsonArray{line.end_mm[0], line.end_mm[1], line.end_mm[2]}}});
                     return QJsonObject{{"document_id", text(packet.document.id.value)},
                                        {"document_epoch", text(packet.document.epoch.value)},
                                        {"revision", number(packet.revision)},
                                        {"view_session_id", text(packet.view_session_id)},
                                        {"view_revision", number(packet.view_revision)},
                                        {"points", points},
-                                       {"beams", beams}};
+                                       {"beams", beams},
+                                       {"geometry_lines", geometry_lines}};
                 });
         }
         if (op == "selection.combine") {

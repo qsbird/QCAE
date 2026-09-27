@@ -3,6 +3,7 @@
 
 #include <QFile>
 #include <QApplication>
+#include <QDir>
 #include <QJsonDocument>
 #include <QLocalServer>
 #include <QLocalSocket>
@@ -13,8 +14,53 @@
 #include <QSurfaceFormat>
 #include <QVTKOpenGLNativeWidget.h>
 #include <set>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
 
 namespace {
+QPoint viewportPosition(QVTKOpenGLNativeWidget* widget, const std::array<double, 3>& position) {
+    auto* renderer = widget->renderWindow()->GetRenderers()->GetFirstRenderer();
+    renderer->SetWorldPoint(position[0], position[1], position[2], 1.0);
+    renderer->WorldToDisplay();
+    const auto* display = renderer->GetDisplayPoint();
+    const auto scale = widget->devicePixelRatioF();
+    return {qRound(display[0] / scale), qRound(widget->height() - display[1] / scale)};
+}
+
+void dragBox(QVTKOpenGLNativeWidget* widget, QPoint first, QPoint last) {
+    QTest::mousePress(widget, Qt::LeftButton, Qt::ShiftModifier, first);
+    QTest::mouseMove(widget, last);
+    QTest::mouseRelease(widget, Qt::LeftButton, Qt::ShiftModifier, last);
+}
+
+template <class Predicate> int coloredPixels(const QImage& image, Predicate matches) {
+    int count = 0;
+    for (int y = 0; y < image.height(); ++y)
+        for (int x = 0; x < image.width(); ++x)
+            if (matches(image.pixelColor(x, y)))
+                ++count;
+    return count;
+}
+
+int highlightedPixels(QVTKOpenGLNativeWidget* widget) {
+    return coloredPixels(widget->grab().toImage(), [](const QColor& color) {
+        return color.red() > 170 && color.green() > 80 && color.blue() < 100;
+    });
+}
+
+int previewPixels(QVTKOpenGLNativeWidget* widget) {
+    return coloredPixels(widget->grab().toImage(), [](const QColor& color) {
+        return color.red() > 150 && color.green() < 150 && color.blue() > 180;
+    });
+}
+
+bool saveEvidence(QVTKOpenGLNativeWidget* widget, const QString& name) {
+    const auto directory = qEnvironmentVariable("QCAE_VTK_EVIDENCE_DIR");
+    return directory.isEmpty() ||
+           (QDir().mkpath(directory) && widget->grab().save(QDir(directory).filePath(name)));
+}
+
 class DesktopTests : public QObject {
     Q_OBJECT
   private slots:
@@ -205,6 +251,158 @@ class DesktopTests : public QObject {
                     ++highlighted_pixels;
             }
         QVERIFY(highlighted_pixels > 5);
+    }
+
+    void geometryLinesKeepStablePickIdentity() {
+        qcae::VtkView view;
+        view.resize(640, 420);
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        qcae::RenderPacket packet;
+        packet.document = {qcae::DocumentId{"doc"}, qcae::DocumentEpoch{"epoch"}};
+        packet.revision = 7;
+        packet.view_session_id = "geometry-view";
+        packet.view_revision = 3;
+        packet.geometry_lines = {{qcae::EntityId{"line-behind"}, {0, 20, 0}, {100, 20, 0}},
+                                 {qcae::EntityId{"line-front"}, {0, -20, 0}, {100, -20, 0}},
+                                 {qcae::EntityId{"line-to-hide"}, {0, 0, 35}, {100, 0, 35}}};
+        view.setPacket(packet);
+        view.standardView(qcae::VtkView::StandardView::front);
+        view.fit();
+        auto* widget = view.findChild<QVTKOpenGLNativeWidget*>();
+        QVERIFY(widget);
+        QTest::qWait(100);
+        QSignalSpy picked(&view, &qcae::VtkView::picked);
+        const auto center = viewportPosition(widget, {50, -20, 0});
+
+        view.setThroughSelection(true);
+        QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, center);
+        QCOMPARE(picked.size(), 1);
+        QCOMPARE(picked.first().at(1).toBool(), true);
+        QCOMPARE(picked.takeFirst().at(0).toStringList(),
+                 QStringList({"line-behind", "line-front"}));
+
+        view.setThroughSelection(false);
+        QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, center);
+        QCOMPARE(picked.size(), 1);
+        QCOMPARE(picked.first().at(1).toBool(), false);
+        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"line-front"}));
+
+        const auto left = viewportPosition(widget, {40, -20, 0}) - QPoint(0, 10);
+        const auto right = viewportPosition(widget, {60, -20, 0}) + QPoint(0, 10);
+        view.setThroughSelection(true);
+        view.setBoxMode(qcae::VtkView::BoxMode::intersecting);
+        dragBox(widget, left, right);
+        QCOMPARE(picked.size(), 1);
+        QCOMPARE(picked.takeFirst().at(0).toStringList(),
+                 QStringList({"line-behind", "line-front"}));
+
+        view.setBoxMode(qcae::VtkView::BoxMode::contained);
+        dragBox(widget, left, right);
+        QCOMPARE(picked.size(), 1);
+        QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+        view.setThroughSelection(false);
+        dragBox(widget, left, right);
+        QCOMPARE(picked.size(), 1);
+        QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+
+        dragBox(widget, {5, 5}, {widget->width() - 5, widget->height() - 5});
+        QCOMPARE(picked.size(), 1);
+        QCOMPARE(picked.takeFirst().at(0).toStringList(),
+                 QStringList({"line-front", "line-to-hide"}));
+        // Clicks still hit a long line after choosing fully-contained box selection.
+        QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, center);
+        QCOMPARE(picked.size(), 1);
+        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"line-front"}));
+
+        std::swap(packet.geometry_lines[0], packet.geometry_lines[1]);
+        ++packet.view_revision;
+        view.setPacket(packet);
+        QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, center);
+        QCOMPARE(picked.size(), 1);
+        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"line-front"}));
+        const auto hidden_position = viewportPosition(widget, {50, 0, 35});
+        packet.geometry_lines.pop_back();
+        ++packet.view_revision;
+        view.setPacket(packet);
+        for (const bool through : {false, true}) {
+            view.setThroughSelection(through);
+            QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, hidden_position);
+            QCOMPARE(picked.size(), 1);
+            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+        }
+
+        view.setSelectedIds({"line-front"});
+        QVERIFY(highlightedPixels(widget) > 20);
+        QVERIFY(saveEvidence(widget, "geometry-highlight.png"));
+    }
+
+    void geometryPreviewHasNoSelectionIdentity() {
+        qcae::VtkView view;
+        view.resize(640, 420);
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        qcae::RenderPacket packet;
+        packet.document = {qcae::DocumentId{"doc"}, qcae::DocumentEpoch{"epoch"}};
+        packet.revision = 9;
+        packet.view_session_id = "preview-view";
+        packet.view_revision = 4;
+        packet.geometry_lines = {{qcae::EntityId{"committed-line"}, {0, 0, 0}, {100, 0, 0}}};
+        view.setPacket(packet);
+        view.setSelectedIds({"committed-line"});
+        view.setPreview({{{0, -10, 30}, {100, -10, 30}}, {{0, 1}}});
+        view.standardView(qcae::VtkView::StandardView::front);
+        view.fit();
+        auto* widget = view.findChild<QVTKOpenGLNativeWidget*>();
+        QVERIFY(widget);
+        QTest::qWait(100);
+        QVERIFY(view.hasPacket());
+        QVERIFY(highlightedPixels(widget) > 20);
+        QVERIFY(previewPixels(widget) > 20);
+        QVERIFY(saveEvidence(widget, "geometry-preview.png"));
+        const auto camera = view.cameraFingerprint();
+        QSignalSpy picked(&view, &qcae::VtkView::picked);
+        const auto committed_position = viewportPosition(widget, {50, 0, 0});
+        const auto preview_position = viewportPosition(widget, {50, -10, 30});
+        for (const bool through : {false, true}) {
+            view.setThroughSelection(through);
+            QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, preview_position);
+            QCOMPARE(picked.size(), 1);
+            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+            QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, committed_position);
+            QCOMPARE(picked.size(), 1);
+            QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"committed-line"}));
+            dragBox(widget, {5, 5}, {widget->width() - 5, widget->height() - 5});
+            QCOMPARE(picked.size(), 1);
+            QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"committed-line"}));
+        }
+
+        // A preview in front of the committed line cannot replace its pick identity.
+        view.setPreview({{{0, -10, 0}, {100, -10, 0}}, {{0, 1}}});
+        QCOMPARE(view.cameraFingerprint(), camera);
+        view.setThroughSelection(false);
+        QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, committed_position);
+        QCOMPARE(picked.size(), 1);
+        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"committed-line"}));
+        view.clearPreview();
+        QCOMPARE(view.cameraFingerprint(), camera);
+        QCOMPARE(previewPixels(widget), 0);
+        QVERIFY(highlightedPixels(widget) > 20);
+        QVERIFY(saveEvidence(widget, "geometry-preview-cleared.png"));
+
+        // Previewing an otherwise empty document does not fabricate selectable entities.
+        packet.geometry_lines.clear();
+        ++packet.revision;
+        view.setPacket(packet);
+        view.setPreview({{{0, -10, 0}, {100, -10, 0}}, {{0, 1}}});
+        for (const bool through : {false, true}) {
+            view.setThroughSelection(through);
+            dragBox(widget, {5, 5}, {widget->width() - 5, widget->height() - 5});
+            QCOMPARE(picked.size(), 1);
+            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+        }
+        view.clearPreview();
+        QCOMPARE(previewPixels(widget), 0);
     }
 };
 } // namespace

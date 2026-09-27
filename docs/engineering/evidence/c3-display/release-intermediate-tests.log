@@ -1,0 +1,107 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-desktop
+      Start 37: c3_desktop_workflow
+      Start  1: acceptance_checker
+ 1/44 Test  #1: acceptance_checker ...............   Passed    0.13 sec
+      Start  2: architecture_gate_unit
+ 2/44 Test  #2: architecture_gate_unit ...........   Passed    8.25 sec
+      Start  3: record_application
+ 3/44 Test  #3: record_application ...............   Passed    0.49 sec
+      Start  4: operation_registry
+ 4/44 Test  #4: operation_registry ...............   Passed    0.44 sec
+      Start  5: generated_operation_inputs
+ 5/44 Test  #5: generated_operation_inputs .......   Passed    0.05 sec
+      Start  6: operation_generation
+ 6/44 Test  #6: operation_generation .............   Passed    4.02 sec
+      Start  7: parameters
+ 7/44 Test  #7: parameters .......................   Passed    0.39 sec
+      Start  8: model_operations
+ 8/44 Test  #8: model_operations .................   Passed    0.45 sec
+      Start  9: quantity_entry_consistency
+ 9/44 Test  #9: quantity_entry_consistency .......   Passed    0.47 sec
+      Start 10: record_query
+10/44 Test #10: record_query .....................   Passed    0.23 sec
+      Start 11: cpp_format
+11/44 Test #11: cpp_format .......................   Passed    0.40 sec
+      Start 12: model
+12/44 Test #12: model ............................   Passed    0.30 sec
+      Start 13: nastran
+13/44 Test #13: nastran ..........................   Passed    0.48 sec
+      Start 14: delta
+14/44 Test #14: delta ............................   Passed    0.21 sec
+      Start 15: persistence
+15/44 Test #15: persistence ......................   Passed    0.28 sec
+      Start 16: query
+16/44 Test #16: query ............................   Passed    0.33 sec
+      Start 17: generated_profile
+17/44 Test #17: generated_profile ................   Passed    0.02 sec
+      Start 18: core
+18/44 Test #18: core .............................   Passed    0.28 sec
+      Start 19: contracts
+19/44 Test #19: contracts ........................   Passed    0.25 sec
+      Start 20: allocation_atomicity
+20/44 Test #20: allocation_atomicity .............   Passed    0.36 sec
+      Start 21: design
+21/44 Test #21: design ...........................   Passed    0.07 sec
+      Start 22: generated_contract
+22/44 Test #22: generated_contract ...............   Passed    0.04 sec
+      Start 23: sqlite
+23/44 Test #23: sqlite ...........................   Passed    0.66 sec
+      Start 24: record_store
+24/44 Test #24: record_store .....................   Passed    0.61 sec
+      Start 25: geometry_mesh_sqlite
+25/44 Test #37: c3_desktop_workflow ..............***Failed   19.30 sec
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+FAIL!  : Workflow::realEngineModelingAndHistory() 'apply->isEnabled()' returned FALSE. ()
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(141)]
+2026-09-27 22:25:45.690 qcae_c3_desktop_workflow_tests[14632:35024627] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+PASS   : Workflow::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 18641ms
+********* Finished testing of Workflow *********
+
+      Start 26: legacy_migration
+26/44 Test #25: geometry_mesh_sqlite .............   Passed    0.89 sec
+      Start 27: engine_assembly
+27/44 Test #26: legacy_migration .................   Passed    1.06 sec
+      Start 28: ipc
+28/44 Test #27: engine_assembly ..................   Passed    0.68 sec
+      Start 29: m1_ipc
+29/44 Test #28: ipc ..............................   Passed    1.20 sec
+      Start 30: c3_display_ipc
+30/44 Test #29: m1_ipc ...........................   Passed    1.03 sec
+      Start 31: entity_query_ipc
+31/44 Test #30: c3_display_ipc ...................   Passed    2.14 sec
+      Start 32: engine_contributions_ipc
+32/44 Test #32: engine_contributions_ipc .........   Passed    3.20 sec
+      Start 33: m23_ipc
+33/44 Test #33: m23_ipc ..........................   Passed    1.37 sec
+      Start 34: c2_workflow
+34/44 Test #31: entity_query_ipc .................   Passed    7.21 sec
+      Start 35: desktop
+35/44 Test #35: desktop ..........................   Passed    3.66 sec
+      Start 36: desktop_selection
+36/44 Test #36: desktop_selection ................   Passed    4.63 sec
+      Start 38: modeling_tools
+37/44 Test #38: modeling_tools ...................   Passed    6.37 sec
+      Start 39: desktop_smoke
+38/44 Test #39: desktop_smoke ....................   Passed    6.77 sec
+      Start 40: record_document
+39/44 Test #34: c2_workflow ......................   Passed   24.12 sec
+      Start 41: generated_entities
+40/44 Test #41: generated_entities ...............   Passed    0.23 sec
+      Start 42: runtime
+41/44 Test #42: runtime ..........................   Passed    0.59 sec
+      Start 43: geometry_mesh
+42/44 Test #43: geometry_mesh ....................   Passed    0.48 sec
+      Start 44: typed_host
+43/44 Test #44: typed_host .......................   Passed    0.55 sec
+44/44 Test #40: record_document ..................   Passed    5.94 sec
+
+98% tests passed, 1 tests failed out of 44
+
+Total Test time (real) =  56.41 sec
+
+The following tests FAILED:
+	 37 - c3_desktop_workflow (Failed)
+Errors while running CTest

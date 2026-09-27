@@ -18,6 +18,8 @@ class VtkView : public QWidget {
     ~VtkView() override;
     void setPacket(const RenderPacket& packet);
     void setSelectedIds(const QStringList& ids);
+    void setPreview(const RenderPreview& preview);
+    void clearPreview();
     void fit();
     void standardView(StandardView view);
     void setBoxMode(BoxMode mode);
@@ -26,7 +28,7 @@ class VtkView : public QWidget {
     [[nodiscard]] bool hasPacket() const;
 
   signals:
-    // IDs are real node/beam entities from RenderPacket, never VTK cell IDs.
+    // IDs are real node/beam/geometry entities from RenderPacket, never VTK cell IDs.
     void picked(const QStringList& ids, bool through);
     void cameraChanged(const QString& fingerprint);
 

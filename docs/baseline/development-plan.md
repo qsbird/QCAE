@@ -1,6 +1,6 @@
 # 开发计划
 
-状态：设计基线1.1；M0/M1、M2持久化与M3桌面已有运行实现，平台骨架已通过[C1/C2阶段出口](../engineering/checkpoints-c1-c2.md)。C2新增记录事务、SQLite迁移和真实后台线网格流程；新增工具目前只经CLI/IPC使用。C3/C4、完整SK、真实求解/AI及P0发布尚未验收。需求见[requirements.md](requirements.md)，当前证据见[C2验证](../engineering/c2-validation.md)，完整标准见[acceptance.md](acceptance.md)。
+状态：设计基线1.1；M0/M1、M2持久化与M3桌面已有运行实现，平台骨架已通过[C1/C2阶段出口](../engineering/checkpoints-c1-c2.md)。C2新增记录事务、SQLite迁移和真实后台线网格流程；NEXT-01—03与C3首个显示/交互切片已实现；几何建线和网格工具已有GUI入口，见[C3切片记录](../engineering/c3-display-validation.md)。C3/C4、完整SK、真实求解/AI及P0发布尚未验收。需求见[requirements.md](requirements.md)，当前证据见[C2验证](../engineering/c2-validation.md)，完整标准见[acceptance.md](acceptance.md)。
 
 ## M0：最小核心与本地运行入口
 
@@ -65,7 +65,7 @@ NEXT-03的关系记录是明确标记的测试贡献，不提前加入正式字�
 
 之后按依赖推进：
 
-1. **C3显示与交互**：用已有Node/Line2/GeometryLine落实拓扑、空间查询和显示贡献，先让直线可见且可拾取到稳定ID；接建线、网格任务和预览/取消/应用工具。并落实版本化分块资源、事件缺口重同步和局部显示更新。对应SK-04/10/12；4MiB资源、单块≤256KiB及局部修改负载按原合同测量。
+1. **C3显示与交互（进行中）**：首个切片已完成GeometryLine显示/稳定ID拾取、建线预览/取消/应用及后台线网格任务入口，见[验证记录](../engineering/c3-display-validation.md)。继续用已有Node/Line2/GeometryLine补齐通用拓扑/空间/显示贡献，并落实版本化分块资源、事件缺口重同步和局部显示更新。对应SK-04/10/12；4MiB资源、单块≤256KiB及局部修改负载按原合同测量。
 2. **剩余骨架机制**：按AP/BP缺项补齐参数/检查、分析引用、产物发布、结果来源及陈旧状态、Nastran六类静态贡献和布局恢复。复用已有TaskService与提交链；测试结果夹具不计真实求解。对应SK-05—11，逐项提供证据。
 3. **C4扩展实验**：冻结共同基线、保护区、输入与环境后，字段、批量命令、Tri3三项扩展各自从同一冻结基线起步；另执行适配/局部负载实验。EXT-01—05通过5/5，三项扩展保护区触碰各为0，手写产品文件分别≤6/6/10；至少一次独立执行者。不得预埋Tri3后用空diff验收。对应SK-13，并汇总SK-14所需的全量故障、性能和回归证据。
 4. **M4/M5接续**：骨架验收后接真实Nastran进程、运行产物、位移/反力读取和数值核验，再接MCP及真实外部AI会话。已有后台网格任务不替代外部进程生命周期与数值验收。

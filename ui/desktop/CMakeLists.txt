@@ -1,4 +1,4 @@
-add_library(qcae_desktop_ui STATIC src/desktop.cpp include/qcae/desktop.hpp)
+add_library(qcae_desktop_ui STATIC src/desktop.cpp src/modeling_tools.cpp src/modeling_tools.hpp include/qcae/desktop.hpp)
 target_include_directories(qcae_desktop_ui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(qcae_desktop_ui PUBLIC cxx_std_20)
 target_link_libraries(qcae_desktop_ui PUBLIC qcae_desktop_client qcae_vtk_view)

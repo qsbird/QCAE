@@ -78,12 +78,16 @@ struct VtkView::Impl {
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkActor> nodes;
     vtkSmartPointer<vtkActor> beams;
+    vtkSmartPointer<vtkActor> geometry_lines;
     vtkSmartPointer<vtkActor> selected_nodes;
     vtkSmartPointer<vtkActor> selected_beams;
+    vtkSmartPointer<vtkActor> selected_geometry_lines;
+    vtkSmartPointer<vtkActor> preview;
     RenderPacket packet;
     QStringList selected;
     std::vector<std::size_t> node_cell_ids;
     std::vector<std::size_t> beam_cell_ids;
+    std::vector<std::size_t> geometry_cell_ids;
     QPoint press;
     bool mouse_down{false};
     bool box_active{false};
@@ -99,8 +103,14 @@ struct VtkView::Impl {
         return {point[0], widget->height() * widget->devicePixelRatioF() - point[1]};
     }
 
-    QStringList projectedBox(const QRectF& rect) const {
+    QStringList projectedBox(const QRectF& rect, BoxMode mode) const {
         std::set<QString> selected_ids;
+        const auto lineHit = [&](const std::array<double, 3>& a, const std::array<double, 3>& b) {
+            const auto pa = screenPoint(a);
+            const auto pb = screenPoint(b);
+            return mode == BoxMode::contained ? inside(pa, rect) && inside(pb, rect)
+                                              : segmentIntersectsRect(pa, pb, rect);
+        };
         for (const auto& point : packet.points)
             if (inside(screenPoint(point.position_mm), rect))
                 selected_ids.insert(qs(point.entity.value));
@@ -109,13 +119,12 @@ struct VtkView::Impl {
                 continue;
             const auto& a = packet.points[beam.points[0]];
             const auto& b = packet.points[beam.points[1]];
-            const auto pa = screenPoint(a.position_mm);
-            const auto pb = screenPoint(b.position_mm);
-            const bool hit = box_mode == BoxMode::contained ? inside(pa, rect) && inside(pb, rect)
-                                                            : segmentIntersectsRect(pa, pb, rect);
-            if (hit)
+            if (lineHit(a.position_mm, b.position_mm))
                 selected_ids.insert(qs(beam.entity.value));
         }
+        for (const auto& line : packet.geometry_lines)
+            if (lineHit(line.start_mm, line.end_mm))
+                selected_ids.insert(qs(line.entity.value));
         return QStringList(selected_ids.begin(), selected_ids.end());
     }
 
@@ -142,14 +151,16 @@ struct VtkView::Impl {
                     ids.insert(qs(packet.points[node_cell_ids[index]].entity.value));
                 if (prop == beams && index < beam_cell_ids.size())
                     ids.insert(qs(packet.beams[beam_cell_ids[index]].entity.value));
+                if (prop == geometry_lines && index < geometry_cell_ids.size())
+                    ids.insert(qs(packet.geometry_lines[geometry_cell_ids[index]].entity.value));
             }
         }
         return QStringList(ids.begin(), ids.end());
     }
 
-    QStringList visibleBox(const QRect& area) const {
+    QStringList visibleBox(const QRect& area, BoxMode mode) const {
         const auto visible = hardwareBox(area);
-        const auto projected = projectedBox(area);
+        const auto projected = projectedBox(area, mode);
         QStringList result;
         for (const auto& id : visible)
             if (projected.contains(id))
@@ -182,11 +193,15 @@ struct VtkView::Impl {
     void rebuild() {
         node_cell_ids.clear();
         beam_cell_ids.clear();
+        geometry_cell_ids.clear();
         vtkNew<vtkPoints> points;
         vtkNew<vtkCellArray> point_cells;
         vtkNew<vtkCellArray> line_cells;
         vtkNew<vtkCellArray> selected_point_cells;
         vtkNew<vtkCellArray> selected_line_cells;
+        vtkNew<vtkPoints> geometry_points;
+        vtkNew<vtkCellArray> geometry_cells;
+        vtkNew<vtkCellArray> selected_geometry_cells;
         for (std::size_t index = 0; index < packet.points.size(); ++index) {
             const auto& point = packet.points[index];
             const auto id = points->InsertNextPoint(point.position_mm.data());
@@ -208,15 +223,52 @@ struct VtkView::Impl {
             if (selected.contains(qs(beam.entity.value)))
                 selected_line_cells->InsertNextCell(2, ends);
         }
+        // Geometry endpoints are display coordinates, never mesh nodes or pick identities.
+        for (std::size_t index = 0; index < packet.geometry_lines.size(); ++index) {
+            const auto& line = packet.geometry_lines[index];
+            const vtkIdType ends[]{geometry_points->InsertNextPoint(line.start_mm.data()),
+                                   geometry_points->InsertNextPoint(line.end_mm.data())};
+            geometry_cells->InsertNextCell(2, ends);
+            geometry_cell_ids.push_back(index);
+            if (selected.contains(qs(line.entity.value)))
+                selected_geometry_cells->InsertNextCell(2, ends);
+        }
         const double node_color[]{0.22, 0.7, 0.95};
         const double beam_color[]{0.8, 0.85, 0.91};
+        const double geometry_color[]{0.42, 0.87, 0.68};
         const double selected_color[]{1.0, 0.62, 0.13};
         makeActor(nodes, points, point_cells, true, node_color, 7);
         makeActor(beams, points, line_cells, false, beam_color, 3);
         makeActor(selected_nodes, points, selected_point_cells, true, selected_color, 13);
         makeActor(selected_beams, points, selected_line_cells, false, selected_color, 7);
+        makeActor(geometry_lines, geometry_points, geometry_cells, false, geometry_color, 3);
+        makeActor(selected_geometry_lines,
+                  geometry_points,
+                  selected_geometry_cells,
+                  false,
+                  selected_color,
+                  7);
         selected_nodes->PickableOff();
         selected_beams->PickableOff();
+        selected_geometry_lines->PickableOff();
+        window->Render();
+    }
+
+    void setPreview(const RenderPreview& value) {
+        vtkNew<vtkPoints> points;
+        vtkNew<vtkCellArray> cells;
+        for (const auto& point : value.points)
+            points->InsertNextPoint(point.data());
+        for (const auto& line : value.lines) {
+            if (line[0] >= value.points.size() || line[1] >= value.points.size())
+                continue;
+            const vtkIdType ends[]{static_cast<vtkIdType>(line[0]),
+                                   static_cast<vtkIdType>(line[1])};
+            cells->InsertNextCell(2, ends);
+        }
+        const double color[]{0.82, 0.38, 1.0};
+        makeActor(preview, points, cells, false, color, 5);
+        preview->PickableOff();
         window->Render();
     }
 };
@@ -237,12 +289,19 @@ VtkView::VtkView(QWidget* parent) : QWidget(parent), impl_(std::make_unique<Impl
     impl_->renderer->GradientBackgroundOn();
     impl_->nodes = vtkSmartPointer<vtkActor>::New();
     impl_->beams = vtkSmartPointer<vtkActor>::New();
+    impl_->geometry_lines = vtkSmartPointer<vtkActor>::New();
     impl_->selected_nodes = vtkSmartPointer<vtkActor>::New();
     impl_->selected_beams = vtkSmartPointer<vtkActor>::New();
+    impl_->selected_geometry_lines = vtkSmartPointer<vtkActor>::New();
+    impl_->preview = vtkSmartPointer<vtkActor>::New();
+    impl_->preview->PickableOff();
     for (auto* actor : {impl_->beams.GetPointer(),
+                        impl_->geometry_lines.GetPointer(),
                         impl_->nodes.GetPointer(),
                         impl_->selected_beams.GetPointer(),
-                        impl_->selected_nodes.GetPointer()})
+                        impl_->selected_geometry_lines.GetPointer(),
+                        impl_->selected_nodes.GetPointer(),
+                        impl_->preview.GetPointer()})
         impl_->renderer->AddActor(actor);
     impl_->widget->installEventFilter(this);
     impl_->camera_timer.setSingleShot(true);
@@ -268,6 +327,14 @@ void VtkView::setPacket(const RenderPacket& packet) {
 void VtkView::setSelectedIds(const QStringList& ids) {
     impl_->selected = ids;
     impl_->rebuild();
+}
+
+void VtkView::setPreview(const RenderPreview& preview) {
+    impl_->setPreview(preview);
+}
+
+void VtkView::clearPreview() {
+    impl_->setPreview({});
 }
 
 void VtkView::fit() {
@@ -345,11 +412,11 @@ bool VtkView::eventFilter(QObject* watched, QEvent* event) {
                 const QRect pixels(QPoint(rect.left() * dpr, rect.top() * dpr),
                                    QPoint(rect.right() * dpr, rect.bottom() * dpr));
                 if (impl_->box_active || (rect.width() < 4 && rect.height() < 4)) {
-                    const auto area = rect.width() < 4 && rect.height() < 4
-                                          ? pixels.adjusted(-3, -3, 3, 3)
-                                          : pixels;
-                    const auto ids =
-                        impl_->through ? impl_->projectedBox(area) : impl_->visibleBox(area);
+                    const bool click = rect.width() < 4 && rect.height() < 4;
+                    const auto mode = click ? BoxMode::intersecting : impl_->box_mode;
+                    const auto area = click ? pixels.adjusted(-3, -3, 3, 3) : pixels;
+                    const auto ids = impl_->through ? impl_->projectedBox(area, mode)
+                                                    : impl_->visibleBox(area, mode);
                     emit picked(ids, impl_->through);
                     if (impl_->box_active) {
                         impl_->box_active = false;

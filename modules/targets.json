@@ -335,14 +335,18 @@
         "ui/desktop/include/qcae/desktop.hpp"
       ],
       "sources": [
-        "ui/desktop/src/desktop.cpp"
+        "ui/desktop/src/desktop.cpp",
+        "ui/desktop/src/modeling_tools.cpp"
       ],
       "public_dependencies": [
         "qcae_desktop_client",
         "qcae_vtk_view"
       ],
       "private_dependencies": [],
-      "external_dependencies": []
+      "external_dependencies": [],
+      "private_headers": [
+        "ui/desktop/src/modeling_tools.hpp"
+      ]
     },
     {
       "target": "qcae-engine",

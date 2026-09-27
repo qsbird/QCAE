@@ -39,7 +39,7 @@ flowchart LR
     Engine -.按需.-> Render[离屏图像辅助进程]
 ```
 
-以下为目标组件分工。qcae-engine、qcae-cli及Qt/VTK桌面已有实现；C2新增几何/网格从CLI/IPC调用。MCP桥、真实求解器执行和离屏图像辅助进程仍待实现，图中的目标连线不代表这些能力已接入：
+以下为目标组件分工。qcae-engine、qcae-cli及Qt/VTK桌面已有实现；C2新增几何/网格从CLI/IPC调用，C3首个显示交互切片补上相同操作的GUI入口。MCP桥、真实求解器执行和离屏图像辅助进程仍待实现，图中的目标连线不代表这些能力已接入：
 
 - **qcae-engine**：文档、事务、查询、分析、任务与恢复的唯一持有者。
 - **qcae-desktop**：GUI、交互、视图状态和 VTK 显示缓存；不直接写工程库。
@@ -127,7 +127,7 @@ OCCT、Netgen/Gmsh、HDF5 等不因架构预留就立即接入，保持按实际
 
 当前macOS工具链、SQLite恢复及有界历史/任务已有C2记录；待完成门禁包括目标硬件性能分档、跨平台验证、实际外部AI客户端及Nastran方言/真实求解器。重复实例装配、复杂CAD/网格、远程亿级、内置聊天仍不进入本轮。
 
-架构文档中的职责与链路是目标合同；当前范围以C2及[NEXT入口一致性记录](../engineering/next-validation.md)为准。已实现入口补强及后续C3/C4顺序见[开发计划](../baseline/development-plan.md#c2之后的接续计划)。
+架构文档中的职责与链路是目标合同；当前范围以C2、[NEXT入口一致性记录](../engineering/next-validation.md)及[C3首个显示交互切片](../engineering/c3-display-validation.md)为准。已实现入口补强及后续C3/C4顺序见[开发计划](../baseline/development-plan.md#c2之后的接续计划)。
 
 
 ## 后续参考研究
