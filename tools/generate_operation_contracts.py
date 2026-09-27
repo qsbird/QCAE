@@ -73,8 +73,8 @@ def load_schemas(directory: Path) -> list[dict]:
             op['context'] = {**op['context'], 'expected_profile': op['context'].get('expected_profile', False)}
             if any(type(op['context'][flag]) is not bool for flag in CONTEXT):
                 raise ValueError(f'{file}: context flags must be boolean')
-            if not isinstance(op['fields'], list) or not op['fields']:
-                raise ValueError(f'{file}: fields must be a nonempty list')
+            if not isinstance(op['fields'], list):
+                raise ValueError(f'{file}: fields must be a list (empty for no parameters)')
             field_ids, field_names = set(), set()
             for field in op['fields']:
                 if set(field) - {'field_id', 'name', 'type', 'units', 'optional'} or not {'field_id', 'name', 'type'} <= set(field):
@@ -141,7 +141,9 @@ def render(operations: list[dict]) -> str:
                       '        const auto object = wire::object_fields(value, allowed, required, "input");',
                       '        if (!object.ok()) {',
                       '            return {object.status, std::nullopt, object.error};',
-                      '        }', '        const auto& fields = **object.value;'])
+                      '        }'])
+        if fields:
+            lines.append('        const auto& fields = **object.value;')
         for field in fields:
             key = field['name']
             optional = field.get('optional', False)
@@ -168,7 +170,7 @@ def render(operations: list[dict]) -> str:
                 lines.extend([f'{indent}{key} = *{decoded}.value;', '        }'])
         values = [field['name'] if field.get('optional', False) else '*' + field['name'] + '.value' for field in fields]
         lines.extend([f'        return {{Status::success, {name}{{' + ', '.join(values) + '}, std::nullopt};',
-                      '    }', '', f'    static Value to_value(const {name}& input) {{',
+                      '    }', '', f'    static Value to_value(const {name}&' + (' input' if fields else '') + ') {',
                       '        Value::Object object;'])
         for field in fields:
             key = field['name']

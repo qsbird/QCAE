@@ -1,6 +1,6 @@
 # 01：构建、公共契约与引擎入口
 
-本章先回答三个问题：哪些代码进入同一个程序，哪些类型能跨模块传递，以及客户端的一条请求怎样进入应用服务。这里描述 C2 的实际文件；框架检查通过不表示所有规划模块已经实现。
+本章先回答三个问题：哪些代码进入同一个程序，哪些类型能跨模块传递，以及客户端的一条请求怎样进入应用服务。这里描述当前源码；运行证据与剩余边界见[入口补强验证](../next-validation.md)。
 
 ## 构建与模块边界
 
@@ -10,7 +10,7 @@
 
 ### modules/targets.json
 
-[打开配置](../../../modules/targets.json)。登记 26 个生产构建目标的所有者、源码、公开/私有头文件和依赖，供架构检查与实际 CMake 图比较。它是工程检查数据，不负责运行时注册或依赖注入；增加目标、改变公开依赖时要同步更新。
+[打开配置](../../../modules/targets.json)。登记生产构建目标的所有者、源码、公开/私有头文件和依赖，供架构检查与实际 CMake 图比较。它是工程检查数据，不负责运行时注册；增加目标、改变公开依赖时要同步更新。
 
 ### modules/source-migration.json
 
@@ -56,7 +56,15 @@
 
 ### apps/engine/main.cpp
 
-[打开源码](../../../apps/engine/main.cpp)。这是本地业务宿主的组装点：创建 `QCoreApplication`、解析 socket/workspace/migrate-from 参数、检查 endpoint 锁和现存服务、监听 `QLocalServer`，再创建 Nastran codec、可选 SQLite store、兼容应用外观、选择服务与 `TypedHost`。`MemoryApplication` 内部持有同一个 `RecordApplication`，`typed(core.record_application(), ...)` 明确共享它；没有 `--workspace` 时仍为内存模式。
+[打开源码](../../../apps/engine/main.cpp)。生产 executable 的薄入口：取得 `default_engine_contributions()`，再调用 `qcae_run_engine`。实际 socket 服务、生命周期和持久化装配位于 `engine_host.cpp`。
+
+### apps/engine/include/qcae/engine_host.hpp
+
+[打开源码](../../../apps/engine/include/qcae/engine_host.hpp)。声明接收启动参数与静态贡献列表的 `qcae_run_engine`。生产入口与测试专用贡献入口复用同一宿主函数，差别只在可信的启动贡献。
+
+### apps/engine/engine_host.cpp
+
+[打开源码](../../../apps/engine/engine_host.cpp)。创建 `QCoreApplication`、解析 socket/workspace/migrate-from 参数、检查 endpoint 锁和现存服务并监听 `QLocalServer`。先装配并冻结记录注册表，再创建 Nastran codec、可选 SQLite store、共享应用、选择服务和 `TypedHost`；迁移解码也使用同一注册表。兼容外观与 typed 入口共享 `RecordApplication`，没有 `--workspace` 时仍为内存模式。
 
 继续读连接回调：按换行接收不超过 1 MiB 的 JSON 帧，要求先握手，再交给 `ipc::dispatch`，最终进入 Qt 事件循环。调用者由宿主固定为本地 OS 用户上下文 `local-user`，请求 JSON 不能冒充另一个 caller；这还不是多人认证系统。启动能发现工作恢复状态，但用户必须显式选择恢复，不把进程启动直接当作正常打开工程。
 
@@ -68,15 +76,27 @@
 
 ### adapters/engine_api/src/ipc_api.cpp
 
-[打开源码](../../../adapters/engine_api/src/ipc_api.cpp)。先读顶层字段白名单、API 版本、参数对象和修订十进制字符串校验，再看 `typed → selection → model → 生命周期/历史` 的路由。typed 操作优先进入新注册表，旧目录与兼容接口仍承担其余功能；`capabilities.list` 合并两类能力，但尚未做到所有业务操作都由一个 typed 描述生成。这里仍保留旧材料预览路径，不能拿它作为新增功能的默认实现模板。
+[打开源码](../../../adapters/engine_api/src/ipc_api.cpp)。先读顶层字段白名单、API 版本和参数对象，再看 `typed → selection → model → 生命周期/历史` 的路由。`requested_version` 与 `expected_profile` 交给 typed 上下文解析，其他入口拒绝这两个顶层字段。`operations.get` 保留 commit/undo/redo 的兼容映射，其他文档操作直接查询应用保留的 action outcome，不受当前处理器是否安装影响；查询仍检查文档/epoch 和 caller 作用域。`capabilities.list` 合并 typed 注册描述与旧目录，旧材料预览仍是兼容路径。
 
 ### adapters/engine_api/include/qcae/typed_host.hpp
 
-[打开源码](../../../adapters/engine_api/include/qcae/typed_host.hpp)。`TypedHost` 是持有 `RecordApplication&` 的传输组装器，提供能力发现和分派，内部拥有操作注册表及按需创建的任务服务。它不拥有第二个文档；引用的应用必须比它活得更久。
+[打开源码](../../../adapters/engine_api/include/qcae/typed_host.hpp)。`TypedHost` 持有 `RecordApplication&`，提供能力发现和分派，内部拥有操作注册表及按需创建的任务服务。三参数构造接收 `OperationContributor`，将同一应用和延迟 task-service 访问交给启动贡献；两参数构造保留默认贡献。它不拥有第二个文档，引用的应用必须比它活得更久。
 
 ### adapters/engine_api/src/typed_host.cpp
 
-[打开源码](../../../adapters/engine_api/src/typed_host.cpp)。先看构造函数：材料和网格编辑模块注册处理器，几何创建调用 `app_.execute(... create_line_handler(...))`，线网格生成冻结快照后交给 `TaskService`。再看 `supports`、`capabilities` 和 `dispatch`，它们把 Qt JSON 转为中立 `Value`/typed 输入，并提供字段读取及任务状态、取消、协调入口。当前注册仍在此处逐项组装，操作版本/profile 上下文尚未完整贯穿 IPC；这些扩展缺口见 C2 审查，不能把现有 typed 接口当作完整插件系统。
+[打开源码](../../../adapters/engine_api/src/typed_host.cpp)。构造时执行贡献并拒绝与 intrinsic、旧操作目录或 handshake 名称冲突的注册。`context` 解析正 uint32 `requested_version` 和完整 `expected_profile`，注册表核验版本及必需上下文后才调用处理器；省略版本明确使用已安装版本。能力中的版本、输入字段、profile 必需标志和可用性来自已注册条目。任务状态、取消、协调及字段读取仍是内置入口；profile 是否适用由处理器在应用准备阶段核验，不在传输层另设一份目标规则。
+
+### adapters/engine_api/include/qcae/engine_contributions.hpp
+
+[打开源码](../../../adapters/engine_api/include/qcae/engine_contributions.hpp)。`EngineContribution` 按稳定贡献 ID 收集记录/规则与操作注册回调，`EngineAssembly` 返回已冻结记录注册表和组合操作回调。它是可信静态启动接口，没有动态加载或独立文档状态。
+
+### adapters/engine_api/src/engine_contributions.cpp
+
+[打开源码](../../../adapters/engine_api/src/engine_contributions.cpp)。`default_engine_contributions()` 提供生产记录/规则，`default_operations()` 注册材料、网格编辑、几何创建和后台线网格。`assemble_engine` 拒绝空或重复贡献 ID，先收集记录与规则再 freeze；组合操作回调随后在同一个应用上执行。新增测试贡献无需修改通用提交、历史或存储算法。
+
+### adapters/engine_api/src/typed_values.hpp
+
+[打开源码](../../../adapters/engine_api/src/typed_values.hpp)。适配器私有的任务状态/事件 DTO 投影和 `Result<T> → Result<Value>` 转换，供启动注册包装器与 typed 分派复用。它不执行任务、不存储事实，也不拥有文档。
 
 ### adapters/engine_api/include/qcae/ipc_model.hpp
 
@@ -84,7 +104,7 @@
 
 ### adapters/engine_api/src/ipc_model.cpp
 
-[打开源码](../../../adapters/engine_api/src/ipc_model.cpp)。实现模型摘要/实体查询、旧编辑预览、导入和内存导出预览。显式指定 node、beam、material、section、geometry 或 mesh，且没有 ids/name_contains/view/owner_id 条件的分页查询走记录读视图；省略 kind 或使用其他过滤条件仍走旧 `ModelSnapshot`。所以它是当前通用入口尚未统一的具体位置，新增记录并不会自动获得全部 IPC 查询条件；C2 审查中的 geometry 查询复现提供了实际例子。
+[打开源码](../../../adapters/engine_api/src/ipc_model.cpp)。实体查询与双向引用读取统一取 `RecordSnapshot`，枚举、kind/ID/名称筛选、组织视图和分页均调用记录查询；字段和来源按记录描述序列化，未知 kind 或条件明确拒绝。省略 kind 不再转入旧 `ModelSnapshot`。旧编辑预览、导入和内存导出预览仍在格式/兼容模型边界完成。
 
 ### adapters/engine_api/include/qcae/ipc_selection.hpp
 
@@ -100,7 +120,7 @@
 |---|---|
 | [modules/foundation/CMakeLists.txt](../../../modules/foundation/CMakeLists.txt) | INTERFACE 目标只传播 foundation 头文件和 C++20 要求，不生成实体持久化实现。 |
 | [modules/contracts/CMakeLists.txt](../../../modules/contracts/CMakeLists.txt) | INTERFACE 目标依赖 foundation，依据旧 `docs/contracts/operations.json` 生成能力目录 `operations.hpp`；与新 typed 输入生成分开。 |
-| [adapters/engine_api/CMakeLists.txt](../../../adapters/engine_api/CMakeLists.txt) | 将四组分派源码编为 `qcae_engine_api`，组装 legacy/query/typed 特性和 QtCore，不链接 Widgets 或 VTK。 |
-| [apps/engine/CMakeLists.txt](../../../apps/engine/CMakeLists.txt) | 构建 `qcae-engine`，链接 engine API、传输和 Nastran；启用存储时才链接 SQLite 并定义 `QCAE_HAS_SQLITE`。 |
+| [adapters/engine_api/CMakeLists.txt](../../../adapters/engine_api/CMakeLists.txt) | 将分派与静态贡献装配编为 `qcae_engine_api`，依赖 legacy/query/typed 特性和 QtCore，不链接 Widgets 或 VTK。 |
+| [apps/engine/CMakeLists.txt](../../../apps/engine/CMakeLists.txt) | `qcae_engine_host` 承担共享宿主实现并链接 engine API、传输和 Nastran；存储启用时才链接 SQLite/定义 `QCAE_HAS_SQLITE`。薄 executable `qcae-engine` 链接这个宿主目标。 |
 
-读完后应能准确指出：`main.cpp` 组装实例，`ipc_api.cpp` 选择入口，`TypedHost` 绑定功能，`RecordApplication` 拥有提交权。下一章继续看应用为什么能统一版本检查、历史与持久化。
+读完后应能准确指出：`main.cpp` 选择生产贡献，`engine_host.cpp` 运行宿主，`engine_contributions.cpp` 组装记录与操作，`ipc_api.cpp`/`TypedHost` 分派请求，`RecordApplication` 拥有提交权。下一章继续看版本检查、历史与持久化。

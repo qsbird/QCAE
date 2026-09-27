@@ -1,6 +1,6 @@
 # QCAE 设计基线 1.1
 
-状态：当前开发基线；平台骨架已交付至C1/C2，运行及范围见[C2交接](../implementation/c2-handoff.md)，证据见[C2验证](../engineering/c2-validation.md)。完整SK及P0尚未验收。此文将v0.1—v0.8讨论中已选择的方向收敛为当前依据，后续架构变更通过ADR记录。
+状态：当前开发基线；平台骨架已交付至C1/C2，运行及范围见[C2交接](../implementation/c2-handoff.md)，证据见[C2验证](../engineering/c2-validation.md)。后续 NEXT-01—03 入口一致性已交付，见[独立验证记录](../engineering/next-validation.md)。完整SK及P0尚未验收。此文将v0.1—v0.8讨论中已选择的方向收敛为当前依据，后续架构变更通过ADR记录。
 
 ## 确定决策
 

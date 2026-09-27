@@ -1,4 +1,5 @@
 add_library(qcae_engine_api STATIC src/ipc_api.cpp src/ipc_model.cpp src/ipc_selection.cpp src/typed_host.cpp include/qcae/ipc_api.hpp include/qcae/ipc_model.hpp include/qcae/ipc_selection.hpp include/qcae/typed_host.hpp)
+target_sources(qcae_engine_api PRIVATE src/typed_values.hpp src/engine_contributions.cpp include/qcae/engine_contributions.hpp)
 target_include_directories(qcae_engine_api PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(qcae_engine_api PUBLIC cxx_std_20)
 target_link_libraries(qcae_engine_api PUBLIC qcae_legacy_api qcae_query qcae_contracts Qt6::Core qcae_operations qcae_material_features qcae_mesh_editing qcae_geometry_features qcae_mesh_generation qcae_task_application)

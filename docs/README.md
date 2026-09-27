@@ -27,11 +27,13 @@
 
 ## 当前实现
 
-[C2 交接与当前边界](implementation/c2-handoff.md)：当前停止在 C2，记录核心、后台线网格、CLI/薄客户端与保存/恢复已贯通。
+[NEXT-01—03 入口一致性](engineering/next-validation.md)：C2 后统一查询、操作契约和生产装配的实现、测试与边界。
+
+[C2 交接](implementation/c2-handoff.md)：该阶段的记录核心、后台线网格、CLI/薄客户端与保存/恢复链路及运行方式。
 
 [C2 扩展审查](engineering/extensibility-audit-c2.md)：生产查询、操作契约、装配及拓扑/显示的剩余缺口；接续任务纳入[开发计划](baseline/development-plan.md#c2之后的接续计划)。
 
-[平台框架逐文件导读](engineering/code-walkthrough/README.md)：按四条阅读链说明现有 109 个生产源码与配置文件，区分记录主链、旧兼容边界和尚未贯通的入口。
+[平台框架逐文件导读](engineering/code-walkthrough/README.md)：按四条阅读链说明生产源码与配置文件，区分记录主链、旧兼容边界和尚未贯通的入口。
 
 [M0运行与验证](implementation/m0.md)：纯C++内存核心、Qt本地engine/CLI。
 

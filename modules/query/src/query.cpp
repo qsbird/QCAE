@@ -156,7 +156,7 @@ class QueryContext {
             return false;
         switch (predicate.op) {
         case QueryOp::kind:
-            if (predicate.text.empty())
+            if (!query_kind_registered(snapshot_, predicate.text))
                 return false;
             break;
         case QueryOp::source_number_range:

@@ -104,7 +104,22 @@ struct ReferencePage {
     std::size_t total{};
     std::vector<Reference> references;
 };
+// Organization views include intermediate organization rows and exclude only the owner.
+// This differs intentionally from the selection predicate's member-only scope.
+struct EntityFilter {
+    std::string kind;
+    std::string name_contains;
+    std::optional<std::vector<EntityId>> ids;
+    std::string view{"all"};
+    std::optional<EntityId> owner;
+};
+bool query_kind_registered(const DocumentView&, std::string_view);
 std::size_t query_entity_count(const DocumentView&, std::string_view kind = {});
+Result<EntityPage> query_entities(const DocumentView&,
+                                  const EntityFilter&,
+                                  std::size_t offset,
+                                  std::size_t limit,
+                                  RecordStats* = nullptr);
 Result<EntityPage> query_entities(const DocumentView&,
                                   std::size_t offset,
                                   std::size_t limit,

@@ -59,6 +59,8 @@ if(BUILD_TESTING)
   add_test(NAME generated_operation_inputs COMMAND Python3::Interpreter
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_operation_contracts.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/schemas/operations" "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp" --check)
+  add_test(NAME operation_generation COMMAND Python3::Interpreter
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_operation_generation.py")
   add_executable(qcae_parameter_tests tests/parameter_tests.cpp)
   target_link_libraries(qcae_parameter_tests PRIVATE qcae_parameters)
   qcae_warnings(qcae_parameter_tests)
@@ -150,6 +152,12 @@ if(QCAE_BUILD_IPC)
   target_link_libraries(qcae_ipc INTERFACE qcae_engine_api qcae_transport_local)
   add_subdirectory(apps/engine)
   add_subdirectory(apps/cli)
+  if(BUILD_TESTING)
+    add_executable(qcae_engine_assembly_tests tests/engine_assembly_tests.cpp)
+    target_link_libraries(qcae_engine_assembly_tests PRIVATE qcae_engine_api)
+    qcae_warnings(qcae_engine_assembly_tests)
+    add_test(NAME engine_assembly COMMAND qcae_engine_assembly_tests)
+  endif()
   if(BUILD_TESTING AND UNIX)
     add_test(NAME ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/ipc_tests.py"
       --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
@@ -157,6 +165,20 @@ if(QCAE_BUILD_IPC)
       --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
     set_tests_properties(ipc m1_ipc PROPERTIES TIMEOUT 60)
     if(QCAE_BUILD_STORAGE)
+      add_test(NAME entity_query_ipc COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/entity_query_ipc_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+        --evidence-dir ${CMAKE_CURRENT_BINARY_DIR}/next-evidence/queries)
+      set_tests_properties(entity_query_ipc PROPERTIES TIMEOUT 90)
+      add_executable(qcae_contributed_engine tests/contributed_engine_main.cpp)
+      target_link_libraries(qcae_contributed_engine PRIVATE qcae_engine_host)
+      qcae_warnings(qcae_contributed_engine)
+      add_test(NAME engine_contributions_ipc COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/engine_contributions_ipc_tests.py"
+        --engine $<TARGET_FILE:qcae_contributed_engine>
+        --production-engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/next-evidence/contributions")
+      set_tests_properties(engine_contributions_ipc PROPERTIES TIMEOUT 90)
       add_test(NAME m23_ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/m23_ipc_tests.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
       set_tests_properties(m23_ipc PROPERTIES TIMEOUT 90)

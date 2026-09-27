@@ -77,3 +77,9 @@ OperationDescriptor新增target_context（none、optional_profile、source_profi
 目录现为35项。持久化宿主支持project.current、normal/recover两种project.open、save/save_as及明确policy的close；只有带SQLite工作库时才声明durable。host作用域的operations.get可查询生命周期结果，恢复的open通过original_mode区分。图形/查询入口增加view.create/update/render_data与selection.evaluate/combine/get；请求明确模型版本和视图版本，详见[M2/M3说明](../implementation/m2-m3.md)及tests/m23_ipc_tests.py。
 
 picker_candidates表示图形客户端给出的明确候选，核心不把它冒充独立遮挡计算；无图形端口的visible_only继续返回不支持。当前RenderPacket走有界JSON而非既定最终批量通道，事件也由显式查询/轮询补偿。这些临时边界见[实施ADR](../architecture/m2-m3-decisions.md)。
+
+## NEXT-02 当前 typed IPC 补充
+
+已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。旧非 typed 路径拒绝这些新字段，避免静默忽略。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
+
+`operations.get` 的 document 作用域可以在贡献停用后查询原调用者的已保存回执，无需重新启用 handler；未知或未保留事实返回 `ENTITY_NOT_FOUND`。来源、测试及未完成范围见[NEXT验证](../engineering/next-validation.md)与[实际 wire 说明](../../adapters/engine_api/README.md)。

@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
-#include <map>
-#include <set>
 #include <stdexcept>
 
 namespace qcae::ipc {
@@ -117,121 +115,142 @@ Vec3 vec(const QJsonObject& o, const char* key) {
             throw BadInput("Invalid position number");
     return {a[0].toDouble(), a[1].toDouble(), a[2].toDouble()};
 }
-QJsonArray vec_json(const Vec3& v) {
-    return {v.x, v.y, v.z};
+QJsonValue field_json(const RecordFieldInput& field) {
+    switch (field.kind) {
+    case RecordFieldKind::text:
+    case RecordFieldKind::reference:
+        return qs(record_wire::read_text(field.payload));
+    case RecordFieldKind::real:
+        return record_wire::read_real(field.payload);
+    case RecordFieldKind::unsigned_integer:
+        return QString::number(record_wire::read_number(field.payload));
+    case RecordFieldKind::boolean:
+        return record_wire::read_boolean(field.payload);
+    case RecordFieldKind::vector3: {
+        const auto value = record_wire::read_vector3(field.payload);
+        return QJsonArray{value[0], value[1], value[2]};
+    }
+    case RecordFieldKind::references: {
+        QJsonArray result;
+        for (const auto& id : record_wire::read_strings(field.payload))
+            result.append(qs(id));
+        return result;
+    }
+    case RecordFieldKind::profile:
+        return profile_ref_json(record_wire::read_profile(field.payload));
+    case RecordFieldKind::target: {
+        const auto value = record_wire::read_target(field.payload);
+        return QJsonObject{{"profile", profile_ref_json(value.profile)},
+                           {"analysis_kind", qs(value.analysis_kind)}};
+    }
+    }
+    throw BadInput("Unsupported record field type");
 }
-QJsonArray vector_json(const std::array<double, 3>& value) {
-    return {value[0], value[1], value[2]};
+QString entity_field_name(const RecordFieldDescriptor& field) {
+    // Preserve the established entity.query wire names; entity.fields uses schema names.
+    if (field.kind == RecordFieldKind::reference)
+        return qs(field.name + "_id");
+    if (field.kind == RecordFieldKind::vector3 && field.unit == "mm")
+        return qs(field.name + "_mm");
+    return qs(field.name);
 }
 QJsonObject record_entity_json(const EntitySummary& entity, const DocumentView& view) {
     QJsonObject result{
         {"entity_id", qs(entity.id.value)}, {"kind", qs(entity.kind)}, {"name", qs(entity.name)}};
     const auto record = view.find_identity(entity.id.value);
-    if (entity.kind == "node") {
-        const auto& value = record->get<records::Node>();
-        result.insert("position_mm", vector_json(value.position));
-        if (value.mesh)
-            result.insert("mesh_id", qs(value.mesh->value));
-    } else if (entity.kind == "beam") {
-        const auto& value = record->get<records::Beam>();
-        result.insert("nodes", QJsonArray{qs(value.nodes[0].value), qs(value.nodes[1].value)});
-        result.insert("section_id",
-                      value.section ? QJsonValue(qs(value.section->value)) : QJsonValue());
-        result.insert("orientation", vector_json(value.orientation));
-        if (value.mesh)
-            result.insert("mesh_id", qs(value.mesh->value));
-    } else if (entity.kind == "material") {
-        const auto& value = record->get<records::Material>();
-        result.insert("young_modulus_mpa", value.young_modulus_mpa);
-        if (value.poisson_ratio)
-            result.insert("poisson_ratio", *value.poisson_ratio);
-    } else if (entity.kind == "section") {
-        const auto& value = record->get<records::BeamSection>();
-        result.insert("material_id", qs(value.material.value));
-        result.insert("area_mm2", value.area_mm2);
-        result.insert("i1_mm4", value.i1_mm4);
-        result.insert("i2_mm4", value.i2_mm4);
-        result.insert("torsion_mm4", value.torsion_mm4);
-    } else if (entity.kind == "geometry") {
-        const auto& value = record->get<records::GeometryLine>();
-        result.insert("start_mm", vector_json(value.start));
-        result.insert("end_mm", vector_json(value.end));
-        result.insert("geometry_revision", QString::number(value.geometry_revision));
-    } else if (entity.kind == "mesh") {
-        const auto& value = record->get<records::Mesh>();
-        if (value.geometry)
-            result.insert("geometry_id", qs(value.geometry->value));
-        result.insert("stale", value.stale);
+    const auto input = record_wire::decode(record->encoded());
+    for (const auto& descriptor : record->descriptor().fields) {
+        const auto* field = record_wire::find(input, descriptor.id);
+        if (field) {
+            result.insert(entity_field_name(descriptor), field_json(*field));
+            if (descriptor.kind == RecordFieldKind::target)
+                result.insert("profile_ref",
+                              profile_ref_json(record_wire::read_target(field->payload).profile));
+        } else if (entity.kind == "beam" && descriptor.name == "section")
+            result.insert("section_id", QJsonValue());
     }
+    QJsonArray sources;
+    view.visit(RecordTraits<records::SourceIdentifier>::type_id, [&](const Record& item) {
+        const auto& source = item->get<records::SourceIdentifier>();
+        if (source.entity == entity.id)
+            sources.append(QJsonObject{{"source_model_id", qs(source.source_model_id)},
+                                       {"namespace", qs(source.name_space)},
+                                       {"number", QString::number(source.number)},
+                                       {"include_id", qs(source.include.value)}});
+    });
+    result.insert("sources", sources);
     return result;
 }
-QJsonObject entity_json(const EntitySummary& e, const Model& m) {
-    QJsonObject o{{"entity_id", qs(e.id.value)}, {"kind", qs(e.kind)}, {"name", qs(e.name)}};
-    for (const auto& n : m.nodes)
-        if (n.id == e.id)
-            o.insert("position_mm", vec_json(n.position));
-    for (const auto& b : m.beams)
-        if (b.id == e.id) {
-            o.insert("nodes", QJsonArray{qs(b.nodes[0].value), qs(b.nodes[1].value)});
-            o.insert("section_id", qs(b.section.value));
-            o.insert("orientation", vec_json(b.orientation));
-        }
-    for (const auto& s : m.sections)
-        if (s.id == e.id) {
-            o.insert("material_id", qs(s.material.value));
-            o.insert("area_mm2", s.area_mm2);
-            o.insert("i1_mm4", s.i1_mm4);
-            o.insert("i2_mm4", s.i2_mm4);
-            o.insert("torsion_mm4", s.torsion_mm4);
-        }
-    for (const auto& v : m.materials)
-        if (v.id == e.id) {
-            o.insert("young_modulus_mpa", v.young_modulus_mpa);
-            if (v.poisson_ratio)
-                o.insert("poisson_ratio", *v.poisson_ratio);
-        }
-    for (const auto& v : m.parts)
-        if (v.id == e.id)
-            o.insert("members", id_json(v.members));
-    for (const auto& v : m.sets)
-        if (v.id == e.id)
-            o.insert("members", id_json(v.members));
-    for (const auto& v : m.assemblies)
-        if (v.id == e.id)
-            o.insert("children", id_json(v.children));
-    for (const auto& v : m.includes)
-        if (v.id == e.id) {
-            o.insert("path", qs(v.path));
-            o.insert("members", id_json(v.members));
-            if (v.parent)
-                o.insert("parent_id", qs(v.parent->value));
-        }
-    for (const auto& v : m.forces)
-        if (v.id == e.id) {
-            o.insert("node_id", qs(v.node.value));
-            o.insert("force_n", vec_json(v.force_n));
-        }
-    for (const auto& v : m.constraints)
-        if (v.id == e.id) {
-            o.insert("nodes", id_json(v.nodes));
-            o.insert("dofs", qs(v.dofs));
-        }
-    for (const auto& v : m.analyses)
-        if (v.id == e.id) {
-            o.insert("profile_ref", profile_ref_json(v.target.profile));
-            o.insert("forces", id_json(v.forces));
-            o.insert("constraints", id_json(v.constraints));
-        }
-    QJsonArray sources;
-    for (const auto& s : m.sources)
-        if (s.entity == e.id)
-            sources.append(QJsonObject{{"source_model_id", qs(s.source_model_id)},
-                                       {"namespace", qs(s.name_space)},
-                                       {"number", QString::number(s.number)},
-                                       {"include_id", qs(s.include.value)}});
-    o.insert("sources", sources);
-    return o;
+int page_index(const QJsonObject& parameters, const char* key, int fallback, int maximum) {
+    if (!parameters.contains(key))
+        return fallback;
+    const auto value = parameters.value(QLatin1String(key));
+    if (!value.isDouble() || value.toDouble() < 0 || value.toDouble() > maximum ||
+        std::floor(value.toDouble()) != value.toDouble())
+        throw BadInput("Invalid pagination");
+    return value.toInt();
 }
+QJsonObject
+entity_query(const QString& id, const QJsonObject& parameters, const RecordSnapshot& snapshot) {
+    fields(parameters, {"kind", "name_contains", "ids", "view", "owner_id", "offset", "limit"});
+    EntityFilter filter;
+    if (parameters.contains("kind"))
+        filter.kind = str(parameters, "kind");
+    if (parameters.contains("name_contains"))
+        filter.name_contains = str(parameters, "name_contains", true);
+    if (parameters.contains("ids"))
+        filter.ids = ids(parameters, "ids");
+    if (parameters.contains("view"))
+        filter.view = str(parameters, "view");
+    if (parameters.contains("owner_id"))
+        filter.owner = EntityId(str(parameters, "owner_id"));
+    const auto offset = page_index(parameters, "offset", 0, 100000);
+    const auto limit = page_index(parameters, "limit", 100, 1000);
+    const auto page = query_entities(snapshot.records, filter, offset, limit);
+    if (!page.ok())
+        return error(id, page);
+    QJsonArray rows;
+    for (const auto& entity : page.value->entities)
+        rows.append(record_entity_json(entity, snapshot.records));
+    return ok(id,
+              {{"entities", rows},
+               {"total", static_cast<qint64>(page.value->total)},
+               {"offset", offset},
+               {"limit", limit}},
+              snapshot.info.revision);
+}
+QJsonObject entity_references(const QString& id,
+                              const QJsonObject& parameters,
+                              const RecordSnapshot& snapshot) {
+    fields(parameters, {"entity_id", "direction"});
+    const EntityId selected{str(parameters, "entity_id")};
+    const auto direction =
+        parameters.contains("direction") ? str(parameters, "direction") : "incoming";
+    if (direction != "incoming" && direction != "outgoing")
+        throw BadInput("Unknown reference direction");
+    QJsonArray rows;
+    std::size_t offset = 0;
+    // The existing response contains every reference. Read bounded record pages without
+    // projecting the document or constructing a second all-references collection.
+    for (;;) {
+        const auto page =
+            query_references(snapshot.records, selected, direction == "incoming", offset, 1000);
+        if (!page.ok())
+            return error(id, page);
+        for (const auto& reference : page.value->references)
+            rows.append(QJsonObject{{"from", qs(reference.from.value)},
+                                    {"to", qs(reference.to.value)},
+                                    {"role", qs(reference.role)}});
+        offset += page.value->references.size();
+        if (offset >= page.value->total)
+            break;
+    }
+    return ok(id,
+              {{"references", rows},
+               {"affected_analyses", id_json(query_affected_analyses(snapshot.records, selected))}},
+              snapshot.info.revision);
+}
+
 } // namespace
 QJsonObject profile_json(const ProfileDefinition& p) {
     return {{"profile_ref", profile_ref_json(p.reference)},
@@ -261,45 +280,12 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
     if (!edit && op != "entity.query" && op != "entity.references" && op != "model.export_preview")
         return std::nullopt;
     try {
-        // Basic paging reads records directly, including geometry and unassigned line beams.
-        // The existing organization/filter protocol remains available below.
-        if (op == "entity.query" && !p.contains("ids") && !p.contains("name_contains") &&
-            !p.contains("view") && !p.contains("owner_id")) {
-            fields(p, {"kind", "offset", "limit"});
-            const auto kind = p.contains("kind") ? str(p, "kind") : std::string{};
-            const bool native_kind = kind == "node" || kind == "beam" || kind == "material" ||
-                                     kind == "section" || kind == "geometry" || kind == "mesh";
-            if (native_kind) {
-                auto index = [&](const char* key, int fallback, int maximum) {
-                    if (!p.contains(key))
-                        return fallback;
-                    const auto value = p.value(QLatin1String(key));
-                    if (!value.isDouble() || value.toDouble() < 0 || value.toDouble() > maximum ||
-                        std::floor(value.toDouble()) != value.toDouble())
-                        throw BadInput("Invalid pagination");
-                    return value.toInt();
-                };
-                const auto offset = index("offset", 0, 100000);
-                const auto limit = index("limit", 100, 1000);
-                const auto snapshot = app.record_application().snapshot(ref(r));
-                if (!snapshot.ok())
-                    return error(id, snapshot);
-                const auto page = query_entities(snapshot.value->records,
-                                                 static_cast<std::size_t>(offset),
-                                                 static_cast<std::size_t>(limit),
-                                                 kind);
-                if (!page.ok())
-                    return error(id, page);
-                QJsonArray rows;
-                for (const auto& entity : page.value->entities)
-                    rows.append(record_entity_json(entity, snapshot.value->records));
-                return ok(id,
-                          {{"entities", rows},
-                           {"total", static_cast<qint64>(page.value->total)},
-                           {"offset", offset},
-                           {"limit", limit}},
-                          snapshot.value->info.revision);
-            }
+        if (op == "entity.query" || op == "entity.references") {
+            const auto snapshot = app.record_application().snapshot(ref(r));
+            if (!snapshot.ok())
+                return error(id, snapshot);
+            return op == "entity.query" ? entity_query(id, p, *snapshot.value)
+                                        : entity_references(id, p, *snapshot.value);
         }
         const auto snap = app.snapshot(ref(r));
         if (!snap.ok())
@@ -419,143 +405,7 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
                        {"published", false}},
                       m.info.revision);
         }
-        const auto entities = model_entities(m);
-        const auto references = model_references(m);
-        std::map<EntityId, EntitySummary> by_id;
-        for (const auto& e : entities)
-            by_id.emplace(e.id, e);
-        if (op == "entity.references") {
-            fields(p, {"entity_id", "direction"});
-            const EntityId selected{str(p, "entity_id")};
-            if (!by_id.contains(selected))
-                return failure(id, "ENTITY_NOT_FOUND", "Unknown entity");
-            const auto direction = p.contains("direction") ? str(p, "direction") : "incoming";
-            if (direction != "incoming" && direction != "outgoing")
-                throw BadInput("direction must be incoming or outgoing");
-            QJsonArray rows;
-            for (const auto& v : references)
-                if ((direction == "incoming" ? v.to : v.from) == selected)
-                    rows.append(QJsonObject{
-                        {"from", qs(v.from.value)}, {"to", qs(v.to.value)}, {"role", qs(v.role)}});
-            return ok(id,
-                      {{"references", rows},
-                       {"affected_analyses", id_json(affected_analyses(m, selected))}},
-                      m.info.revision);
-        }
-        fields(p, {"kind", "name_contains", "ids", "view", "owner_id", "offset", "limit"});
-        const auto kind = p.contains("kind") ? str(p, "kind") : "";
-        const auto name = p.contains("name_contains") ? str(p, "name_contains", true) : "";
-        if (!kind.empty() && !std::set<std::string>{"node",
-                                                    "beam",
-                                                    "material",
-                                                    "section",
-                                                    "part",
-                                                    "assembly",
-                                                    "set",
-                                                    "include",
-                                                    "force",
-                                                    "constraint",
-                                                    "analysis"}
-                                  .contains(kind))
-            throw BadInput("Unknown entity kind");
-        std::optional<std::set<EntityId>> selected;
-        if (p.contains("ids")) {
-            const auto list = ids(p, "ids");
-            selected = std::set<EntityId>(list.begin(), list.end());
-        }
-        const auto view = p.contains("view") ? str(p, "view") : "all";
-        if (view == "all" && p.contains("owner_id"))
-            throw BadInput("owner_id requires an organization view");
-        if (view != "all") {
-            const EntityId owner{str(p, "owner_id")};
-            if (!by_id.contains(owner))
-                return failure(id, "ENTITY_NOT_FOUND", "Unknown view owner");
-            const auto owner_kind = view == "property" ? "section" : view;
-            if (!std::set<std::string>{"part", "assembly", "set", "include", "material", "property"}
-                     .contains(view) ||
-                by_id.at(owner).kind != owner_kind)
-                throw BadInput("View owner kind does not match");
-            std::set<EntityId> scope;
-            std::vector<EntityId> pending{owner};
-            while (!pending.empty()) {
-                const auto current = pending.back();
-                pending.pop_back();
-                if (!scope.insert(current).second)
-                    continue;
-                const auto& k = by_id.at(current).kind;
-                if (k == "part")
-                    for (const auto& v : m.parts)
-                        if (v.id == current)
-                            pending.insert(pending.end(), v.members.begin(), v.members.end());
-                if (k == "assembly")
-                    for (const auto& v : m.assemblies)
-                        if (v.id == current)
-                            pending.insert(pending.end(), v.children.begin(), v.children.end());
-                if (k == "set")
-                    for (const auto& v : m.sets)
-                        if (v.id == current)
-                            pending.insert(pending.end(), v.members.begin(), v.members.end());
-                if (k == "include")
-                    for (const auto& v : m.includes) {
-                        if (v.id == current)
-                            pending.insert(pending.end(), v.members.begin(), v.members.end());
-                        if (v.parent == current)
-                            pending.push_back(v.id);
-                    }
-                if (k == "material" && view == "material")
-                    for (const auto& v : m.sections)
-                        if (v.material == current)
-                            pending.push_back(v.id);
-                if (k == "section" && (view == "material" || view == "property"))
-                    for (const auto& v : m.beams)
-                        if (v.section == current)
-                            pending.push_back(v.id);
-                if (k == "beam" && (view == "material" || view == "property" || view == "part" ||
-                                    view == "assembly"))
-                    for (const auto& v : m.beams)
-                        if (v.id == current)
-                            pending.insert(pending.end(), v.nodes.begin(), v.nodes.end());
-            }
-            scope.erase(owner);
-            if (selected) {
-                std::set<EntityId> intersection;
-                std::set_intersection(scope.begin(),
-                                      scope.end(),
-                                      selected->begin(),
-                                      selected->end(),
-                                      std::inserter(intersection, intersection.begin()));
-                selected = std::move(intersection);
-            } else
-                selected = std::move(scope);
-        }
-        auto index = [&](const char* key, int fallback, int maximum) {
-            if (!p.contains(key))
-                return fallback;
-            const auto v = p.value(key);
-            if (!v.isDouble() || v.toDouble() < 0 || v.toDouble() > maximum ||
-                std::floor(v.toDouble()) != v.toDouble())
-                throw BadInput("Invalid pagination");
-            return v.toInt();
-        };
-        const auto offset = index("offset", 0, 100000);
-        const auto limit = index("limit", 100, 1000);
-        QJsonArray rows;
-        std::size_t count = 0;
-        for (const auto& e : entities) {
-            if ((!kind.empty() && e.kind != kind) ||
-                (!name.empty() && e.name.find(name) == std::string::npos) ||
-                (selected && !selected->contains(e.id)))
-                continue;
-            if (count >= static_cast<std::size_t>(offset) && rows.size() < limit)
-                rows.append(entity_json(e, m));
-            ++count;
-        }
-        return ok(id,
-                  {{"entities", rows},
-                   {"total", static_cast<qint64>(count)},
-                   {"offset", offset},
-                   {"limit", limit}},
-                  m.info.revision);
+        return std::nullopt;
     } catch (const BadInput& e) {
         return failure(id, "INVALID_INPUT", QString::fromUtf8(e.what()));
     }

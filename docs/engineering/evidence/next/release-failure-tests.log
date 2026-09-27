@@ -1,0 +1,91 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+      Start 33: c2_workflow
+      Start  2: architecture_gate_unit
+ 1/40 Test  #2: architecture_gate_unit ...........   Passed   13.87 sec
+      Start 36: record_document
+ 2/40 Test #36: record_document ..................   Passed    8.81 sec
+      Start 30: entity_query_ipc
+ 3/40 Test #30: entity_query_ipc .................   Passed    8.47 sec
+      Start  6: operation_generation
+ 4/40 Test #33: c2_workflow ......................   Passed   35.94 sec
+      Start 35: desktop_smoke
+ 5/40 Test  #6: operation_generation .............   Passed    7.83 sec
+      Start 31: engine_contributions_ipc
+ 6/40 Test #31: engine_contributions_ipc .........   Passed    2.26 sec
+      Start 34: desktop
+ 7/40 Test #35: desktop_smoke ....................   Passed    6.12 sec
+      Start 28: ipc
+ 8/40 Test #28: ipc ..............................   Passed    1.15 sec
+      Start 29: m1_ipc
+ 9/40 Test #34: desktop ..........................   Passed    2.00 sec
+      Start 32: m23_ipc
+10/40 Test #29: m1_ipc ...........................   Passed    1.68 sec
+      Start 25: geometry_mesh_sqlite
+11/40 Test #32: m23_ipc ..........................   Passed    1.76 sec
+      Start 26: legacy_migration
+12/40 Test #26: legacy_migration .................   Passed    0.19 sec
+      Start 24: record_store
+13/40 Test #24: record_store .....................Subprocess aborted***Exception:   0.18 sec
+Assertion failed: (WIFEXITED(status) && WEXITSTATUS(status) == 17), function test_process_termination_windows, file record_store_tests.cpp, line 312.
+
+      Start 23: sqlite
+14/40 Test #25: geometry_mesh_sqlite .............   Passed    0.62 sec
+      Start 11: cpp_format
+15/40 Test #23: sqlite ...........................   Passed    0.18 sec
+      Start 27: engine_assembly
+16/40 Test #27: engine_assembly ..................   Passed    0.61 sec
+      Start 20: allocation_atomicity
+17/40 Test #11: cpp_format .......................   Passed    0.89 sec
+      Start 40: typed_host
+18/40 Test #20: allocation_atomicity .............   Passed    0.45 sec
+      Start  8: model_operations
+19/40 Test  #8: model_operations .................   Passed    0.01 sec
+      Start 39: geometry_mesh
+20/40 Test #39: geometry_mesh ....................   Passed    0.04 sec
+      Start 12: model
+21/40 Test #40: typed_host .......................   Passed    1.96 sec
+      Start 38: runtime
+22/40 Test #38: runtime ..........................   Passed    0.01 sec
+      Start  3: record_application
+23/40 Test  #3: record_application ...............   Passed    0.06 sec
+      Start  4: operation_registry
+24/40 Test  #4: operation_registry ...............   Passed    0.01 sec
+      Start 18: core
+25/40 Test #12: model ............................   Passed    2.00 sec
+      Start 13: nastran
+26/40 Test #13: nastran ..........................   Passed    0.01 sec
+      Start 19: contracts
+27/40 Test #18: core .............................   Passed    1.86 sec
+      Start 10: record_query
+28/40 Test #19: contracts ........................   Passed    1.88 sec
+      Start 15: persistence
+29/40 Test #10: record_query .....................   Passed    1.87 sec
+      Start 16: query
+30/40 Test #15: persistence ......................   Passed    1.93 sec
+      Start  7: parameters
+31/40 Test  #7: parameters .......................   Passed    0.01 sec
+      Start 14: delta
+32/40 Test #16: query ............................   Passed    2.11 sec
+      Start  9: quantity_entry_consistency
+33/40 Test  #9: quantity_entry_consistency .......   Passed    0.01 sec
+      Start 37: generated_entities
+34/40 Test #37: generated_entities ...............   Passed    0.18 sec
+      Start  1: acceptance_checker
+35/40 Test #14: delta ............................   Passed    2.14 sec
+      Start 21: design
+36/40 Test  #1: acceptance_checker ...............   Passed    0.31 sec
+      Start  5: generated_operation_inputs
+37/40 Test #21: design ...........................   Passed    0.17 sec
+      Start 22: generated_contract
+38/40 Test  #5: generated_operation_inputs .......   Passed    0.11 sec
+      Start 17: generated_profile
+39/40 Test #22: generated_contract ...............   Passed    0.10 sec
+40/40 Test #17: generated_profile ................   Passed    0.07 sec
+
+98% tests passed, 1 tests failed out of 40
+
+Total Test time (real) =  54.97 sec
+
+The following tests FAILED:
+	 24 - record_store (Subprocess aborted)
+Errors while running CTest

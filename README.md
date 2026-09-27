@@ -2,9 +2,9 @@
 
 面向本地中小规模模型的 CAE 前处理平台。P0 聚焦受控 Nastran 悬臂梁流程，提供桌面 GUI 与外部 AI 共用的无界面业务接口；服务器和亿级实现后置。
 
-**当前状态：平台骨架 C1/C2 已完成，本轮停止在 C2。** 权威数据、事务/历史、SQLite迁移与真实后台线网格任务已贯通；CLI/脚本可创建几何、生成网格、分配材料/截面并完成保存/恢复。运行及证据见[C2交接说明](docs/implementation/c2-handoff.md)。桌面保留[M2/M3工作区](docs/implementation/m2-m3.md)，新增几何/网格功能尚无对应GUI工具；真实求解、AI接入和完整容量/性能验收尚未完成。
+**当前状态：C1/C2 及 NEXT-01—03 入口一致性切片已完成。** 权威数据、事务/历史、SQLite迁移与真实后台线网格任务已贯通；CLI/脚本可创建几何、生成网格、分配材料/截面并完成保存/恢复。运行及证据见[C2交接说明](docs/implementation/c2-handoff.md)。桌面保留[M2/M3工作区](docs/implementation/m2-m3.md)，新增几何/网格功能尚无对应GUI工具；真实求解、AI接入和完整容量/性能验收尚未完成。
 
-下一步先补齐实体查询、操作契约和生产装配入口，再接续 C3/C4；具体任务、依赖和验收范围见[开发计划](docs/baseline/development-plan.md#c2之后的接续计划)。当前仅同步计划，尚未实施这些改动。
+实体查询、操作版本/Profile 合同及静态生产装配已统一，实测范围见[NEXT 验证记录](docs/engineering/next-validation.md)。下一步进入 C3 显示与交互，顺序见[开发计划](docs/baseline/development-plan.md#c2之后的接续计划)。
 
 ## 从这里开始
 
@@ -15,7 +15,7 @@
 5. [开发计划](docs/baseline/development-plan.md)
 6. [验收标准](docs/baseline/acceptance.md)
 
-阅读现有实现可从[平台框架逐文件导读](docs/engineering/code-walkthrough/README.md)开始，按构建/入口、数据/提交、业务功能、查询/存储/桌面的顺序覆盖 109 个生产源码与配置文件。
+阅读现有实现可从[平台框架逐文件导读](docs/engineering/code-walkthrough/README.md)开始，按构建/入口、数据/提交、业务功能、查询/存储/桌面的顺序阅读当前生产源码与配置文件。
 
 ```mermaid
 flowchart LR

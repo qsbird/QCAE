@@ -2,7 +2,7 @@
 
 本篇逐文件阅读 `modules/document`、`modules/application`、`modules/runtime`（含 `record_application` 桥）和 `features/legacy_api` 的 C++ 源码及构建文件。建议先读记录类型与只读视图，再读应用提交，最后读任务发布与旧接口；这里描述当前实现，不将架构规划当作已交付功能。
 
-最关键的关系是：宿主共享一个 `RecordApplication`，它拥有当前已提交的 `DocumentView`、修订、历史和操作事实。业务回调生成候选；`EditSession::prepare()` 不发布模型；任务工作线程也只返回候选；真正提交都回到应用协调器。旧 `MemoryApplication` 是同一协调器的兼容外观，旧 `Model` 是导入、导出、读取及迁移边界上的值。
+最关键的关系是：宿主共享一个 `RecordApplication`，它拥有当前已提交的 `DocumentView`、修订、历史和操作事实。业务回调生成候选；`EditSession::prepare()` 不发布模型；任务工作线程也只返回候选；真正提交都回到应用协调器。`MemoryApplication` 是同一协调器的兼容外观，使用启动贡献装配的注册表；旧 `Model` 留在导入、导出、旧 API 读取及迁移边界，实体查询使用记录快照。
 
 ## 文档层：当前记录表示
 
@@ -150,7 +150,7 @@ TaskService::start → 保存 queued → worker 保存 running
 
 ### features/legacy_api/include/qcae/core.hpp
 
-[打开源码](../../../features/legacy_api/include/qcae/core.hpp)。保留 `MemoryApplication` 的材料命令、旧导入/编辑预览、快照、生命周期与历史 API。`record_application()` 明确暴露它内部共享的同一个协调器，供新特性直接复用；构造参数可传入 owned-row handlers。名字中的 Memory 不意味着默认持久化，只有显式存储才提供 durable 能力；接口兼容不形成第二套文档或历史。
+[打开源码](../../../features/legacy_api/include/qcae/core.hpp)。保留 `MemoryApplication` 的材料命令、旧导入/编辑预览、快照、生命周期与历史 API。`record_application()` 暴露内部共享的同一协调器；构造参数接收 owned-row handlers 和已装配记录注册表，省略注册表保留兼容默认值。名字中的 Memory 不意味着默认持久化，只有显式存储才提供 durable 能力。
 
 ### features/legacy_api/src/core.cpp
 

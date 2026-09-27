@@ -127,7 +127,7 @@ OCCT、Netgen/Gmsh、HDF5 等不因架构预留就立即接入，保持按实际
 
 当前macOS工具链、SQLite恢复及有界历史/任务已有C2记录；待完成门禁包括目标硬件性能分档、跨平台验证、实际外部AI客户端及Nastran方言/真实求解器。重复实例装配、复杂CAD/网格、远程亿级、内置聊天仍不进入本轮。
 
-架构文档中的职责与链路是目标合同；当前实现和验证范围以C2记录为准。后续入口补强及C3/C4顺序见[开发计划](../baseline/development-plan.md#c2之后的接续计划)。
+架构文档中的职责与链路是目标合同；当前范围以C2及[NEXT入口一致性记录](../engineering/next-validation.md)为准。已实现入口补强及后续C3/C4顺序见[开发计划](../baseline/development-plan.md#c2之后的接续计划)。
 
 
 ## 后续参考研究

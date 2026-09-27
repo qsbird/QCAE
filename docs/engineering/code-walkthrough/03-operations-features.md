@@ -10,17 +10,17 @@
 
 ### schemas/operations/basic.json
 
-[打开配置](../../../schemas/operations/basic.json)。定义七项操作的 ID/版本、输入字段、单位与写入上下文要求，生成构建目录中的 `qcae/operation_inputs.hpp`。操作输入与持久化实体是不同结构，例如移动节点用实体 ID 与位置，不能让客户端提交任意未验证的记录字节。当前生成器只支持已有受控字段形式，所有 API 操作也还没有统一迁到这个目录。
+[打开配置](../../../schemas/operations/basic.json)。定义七项生产操作的 ID/版本、输入字段、单位与上下文要求，生成构建目录中的 `qcae/operation_inputs.hpp`。操作输入与持久化实体是不同结构，例如移动节点用实体 ID 与位置，不能让客户端提交任意未验证的记录字节。生成器支持现有受控字段形式及 `fields: []` 的无参数输入，后者仍只接受空对象；所有 API 操作尚未统一迁到这个目录。
 
 ## operations：描述、解码与调度机制
 
 ### modules/operations/include/qcae/operation_registry.hpp
 
-[打开源码](../../../modules/operations/include/qcae/operation_registry.hpp)。先看中立 `Value`、`OperationContext`、`OperationDefinition`/`Descriptor`，再看 `InputTraits` 与 `register_typed`：注册的描述必须与生成输入契约一致，解码成功后才调用处理器。`Value` 是传输值，不是文档权威数据；注册表检查机械格式和上下文，领域合法性仍由参数工具、功能处理器和记录校验完成。`declare_unavailable` 可明确声明暂不可用能力，不能用成功返回掩盖未实现功能。
+[打开源码](../../../modules/operations/include/qcae/operation_registry.hpp)。先看中立 `Value`、`OperationContext`、`OperationDefinition`/`Descriptor`，再看 `InputTraits` 与 `register_typed`：注册的描述必须与生成输入契约一致，解码成功后才调用处理器。上下文包含可选请求版本和预期 profile；描述规定必需项，可用性由实际处理器产生。`Value` 是传输值，不是文档权威数据，领域合法性仍由功能处理器和记录校验完成。`declare_unavailable` 明确发布无处理器的能力。
 
 ### modules/operations/src/operation_registry.cpp
 
-[打开源码](../../../modules/operations/src/operation_registry.cpp)。实现对象字段白名单、必填、有限数、ID、数量/单位和向量等解码，以及重复注册、版本与上下文核验和处理器调用。它不知道梁截面或几何线的具体算法，这让已有机制可以被多个功能复用；但宿主必须正确传入版本/profile，注册表里的检查才会产生实际作用。
+[打开源码](../../../modules/operations/src/operation_registry.cpp)。实现对象字段白名单、必填、有限数、ID、数量/单位和向量等解码，以及重复注册和上下文核验。请求版本必须匹配已安装定义，显式参数与上下文版本不能矛盾；省略版本使用已安装版本，并将解析结果传给处理器。注册表检查 profile 必需字段是否存在；目标匹配由应用准备回调核验，保留事实的幂等重放先于当前目标规则执行。
 
 ### modules/operations/src/canonical_value.cpp
 
@@ -86,11 +86,11 @@ typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—10
 
 | 文件 | 作用与依赖 |
 |---|---|
-| [modules/operations/CMakeLists.txt](../../../modules/operations/CMakeLists.txt) | 生成 typed 输入并构建 `qcae_operations`，公开依赖 foundation/contracts；当前生成命令的 schema 依赖只列 basic.json，新增 schema 文件需补构建依赖。 |
+| [modules/operations/CMakeLists.txt](../../../modules/operations/CMakeLists.txt) | 生成 typed 输入并构建 `qcae_operations`，公开依赖 foundation/contracts。`GLOB CONFIGURE_DEPENDS` 跟踪全部操作 JSON；文件成员清单也是生成依赖，新增、修改或删除 schema 都触发增量生成。 |
 | [modules/parameters/CMakeLists.txt](../../../modules/parameters/CMakeLists.txt) | 构建纯参数工具，链接 foundation/contracts，不依赖应用、Qt 或具体求解器。 |
 | [features/materials/CMakeLists.txt](../../../features/materials/CMakeLists.txt) | 构建材料特性，链接 application/operations/parameters，定义三项业务处理器。 |
 | [features/mesh_editing/CMakeLists.txt](../../../features/mesh_editing/CMakeLists.txt) | 构建局部网格编辑特性，依赖结构与材料特性一致，通用提交留在 application。 |
 | [features/geometry/CMakeLists.txt](../../../features/geometry/CMakeLists.txt) | 构建纯几何候选处理器，只公开依赖 application；typed 注册目前由宿主完成。 |
 | [features/mesh_generation/CMakeLists.txt](../../../features/mesh_generation/CMakeLists.txt) | 构建线网格任务，依赖独立 task/application 桥，并登记 geometry_mesh 测试；不让通用应用反向依赖网格生成。 |
 
-可以沿 `geometry.create_line → mesh.generate_line → beam.assign_section → node.move` 阅读一次完整功能链。新增已有类型上的操作优先复用本章的模式；新增面/体单元还必须补拓扑规则、查询/显示和格式语义，相关边界见[扩展审查](../extensibility-audit-c2.md)。
+可以沿 `geometry.create_line → mesh.generate_line → beam.assign_section → node.move` 阅读一次完整功能链。新增已有类型上的操作复用候选/提交模式，并从静态贡献注册；新增面/体单元仍须补拓扑、查询/显示和格式语义。入口补强的范围及证据见[当前验证](../next-validation.md)，历史缺口见[C2 扩展审查](../extensibility-audit-c2.md)。

@@ -8,11 +8,11 @@
 
 ### modules/query/include/qcae/query.hpp
 
-[打开源码](../../../modules/query/include/qcae/query.hpp)。这是查询与选择的公共入口，定义 `QueryPredicate`、`SelectionScope`、分页结果、`SelectionHandle` 和 `SelectionService`，把候选域、隐藏策略、模型版本与视图版本写进类型。优先读接收 `DocumentView` 的实体/字段/引用查询和选择接口；接收 `ModelSnapshot` 的重载是显式兼容入口，应用宿主负责提供当前读视图，头文件不依赖 Qt 或 VTK。
+[打开源码](../../../modules/query/include/qcae/query.hpp)。这是查询与选择的公共入口，定义 `EntityFilter`、`QueryPredicate`、`SelectionScope`、分页结果、`SelectionHandle` 和 `SelectionService`，把筛选、候选域、隐藏策略与版本写进类型。`EntityFilter` 组合 kind、ID、名称及组织视图，实体/字段/引用和选择接口直接接收 `DocumentView`；`ModelSnapshot` 重载是显式兼容入口，头文件不依赖 Qt 或 VTK。
 
 ### modules/query/src/entity_queries.cpp
 
-[打开源码](../../../modules/query/src/entity_queries.cpp)。`query_entities`、`query_fields` 和 `query_references` 通过注册表描述符访问记录，供应用层返回摘要、字段和引用分页；`query_kind` 为空的内部记录不会作为普通实体暴露。`query_affected_analyses` 沿反向引用反复扩展影响集，并在影响到梁时保守关联分析；读取时可累计 `RecordStats`，但分页与影响传播仍有遍历行为，不能理解为每类查询都有索引。
+[打开源码](../../../modules/query/src/entity_queries.cpp)。`query_entities` 按注册描述符枚举并组合 kind/ID/名称/组织范围，未知 kind 明确拒绝；`query_fields` 和 `query_references` 返回字段与双向引用页，内部记录不作为普通实体暴露。组织范围保留旧实体浏览的 owner 排除、装配中间行、梁端点和 INCLUDE 子层级语义，类型判断使用稳定 RecordTypeId。公共来源引用保留 `source.include` 角色；`query_affected_analyses` 扩展反向影响并保守关联梁分析。读取不物化旧 `Model`，但分页和影响传播仍有遍历成本。
 
 ### modules/query/src/query.cpp
 

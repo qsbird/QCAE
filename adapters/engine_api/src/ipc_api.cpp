@@ -138,7 +138,9 @@ QJsonObject dispatch(MemoryApplication& app,
                 "document_id",
                 "document_epoch",
                 "expected_revision",
-                "idempotency_key"});
+                "idempotency_key",
+                "requested_version",
+                "expected_profile"});
         (void)string_field(request, "request_id");
         if (string_field(request, "api_version") != qs(api_version))
             return failure(
@@ -153,6 +155,8 @@ QJsonObject dispatch(MemoryApplication& app,
         const auto params = request.value("parameters").toObject();
         if (typed && typed->supports(op))
             return typed->dispatch(request, caller);
+        if (request.contains("requested_version") || request.contains("expected_profile"))
+            throw InvalidRequest("requested_version/expected_profile require a typed operation");
         if (selections) {
             if (const auto selection_response =
                     dispatch_selection(app, *selections, request, caller))
@@ -389,7 +393,7 @@ QJsonObject dispatch(MemoryApplication& app,
                 original = "undo";
             else if (original == "history.redo")
                 original = "redo";
-            else if (typed && typed->supports(original))
+            else
                 return result_json(id,
                                    app.record_application().action_outcome(
                                        caller,
@@ -397,8 +401,6 @@ QJsonObject dispatch(MemoryApplication& app,
                                        original,
                                        string_field(params, "idempotency_key").toStdString()),
                                    receipt_json);
-            else
-                return failure(id, "UNSUPPORTED_CAPABILITY", "Operation outcome is unavailable");
             response =
                 result_json(id,
                             app.operation(caller,

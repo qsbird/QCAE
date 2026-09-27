@@ -1,0 +1,31 @@
+Record-store integration failure diagnosis
+Observed: final Release suite was 39/40; record_store parent assertion required child exit 17.
+Fixture paths: Sandbox uses mkdtemp(qcae-record-store-XXXXXX); no fixed database directory is shared between Release and sanitizer runs.
+
+Sanitized factual excerpt from the macOS child crash report:
+process=qcae_record_store_tests pid=85278 parent_pid=85277
+launch=2026-09-27 21:43:15.8920 +0800 crash_capture=2026-09-27 21:43:15.9589 +0800
+exception=EXC_BAD_ACCESS signal=SIGSEGV subtype=KERN_INVALID_ADDRESS at 0x000000010312893d
+annotation=crashed on child side of fork pre-exec
+stack:
+  libsystem_trace.dylib: _os_log_preferences_refresh + 56
+  libsystem_trace.dylib: os_signpost_enabled + 300
+  libsystem_trace.dylib: os_signpost_id_make_with_pointer + 32
+  libsqlite3.dylib: openDatabase + 2564
+  qcae_record_store_tests: qcae::(anonymous namespace)::Db::Db(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, int) + 60
+  qcae_record_store_tests: qcae::SqliteWorkspaceStore::Impl::Impl(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, qcae::StoreOptions) + 436
+  qcae_record_store_tests: qcae::SqliteWorkspaceStore::SqliteWorkspaceStore(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, qcae::StoreOptions) + 188
+  qcae_record_store_tests: main + 16688
+  dyld: start + 6992
+
+Cause: the child crashes in system SQLite openDatabase -> os_signpost_id_make_with_pointer -> os_signpost_enabled -> _os_log_preferences_refresh after fork and before exec, prior to reaching either injected commit milestone. This is a test process-lifecycle failure, not an observed row-commit failure.
+Reproduction: the unchanged Release executable subsequently passed 15 consecutive direct runs; the intermittent fault was not reproduced in those runs. The failing run is retained in record-store-failure-LastTest.log and the original full-suite log.
+Correction: tests/record_store_tests.cpp launches explicit --store-child modes through posix_spawnp so SQLite/logging initialize in a fresh process image. Before/after DB commit still terminate with _exit(17); the recent-WAL fixture still uses _exit(23) without SQLite close/checkpoint. Parent generation/rows/payload/WAL preservation assertions remain unchanged. Unexpected child exit or signal is printed before failing the exact-exit assertion.
+No adapter or application source changed for this correction.
+
+Validation after correction:
+cmake --build build-next01 --target qcae_record_store_tests -j 6: passed.
+ctest --test-dir build-next01 -R '^record_store$' --output-on-failure: passed 1/1.
+ctest --test-dir build-next01 -R '^record_store$' --repeat until-fail:20 --output-on-failure: passed all 20 executions, 2.89 seconds; each retains both exit-17 crash windows and exit-23 WAL checks. Raw output: record-store-repeat-20.log.
+No automatic retry inside the test; any unexpected child exit or state assertion still fails. CTest until-fail repeats stop on the first failure.
+python3 tools/check_cpp_format.py and git diff --check: passed.

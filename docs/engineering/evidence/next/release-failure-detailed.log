@@ -1,0 +1,759 @@
+Start testing: Sep 27 21:42 CST
+----------------------------------------------------------
+2/40 Testing: architecture_gate_unit
+2/40 Test: architecture_gate_unit
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/test_architecture_gate.py"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"architecture_gate_unit" start time: Sep 27 21:42 CST
+Output:
+----------------------------------------------------------
+test_01_domain_qt (__main__.ArchitectureMutations.test_01_domain_qt) ... ok
+test_02_domain_sqlite (__main__.ArchitectureMutations.test_02_domain_sqlite) ... ok
+test_03_domain_vtk (__main__.ArchitectureMutations.test_03_domain_vtk) ... ok
+test_04_gui_links_application (__main__.ArchitectureMutations.test_04_gui_links_application) ... ok
+test_05_sdk_links_document (__main__.ArchitectureMutations.test_05_sdk_links_document) ... ok
+test_06_dependency_cycle (__main__.ArchitectureMutations.test_06_dependency_cycle) ... ok
+test_07_cross_module_private_header (__main__.ArchitectureMutations.test_07_cross_module_private_header) ... ok
+test_08_undeclared_cmake_dependency (__main__.ArchitectureMutations.test_08_undeclared_cmake_dependency) ... ok
+test_declared_generated_include_root (__main__.ArchitectureMutations.test_declared_generated_include_root) ... ok
+test_generated_root_cannot_escape_build (__main__.ArchitectureMutations.test_generated_root_cannot_escape_build) ... ok
+test_private_include_directory_export (__main__.ArchitectureMutations.test_private_include_directory_export) ... ok
+test_unowned_production_unit (__main__.ArchitectureMutations.test_unowned_production_unit) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 13.788s
+
+OK
+<end of output>
+Test time =  13.87 sec
+----------------------------------------------------------
+Test Passed.
+"architecture_gate_unit" end time: Sep 27 21:42 CST
+"architecture_gate_unit" time elapsed: 00:00:13
+----------------------------------------------------------
+
+36/40 Testing: record_document
+36/40 Test: record_document
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_record_document_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/modules/document
+"record_document" start time: Sep 27 21:42 CST
+Output:
+----------------------------------------------------------
+locality 1000 nodes: 20/20 record-layer samples passed
+locality 10000 nodes: 20/20 record-layer samples passed
+locality 100000 nodes: 20/20 record-layer samples passed
+PASS: typed records, schema negatives, stable-key history, legacy bridge, geometry ownership
+<end of output>
+Test time =   8.81 sec
+----------------------------------------------------------
+Test Passed.
+"record_document" end time: Sep 27 21:42 CST
+"record_document" time elapsed: 00:00:08
+----------------------------------------------------------
+
+30/40 Testing: entity_query_ipc
+30/40 Test: entity_query_ipc
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/entity_query_ipc_tests.py" "--engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-engine" "--cli" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-cli" "--evidence-dir" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/next-evidence/queries"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"entity_query_ipc" start time: Sep 27 21:42 CST
+Output:
+----------------------------------------------------------
+PASS: NEXT-01 real engine/CLI queries, references, fields, paging and M1 organization views
+<end of output>
+Test time =   8.47 sec
+----------------------------------------------------------
+Test Passed.
+"entity_query_ipc" end time: Sep 27 21:43 CST
+"entity_query_ipc" time elapsed: 00:00:08
+----------------------------------------------------------
+
+33/40 Testing: c2_workflow
+33/40 Test: c2_workflow
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/c2_workflow_tests.py" "--engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-engine" "--cli" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-cli" "--evidence-dir" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/c2-evidence/workflow"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"c2_workflow" start time: Sep 27 21:42 CST
+Output:
+----------------------------------------------------------
+{"mode": "cli", "run": 1, "passed": true, "semantic_sha256": "12c8eae72acfbda466fedc33daaa99583a1dd067329e6d0232d1709abcc870e0", "nodes": 11, "beams": 10, "task_state": "succeeded", "recovery_verified": true, "normal_open_verified": true, "requests": 347}
+{"mode": "cli", "run": 2, "passed": true, "semantic_sha256": "12c8eae72acfbda466fedc33daaa99583a1dd067329e6d0232d1709abcc870e0", "nodes": 11, "beams": 10, "task_state": "succeeded", "recovery_verified": true, "normal_open_verified": true, "requests": 347}
+{"mode": "cli", "run": 3, "passed": true, "semantic_sha256": "12c8eae72acfbda466fedc33daaa99583a1dd067329e6d0232d1709abcc870e0", "nodes": 11, "beams": 10, "task_state": "succeeded", "recovery_verified": true, "normal_open_verified": true, "requests": 347}
+{"mode": "script", "run": 1, "passed": true, "semantic_sha256": "12c8eae72acfbda466fedc33daaa99583a1dd067329e6d0232d1709abcc870e0", "nodes": 11, "beams": 10, "task_state": "succeeded", "recovery_verified": true, "normal_open_verified": true, "requests": 347}
+{"mode": "script", "run": 2, "passed": true, "semantic_sha256": "12c8eae72acfbda466fedc33daaa99583a1dd067329e6d0232d1709abcc870e0", "nodes": 11, "beams": 10, "task_state": "succeeded", "recovery_verified": true, "normal_open_verified": true, "requests": 347}
+{"mode": "script", "run": 3, "passed": true, "semantic_sha256": "12c8eae72acfbda466fedc33daaa99583a1dd067329e6d0232d1709abcc870e0", "nodes": 11, "beams": 10, "task_state": "succeeded", "recovery_verified": true, "normal_open_verified": true, "requests": 347}
+PASS: C2 CLI/script SQLite workflows 6/6; semantic differences 0
+<end of output>
+Test time =  35.94 sec
+----------------------------------------------------------
+Test Passed.
+"c2_workflow" end time: Sep 27 21:43 CST
+"c2_workflow" time elapsed: 00:00:35
+----------------------------------------------------------
+
+6/40 Testing: operation_generation
+6/40 Test: operation_generation
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/test_operation_generation.py"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"operation_generation" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+test_parameterless_input_compiles_and_checks_object_shape (__main__.OperationGeneration.test_parameterless_input_compiles_and_checks_object_shape) ... ok
+test_schema_add_modify_remove_regenerates_without_manual_configure (__main__.OperationGeneration.test_schema_add_modify_remove_regenerates_without_manual_configure) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 7.693s
+
+OK
+<end of output>
+Test time =   7.83 sec
+----------------------------------------------------------
+Test Passed.
+"operation_generation" end time: Sep 27 21:43 CST
+"operation_generation" time elapsed: 00:00:07
+----------------------------------------------------------
+
+31/40 Testing: engine_contributions_ipc
+31/40 Test: engine_contributions_ipc
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/engine_contributions_ipc_tests.py" "--engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_contributed_engine" "--production-engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-engine" "--cli" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-cli" "--evidence-dir" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/next-evidence/contributions"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"engine_contributions_ipc" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: test-only relation contribution over real engine IPC/SQLite; production capability absent
+<end of output>
+Test time =   2.26 sec
+----------------------------------------------------------
+Test Passed.
+"engine_contributions_ipc" end time: Sep 27 21:43 CST
+"engine_contributions_ipc" time elapsed: 00:00:02
+----------------------------------------------------------
+
+35/40 Testing: desktop_smoke
+35/40 Test: desktop_smoke
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/desktop_smoke.py" "--engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-engine" "--cli" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-cli" "--desktop" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-desktop" "--screenshot" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/desktop-smoke.png"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"desktop_smoke" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+Real engine/desktop shared-model smoke passed: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/desktop-smoke.png
+<end of output>
+Test time =   6.12 sec
+----------------------------------------------------------
+Test Passed.
+"desktop_smoke" end time: Sep 27 21:43 CST
+"desktop_smoke" time elapsed: 00:00:06
+----------------------------------------------------------
+
+28/40 Testing: ipc
+28/40 Test: ipc
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py" "--engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-engine" "--cli" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-cli"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"ipc" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: QCAE local IPC integration
+<end of output>
+Test time =   1.15 sec
+----------------------------------------------------------
+Test Passed.
+"ipc" end time: Sep 27 21:43 CST
+"ipc" time elapsed: 00:00:01
+----------------------------------------------------------
+
+34/40 Testing: desktop
+34/40 Test: desktop
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_desktop_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"desktop" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+********* Start testing of DesktopTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : DesktopTests::initTestCase()
+PASS   : DesktopTests::asynchronousRepliesRemainCorrelated()
+PASS   : DesktopTests::clientCanBeDestroyedInsideReply()
+2026-09-27 21:43:12.972 qcae_desktop_tests[85124:34915544] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+PASS   : DesktopTests::vtkRendersRealPacket()
+PASS   : DesktopTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 1848ms
+********* Finished testing of DesktopTests *********
+<end of output>
+Test time =   2.00 sec
+----------------------------------------------------------
+Test Passed.
+"desktop" end time: Sep 27 21:43 CST
+"desktop" time elapsed: 00:00:02
+----------------------------------------------------------
+
+29/40 Testing: m1_ipc
+29/40 Test: m1_ipc
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/m1_ipc_tests.py" "--engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-engine" "--cli" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-cli"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"m1_ipc" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+M1 IPC black-box checks passed
+<end of output>
+Test time =   1.68 sec
+----------------------------------------------------------
+Test Passed.
+"m1_ipc" end time: Sep 27 21:43 CST
+"m1_ipc" time elapsed: 00:00:01
+----------------------------------------------------------
+
+32/40 Testing: m23_ipc
+32/40 Test: m23_ipc
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/m23_ipc_tests.py" "--engine" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-engine" "--cli" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae-cli"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"m23_ipc" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+M2 durable recovery/save and M3 view/selection IPC passed
+<end of output>
+Test time =   1.76 sec
+----------------------------------------------------------
+Test Passed.
+"m23_ipc" end time: Sep 27 21:43 CST
+"m23_ipc" time elapsed: 00:00:01
+----------------------------------------------------------
+
+26/40 Testing: legacy_migration
+26/40 Test: legacy_migration
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_legacy_migration_tests" "/Users/qs/Documents/ChatGPT/QCAE/tests/fixtures/legacy"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"legacy_migration" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+Checking saved-empty
+Checking saved-beam
+Checking saved-organization
+Checking unsaved-workspace
+Checking redo-workspace
+Checking all-supported-entities
+PASS: six frozen legacy fixtures migrated; source byte changes 0; redo/facts/save-intent/epoch retained
+<end of output>
+Test time =   0.19 sec
+----------------------------------------------------------
+Test Passed.
+"legacy_migration" end time: Sep 27 21:43 CST
+"legacy_migration" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/40 Testing: record_store
+24/40 Test: record_store
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_record_store_tests" "/Users/qs/Documents/ChatGPT/QCAE/tests/fixtures/legacy"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"record_store" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+Assertion failed: (WIFEXITED(status) && WEXITSTATUS(status) == 17), function test_process_termination_windows, file record_store_tests.cpp, line 312.
+<end of output>
+Test time =   0.18 sec
+----------------------------------------------------------
+Test Failed.
+"record_store" end time: Sep 27 21:43 CST
+"record_store" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/40 Testing: geometry_mesh_sqlite
+25/40 Test: geometry_mesh_sqlite
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_geometry_mesh_sqlite_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"geometry_mesh_sqlite" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+{"case":"success","run_id":"sqlite-mesh-0-0","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-1","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-2","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-3","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-4","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-5","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-6","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-7","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-8","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"sqlite-mesh-0-9","backend":"sqlite","final_state":"succeeded","task_model_commits":1}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-0","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-1","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-2","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-3","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-4","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-5","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-6","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-7","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-8","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"sqlite-mesh-1-9","backend":"sqlite","final_state":"cancelled","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-0","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-1","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-2","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-3","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-4","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-5","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-6","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-7","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-8","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"sqlite-mesh-2-9","backend":"sqlite","final_state":"conflicted","task_model_commits":0}
+PASS: task replay after undo removes geometry and section; new missing-source work fails
+PASS: 100 undo/redo rounds; semantic differences=0; revision_delta=201
+PASS: 10 success + 10 cancellation + 10 stale real mesh tasks
+<end of output>
+Test time =   0.62 sec
+----------------------------------------------------------
+Test Passed.
+"geometry_mesh_sqlite" end time: Sep 27 21:43 CST
+"geometry_mesh_sqlite" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/40 Testing: sqlite
+23/40 Test: sqlite
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_sqlite_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"sqlite" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.18 sec
+----------------------------------------------------------
+Test Passed.
+"sqlite" end time: Sep 27 21:43 CST
+"sqlite" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/40 Testing: engine_assembly
+27/40 Test: engine_assembly
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_engine_assembly_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"engine_assembly" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: static engine assembly, duplicate rejection and shared authority
+<end of output>
+Test time =   0.61 sec
+----------------------------------------------------------
+Test Passed.
+"engine_assembly" end time: Sep 27 21:43 CST
+"engine_assembly" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/40 Testing: cpp_format
+11/40 Test: cpp_format
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tools/check_cpp_format.py"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"cpp_format" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: 112 C++ files match clang-format 21
+<end of output>
+Test time =   0.89 sec
+----------------------------------------------------------
+Test Passed.
+"cpp_format" end time: Sep 27 21:43 CST
+"cpp_format" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/40 Testing: allocation_atomicity
+20/40 Test: allocation_atomicity
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_allocation_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"allocation_atomicity" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+commit: 121 allocation-failure positions preserved state
+undo: 79 allocation-failure positions preserved state
+redo: 85 allocation-failure positions preserved state
+imported commit: 262 allocation-failure positions preserved state
+imported undo: 145 allocation-failure positions preserved state
+imported redo: 180 allocation-failure positions preserved state
+<end of output>
+Test time =   0.45 sec
+----------------------------------------------------------
+Test Passed.
+"allocation_atomicity" end time: Sep 27 21:43 CST
+"allocation_atomicity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/40 Testing: model_operations
+8/40 Test: model_operations
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_model_operation_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"model_operations" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: reusable record feature operations, normalization, references and direct retries
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"model_operations" end time: Sep 27 21:43 CST
+"model_operations" time elapsed: 00:00:00
+----------------------------------------------------------
+
+39/40 Testing: geometry_mesh
+39/40 Test: geometry_mesh
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_geometry_mesh_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/features/mesh_generation
+"geometry_mesh" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+{"case":"success","run_id":"memory-mesh-0-0","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-1","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-2","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-3","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-4","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-5","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-6","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-7","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-8","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"success","run_id":"memory-mesh-0-9","backend":"memory","final_state":"succeeded","task_model_commits":1}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-0","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-1","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-2","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-3","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-4","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-5","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-6","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-7","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-8","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"cancel_before_commit","run_id":"memory-mesh-1-9","backend":"memory","final_state":"cancelled","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-0","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-1","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-2","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-3","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-4","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-5","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-6","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-7","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-8","backend":"memory","final_state":"conflicted","task_model_commits":0}
+{"case":"stale_candidate","run_id":"memory-mesh-2-9","backend":"memory","final_state":"conflicted","task_model_commits":0}
+PASS: task replay after undo removes geometry and section; new missing-source work fails
+PASS: 100 undo/redo rounds; semantic differences=0; revision_delta=201
+PASS: 10 success + 10 cancellation + 10 stale real mesh tasks
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"geometry_mesh" end time: Sep 27 21:43 CST
+"geometry_mesh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+40/40 Testing: typed_host
+40/40 Test: typed_host
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_typed_host_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/adapters/engine_api
+"typed_host" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS typed JSON transport, mesh idempotency and task fault recovery
+<end of output>
+Test time =   1.96 sec
+----------------------------------------------------------
+Test Passed.
+"typed_host" end time: Sep 27 21:43 CST
+"typed_host" time elapsed: 00:00:01
+----------------------------------------------------------
+
+38/40 Testing: runtime
+38/40 Test: runtime
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_runtime_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/modules/runtime
+"runtime" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: real workers, queue bounds, cancellation, atomic publication, restart and direct-operation replay
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"runtime" end time: Sep 27 21:43 CST
+"runtime" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/40 Testing: record_application
+3/40 Test: record_application
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_record_application_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"record_application" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.06 sec
+----------------------------------------------------------
+Test Passed.
+"record_application" end time: Sep 27 21:43 CST
+"record_application" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/40 Testing: operation_registry
+4/40 Test: operation_registry
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_operation_registry_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"operation_registry" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: typed operation registry, availability and mechanical wire validation
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"operation_registry" end time: Sep 27 21:43 CST
+"operation_registry" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/40 Testing: model
+12/40 Test: model
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_model_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"model" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+model tests passed
+<end of output>
+Test time =   2.00 sec
+----------------------------------------------------------
+Test Passed.
+"model" end time: Sep 27 21:43 CST
+"model" time elapsed: 00:00:02
+----------------------------------------------------------
+
+13/40 Testing: nastran
+13/40 Test: nastran
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_nastran_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"nastran" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"nastran" end time: Sep 27 21:43 CST
+"nastran" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/40 Testing: core
+18/40 Test: core
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_core_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"core" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+core tests passed
+<end of output>
+Test time =   1.86 sec
+----------------------------------------------------------
+Test Passed.
+"core" end time: Sep 27 21:43 CST
+"core" time elapsed: 00:00:01
+----------------------------------------------------------
+
+19/40 Testing: contracts
+19/40 Test: contracts
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_contract_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"contracts" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+contract tests passed
+<end of output>
+Test time =   1.88 sec
+----------------------------------------------------------
+Test Passed.
+"contracts" end time: Sep 27 21:43 CST
+"contracts" time elapsed: 00:00:01
+----------------------------------------------------------
+
+10/40 Testing: record_query
+10/40 Test: record_query
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_record_query_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"record_query" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: record queries, stable-ID pages, unassigned beams and legacy wrappers
+<end of output>
+Test time =   1.87 sec
+----------------------------------------------------------
+Test Passed.
+"record_query" end time: Sep 27 21:43 CST
+"record_query" time elapsed: 00:00:01
+----------------------------------------------------------
+
+15/40 Testing: persistence
+15/40 Test: persistence
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_persistence_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"persistence" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   1.93 sec
+----------------------------------------------------------
+Test Passed.
+"persistence" end time: Sep 27 21:43 CST
+"persistence" time elapsed: 00:00:01
+----------------------------------------------------------
+
+7/40 Testing: parameters
+7/40 Test: parameters
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_parameter_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"parameters" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: BP-09 parameter arithmetic and unit/frame/table rejection cases
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"parameters" end time: Sep 27 21:43 CST
+"parameters" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/40 Testing: query
+16/40 Test: query
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_query_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"query" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+1000-node world-box query: 2391 us
+query tests passed
+<end of output>
+Test time =   2.11 sec
+----------------------------------------------------------
+Test Passed.
+"query" end time: Sep 27 21:43 CST
+"query" time elapsed: 00:00:02
+----------------------------------------------------------
+
+9/40 Testing: quantity_entry_consistency
+9/40 Test: quantity_entry_consistency
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_quantity_entry_consistency_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"quantity_entry_consistency" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: legacy material entry uses shared pressure normalization and numeric bounds
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"quantity_entry_consistency" end time: Sep 27 21:43 CST
+"quantity_entry_consistency" time elapsed: 00:00:00
+----------------------------------------------------------
+
+37/40 Testing: generated_entities
+37/40 Test: generated_entities
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tools/generate_entities.py" "--check" "--permutation-check"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/modules/document
+"generated_entities" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: typed entity generation; ten registration permutations identical
+<end of output>
+Test time =   0.18 sec
+----------------------------------------------------------
+Test Passed.
+"generated_entities" end time: Sep 27 21:43 CST
+"generated_entities" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/40 Testing: delta
+14/40 Test: delta
+Command: "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/qcae_delta_tests"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"delta" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   2.14 sec
+----------------------------------------------------------
+Test Passed.
+"delta" end time: Sep 27 21:43 CST
+"delta" time elapsed: 00:00:02
+----------------------------------------------------------
+
+1/40 Testing: acceptance_checker
+1/40 Test: acceptance_checker
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tests/test_acceptance_checker.py"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"acceptance_checker" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.192s
+
+OK
+<end of output>
+Test time =   0.31 sec
+----------------------------------------------------------
+Test Passed.
+"acceptance_checker" end time: Sep 27 21:43 CST
+"acceptance_checker" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/40 Testing: design
+21/40 Test: design
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tools/check_design.py"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"design" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: 153 portable links; 39 JSON files; 32-module acyclic graph
+PASS: 35 operation descriptors; 12 contract examples; 20 requirements; 38 acceptance cases
+Design checks only. This command does not run product builds, solver runs or AI acceptance.
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Passed.
+"design" end time: Sep 27 21:43 CST
+"design" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/40 Testing: generated_operation_inputs
+5/40 Test: generated_operation_inputs
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tools/generate_operation_contracts.py" "/Users/qs/Documents/ChatGPT/QCAE/schemas/operations" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/generated/qcae/operation_inputs.hpp" "--check"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"generated_operation_inputs" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+PASS: generated operation contracts are byte-identical
+<end of output>
+Test time =   0.11 sec
+----------------------------------------------------------
+Test Passed.
+"generated_operation_inputs" end time: Sep 27 21:43 CST
+"generated_operation_inputs" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/40 Testing: generated_contract
+22/40 Test: generated_contract
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tools/generate_operations.py" "/Users/qs/Documents/ChatGPT/QCAE/docs/contracts/operations.json" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/generated/qcae/operations.hpp" "--check"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"generated_contract" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+Generated descriptor catalog matches its source
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"generated_contract" end time: Sep 27 21:43 CST
+"generated_contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/40 Testing: generated_profile
+17/40 Test: generated_profile
+Command: "/opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14" "/Users/qs/Documents/ChatGPT/QCAE/tools/generate_profile.py" "/Users/qs/Documents/ChatGPT/QCAE" "/Users/qs/Documents/ChatGPT/QCAE/build-next-desktop/profiles/nastran/generated/qcae/nastran_digest.hpp" "--check"
+Directory: /Users/qs/Documents/ChatGPT/QCAE/build-next-desktop
+"generated_profile" start time: Sep 27 21:43 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"generated_profile" end time: Sep 27 21:43 CST
+"generated_profile" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 27 21:43 CST

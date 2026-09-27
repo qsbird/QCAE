@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "baseline_commit": "62e2b1d",
-  "branch": "codex/platform-skeleton",
+  "branch": "codex/c2-entry-consistency",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-09-27T06:39:49.748492+00:00",
-  "status": "completed_to_C2",
+  "updated_utc": "2026-09-27T13:51:12.257226+00:00",
+  "status": "completed_to_NEXT_03",
   "phases": {
     "R0": "partial_committed",
     "R1": "committed",
@@ -70,6 +70,27 @@
       "reasoning": "medium",
       "agent": "c2_final_handoff_review",
       "status": "completed"
+    },
+    {
+      "task": "NEXT-01 record-native entity query and NEXT-02/03 cross-review",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "agent": "next01_queries",
+      "status": "completed"
+    },
+    {
+      "task": "NEXT-02 typed IPC contracts and NEXT-01 cross-review",
+      "model": "gpt-6-sol",
+      "reasoning": "xhigh",
+      "agent": "next02_contracts",
+      "status": "completed"
+    },
+    {
+      "task": "NEXT-03 real IPC contribution workflow and evidence review",
+      "model": "gpt-6-luna",
+      "reasoning": "xhigh",
+      "agent": "next_acceptance",
+      "status": "completed"
     }
   ],
   "verified_evidence": [
@@ -114,18 +135,50 @@
       "passed": 42,
       "total": 42,
       "note": "Independent compile/link; final incremental rebuild passed."
+    },
+    {
+      "scope": "NEXT final Release Qt/VTK/SQLite/IPC",
+      "passed": 40,
+      "total": 40,
+      "evidence": "docs/engineering/evidence/next/release-tests.log"
+    },
+    {
+      "scope": "NEXT pure core Release",
+      "passed": 26,
+      "total": 26,
+      "evidence": "docs/engineering/evidence/next/core-tests.log"
+    },
+    {
+      "scope": "NEXT public API consumers",
+      "passed": 44,
+      "total": 44,
+      "evidence": "docs/engineering/evidence/next/public-build.log.gz"
+    },
+    {
+      "scope": "NEXT affected ASan/UBSan suites",
+      "passed": 12,
+      "total": 12,
+      "evidence": "docs/engineering/evidence/next/sanitizer-tests.log",
+      "note": "Record-store test subprocess fixture corrected afterward; affected sanitizer recheck 1/1 passed, separately logged."
+    },
+    {
+      "scope": "NEXT corrected record-store repeated CTest",
+      "passed": 20,
+      "total": 20,
+      "evidence": "docs/engineering/evidence/next/record-store-repeat-20.log"
     }
   ],
   "notes": [
-    "Existing .idea is preserved and not committed.",
-    "C2 selected by user and completed; no C3/C4 execution. Full SK gates remain unclaimed.",
+    "C2 excluded .idea; subsequent synchronization committed six portable project files at 7c8f2eb, keeping local caches/runtime settings ignored.",
+    "C2 completed; the user subsequently authorized NEXT-01/02/03 in parallel. No C3/C4 execution. Full SK gates remain unclaimed.",
     "C3 WIP archived on codex/skeleton-c3-wip; not release-validated.",
     "One C1 SQLite child-lock assertion failure did not reproduce in 192 targeted runs; cause remains unidentified. Raw failure and case diagnostics retained.",
     "ASan/UBSan initial run, fixture correction and affected rechecks are reported separately, not as one uninterrupted passing run.",
     "Final handoff portability review changed only the Unix workflow temp root; full 36-test Release suite then passed again.",
-    "New geometry/mesh tools are CLI/IPC only; no new GUI, actual solver, external AI, billion-scale or full P0 acceptance."
+    "New geometry/mesh tools are CLI/IPC only; no new GUI, actual solver, external AI, billion-scale or full P0 acceptance.",
+    "NEXT integration preserved one 39/40 Release failure: macOS child-side-fork SQLite/logging SIGSEGV. Changed only test subprocess fixtures to spawn fresh executable images; exact abrupt-exit and recovery/WAL assertions retained. Final 40/40 and affected sanitizer recheck passed; this does not resolve the distinct historical C1 lock failure."
   ],
-  "selected_stop_checkpoint": "C2",
+  "selected_stop_checkpoint": "NEXT-03",
   "checkpoint_contract": "docs/engineering/checkpoints-c1-c2.md",
   "checkpoints": {
     "C1": "passed",
@@ -140,13 +193,21 @@
     "c1": "92b115124e26454fe1204ec410bee83f6a5774ac"
   },
   "model_policy": {
-    "complex": "gpt-6-sol xhigh",
-    "regular": "gpt-6-sol medium",
+    "complex": "gpt-6-astra xhigh",
+    "regular": "gpt-6-sol xhigh",
     "mechanical": "gpt-6-luna xhigh"
   },
   "tags": {
     "C1": "checkpoint/c1",
     "C2": "checkpoint/c2"
   },
-  "validation_report": "docs/engineering/c2-validation.md"
+  "validation_report": "docs/engineering/next-validation.md",
+  "follow_up": {
+    "base_commit": "7c8f2eb",
+    "NEXT-01": "completed",
+    "NEXT-02": "completed",
+    "NEXT-03": "completed",
+    "next": "C3 geometry display and stable-ID picking",
+    "scope": "Entry consistency only; no full SK gate or C3/C4 acceptance."
+  }
 }

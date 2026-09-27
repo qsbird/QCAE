@@ -53,9 +53,9 @@ Result<bool> valid_context(const ContextRequirements& required, const OperationC
 
 Result<bool> valid_definition(const OperationDefinition& definition) {
     if (definition.operation_id.empty() || definition.schema_id.empty() ||
-        definition.version == 0 || definition.fields.empty()) {
+        definition.version == 0) {
         return failure<bool>(ErrorCode::invalid_input,
-                             "Operation metadata requires identity, version and input fields.",
+                             "Operation metadata requires identity and a positive version.",
                              "definition");
     }
     switch (definition.effect) {
@@ -327,7 +327,10 @@ Result<Value> OperationRegistry::invoke(std::string_view operation_id,
         return failure<Value>(
             ErrorCode::unsupported_capability, "Operation is not registered.", "operation_id");
     }
-    return invoke(operation_id, found->second.definition.version, context, input);
+    return invoke(operation_id,
+                  context.requested_version.value_or(found->second.definition.version),
+                  context,
+                  input);
 }
 
 Result<Value> OperationRegistry::invoke(std::string_view operation_id,
@@ -346,7 +349,12 @@ Result<Value> OperationRegistry::invoke(std::string_view operation_id,
     if (requested_version != found->second.definition.version) {
         return failure<Value>(ErrorCode::schema_unsupported,
                               "Requested operation contract version is not installed.",
-                              "version");
+                              "requested_version");
+    }
+    if (context.requested_version && *context.requested_version != requested_version) {
+        return failure<Value>(ErrorCode::invalid_input,
+                              "Explicit and contextual operation versions disagree.",
+                              "requested_version");
     }
     const auto valid = valid_context(found->second.definition.context, context);
     if (!valid.ok()) {
@@ -356,7 +364,9 @@ Result<Value> OperationRegistry::invoke(std::string_view operation_id,
         return failure<Value>(
             ErrorCode::unsupported_capability, found->second.unavailable_reason, "operation_id");
     }
-    const auto result = found->second.handler(context, input);
+    auto invocation = context;
+    invocation.requested_version = requested_version;
+    const auto result = found->second.handler(invocation, input);
     if (!result.ok()) {
         if (result.error && result.status != Status::success) {
             return {result.status, std::nullopt, result.error};

@@ -55,6 +55,8 @@ struct OperationContext {
     std::string idempotency_key;
     std::optional<ProfileRef> expected_profile;
     std::string request_id;
+    // Omitted versions preserve trusted local/legacy callers using the installed definition.
+    std::optional<std::uint32_t> requested_version{};
 };
 struct InputFieldDescriptor {
     std::uint32_t field_id{};

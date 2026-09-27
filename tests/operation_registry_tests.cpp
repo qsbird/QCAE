@@ -18,6 +18,20 @@ template <> struct InputTraits<DuplicateSchemaInput> {
         return {Status::success, DuplicateSchemaInput{}, std::nullopt};
     }
 };
+struct EmptyInput {};
+template <> struct InputTraits<EmptyInput> {
+    static constexpr std::string_view schema_id = "qcae.operation.test.empty.v1";
+    static OperationDefinition definition() {
+        return {"test.empty", 1, std::string(schema_id), OperationEffect::read_only, {}, {}};
+    }
+    static Result<EmptyInput> from_value(const Value& value) {
+        const auto fields =
+            wire::object_fields(value, std::span<const std::string_view>{}, "input");
+        if (!fields.ok())
+            return {fields.status, {}, fields.error};
+        return {Status::success, EmptyInput{}, {}};
+    }
+};
 } // namespace qcae::operations
 
 using namespace qcae;
@@ -83,6 +97,8 @@ void registration_and_availability() {
              [&calls](const OperationContext& call_context, const MaterialCreateInput& input) {
                  check(call_context.request_id == "request-1",
                        "per-call context reaches typed handler");
+                 check(call_context.requested_version == 1,
+                       "resolved operation version reaches typed handler");
                  ++calls;
                  check(input.name == "Steel" && input.young_modulus.value == 210 &&
                            input.young_modulus.unit == "GPa",
@@ -106,6 +122,15 @@ void registration_and_availability() {
         ErrorCode::schema_unsupported,
         "unknown future operation version rejected before handler");
     check(calls == 1, "version rejection does not invoke handler");
+    auto future_context = context;
+    future_context.requested_version = 2;
+    const auto future_result = registry.invoke("material.create", future_context, material_input());
+    bad(future_result, ErrorCode::schema_unsupported, "contextual requested version is respected");
+    check(future_result.error->field == "requested_version" && calls == 1,
+          "version error identifies wire field before effects");
+    bad(registry.invoke("material.create", 1, future_context, material_input()),
+        ErrorCode::invalid_input,
+        "contradictory explicit/contextual versions cannot silently override each other");
     bad(registry.register_typed<MaterialCreateInput>(
             InputTraits<MaterialCreateInput>::definition(),
             [](const OperationContext&, const auto&) { return output("duplicate"); }),
@@ -431,6 +456,26 @@ void receipt_projection() {
     check(!std::get<Value::Object>(change_receipt_value(receipt).data).contains("entity_id"),
           "receipt without a primary entity does not fabricate an identity");
 }
+void parameterless_contract() {
+    OperationRegistry registry;
+    int calls{};
+    good(registry.register_typed<EmptyInput>(
+             InputTraits<EmptyInput>::definition(),
+             [&calls](const OperationContext& context, const EmptyInput&) {
+                 check(context.requested_version == 1, "empty handler version forwarded");
+                 ++calls;
+                 return output("empty");
+             }),
+         "register parameterless input");
+    good(registry.invoke("test.empty", test_context(), Value{}), "empty object accepted");
+    bad(registry.invoke("test.empty", test_context(), Value(true)),
+        ErrorCode::invalid_input,
+        "parameterless input still requires object");
+    bad(registry.invoke("test.empty", test_context(), Value(Value::Object{{"extra", Value(1)}})),
+        ErrorCode::invalid_input,
+        "parameterless input rejects extra parameters");
+    check(calls == 1, "invalid empty inputs do not execute handler");
+}
 } // namespace
 
 int main() {
@@ -441,6 +486,7 @@ int main() {
         context_validation_and_isolation();
         output_contract();
         receipt_projection();
+        parameterless_contract();
         std::cout
             << "PASS: typed operation registry, availability and mechanical wire validation\n";
     } catch (const std::exception& error) {

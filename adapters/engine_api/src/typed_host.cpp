@@ -1,9 +1,8 @@
 #include "qcae/typed_host.hpp"
-#include "qcae/geometry_features.hpp"
+#include "typed_values.hpp"
 #include "qcae/ipc_api.hpp"
-#include "qcae/line_mesh_task.hpp"
-#include "qcae/material_operations.hpp"
-#include "qcae/mesh_editing_operations.hpp"
+#include "qcae/operations.hpp"
+#include <algorithm>
 #include "qcae/query.hpp"
 #include <charconv>
 #include <cmath>
@@ -16,6 +15,13 @@ struct TypedHost::State {
 };
 namespace {
 using namespace operations;
+using namespace detail;
+constexpr std::array<std::string_view, 4> intrinsic_operations{
+    "task.status", "task.cancel", "task.reconcile", "entity.fields"};
+bool intrinsic(std::string_view operation) {
+    return std::find(intrinsic_operations.begin(), intrinsic_operations.end(), operation) !=
+           intrinsic_operations.end();
+}
 QString qs(std::string_view value) {
     return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
 }
@@ -76,32 +82,6 @@ QJsonValue encode(const Value& value) {
         },
         value.data);
 }
-Value task_value(const TaskRecord& task) {
-    Value::Array events;
-    for (const auto& event : task.events)
-        events.emplace_back(Value::Object{{"sequence", Value(std::to_string(event.sequence))},
-                                          {"state", Value(task_state_name(event.state))},
-                                          {"progress", Value(event.progress)}});
-    Value::Object object{{"task_id", Value(task.id)},
-                         {"state", Value(task_state_name(task.state))},
-                         {"progress", Value(task.progress)},
-                         {"input_revision", Value(std::to_string(task.input.revision))},
-                         {"events", Value(std::move(events))}};
-    if (task.receipt)
-        object.emplace("receipt", change_receipt_value(*task.receipt));
-    if (task.diagnostic)
-        object.emplace("diagnostic",
-                       Value(Value::Object{{"code", Value(error_name(task.diagnostic->code))},
-                                           {"message", Value(task.diagnostic->message)},
-                                           {"field", Value(task.diagnostic->field)}}));
-    return Value(std::move(object));
-}
-template <class T, class Convert>
-Result<Value> converted(const Result<T>& result, Convert convert) {
-    if (!result.ok())
-        return {result.status, {}, result.error};
-    return {Status::success, convert(*result.value), {}};
-}
 QJsonObject response(const QString& id, const Result<Value>& result) {
     if (!result.ok()) {
         auto output = failure(id,
@@ -138,6 +118,33 @@ OperationContext context(const QJsonObject& request, const Caller& caller) {
     }
     if (request.contains("idempotency_key"))
         result.idempotency_key = string(request, "idempotency_key");
+    if (request.contains("requested_version")) {
+        const auto version =
+            wire::positive_uint32(decode(request.value("requested_version")), "requested_version");
+        if (!version.ok())
+            throw RecordError(version.error->code, version.error->message, version.error->field);
+        result.requested_version = *version.value;
+    }
+    if (request.contains("expected_profile")) {
+        static constexpr std::array<std::string_view, 3> members{
+            "profile_id", "profile_version", "definition_digest"};
+        const auto value = decode(request.value("expected_profile"));
+        const auto profile = wire::object_fields(value, members, "expected_profile");
+        if (!profile.ok())
+            throw RecordError(profile.error->code, profile.error->message, profile.error->field);
+        ProfileRef expected;
+        for (const auto& [key, target] :
+             {std::pair{"profile_id", &expected.profile_id},
+              std::pair{"profile_version", &expected.profile_version},
+              std::pair{"definition_digest", &expected.definition_digest}}) {
+            const auto text = wire::string_value((**profile.value).at(key),
+                                                 std::string("expected_profile.") + key);
+            if (!text.ok())
+                throw RecordError(text.error->code, text.error->message, text.error->field);
+            *target = *text.value;
+        }
+        result.expected_profile = std::move(expected);
+    }
     return result;
 }
 Value profile_value(const ProfileRef& profile) {
@@ -181,41 +188,20 @@ void checked(const Result<bool>& result) {
 } // namespace
 
 TypedHost::TypedHost(RecordApplication& app, std::function<bool(const ProfileRef&)> supported)
+    : TypedHost(app, std::move(supported), default_operations()) {}
+TypedHost::TypedHost(RecordApplication& app,
+                     std::function<bool(const ProfileRef&)> supported,
+                     OperationContributor contributor)
     : app_(app), profile_supported_(std::move(supported)), state_(std::make_unique<State>()) {
-    checked(features::materials::register_handlers(state_->registry, app_));
-    checked(features::mesh_editing::register_handlers(state_->registry, app_));
-    checked(state_->registry.register_typed<GeometryCreateLineInput>(
-        InputTraits<GeometryCreateLineInput>::definition(),
-        [this](const OperationContext& ctx, const GeometryCreateLineInput& input) {
-            const LineGeometryInput line{input.start_mm, input.end_mm};
-            return converted(app_.execute(ctx.caller,
-                                          {*ctx.document, *ctx.expected_revision},
-                                          "geometry.create_line",
-                                          line_geometry_signature(line),
-                                          create_line_handler(line),
-                                          ctx.idempotency_key),
-                             change_receipt_value);
-        }));
-    checked(state_->registry.register_typed<MeshGenerateLineInput>(
-        InputTraits<MeshGenerateLineInput>::definition(),
-        [this](const OperationContext& ctx, const MeshGenerateLineInput& input) -> Result<Value> {
-            const auto snapshot = app_.snapshot(*ctx.document);
-            if (!snapshot.ok())
-                return {snapshot.status, {}, snapshot.error};
-            try {
-                auto request = line_mesh_task(
-                    *snapshot.value,
-                    ctx.caller,
-                    {},
-                    {records::GeometryId(input.geometry_id.value), input.segments, {}},
-                    ctx.idempotency_key);
-                // Deduplication compares the original submitted context before freshness checks.
-                request.input.revision = *ctx.expected_revision;
-                return converted(tasks().start(std::move(request)), task_value);
-            } catch (const RecordError& error) {
-                return {Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
-            }
-        }));
+    if (!contributor)
+        throw std::invalid_argument("Operation contributor is empty");
+    checked(contributor(state_->registry, app_, [this]() -> TaskService& { return tasks(); }));
+    for (const auto& descriptor : state_->registry.descriptors()) {
+        const auto& id = descriptor.definition.operation_id;
+        if (intrinsic(id) || find_operation(id) || id == "runtime.handshake")
+            throw std::invalid_argument("Operation contribution conflicts with host operation: " +
+                                        id);
+    }
 }
 TypedHost::~TypedHost() = default;
 TaskService& TypedHost::tasks() {
@@ -231,8 +217,7 @@ Result<bool> TypedHost::reconcile() {
     return tasks_ ? tasks_->reconcile() : Result<bool>{Status::success, true, {}};
 }
 bool TypedHost::supports(std::string_view operation) const {
-    if (operation == "task.status" || operation == "task.cancel" || operation == "task.reconcile" ||
-        operation == "entity.fields")
+    if (intrinsic(operation))
         return true;
     for (const auto& descriptor : state_->registry.descriptors())
         if (descriptor.definition.operation_id == operation)
@@ -261,7 +246,7 @@ QJsonArray TypedHost::capabilities() const {
         result.append(QJsonObject{
             {"name", qs(definition.operation_id)},
             {"effect", effect},
-            {"version", static_cast<int>(definition.version)},
+            {"version", static_cast<qint64>(definition.version)},
             {"schema_id", qs(definition.schema_id)},
             {"available", descriptor.available},
             {"implementation_status", descriptor.available ? "implemented" : "unavailable"},
@@ -269,12 +254,19 @@ QJsonArray TypedHost::capabilities() const {
             {"requires_epoch", definition.context.epoch},
             {"requires_revision", definition.context.expected_revision},
             {"requires_idempotency_key", definition.context.idempotency_key},
+            {"requires_expected_profile", definition.context.expected_profile},
+            {"requested_version_field", "requested_version"},
+            {"omitted_version_policy", "installed_version"},
             {"fields", fields}});
     }
-    for (const auto* name : {"task.status", "task.cancel", "task.reconcile", "entity.fields"})
-        result.append(QJsonObject{{"name", name},
+    for (const auto name : intrinsic_operations)
+        result.append(QJsonObject{{"name", qs(name)},
+                                  {"version", 1},
+                                  {"requested_version_field", "requested_version"},
+                                  {"omitted_version_policy", "installed_version"},
                                   {"available", true},
                                   {"implementation_status", "implemented"},
+                                  {"requires_expected_profile", false},
                                   {"requires_document", true},
                                   {"requires_epoch", true}});
     return result;
@@ -286,6 +278,13 @@ QJsonObject TypedHost::dispatch(const QJsonObject& request, const Caller& caller
         const auto ctx = context(request, caller);
         if (caller.principal.empty())
             throw std::invalid_argument("Trusted caller identity is required");
+        if (intrinsic(operation) && ctx.requested_version.value_or(1) != 1)
+            return response(id,
+                            {Status::failed,
+                             {},
+                             Diagnostic{ErrorCode::schema_unsupported,
+                                        "Requested operation contract version is not installed.",
+                                        "requested_version"}});
         if (operation == "task.reconcile") {
             if (!ctx.document || !request.value("parameters").toObject().isEmpty())
                 throw std::invalid_argument(
@@ -353,7 +352,11 @@ QJsonObject TypedHost::dispatch(const QJsonObject& request, const Caller& caller
     } catch (const std::invalid_argument& error) {
         return failure(id, "INVALID_INPUT", qs(error.what()));
     } catch (const RecordError& error) {
-        return failure(id, qs(error_name(error.code())), qs(error.what()));
+        return response(
+            id,
+            {error.code() == ErrorCode::missing_input ? Status::needs_input : Status::failed,
+             {},
+             Diagnostic{error.code(), error.what(), error.field()}});
     }
 }
 } // namespace qcae::ipc

@@ -5,16 +5,23 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
+#include <array>
 #include <cassert>
+#include <cerrno>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <iterator>
+#include <spawn.h>
 #include <stdexcept>
 #include <string>
 #include <sys/wait.h>
 #include <unistd.h>
+
+extern char** environ;
 
 namespace {
 using namespace qcae;
@@ -283,7 +290,69 @@ void test_unsupported_record_version() {
     assert(fails([&] { SqliteWorkspaceStore rejected(path); }));
 }
 
-void test_process_termination_windows() {
+int child_commit(const std::string& path, const std::string& milestone) {
+    try {
+        if (milestone == "recent_wal") {
+            SqliteWorkspaceStore writer(path);
+            writer.commit(1, "recent WAL payload");
+            ::_exit(23); // Preserve the committed WAL without a SQLite close/checkpoint.
+        }
+        if (milestone != "before_db_commit" && milestone != "after_db_commit")
+            throw std::invalid_argument("Unknown child commit milestone");
+        StoreOptions options;
+        options.fault = [&](const std::string& point) {
+            if (point == milestone)
+                ::_exit(17);
+        };
+        SqliteWorkspaceStore store(path, options);
+        store.commit_rows({1,
+                           "crash",
+                           {row(StoreSpace::document_record, "a", "after"),
+                            row(StoreSpace::history_entry, "1", "delta"),
+                            row(StoreSpace::operation_fact, "crash", "receipt")}});
+        ::_exit(18); // Reaching normal completion means the requested crash window was missed.
+    } catch (const std::exception& error) {
+        std::cerr << "Store child " << milestone << ": " << error.what() << '\n';
+        return 19;
+    }
+}
+
+void run_child_commit(const std::string& executable,
+                      const std::string& path,
+                      const std::string& milestone,
+                      int expected_exit) {
+    // Start a fresh process image: system SQLite/logging state is unsafe to reuse in a
+    // forked child before exec. The child still terminates abruptly at the exact fault hook.
+    std::array<std::string, 4> values{executable, "--store-child", path, milestone};
+    std::array<char*, 5> arguments{
+        values[0].data(), values[1].data(), values[2].data(), values[3].data(), nullptr};
+    pid_t child{};
+    const auto spawned =
+        ::posix_spawnp(&child, executable.c_str(), nullptr, nullptr, arguments.data(), environ);
+    if (spawned != 0)
+        throw std::runtime_error("Cannot spawn store child: " +
+                                 std::string(std::strerror(spawned)));
+    int status{};
+    pid_t waited{};
+    do {
+        waited = ::waitpid(child, &status, 0);
+    } while (waited < 0 && errno == EINTR);
+    if (waited != child)
+        throw std::runtime_error("Cannot wait for store child: " +
+                                 std::string(std::strerror(errno)));
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != expected_exit) {
+        std::cerr << "Store child " << child << " milestone=" << milestone
+                  << " expected_exit=" << expected_exit << " status=" << status;
+        if (WIFEXITED(status))
+            std::cerr << " exit=" << WEXITSTATUS(status);
+        if (WIFSIGNALED(status))
+            std::cerr << " signal=" << WTERMSIG(status);
+        std::cerr << '\n';
+    }
+    assert(WIFEXITED(status) && WEXITSTATUS(status) == expected_exit);
+}
+
+void test_process_termination_windows(const std::string& executable) {
     for (const std::string milestone : {"before_db_commit", "after_db_commit"}) {
         Sandbox sandbox;
         const auto path = sandbox.database();
@@ -291,25 +360,7 @@ void test_process_termination_windows() {
             SqliteWorkspaceStore initial(path);
             initial.commit_rows({0, "initial", {row(StoreSpace::document_record, "a", "before")}});
         }
-        const pid_t child = ::fork();
-        assert(child >= 0);
-        if (child == 0) {
-            StoreOptions options;
-            options.fault = [&](const std::string& point) {
-                if (point == milestone)
-                    ::_exit(17);
-            };
-            SqliteWorkspaceStore store(path, options);
-            store.commit_rows({1,
-                               "crash",
-                               {row(StoreSpace::document_record, "a", "after"),
-                                row(StoreSpace::history_entry, "1", "delta"),
-                                row(StoreSpace::operation_fact, "crash", "receipt")}});
-            ::_exit(18);
-        }
-        int status = 0;
-        assert(::waitpid(child, &status, 0) == child);
-        assert(WIFEXITED(status) && WEXITSTATUS(status) == 17);
+        run_child_commit(executable, path, milestone, 17);
         SqliteWorkspaceStore recovered(path);
         const auto loaded = recovered.load_rows();
         const bool committed = milestone == "after_db_commit";
@@ -351,23 +402,14 @@ void test_delete_mode_detection_preserves_source() {
     }
 }
 
-void test_readonly_source_with_recent_wal_commit() {
+void test_readonly_source_with_recent_wal_commit(const std::string& executable) {
     Sandbox sandbox;
     const auto path = sandbox.database();
     {
         SqliteWorkspaceStore initial(path);
         initial.commit(0, "prior payload");
     }
-    const pid_t child = ::fork();
-    assert(child >= 0);
-    if (child == 0) {
-        SqliteWorkspaceStore writer(path);
-        writer.commit(1, "recent WAL payload");
-        ::_exit(23); // Keep the actual committed WAL, with no SQLite close/checkpoint.
-    }
-    int status = 0;
-    assert(::waitpid(child, &status, 0) == child);
-    assert(WIFEXITED(status) && WEXITSTATUS(status) == 23);
+    run_child_commit(executable, path, "recent_wal", 23);
     assert(fs::exists(path + "-wal") && fs::file_size(path + "-wal") > 0);
     const auto original = read_file(path);
     const auto wal = read_file(path + "-wal");
@@ -437,15 +479,17 @@ void test_frozen_sources_unchanged(const fs::path& directory) {
 } // namespace
 
 int main(int argc, char** argv) {
+    if (argc == 4 && std::string(argv[1]) == "--store-child")
+        return child_commit(argv[2], argv[3]);
     test_rows_and_generation();
     test_legacy_detection_is_read_only();
     test_invalid_batches_and_quotas();
     test_failure_windows();
     test_one_row_update_has_bounded_payload();
     test_unsupported_record_version();
-    test_process_termination_windows();
+    test_process_termination_windows(argv[0]);
     test_delete_mode_detection_preserves_source();
-    test_readonly_source_with_recent_wal_commit();
+    test_readonly_source_with_recent_wal_commit(argv[0]);
     test_readonly_permissions_without_sidecars();
     if (argc == 2)
         test_frozen_sources_unchanged(argv[1]);

@@ -7,6 +7,21 @@
 #include <limits>
 #include <stdexcept>
 using namespace qcae;
+struct QueryRelation {
+    EntityId id;
+    std::string name;
+    EntityId from;
+    EntityId to;
+};
+namespace qcae {
+template <> struct RecordTraits<QueryRelation> {
+    inline static constexpr RecordTypeId type_id{900001};
+    static const void* token() {
+        static const char token{};
+        return &token;
+    }
+};
+} // namespace qcae
 namespace {
 void check(bool value, const char* message) {
     if (!value)
@@ -16,6 +31,55 @@ template <class T> T good(Result<T> result) {
     if (!result.ok())
         throw std::runtime_error(result.error ? result.error->message : "Missing result");
     return std::move(*result.value);
+}
+RecordDescriptor relation_descriptor() {
+    RecordDescriptor descriptor;
+    descriptor.type = RecordTraits<QueryRelation>::type_id;
+    descriptor.name = "QueryRelation";
+    descriptor.query_kind = "query_relation";
+    descriptor.cpp_type_token = RecordTraits<QueryRelation>::token();
+    descriptor.display_name = [](const void* value) -> std::string_view {
+        return static_cast<const QueryRelation*>(value)->name;
+    };
+    const std::vector<RecordTypeId> targets{RecordTraits<records::Node>::type_id};
+    descriptor.fields = {{RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}},
+                         {RecordFieldId{3}, "from", RecordFieldKind::reference, false, "", targets},
+                         {RecordFieldId{4}, "to", RecordFieldKind::reference, false, "", targets}};
+    descriptor.encode = [](const void* object) {
+        const auto& value = *static_cast<const QueryRelation*>(object);
+        return RecordInput{
+            {RecordTraits<QueryRelation>::type_id, value.id.value},
+            1,
+            {{RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)},
+             {RecordFieldId{3},
+              RecordFieldKind::reference,
+              "",
+              record_wire::text(value.from.value)},
+             {RecordFieldId{4},
+              RecordFieldKind::reference,
+              "",
+              record_wire::text(value.to.value)}}};
+    };
+    descriptor.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+        auto read = [&](std::uint32_t id) {
+            return record_wire::read_text(record_wire::require(input, RecordFieldId{id}).payload);
+        };
+        return std::make_shared<const QueryRelation>(QueryRelation{
+            EntityId(input.key.identity), read(2), EntityId(read(3)), EntityId(read(4))});
+    };
+    descriptor.owned_bytes = [](const void* object) {
+        const auto& value = *static_cast<const QueryRelation*>(object);
+        return sizeof(value) + value.id.value.size() + value.name.size() + value.from.value.size() +
+               value.to.value.size();
+    };
+    descriptor.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+        const auto& value = *static_cast<const QueryRelation*>(object);
+        const std::array<RecordTypeId, 1> targets{RecordTraits<records::Node>::type_id};
+        visitor(RecordFieldId{3}, value.from.value, targets);
+        visitor(RecordFieldId{4}, value.to.value, targets);
+    };
+    descriptor.validate = [](const void*, const DocumentView&) {};
+    return descriptor;
 }
 DocumentView fixture() {
     EditSession edit{
@@ -195,12 +259,241 @@ void legacy_wrapper_scope() {
     check(original.ids == legacy.ids,
           "Legacy query leaked the synthetic imported mesh into its original entity universe");
 }
+std::set<EntityId> page_ids(const EntityPage& page) {
+    std::set<EntityId> result;
+    for (const auto& entity : page.entities)
+        result.insert(entity.id);
+    return result;
+}
+void descriptor_entity_filters() {
+    auto registry = std::make_shared<RecordRegistry>();
+    for (auto descriptor : generated_record_descriptors())
+        registry->add(std::move(descriptor));
+    registry->add(relation_descriptor());
+    registry->add_rule(records::validate_relations);
+    registry->freeze();
+    EditSession seed{DocumentView(registry, {{DocumentId("extended"), DocumentEpoch("epoch")}, 1})};
+    seed.put(records::GeometryLine{records::GeometryId("line"), {0, 0, 0}, {10, 0, 0}, 1});
+    seed.put(records::Mesh{
+        records::MeshId("mesh"), "Named mesh", "geometry", records::GeometryId("line"), 1, false});
+    seed.put(records::Node{EntityId("left"), {0, 0, 0}, records::MeshId("mesh")});
+    seed.put(records::Node{EntityId("right"), {10, 0, 0}, records::MeshId("mesh")});
+    seed.put(
+        QueryRelation{EntityId("relation"), "Named relation", EntityId("left"), EntityId("right")});
+    const auto records = seed.prepare().candidate;
+    const auto before = record_activity_counters();
+    const auto all = good(query_entities(records, 0, 100));
+    check(all.total == 5, "No-kind enumeration omitted a contributed entity");
+    EntityFilter filter;
+    for (const auto& [kind, id] :
+         std::vector<std::pair<std::string, EntityId>>{{"node", EntityId("left")},
+                                                       {"geometry", EntityId("line")},
+                                                       {"mesh", EntityId("mesh")},
+                                                       {"query_relation", EntityId("relation")}}) {
+        filter.kind = kind;
+        filter.ids = std::vector<EntityId>{id, EntityId("unknown")};
+        const auto page = good(query_entities(records, filter, 0, 1));
+        check(page.total == 1 && page.entities.front().id == id,
+              "Kind and ID filters do not compose for a registered type");
+        check(!good(query_fields(records, id)).fields.empty(),
+              "Registered fields were not readable");
+        check(good(query_entities(records, filter, 1, 1)).entities.empty(),
+              "Filtered page did not apply offset after filtering");
+    }
+    filter.ids.reset();
+    filter.kind = "query_relation";
+    filter.name_contains = "relation";
+    check(good(query_entities(records, filter, 0, 10)).total == 1,
+          "Custom display-name filter failed");
+    filter.name_contains = "mesh";
+    check(good(query_entities(records, filter, 0, 10)).total == 0,
+          "Custom name filter silently ignored its condition");
+    filter.kind.clear();
+    filter.name_contains = "Named";
+    check(good(query_entities(records, filter, 0, 10)).total == 2,
+          "Name-only query used a fixed entity universe");
+    filter.ids = std::vector<EntityId>{};
+    check(good(query_entities(records, filter, 0, 10)).total == 0,
+          "Explicit empty ID filter means empty scope");
+    const auto unknown = query_entities(records, 0, 10, "unknown");
+    check(!unknown.ok() && unknown.error->code == ErrorCode::invalid_input,
+          "Unknown kind must not become a successful empty page");
+    SelectionService service;
+    const auto view = good(service.create_view(records, Caller{"reader"}));
+    QuerySpec spec;
+    spec.predicate.op = QueryOp::kind;
+    spec.predicate.text = "unknown";
+    check(!execute_query(records, view, spec).ok(), "Selection query accepted an unknown kind");
+    spec.predicate.text = "query_relation";
+    check(good(execute_query(records, view, spec)).ids ==
+              std::vector<EntityId>{EntityId("relation")},
+          "Selection query omitted a registered kind");
+    const auto outgoing = good(query_references(records, EntityId("relation"), false, 0, 10));
+    check(outgoing.total == 2 && outgoing.references[0].role == "query_relation.from" &&
+              outgoing.references[1].role == "query_relation.to",
+          "Custom outgoing references lost descriptor roles");
+    const auto incoming = good(query_references(records, EntityId("right"), true, 0, 10));
+    check(incoming.total == 1 && incoming.references[0].from == EntityId("relation"),
+          "Custom incoming references omitted relationship records");
+    check(good(query_references(records, EntityId("line"), true, 0, 10)).references[0].role ==
+              "mesh.geometry",
+          "Geometry incoming references omitted derived mesh");
+    check(good(query_references(records, EntityId("mesh"), true, 0, 10)).total == 2,
+          "Mesh incoming references omitted node ownership");
+    const auto after = record_activity_counters();
+    check(before.whole_model_serializations == after.whole_model_serializations &&
+              before.whole_model_materializations == after.whole_model_materializations,
+          "Generic filtered queries projected a whole legacy Model");
+}
+void organization_entity_filters() {
+    EditSession seed(fixture());
+    seed.put(records::Assembly{EntityId("root"), "Root", {EntityId("assembly")}});
+    seed.put(records::IncludeDocument{EntityId("root-include"), "root.bdf", {}, {}});
+    seed.put(records::IncludeDocument{
+        EntityId("child-include"), "child.bdf", EntityId("root-include"), {EntityId("beam")}});
+    seed.put(records::SourceIdentifier{EntityId("source"),
+                                       EntityId("beam"),
+                                       "source-model",
+                                       EntityId("child-include"),
+                                       {"test", "1", "digest"},
+                                       "CBAR",
+                                       7});
+    const auto records = seed.prepare().candidate;
+    const auto before = record_activity_counters();
+    const std::set<EntityId> connected{EntityId("beam"), EntityId("left"), EntityId("right")};
+    EntityFilter filter;
+    filter.view = "part";
+    filter.owner = EntityId("part");
+    check(page_ids(good(query_entities(records, filter, 0, 100))) == connected,
+          "Part entity view lost endpoint closure or included owner");
+    filter.view = "assembly";
+    filter.owner = EntityId("root");
+    auto assembled = connected;
+    assembled.insert(EntityId("part"));
+    assembled.insert(EntityId("assembly"));
+    check(page_ids(good(query_entities(records, filter, 0, 100))) == assembled,
+          "Assembly entity view lost intermediate organization rows");
+    filter.view = "set";
+    filter.owner = EntityId("set");
+    check(page_ids(good(query_entities(records, filter, 0, 100))) ==
+              std::set<EntityId>{EntityId("beam")},
+          "Set entity view must not expand beam endpoints");
+    filter.view = "property";
+    filter.owner = EntityId("section");
+    check(page_ids(good(query_entities(records, filter, 0, 100))) == connected,
+          "Property entity view changed");
+    filter.view = "material";
+    filter.owner = EntityId("material");
+    auto physical = connected;
+    physical.insert(EntityId("section"));
+    check(page_ids(good(query_entities(records, filter, 0, 100))) == physical,
+          "Material entity view lost properties or included owner");
+    filter.view = "include";
+    filter.owner = EntityId("root-include");
+    check(page_ids(good(query_entities(records, filter, 0, 100))) ==
+              std::set<EntityId>{EntityId("child-include"), EntityId("beam")},
+          "INCLUDE entity view lost descendants or expanded endpoint ownership");
+    filter.ids = std::vector<EntityId>{EntityId("beam"), EntityId("left")};
+    filter.kind = "beam";
+    check(page_ids(good(query_entities(records, filter, 0, 100))) ==
+              std::set<EntityId>{EntityId("beam")},
+          "Organization and ID/kind intersection changed");
+    filter.owner = EntityId("absent");
+    check(query_entities(records, filter, 0, 100).error->code == ErrorCode::entity_not_found,
+          "Missing organization owner must be explicit");
+    filter.owner = EntityId("beam");
+    check(query_entities(records, filter, 0, 100).error->code == ErrorCode::invalid_input,
+          "Wrong organization owner kind was accepted");
+    filter.view = "unsupported";
+    check(!query_entities(records, filter, 0, 100).ok(), "Unsupported view was ignored");
+    const auto refs = good(query_references(records, EntityId("beam"), false, 0, 100));
+    check(std::any_of(refs.references.begin(),
+                      refs.references.end(),
+                      [](const auto& reference) {
+                          return reference.role == "source.include" &&
+                                 reference.to == EntityId("child-include");
+                      }),
+          "Source-number ownership reference lost its public role");
+    SelectionService service;
+    const auto view = good(service.create_view(records, Caller{"reader"}));
+    QuerySpec spec;
+    spec.predicate.op = QueryOp::source_number_range;
+    spec.predicate.text = "CBAR";
+    spec.predicate.first_number = spec.predicate.last_number = 7;
+    check(good(execute_query(records, view, spec)).ids == std::vector<EntityId>{EntityId("beam")},
+          "Source-number selection changed stable identity");
+    const auto after = record_activity_counters();
+    check(before.whole_model_serializations == after.whole_model_serializations &&
+              before.whole_model_materializations == after.whole_model_materializations,
+          "Organization entity query projected a whole legacy Model");
+}
+void organization_kinds_are_not_cpp_types() {
+    for (const auto* kind : {"part", "assembly", "set", "include", "material", "section", "beam"}) {
+        auto registry = std::make_shared<RecordRegistry>();
+        for (auto descriptor : generated_record_descriptors()) {
+            // A contributed reference target is valid schema data, even when its query label
+            // happens to match an existing organization or element label.
+            if (descriptor.type == RecordTraits<records::Part>::type_id) {
+                for (auto& field : descriptor.fields)
+                    if (field.name == "members")
+                        field.reference_types.push_back(RecordTraits<QueryRelation>::type_id);
+                descriptor.references =
+                    [references = descriptor.references](const void* object,
+                                                         const RecordReferenceVisitor& visitor) {
+                        references(object,
+                                   [&](RecordFieldId field,
+                                       std::string_view identity,
+                                       std::span<const RecordTypeId> original) {
+                                       std::vector<RecordTypeId> targets(original.begin(),
+                                                                         original.end());
+                                       targets.push_back(RecordTraits<QueryRelation>::type_id);
+                                       visitor(field, identity, targets);
+                                   });
+                    };
+            }
+            registry->add(std::move(descriptor));
+        }
+        auto relation = relation_descriptor();
+        relation.query_kind = kind;
+        registry->add(std::move(relation));
+        registry->add_rule(records::validate_relations);
+        registry->freeze();
+        EditSession seed{DocumentView(registry)};
+        seed.put(records::Node{EntityId("from"), {0, 0, 0}, {}});
+        seed.put(records::Node{EntityId("to"), {1, 0, 0}, {}});
+        seed.put(QueryRelation{EntityId("relation"), "Relation", EntityId("from"), EntityId("to")});
+        seed.put(records::Part{EntityId("owner"), "Owner", {EntityId("relation")}});
+        const auto records = seed.prepare().candidate;
+        EntityFilter filter;
+        filter.kind = kind;
+        filter.ids = std::vector<EntityId>{EntityId("relation")};
+        check(good(query_entities(records, filter, 0, 100)).total == 1,
+              "Shared query-kind label must still allow generic filtering");
+        filter.kind.clear();
+        filter.ids.reset();
+        filter.owner = EntityId("relation");
+        filter.view = std::string(kind) == "section" ? "property" : kind;
+        if (filter.view == "beam")
+            filter.view = "part";
+        const auto rejected = query_entities(records, filter, 0, 100);
+        check(!rejected.ok() && rejected.error->code == ErrorCode::invalid_input,
+              "Organization owner must be checked by record type, without an invalid cast");
+        filter.owner = EntityId("owner");
+        filter.view = "part";
+        check(page_ids(good(query_entities(records, filter, 0, 100))) ==
+                  std::set<EntityId>{EntityId("relation")},
+              "Organization traversal must not cast or expand descendants by their query label");
+    }
+}
 } // namespace
 int main() {
     try {
         queries();
         unassigned_beams_and_stable_pages();
         legacy_wrapper_scope();
+        descriptor_entity_filters();
+        organization_entity_filters();
+        organization_kinds_are_not_cpp_types();
         std::cout
             << "PASS: record queries, stable-ID pages, unassigned beams and legacy wrappers\n";
     } catch (const std::exception& error) {

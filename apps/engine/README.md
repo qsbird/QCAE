@@ -2,18 +2,18 @@
 
 Engine process setup, socket lifecycle and concrete adapter composition.
 
-Public API: Executable entry only.
+Public API: `qcae_run_engine` in `qcae/engine_host.hpp` runs the actual server with static contributions; `main.cpp` selects production defaults.
 
-Direct dependencies: `qcae_engine_api`, `qcae_transport_local`, `qcae_nastran`
+Targets: `qcae-engine` links the concrete `qcae_engine_host` library, which links `qcae_engine_api`, `qcae_transport_local`, `qcae_nastran`, and optional SQLite.
 
 Boundary: Hosts one application; never links desktop rendering. Existing frame handling remains here.
 
-Minimal consumer: `qcae-engine --help`; link `qcae-engine` in CMake.
+Minimal consumer: `qcae-engine --help`; a custom static entry links `qcae_engine_host`. The test contribution executable uses this same server without installing test types in production.
 
 Validation from the repository root after configuring/building the `QCAE_BUILD_IPC=ON` (desktop also requires IPC/storage):
 
 ```sh
-ctest --test-dir build-local --output-on-failure -R "^(ipc|m1_ipc|m23_ipc)$"
+ctest --test-dir build-local --output-on-failure -R "^(engine_assembly|entity_query_ipc|engine_contributions_ipc|ipc|m1_ipc|m23_ipc)$"
 ```
 
 Actual ownership and links: [target manifest](../../modules/targets.json). Generated build directories are not committed.

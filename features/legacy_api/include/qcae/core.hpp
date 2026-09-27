@@ -24,7 +24,8 @@ class MemoryApplication {
     explicit MemoryApplication(Limits limits = {},
                                std::shared_ptr<IWorkspaceStore> store = {},
                                std::function<bool(const ProfileRef&)> profile_supported = {},
-                               std::vector<OwnedRowHandler> owned_row_handlers = {});
+                               std::vector<OwnedRowHandler> owned_row_handlers = {},
+                               std::shared_ptr<const RecordRegistry> registry = {});
     ~MemoryApplication();
     MemoryApplication(const MemoryApplication&) = delete;
     MemoryApplication& operator=(const MemoryApplication&) = delete;

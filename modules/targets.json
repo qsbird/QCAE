@@ -236,13 +236,15 @@
         "adapters/engine_api/include/qcae/ipc_api.hpp",
         "adapters/engine_api/include/qcae/ipc_model.hpp",
         "adapters/engine_api/include/qcae/ipc_selection.hpp",
-        "adapters/engine_api/include/qcae/typed_host.hpp"
+        "adapters/engine_api/include/qcae/typed_host.hpp",
+        "adapters/engine_api/include/qcae/engine_contributions.hpp"
       ],
       "sources": [
         "adapters/engine_api/src/ipc_api.cpp",
         "adapters/engine_api/src/ipc_model.cpp",
         "adapters/engine_api/src/ipc_selection.cpp",
-        "adapters/engine_api/src/typed_host.cpp"
+        "adapters/engine_api/src/typed_host.cpp",
+        "adapters/engine_api/src/engine_contributions.cpp"
       ],
       "public_dependencies": [
         "qcae_legacy_api",
@@ -259,6 +261,9 @@
       "private_dependencies": [],
       "external_dependencies": [
         "Qt6::Core"
+      ],
+      "private_headers": [
+        "adapters/engine_api/src/typed_values.hpp"
       ]
     },
     {
@@ -352,16 +357,9 @@
       ],
       "public_dependencies": [],
       "private_dependencies": [
-        "qcae_engine_api",
-        "qcae_transport_local",
-        "qcae_nastran"
+        "qcae_engine_host"
       ],
-      "external_dependencies": [],
-      "conditional_dependencies": {
-        "QCAE_BUILD_STORAGE": [
-          "qcae_sqlite"
-        ]
-      }
+      "external_dependencies": []
     },
     {
       "target": "qcae-cli",
@@ -654,6 +652,35 @@
       ],
       "private_dependencies": [],
       "external_dependencies": []
+    },
+    {
+      "target": "qcae_engine_host",
+      "path": "apps/engine",
+      "kind": "STATIC",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [
+        "apps/engine/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "apps/engine/include/qcae/engine_host.hpp"
+      ],
+      "sources": [
+        "apps/engine/engine_host.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_engine_api"
+      ],
+      "private_dependencies": [
+        "qcae_transport_local",
+        "qcae_nastran"
+      ],
+      "external_dependencies": [],
+      "conditional_dependencies": {
+        "QCAE_BUILD_STORAGE": [
+          "qcae_sqlite"
+        ]
+      }
     }
   ]
 }

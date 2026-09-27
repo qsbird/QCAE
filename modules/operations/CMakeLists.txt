@@ -1,9 +1,16 @@
+file(GLOB QCAE_OPERATION_SCHEMAS CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../schemas/operations/*.json")
+# Membership is a dependency too: removing a schema must invalidate the generated header.
+string(REPLACE ";" "\n" QCAE_OPERATION_SCHEMA_MEMBERSHIP "${QCAE_OPERATION_SCHEMAS}")
+set(QCAE_OPERATION_SCHEMA_LIST "${CMAKE_CURRENT_BINARY_DIR}/operation-schemas.txt")
+file(GENERATE OUTPUT "${QCAE_OPERATION_SCHEMA_LIST}"
+  CONTENT "${QCAE_OPERATION_SCHEMA_MEMBERSHIP}\n")
 add_custom_command(
   OUTPUT "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp"
   COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_operation_contracts.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../schemas/operations" "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp"
   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_operation_contracts.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../schemas/operations/basic.json"
+    ${QCAE_OPERATION_SCHEMAS} "${QCAE_OPERATION_SCHEMA_LIST}"
   VERBATIM)
 add_custom_target(qcae_generated_operation_inputs
   DEPENDS "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp")
