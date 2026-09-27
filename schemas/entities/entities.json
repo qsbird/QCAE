@@ -1,0 +1,539 @@
+{
+  "schema_version": 1,
+  "namespace": "qcae::records",
+  "reserved_type_ids": [],
+  "entities": [
+    {
+      "id": 4097,
+      "name": "Material",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "young_modulus_mpa",
+          "kind": "real",
+          "unit": "MPa",
+          "exclusive_min": 0
+        },
+        {
+          "id": 4,
+          "name": "poisson_ratio",
+          "kind": "real",
+          "unit": "1",
+          "optional": true,
+          "exclusive_min": -1,
+          "exclusive_max": 0.5
+        }
+      ],
+      "legacy": "materials",
+      "maximum_encoded_bytes": 4096,
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "material",
+      "display_field": "name"
+    },
+    {
+      "id": 4098,
+      "name": "Node",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "position",
+          "kind": "vector3",
+          "unit": "mm"
+        },
+        {
+          "id": 3,
+          "name": "mesh",
+          "kind": "reference",
+          "targets": [
+            "Mesh"
+          ],
+          "id_type": "MeshId",
+          "optional": true
+        }
+      ],
+      "legacy": "nodes",
+      "maximum_encoded_bytes": 256,
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "node"
+    },
+    {
+      "id": 4099,
+      "name": "BeamSection",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "material",
+          "kind": "reference",
+          "targets": [
+            "Material"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "area_mm2",
+          "kind": "real",
+          "unit": "mm2",
+          "exclusive_min": 0
+        },
+        {
+          "id": 5,
+          "name": "i1_mm4",
+          "kind": "real",
+          "unit": "mm4",
+          "exclusive_min": 0
+        },
+        {
+          "id": 6,
+          "name": "i2_mm4",
+          "kind": "real",
+          "unit": "mm4",
+          "exclusive_min": 0
+        },
+        {
+          "id": 7,
+          "name": "torsion_mm4",
+          "kind": "real",
+          "unit": "mm4",
+          "exclusive_min": 0
+        }
+      ],
+      "legacy": "sections",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "section",
+      "display_field": "name"
+    },
+    {
+      "id": 4100,
+      "name": "Beam",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "section",
+          "kind": "reference",
+          "targets": [
+            "BeamSection"
+          ],
+          "optional": true
+        },
+        {
+          "id": 3,
+          "name": "nodes",
+          "kind": "references",
+          "targets": [
+            "Node"
+          ],
+          "count": 2
+        },
+        {
+          "id": 4,
+          "name": "orientation",
+          "kind": "vector3",
+          "unit": "1"
+        },
+        {
+          "id": 5,
+          "name": "mesh",
+          "kind": "reference",
+          "targets": [
+            "Mesh"
+          ],
+          "id_type": "MeshId",
+          "optional": true
+        }
+      ],
+      "legacy": "beams",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "beam"
+    },
+    {
+      "id": 4101,
+      "name": "Part",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "members",
+          "kind": "references",
+          "targets": [
+            "Node",
+            "Beam"
+          ]
+        }
+      ],
+      "legacy": "parts",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "part",
+      "display_field": "name"
+    },
+    {
+      "id": 4102,
+      "name": "Assembly",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "children",
+          "kind": "references",
+          "targets": [
+            "Part",
+            "Assembly"
+          ]
+        }
+      ],
+      "legacy": "assemblies",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "assembly",
+      "display_field": "name"
+    },
+    {
+      "id": 4103,
+      "name": "EntitySet",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "members",
+          "kind": "references",
+          "targets": [
+            "Node",
+            "Beam"
+          ]
+        }
+      ],
+      "legacy": "sets",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "set",
+      "display_field": "name"
+    },
+    {
+      "id": 4104,
+      "name": "IncludeDocument",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "path",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "parent",
+          "kind": "reference",
+          "targets": [
+            "IncludeDocument"
+          ],
+          "optional": true
+        },
+        {
+          "id": 4,
+          "name": "members",
+          "kind": "references",
+          "targets": [
+            "Material",
+            "Node",
+            "BeamSection",
+            "Beam",
+            "Part",
+            "Assembly",
+            "EntitySet",
+            "NodalForce",
+            "Constraint",
+            "AnalysisDefinition"
+          ]
+        }
+      ],
+      "legacy": "includes",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "include",
+      "display_field": "path"
+    },
+    {
+      "id": 4105,
+      "name": "NodalForce",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "node",
+          "kind": "reference",
+          "targets": [
+            "Node"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "force_n",
+          "kind": "vector3",
+          "unit": "N"
+        }
+      ],
+      "legacy": "forces",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "force"
+    },
+    {
+      "id": 4106,
+      "name": "Constraint",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "nodes",
+          "kind": "references",
+          "targets": [
+            "Node"
+          ],
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "dofs",
+          "kind": "text",
+          "nonempty": true
+        }
+      ],
+      "legacy": "constraints",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "constraint"
+    },
+    {
+      "id": 4107,
+      "name": "AnalysisDefinition",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "target",
+          "kind": "target"
+        },
+        {
+          "id": 4,
+          "name": "forces",
+          "kind": "references",
+          "targets": [
+            "NodalForce"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "constraints",
+          "kind": "references",
+          "targets": [
+            "Constraint"
+          ]
+        }
+      ],
+      "legacy": "analyses",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "analysis",
+      "display_field": "name"
+    },
+    {
+      "id": 4108,
+      "name": "SourceIdentifier",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "entity",
+          "kind": "reference",
+          "targets": [
+            "Material",
+            "Node",
+            "BeamSection",
+            "Beam",
+            "Part",
+            "Assembly",
+            "EntitySet",
+            "NodalForce",
+            "Constraint",
+            "AnalysisDefinition"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "source_model_id",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 4,
+          "name": "include",
+          "kind": "reference",
+          "targets": [
+            "IncludeDocument"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "profile",
+          "kind": "profile"
+        },
+        {
+          "id": 6,
+          "name": "name_space",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 7,
+          "name": "number",
+          "kind": "unsigned_integer",
+          "minimum": 1
+        }
+      ],
+      "legacy": "sources",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": ""
+    },
+    {
+      "id": 4109,
+      "name": "GeometryLine",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "start",
+          "kind": "vector3",
+          "unit": "mm"
+        },
+        {
+          "id": 3,
+          "name": "end",
+          "kind": "vector3",
+          "unit": "mm"
+        },
+        {
+          "id": 4,
+          "name": "geometry_revision",
+          "kind": "unsigned_integer",
+          "minimum": 1
+        }
+      ],
+      "identity_type": "GeometryId",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "geometry"
+    },
+    {
+      "id": 4110,
+      "name": "Mesh",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "origin",
+          "kind": "text",
+          "choices": [
+            "imported",
+            "manual",
+            "geometry"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "geometry",
+          "kind": "reference",
+          "targets": [
+            "GeometryLine"
+          ],
+          "id_type": "GeometryId",
+          "optional": true
+        },
+        {
+          "id": 5,
+          "name": "geometry_revision",
+          "kind": "unsigned_integer"
+        },
+        {
+          "id": 6,
+          "name": "stale",
+          "kind": "boolean"
+        }
+      ],
+      "identity_type": "MeshId",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "mesh",
+      "display_field": "name"
+    }
+  ],
+  "relation_rules_version": 1
+}

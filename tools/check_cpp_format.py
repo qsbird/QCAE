@@ -11,7 +11,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_DIRS = ("modules", "profiles", "adapters", "ui", "apps", "tests")
+SOURCE_DIRS = ("modules", "features", "profiles", "adapters", "ui", "apps", "tests")
 SUFFIXES = {".cpp", ".hpp", ".h", ".cc"}
 
 

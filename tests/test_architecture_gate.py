@@ -132,6 +132,24 @@ class ArchitectureMutations(unittest.TestCase):
         errors = self.run_gate()
         self.assertTrue(any(e.startswith("private-include:") for e in errors), errors)
 
+    def test_declared_generated_include_root(self):
+        self.build = self.root / "build-inside-source"
+        self.row("qcae_document")["generated_public_include_dirs"] = ["generated"]
+        self.extra_cmake = 'target_include_directories(qcae_document PUBLIC "${CMAKE_BINARY_DIR}/generated")\n'
+        self.write_configuration()
+        self.assertEqual(self.run_gate(), [])
+        self.row("qcae_document")["generated_public_include_dirs"] = []
+        self.write_configuration()
+        self.assertTrue(any(e.startswith("private-include:") for e in self.run_gate()))
+
+    def test_generated_root_cannot_escape_build(self):
+        self.row("qcae_document")["generated_public_include_dirs"] = ["../source/modules/document/src"]
+        self.extra_cmake = 'target_include_directories(qcae_document PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/modules/document/src")\n'
+        self.write_configuration()
+        errors = self.run_gate()
+        self.assertTrue(any(e.startswith("include-root:") for e in errors), errors)
+        self.assertTrue(any(e.startswith("private-include:") for e in errors), errors)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

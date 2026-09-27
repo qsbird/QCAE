@@ -1,6 +1,7 @@
 #pragma once
 
 #include "qcae/application_types.hpp"
+#include "qcae/record_application.hpp"
 #include "qcae/read_view.hpp"
 #include "qcae/workspace_store.hpp"
 
@@ -16,15 +17,19 @@
 
 namespace qcae {
 
-// One in-memory document; no storage/recovery claims. All writes serialize internally.
+// Compatibility facade over one authoritative RecordApplication.
+// Persistence requires an explicitly supplied store.
 class MemoryApplication {
   public:
     explicit MemoryApplication(Limits limits = {},
                                std::shared_ptr<IWorkspaceStore> store = {},
-                               std::function<bool(const ProfileRef&)> profile_supported = {});
+                               std::function<bool(const ProfileRef&)> profile_supported = {},
+                               std::vector<OwnedRowHandler> owned_row_handlers = {});
     ~MemoryApplication();
     MemoryApplication(const MemoryApplication&) = delete;
     MemoryApplication& operator=(const MemoryApplication&) = delete;
+    RecordApplication& record_application() noexcept;
+    const RecordApplication& record_application() const noexcept;
     bool durable() const noexcept;
     bool recovery_available() const;
 

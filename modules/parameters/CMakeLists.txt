@@ -1,0 +1,5 @@
+add_library(qcae_parameters STATIC src/quantities.cpp include/qcae/quantities.hpp)
+target_include_directories(qcae_parameters PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_parameters PUBLIC cxx_std_20)
+target_link_libraries(qcae_parameters PUBLIC qcae_foundation qcae_contracts)
+qcae_warnings(qcae_parameters)

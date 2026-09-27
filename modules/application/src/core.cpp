@@ -1,7 +1,5 @@
-#include "qcae/core.hpp"
+#include "qcae/record_application.hpp"
 #include "application_state.hpp"
-#include "qcae/model_delta.hpp"
-#include "qcae/state_codec.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -15,7 +13,7 @@
 
 namespace qcae {
 namespace {
-using namespace detail;
+using namespace record_detail;
 
 template <class T> Result<T> success(T value) {
     return {Status::success, std::move(value), std::nullopt};
@@ -47,51 +45,8 @@ std::string context_signature(const WriteContext& context) {
 bool blank(const std::string& text) {
     return text.find_first_not_of(" \t\r\n") == std::string::npos;
 }
-bool profiles_supported(const Model& model,
-                        const std::function<bool(const ProfileRef&)>& supports) {
-    if (!supports)
-        return true;
-    for (const auto& analysis : model.analyses)
-        if (!supports(analysis.target.profile))
-            return false;
-    for (const auto& source : model.sources)
-        if (!supports(source.profile))
-            return false;
-    return true;
-}
-
-Result<double> normalize(Quantity value) {
-    if (value.unit.empty())
-        return failure<double>(Status::needs_input,
-                               ErrorCode::missing_input,
-                               "A Young modulus unit is required",
-                               "young_modulus.unit");
-    double factor = 0.0;
-    if (value.unit == "Pa")
-        factor = 1e-6;
-    else if (value.unit == "kPa")
-        factor = 1e-3;
-    else if (value.unit == "MPa")
-        factor = 1.0;
-    else if (value.unit == "GPa")
-        factor = 1e3;
-    else
-        return failure<double>(Status::failed,
-                               ErrorCode::invalid_unit,
-                               "Unsupported Young modulus unit",
-                               "young_modulus.unit");
-    if (!std::isfinite(value.value) || value.value <= 0.0)
-        return failure<double>(Status::failed,
-                               ErrorCode::invalid_input,
-                               "Young modulus must be finite and positive",
-                               "young_modulus.value");
-    const double normalized = value.value * factor;
-    if (!std::isfinite(normalized) || normalized <= 0.0)
-        return failure<double>(Status::failed,
-                               ErrorCode::invalid_input,
-                               "Normalized Young modulus is out of range",
-                               "young_modulus.value");
-    return success(normalized);
+bool profiles_supported(const DocumentView& view, const RecordApplicationOptions& options) {
+    return !options.profiles_supported || options.profiles_supported(view);
 }
 
 std::string
@@ -177,38 +132,43 @@ void drop_expired_previews(Data& data) {
 
 } // namespace
 
-struct MemoryApplication::State {
+struct RecordApplication::State {
+    explicit State(std::shared_ptr<const RecordApplicationOptions> settings)
+        : data(settings), store(settings->projects), records(settings->records) {}
     mutable std::mutex mutex;
     Data data;
     std::shared_ptr<IWorkspaceStore> store;
-    std::function<bool(const ProfileRef&)> profile_supported;
+    std::shared_ptr<IRecordStore> records;
     std::uint64_t generation{};
     bool poisoned{};
+    Result<ChangePreview> prepare(const Caller&, const WriteContext&, const RecordPrepare&);
+    Result<ChangeReceipt> commit(const Caller&,
+                                 const WriteContext&,
+                                 const PreviewId&,
+                                 const std::string&,
+                                 const CommitOwnedRows&,
+                                 const std::string& operation_name = "commit",
+                                 const std::optional<std::string>& direct_signature = {});
 };
 
-MemoryApplication::MemoryApplication(Limits limits,
-                                     std::shared_ptr<IWorkspaceStore> store,
-                                     std::function<bool(const ProfileRef&)> profile_supported)
-    : state_(std::make_unique<State>()) {
-    state_->data.limits = limits;
+RecordApplication::RecordApplication(RecordApplicationOptions options)
+    : state_(std::make_unique<State>(
+          std::make_shared<const RecordApplicationOptions>(std::move(options)))) {
     state_->data.application_nonce = nonce();
-    state_->store = std::move(store);
-    state_->profile_supported = std::move(profile_supported);
-    if (state_->store) {
-        if (auto loaded = state_->store->load()) {
-            state_->data = decode_data(loaded->payload, limits);
-            state_->generation = loaded->generation;
-            state_->data.recoverable = state_->data.document.has_value();
-        }
+    if (state_->records) {
+        auto loaded = state_->records->load_rows();
+        state_->data = decode_data(loaded, state_->data.options);
+        state_->generation = loaded.generation;
+        state_->data.recoverable = state_->data.document.has_value();
     }
 }
-MemoryApplication::~MemoryApplication() = default;
+RecordApplication::~RecordApplication() = default;
 
 static_assert(std::is_nothrow_move_constructible_v<Result<DocumentInfo>>);
 static_assert(std::is_nothrow_move_constructible_v<Result<ChangePreview>>);
 static_assert(std::is_nothrow_move_constructible_v<Result<ChangeReceipt>>);
 
-Result<DocumentInfo> MemoryApplication::create_document(const Caller& caller,
+Result<DocumentInfo> RecordApplication::create_document(const Caller& caller,
                                                         const std::string& name,
                                                         const std::string& idempotency_key) {
     std::lock_guard lock(state_->mutex);
@@ -244,11 +204,13 @@ Result<DocumentInfo> MemoryApplication::create_document(const Caller& caller,
     info.document.epoch = DocumentEpoch(new_id(candidate, "epoch"));
     info.content_state = new_id(candidate, "state");
     info.name = name;
-    info.durable = static_cast<bool>(state_->store);
+    info.durable = static_cast<bool>(state_->records);
     candidate.initial_content_state = info.content_state;
     candidate.document = info;
+    update_document(candidate);
     candidate.host_operations.emplace(key, HostOperation{name, info});
-    if (auto error = persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+    if (auto error =
+            persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
         return {Status::failed, std::nullopt, std::move(error)};
     auto result = success(std::move(info));
     static_assert(std::is_nothrow_swappable_v<Data>);
@@ -257,21 +219,26 @@ Result<DocumentInfo> MemoryApplication::create_document(const Caller& caller,
     return result;
 }
 
-Result<ModelSnapshot> MemoryApplication::snapshot(const DocumentRef& ref) const {
+Result<RecordSnapshot> RecordApplication::snapshot(const DocumentRef& ref) const {
     std::lock_guard lock(state_->mutex);
-    const Data& data = state_->data;
-    if (auto error = check_document<ModelSnapshot>(data, ref))
+    if (auto error = check_document<RecordSnapshot>(state_->data, ref))
         return *error;
-    ModelSnapshot snapshot;
-    static_cast<Model&>(snapshot) = data.model;
-    snapshot.info = *data.document;
-    return success(std::move(snapshot));
+    return success(RecordSnapshot{state_->data.records, *state_->data.document});
 }
-
-Result<ChangePreview> MemoryApplication::preview(const Caller& caller,
-                                                 const WriteContext& context,
-                                                 const MaterialCommand& command) {
+RecordStats RecordApplication::stats() const {
     std::lock_guard lock(state_->mutex);
+    return state_->data.stats;
+}
+Result<ChangePreview> RecordApplication::preview(const Caller& caller,
+                                                 const WriteContext& context,
+                                                 const RecordPrepare& handler) {
+    std::lock_guard lock(state_->mutex);
+    return state_->prepare(caller, context, handler);
+}
+Result<ChangePreview> RecordApplication::State::prepare(const Caller& caller,
+                                                        const WriteContext& context,
+                                                        const RecordPrepare& handler) {
+    auto* state_ = this;
     const Data& current = state_->data;
     if (blank(caller.principal))
         return failure<ChangePreview>(
@@ -283,235 +250,69 @@ Result<ChangePreview> MemoryApplication::preview(const Caller& caller,
     if (current.previews.size() >= current.limits.max_previews)
         return failure<ChangePreview>(
             Status::failed, ErrorCode::resource_limit, "Preview limit reached");
-
-    Prepared prepared;
-    prepared.caller = caller;
-    prepared.context = context;
-    Result<double> normalized;
-    if (const auto* create = std::get_if<CreateMaterial>(&command)) {
-        if (blank(create->name))
-            return failure<ChangePreview>(
-                Status::needs_input, ErrorCode::missing_input, "Material name is required", "name");
-        if (create->name.size() > current.limits.max_name_bytes)
-            return failure<ChangePreview>(Status::failed,
-                                          ErrorCode::resource_limit,
-                                          "Material name exceeds byte limit",
-                                          "name");
-        if (current.model.materials.size() >= current.limits.max_materials)
-            return failure<ChangePreview>(
-                Status::failed, ErrorCode::resource_limit, "Material limit reached");
-        prepared.create = true;
-        prepared.name = create->name;
-        normalized = normalize(create->young_modulus);
-    } else {
-        const auto& change = std::get<SetYoungModulus>(command);
-        const auto found =
-            std::find_if(current.model.materials.begin(),
-                         current.model.materials.end(),
-                         [&](const Material& material) { return material.id == change.id; });
-        if (found == current.model.materials.end())
-            return failure<ChangePreview>(
-                Status::failed, ErrorCode::entity_not_found, "Material does not exist", "id");
-        prepared.entity = change.id;
-        prepared.name = found->name;
-        normalized = normalize(change.young_modulus);
-    }
-    if (!normalized.ok())
-        return {normalized.status, std::nullopt, normalized.error};
-    prepared.modulus = *normalized.value;
     Data candidate = current;
-    if (prepared.create) {
-        const auto entities = model_entities(candidate.model);
-        do {
-            prepared.entity = EntityId(new_id(candidate, "entity"));
-        } while (std::any_of(entities.begin(), entities.end(), [&](const EntitySummary& value) {
-            return value.id == prepared.entity;
-        }));
-    }
-    Model after = candidate.model;
-    if (prepared.create) {
-        after.materials.push_back(
-            Material{prepared.entity, prepared.name, prepared.modulus, std::nullopt});
-        prepared.label = "Create material";
-    } else {
-        auto found =
-            std::find_if(after.materials.begin(),
-                         after.materials.end(),
-                         [&](const Material& material) { return material.id == prepared.entity; });
-        found->young_modulus_mpa = prepared.modulus;
-        prepared.label = "Set Young modulus";
-    }
-    if (auto diagnostic = validate_candidate(after, current.limits))
-        return {Status::failed, std::nullopt, std::move(diagnostic)};
-    prepared.after = std::move(after);
-    auto result = stage_preview(candidate, std::move(prepared));
-    using std::swap;
-    swap(state_->data, candidate);
-    return result;
-}
-
-Result<ChangePreview> MemoryApplication::preview_import(const Caller& caller,
-                                                        const WriteContext& context,
-                                                        const Model& imported) {
-    std::lock_guard lock(state_->mutex);
-    Data& data = state_->data;
-    if (blank(caller.principal))
-        return failure<ChangePreview>(
-            Status::needs_input, ErrorCode::missing_input, "Caller is required");
-    if (auto error = check_document<ChangePreview>(data, context.document))
-        return *error;
-    if (auto error = check_revision<ChangePreview>(data, context))
-        return *error;
-    if (data.previews.size() >= data.limits.max_previews)
-        return failure<ChangePreview>(
-            Status::failed, ErrorCode::resource_limit, "Preview limit reached");
-    if (entity_count(data.model) != 0 || !data.model.sources.empty())
-        return failure<ChangePreview>(
-            Status::conflict, ErrorCode::invalid_input, "Import requires an empty model");
-    if (auto diagnostic = validate_candidate(imported, data.limits))
-        return {Status::failed, std::nullopt, std::move(diagnostic)};
-    Prepared prepared;
-    prepared.caller = caller;
-    prepared.context = context;
-    prepared.after = imported;
-    prepared.label = "Import model";
-    return stage_preview(data, std::move(prepared));
-}
-
-Result<ChangePreview> MemoryApplication::preview_edit(const Caller& caller,
-                                                      const WriteContext& context,
-                                                      const ModelEdit& edit) {
-    std::lock_guard lock(state_->mutex);
-    Data& data = state_->data;
-    if (blank(caller.principal))
-        return failure<ChangePreview>(
-            Status::needs_input, ErrorCode::missing_input, "Caller is required");
-    if (auto error = check_document<ChangePreview>(data, context.document))
-        return *error;
-    if (auto error = check_revision<ChangePreview>(data, context))
-        return *error;
-    if (data.previews.size() >= data.limits.max_previews)
-        return failure<ChangePreview>(
-            Status::failed, ErrorCode::resource_limit, "Preview limit reached");
-    Data candidate = data;
-    Model after = data.model;
-    Prepared prepared;
-    prepared.caller = caller;
-    prepared.context = context;
-    auto all_entities = model_entities(after);
-    auto kind_of = [&](const EntityId& id) -> std::string {
-        const auto found = std::find_if(all_entities.begin(),
-                                        all_entities.end(),
-                                        [&](const EntitySummary& value) { return value.id == id; });
-        return found == all_entities.end() ? "" : found->kind;
-    };
-    auto upsert = [&](auto& values, auto value, const char* kind) -> bool {
-        if (value.id.value.empty()) {
+    try {
+        auto result = handler(current.records, [&] {
+            EntityId id;
             do {
-                value.id = EntityId(new_id(candidate, "entity"));
-            } while (!kind_of(value.id).empty());
-            prepared.create = true;
-        } else if (kind_of(value.id) != kind)
-            return false;
-        prepared.entity = value.id;
-        const auto found = std::find_if(values.begin(), values.end(), [&](const auto& existing) {
-            return existing.id == value.id;
+                id = EntityId(new_id(candidate, "entity"));
+            } while (candidate.records.find_identity(id.value));
+            return id;
         });
-        if (found == values.end())
-            values.push_back(std::move(value));
-        else
-            *found = std::move(value);
-        return true;
-    };
-    bool valid = true;
-    std::visit(
-        [&](const auto& change) {
-            using T = std::decay_t<decltype(change)>;
-            if constexpr (std::is_same_v<T, UpsertPart>) {
-                valid = upsert(after.parts, change.value, "part");
-                prepared.label = "Upsert part";
-            } else if constexpr (std::is_same_v<T, UpsertAssembly>) {
-                valid = upsert(after.assemblies, change.value, "assembly");
-                prepared.label = "Upsert assembly";
-            } else if constexpr (std::is_same_v<T, UpsertSet>) {
-                valid = upsert(after.sets, change.value, "set");
-                prepared.label = "Upsert set";
-            } else if constexpr (std::is_same_v<T, MoveNode>) {
-                prepared.entity = change.id;
-                prepared.label = "Move node";
-                const auto found =
-                    std::find_if(after.nodes.begin(), after.nodes.end(), [&](const Node& node) {
-                        return node.id == change.id;
-                    });
-                if (found == after.nodes.end())
-                    valid = false;
-                else
-                    found->position = change.position;
-            } else if constexpr (std::is_same_v<T, DeleteEntity>) {
-                prepared.entity = change.id;
-                prepared.label = "Delete entity";
-                if (kind_of(change.id).empty()) {
-                    valid = false;
-                    return;
-                }
-                for (const auto& ref : model_references(after)) {
-                    if (ref.to == change.id && ref.from != change.id &&
-                        ref.role != "include.member") {
-                        valid = false;
-                        return;
-                    }
-                }
-                auto erase = [&](auto& values) {
-                    values.erase(
-                        std::remove_if(values.begin(),
-                                       values.end(),
-                                       [&](const auto& item) { return item.id == change.id; }),
-                        values.end());
-                };
-                erase(after.materials);
-                erase(after.nodes);
-                erase(after.sections);
-                erase(after.beams);
-                erase(after.parts);
-                erase(after.assemblies);
-                erase(after.sets);
-                erase(after.includes);
-                erase(after.forces);
-                erase(after.constraints);
-                erase(after.analyses);
-                for (auto& include : after.includes)
-                    include.members.erase(
-                        std::remove(include.members.begin(), include.members.end(), change.id),
-                        include.members.end());
-                after.sources.erase(std::remove_if(after.sources.begin(),
-                                                   after.sources.end(),
-                                                   [&](const SourceIdentifier& source) {
-                                                       return source.entity == change.id;
-                                                   }),
-                                    after.sources.end());
-            }
-        },
-        edit);
-    if (!valid)
-        return failure<ChangePreview>(
-            Status::failed,
-            ErrorCode::invalid_input,
-            "Edit entity is missing, has the wrong kind, or is referenced",
-            "id");
-    if (auto diagnostic = validate_candidate(after, data.limits))
-        return {Status::failed, std::nullopt, std::move(diagnostic)};
-    prepared.after = std::move(after);
-    auto result = stage_preview(candidate, std::move(prepared));
-    using std::swap;
-    swap(data, candidate);
-    return result;
+        if (!result.ok())
+            return {result.status, {}, result.error};
+        auto& operation = *result.value;
+        if (!same_record_version(operation.change.base, current.records.version()))
+            return failure<ChangePreview>(Status::conflict,
+                                          ErrorCode::revision_conflict,
+                                          "Prepared change base does not match");
+        if (auto error = validate_candidate(operation.change.candidate, candidate))
+            return {Status::failed, {}, error};
+        if (!profiles_supported(operation.change.candidate, *candidate.options))
+            return failure<ChangePreview>(Status::failed,
+                                          ErrorCode::schema_unsupported,
+                                          "Prepared change requires an unavailable solver profile");
+        candidate.stats += operation.change.stats;
+        Prepared prepared{caller,
+                          context,
+                          operation.creates_entity,
+                          operation.affected_entity,
+                          operation.signature,
+                          operation.normalized_value,
+                          std::make_shared<const PreparedRecordChange>(std::move(operation.change)),
+                          operation.label};
+        auto response = stage_preview(candidate, std::move(prepared));
+        using std::swap;
+        swap(state_->data, candidate);
+        return response;
+    } catch (const RecordError& error) {
+        return {Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+    }
 }
 
-Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
+Result<ChangeReceipt> RecordApplication::commit(const Caller& caller,
                                                 const WriteContext& context,
                                                 const PreviewId& preview_id,
                                                 const std::string& idempotency_key) {
+    return commit_with_rows(caller, context, preview_id, idempotency_key, {});
+}
+Result<ChangeReceipt> RecordApplication::commit_with_rows(const Caller& caller,
+                                                          const WriteContext& context,
+                                                          const PreviewId& preview_id,
+                                                          const std::string& idempotency_key,
+                                                          const CommitOwnedRows& owned) {
     std::lock_guard lock(state_->mutex);
+    return state_->commit(caller, context, preview_id, idempotency_key, owned);
+}
+Result<ChangeReceipt>
+RecordApplication::State::commit(const Caller& caller,
+                                 const WriteContext& context,
+                                 const PreviewId& preview_id,
+                                 const std::string& idempotency_key,
+                                 const CommitOwnedRows& owned,
+                                 const std::string& operation_name,
+                                 const std::optional<std::string>& direct_signature) {
+    auto* state_ = this;
     const Data& current = state_->data;
     if (blank(caller.principal) || blank(idempotency_key))
         return failure<ChangeReceipt>(Status::needs_input,
@@ -519,14 +320,15 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
                                       "Caller and idempotency key are required");
     if (auto error = check_document<ChangeReceipt>(current, context.document))
         return *error;
-    const auto key = scoped_key(caller, "commit", idempotency_key);
+    const auto key = scoped_key(caller, operation_name, idempotency_key);
     const auto existing = current.operations.find(key);
     if (existing != current.operations.end()) {
         // A completed operation survives preview eviction and undo. Its stored signature
         // starts with the caller-supplied context and preview ID.
         std::string prefix = context_signature(context);
         append_part(prefix, preview_id.value);
-        if (existing->second.signature.compare(0, prefix.size(), prefix) != 0)
+        if (direct_signature ? existing->second.signature != *direct_signature
+                             : existing->second.signature.compare(0, prefix.size(), prefix) != 0)
             return failure<ChangeReceipt>(Status::conflict,
                                           ErrorCode::idempotency_key_conflict,
                                           "Key was used with other commit parameters",
@@ -564,39 +366,175 @@ Result<ChangeReceipt> MemoryApplication::commit(const Caller& caller,
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::resource_limit, "History entry limit reached");
     Data candidate = current;
+    for (std::size_t i = candidate.cursor; i < candidate.history.size(); ++i)
+        candidate.pending.push_back(
+            {{StoreSpace::history_entry, candidate.history[i]->transaction.value}, {}});
     candidate.history.resize(candidate.cursor);
     if (!prepared.after)
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::invalid_input, "Preview has no candidate model");
-    candidate.model = *prepared.after;
+    if (!same_record_version(prepared.after->base, current.records.version()))
+        return failure<ChangeReceipt>(
+            Status::conflict, ErrorCode::revision_conflict, "Prepared change base changed");
+    try {
+        candidate.records = apply_record_changes(
+            current.records, prepared.after->changes, RecordDirection::forward, &candidate.stats);
+    } catch (const RecordError& error) {
+        return {Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+    }
+    if (auto diagnostic = validate_candidate(candidate.records, candidate))
+        return {Status::failed, {}, diagnostic};
+    if (!profiles_supported(candidate.records, *candidate.options))
+        return failure<ChangeReceipt>(Status::failed,
+                                      ErrorCode::schema_unsupported,
+                                      "Commit requires an unavailable solver profile");
+    queue_changes(candidate, prepared.after->changes);
     TransactionId transaction(new_id(candidate, "transaction"));
     candidate.document->content_state = new_id(candidate, "state");
     ++candidate.document->revision;
     update_document(candidate);
-    candidate.history.push_back(HistoryEntry{transaction,
+    candidate.history.push_back(make_history(transaction,
                                              prepared.label,
-                                             model_delta(current.model, candidate.model),
-                                             candidate.document->content_state});
+                                             prepared.after->changes,
+                                             candidate.document->content_state,
+                                             &candidate.stats));
+    candidate.pending.push_back(
+        {{StoreSpace::history_entry, transaction.value}, candidate.history.back()->encoded});
     candidate.cursor = candidate.history.size();
     ChangeReceipt receipt{transaction,
                           candidate.document->revision,
                           candidate.document->revision,
                           candidate.document->content_state,
                           false};
+    receipt.primary_entity = prepared.entity;
+    try {
+        if (owned)
+            queue_owned_rows(candidate, owned(receipt));
+    } catch (const RecordError& error) {
+        return {Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+    }
     candidate.operations.emplace(
-        key, RecordedOperation{commit_signature(context, preview_id, prepared), receipt});
+        key,
+        RecordedOperation{
+            direct_signature.value_or(commit_signature(context, preview_id, prepared)), receipt});
     drop_expired_previews(candidate);
     auto result = success(std::move(receipt));
-    if (auto error = persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+    if (auto error =
+            persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
         return {Status::failed, std::nullopt, std::move(error)};
     using std::swap;
     swap(state_->data, candidate);
     return result;
 }
 
+Result<ChangeReceipt> RecordApplication::execute(const Caller& caller,
+                                                 const WriteContext& context,
+                                                 const std::string& operation_name,
+                                                 const std::string& normalized_signature,
+                                                 const RecordPrepare& handler,
+                                                 const std::string& idempotency_key,
+                                                 const CommitOwnedRows& owned) {
+    std::lock_guard lock(state_->mutex);
+    if (blank(caller.principal) || blank(operation_name) || blank(normalized_signature) ||
+        blank(idempotency_key) || !handler)
+        return failure<ChangeReceipt>(
+            Status::needs_input,
+            ErrorCode::missing_input,
+            "Caller, operation, input signature, handler and key are required");
+    if (auto error = check_document<ChangeReceipt>(state_->data, context.document))
+        return *error;
+    const auto scope = "execute:" + operation_name;
+    auto signature = context_signature(context);
+    append_part(signature, normalized_signature);
+    const auto key = scoped_key(caller, scope, idempotency_key);
+    if (const auto found = state_->data.operations.find(key);
+        found != state_->data.operations.end()) {
+        if (found->second.signature != signature)
+            return failure<ChangeReceipt>(Status::conflict,
+                                          ErrorCode::idempotency_key_conflict,
+                                          "Operation key was used with different normalized input");
+        return success(current_receipt(state_->data, found->second.receipt, true));
+    }
+    auto preview = state_->prepare(
+        caller, context, [&](const DocumentView& view, const RecordIdentityAllocator& allocate) {
+            auto prepared = handler(view, allocate);
+            if (prepared.ok() && prepared.value->signature != normalized_signature)
+                return failure<RecordPreparedOperation>(
+                    Status::failed,
+                    ErrorCode::invalid_input,
+                    "Prepared operation signature does not match normalized input");
+            return prepared;
+        });
+    if (!preview.ok())
+        return {preview.status, {}, preview.error};
+    struct ReleasePrivatePreview {
+        Data& data;
+        const std::string& identity;
+        ~ReleasePrivatePreview() {
+            data.previews.erase(identity);
+        }
+    } release{state_->data, preview.value->id.value};
+    return state_->commit(
+        caller, context, preview.value->id, idempotency_key, owned, scope, signature);
+}
+Result<ChangeReceipt> RecordApplication::action_outcome(const Caller& caller,
+                                                        const DocumentRef& document,
+                                                        const std::string& operation_name,
+                                                        const std::string& idempotency_key) const {
+    std::lock_guard lock(state_->mutex);
+    if (auto error = check_document<ChangeReceipt>(state_->data, document))
+        return *error;
+    const auto key = scoped_key(caller, "execute:" + operation_name, idempotency_key);
+    const auto found = state_->data.operations.find(key);
+    if (found == state_->data.operations.end())
+        return failure<ChangeReceipt>(
+            Status::failed, ErrorCode::entity_not_found, "Operation is not recorded");
+    return success(current_receipt(state_->data, found->second.receipt, true));
+}
+
+Result<bool> RecordApplication::update_owned_rows(const Caller& caller,
+                                                  const DocumentRef& document,
+                                                  std::span<const OwnedRowUpdate> updates) {
+    std::lock_guard lock(state_->mutex);
+    if (blank(caller.principal))
+        return failure<bool>(Status::needs_input, ErrorCode::missing_input, "Caller is required");
+    if (auto error = check_document<bool>(state_->data, document))
+        return *error;
+    if (state_->data.save_intent)
+        return failure<bool>(Status::conflict,
+                             ErrorCode::storage_uncertain,
+                             "Save intent needs reconciliation before side-row writes");
+    Data candidate = state_->data;
+    try {
+        queue_owned_rows(candidate, updates);
+        if (auto error =
+                persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
+            return {Status::failed, {}, std::move(error)};
+        using std::swap;
+        swap(state_->data, candidate);
+        return success(true);
+    } catch (const RecordError& error) {
+        const auto status =
+            error.code() == ErrorCode::revision_conflict ? Status::conflict : Status::failed;
+        return {status, {}, Diagnostic{error.code(), error.what(), error.field()}};
+    }
+}
+Result<std::vector<std::shared_ptr<const OwnedRowImage>>> RecordApplication::owned_rows(
+    const DocumentRef& document, StoreSpace space, std::string_view owner) const {
+    std::lock_guard lock(state_->mutex);
+    using Rows = std::vector<std::shared_ptr<const OwnedRowImage>>;
+    if (auto error = check_document<Rows>(state_->data, document))
+        return *error;
+    Rows result;
+    for (const auto& [key, row] : *state_->data.owned_rows)
+        if (key.space == space && row->owner == owner)
+            result.push_back(row);
+    return success(std::move(result));
+}
+
 namespace {
 Result<ChangeReceipt> move_history(Data& data,
-                                   IWorkspaceStore* store,
+                                   IRecordStore* store,
                                    std::uint64_t& generation,
                                    bool& poisoned,
                                    const Caller& caller,
@@ -635,21 +573,32 @@ Result<ChangeReceipt> move_history(Data& data,
             Status::failed, ErrorCode::resource_limit, "Idempotency record limit reached");
     Data candidate = data;
     if (undo) {
-        candidate.model = apply_model_delta(
-            candidate.model, candidate.history[candidate.cursor - 1].delta, false);
+        queue_changes(
+            candidate, candidate.history[candidate.cursor - 1]->changes, RecordDirection::reverse);
+        candidate.records = apply_record_changes(candidate.records,
+                                                 candidate.history[candidate.cursor - 1]->changes,
+                                                 RecordDirection::reverse,
+                                                 &candidate.stats);
         --candidate.cursor;
     } else {
-        candidate.model =
-            apply_model_delta(candidate.model, candidate.history[candidate.cursor].delta, true);
+        queue_changes(candidate, candidate.history[candidate.cursor]->changes);
+        candidate.records = apply_record_changes(candidate.records,
+                                                 candidate.history[candidate.cursor]->changes,
+                                                 RecordDirection::forward,
+                                                 &candidate.stats);
         ++candidate.cursor;
     }
-    if (auto diagnostic = validate_candidate(candidate.model, candidate.limits))
+    if (auto diagnostic = validate_candidate(candidate.records, candidate))
         return {Status::failed, std::nullopt, std::move(diagnostic)};
+    if (!profiles_supported(candidate.records, *candidate.options))
+        return failure<ChangeReceipt>(Status::failed,
+                                      ErrorCode::schema_unsupported,
+                                      "History requires an unavailable solver profile");
     if (candidate.cursor == 0) {
         candidate.document->content_state = candidate.initial_content_state;
     } else {
         const auto& entry = candidate.history[candidate.cursor - 1];
-        candidate.document->content_state = entry.content_state;
+        candidate.document->content_state = entry->content_state;
     }
     ++candidate.document->revision;
     update_document(candidate);
@@ -670,12 +619,12 @@ Result<ChangeReceipt> move_history(Data& data,
 }
 } // namespace
 
-Result<ChangeReceipt> MemoryApplication::undo(const Caller& caller,
+Result<ChangeReceipt> RecordApplication::undo(const Caller& caller,
                                               const WriteContext& context,
                                               const std::string& idempotency_key) {
     std::lock_guard lock(state_->mutex);
     return move_history(state_->data,
-                        state_->store.get(),
+                        state_->records.get(),
                         state_->generation,
                         state_->poisoned,
                         caller,
@@ -684,12 +633,12 @@ Result<ChangeReceipt> MemoryApplication::undo(const Caller& caller,
                         true);
 }
 
-Result<ChangeReceipt> MemoryApplication::redo(const Caller& caller,
+Result<ChangeReceipt> RecordApplication::redo(const Caller& caller,
                                               const WriteContext& context,
                                               const std::string& idempotency_key) {
     std::lock_guard lock(state_->mutex);
     return move_history(state_->data,
-                        state_->store.get(),
+                        state_->records.get(),
                         state_->generation,
                         state_->poisoned,
                         caller,
@@ -698,7 +647,7 @@ Result<ChangeReceipt> MemoryApplication::redo(const Caller& caller,
                         false);
 }
 
-Result<HistorySnapshot> MemoryApplication::history(const DocumentRef& ref) const {
+Result<HistorySnapshot> RecordApplication::history(const DocumentRef& ref) const {
     std::lock_guard lock(state_->mutex);
     const Data& data = state_->data;
     if (auto error = check_document<HistorySnapshot>(data, ref))
@@ -708,11 +657,11 @@ Result<HistorySnapshot> MemoryApplication::history(const DocumentRef& ref) const
     snapshot.revision = data.document->revision;
     for (std::size_t i = 0; i < data.history.size(); ++i)
         snapshot.items.push_back(
-            HistoryItem{data.history[i].transaction, data.history[i].label, i < data.cursor});
+            HistoryItem{data.history[i]->transaction, data.history[i]->label, i < data.cursor});
     return success(std::move(snapshot));
 }
 
-Result<ChangeReceipt> MemoryApplication::operation(const Caller& caller,
+Result<ChangeReceipt> RecordApplication::operation(const Caller& caller,
                                                    const DocumentRef& ref,
                                                    const std::string& operation_name,
                                                    const std::string& idempotency_key) const {
@@ -737,14 +686,14 @@ Result<ChangeReceipt> MemoryApplication::operation(const Caller& caller,
     return success(current_receipt(data, found->second.receipt, true));
 }
 
-bool MemoryApplication::durable() const noexcept {
-    return static_cast<bool>(state_->store);
+bool RecordApplication::durable() const noexcept {
+    return static_cast<bool>(state_->records);
 }
-bool MemoryApplication::recovery_available() const {
+bool RecordApplication::recovery_available() const {
     std::lock_guard lock(state_->mutex);
     return state_->data.recoverable || state_->poisoned;
 }
-Result<DocumentInfo> MemoryApplication::current_document() const {
+Result<DocumentInfo> RecordApplication::current_document() const {
     std::lock_guard lock(state_->mutex);
     const auto& data = state_->data;
     if (!data.document || data.recoverable)
@@ -752,7 +701,7 @@ Result<DocumentInfo> MemoryApplication::current_document() const {
             Status::failed, ErrorCode::document_not_found, "No active document");
     return success(*data.document);
 }
-Result<DocumentInfo> MemoryApplication::host_operation(const Caller& caller,
+Result<DocumentInfo> RecordApplication::host_operation(const Caller& caller,
                                                        const std::string& operation_name,
                                                        const std::string& idempotency_key) const {
     std::lock_guard lock(state_->mutex);
@@ -771,7 +720,7 @@ Result<DocumentInfo> MemoryApplication::host_operation(const Caller& caller,
             Status::failed, ErrorCode::entity_not_found, "Operation is not recorded");
     return success(found->second.result);
 }
-Result<DocumentInfo> MemoryApplication::open_document(const Caller& caller,
+Result<DocumentInfo> RecordApplication::open_document(const Caller& caller,
                                                       const std::string& path,
                                                       const std::string& idempotency_key) {
     std::lock_guard lock(state_->mutex);
@@ -802,12 +751,16 @@ Result<DocumentInfo> MemoryApplication::open_document(const Caller& caller,
         ProjectLeaseGuard lease{state_->store.get(), ""};
         const auto project = state_->store->read_project(canonical);
         Data candidate = state_->data;
-        Data opened = decode_project(project.payload, candidate.limits);
-        if (!profiles_supported(opened.model, state_->profile_supported))
+        Data opened = decode_project(project.payload, candidate.options);
+        if (!profiles_supported(opened.records, *state_->data.options))
             return failure<DocumentInfo>(Status::failed,
                                          ErrorCode::schema_unsupported,
                                          "Project requires an unavailable solver profile");
-        candidate.model = std::move(opened.model);
+        replace_records(candidate, std::move(opened.records));
+        candidate.owned_rows = std::move(opened.owned_rows);
+        for (const auto& [row_key, row] : *candidate.owned_rows)
+            candidate.pending.push_back({row_key, row->encoded});
+        recover_owned_rows(candidate);
         candidate.history.clear();
         candidate.cursor = 0;
         candidate.operations.clear();
@@ -824,14 +777,14 @@ Result<DocumentInfo> MemoryApplication::open_document(const Caller& caller,
         update_document(candidate);
         candidate.host_operations.emplace(key, HostOperation{path, *candidate.document});
         if (auto error =
-                persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+                persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
             return {Status::failed, std::nullopt, std::move(error)};
         using std::swap;
         swap(state_->data, candidate);
         state_->store->release_projects_except(canonical);
         lease.release = false;
         return success(*state_->data.document);
-    } catch (const state_codec::CodecError& error) {
+    } catch (const RecordError& error) {
         return failure<DocumentInfo>(Status::failed, ErrorCode::schema_unsupported, error.what());
     } catch (const StorageError& error) {
         return failure<DocumentInfo>(Status::failed,
@@ -840,24 +793,24 @@ Result<DocumentInfo> MemoryApplication::open_document(const Caller& caller,
                                      error.what());
     }
 }
-Result<DocumentInfo> MemoryApplication::recover_document(const Caller& caller,
+Result<DocumentInfo> RecordApplication::recover_document(const Caller& caller,
                                                          const std::string& idempotency_key) {
     std::lock_guard lock(state_->mutex);
     if (blank(caller.principal) || blank(idempotency_key))
         return failure<DocumentInfo>(
             Status::needs_input, ErrorCode::missing_input, "Caller and key are required");
-    if (state_->poisoned && state_->store) {
+    if (state_->poisoned && state_->records) {
         try {
-            const auto loaded = state_->store->load();
-            if (!loaded)
+            const auto loaded = state_->records->load_rows();
+            if (loaded.rows.empty() && !loaded.legacy)
                 return failure<DocumentInfo>(
                     Status::failed, ErrorCode::storage_failure, "No durable workspace to recover");
-            Data restored = decode_data(loaded->payload, state_->data.limits);
+            Data restored = decode_data(loaded, state_->data.options);
             restored.recoverable = restored.document.has_value();
             state_->data = std::move(restored);
-            state_->generation = loaded->generation;
+            state_->generation = loaded.generation;
             state_->poisoned = false;
-        } catch (const state_codec::CodecError& error) {
+        } catch (const RecordError& error) {
             return failure<DocumentInfo>(
                 Status::failed, ErrorCode::schema_unsupported, error.what());
         } catch (const StorageError& error) {
@@ -871,7 +824,7 @@ Result<DocumentInfo> MemoryApplication::recover_document(const Caller& caller,
     if (const auto existing = state_->data.host_operations.find(key);
         existing != state_->data.host_operations.end())
         return success(existing->second.result);
-    if (!state_->store || !state_->data.document || !state_->data.recoverable)
+    if (!state_->records || !state_->data.document || !state_->data.recoverable)
         return failure<DocumentInfo>(
             Status::failed, ErrorCode::document_not_found, "No retained document to recover");
     if (state_->data.host_operations.size() + state_->data.operations.size() >=
@@ -880,13 +833,17 @@ Result<DocumentInfo> MemoryApplication::recover_document(const Caller& caller,
             Status::failed, ErrorCode::resource_limit, "Operation record limit reached");
     try {
         Data candidate = state_->data;
-        if (!profiles_supported(candidate.model, state_->profile_supported))
+        if (!profiles_supported(candidate.records, *state_->data.options))
             return failure<DocumentInfo>(Status::failed,
                                          ErrorCode::schema_unsupported,
                                          "Recovery requires an unavailable solver profile");
-        if (!candidate.document->saved_path.empty())
+        if (state_->store && !candidate.document->saved_path.empty())
             candidate.document->saved_path =
                 state_->store->acquire_project(candidate.document->saved_path);
+        if (candidate.save_intent && !state_->store)
+            return failure<DocumentInfo>(Status::failed,
+                                         ErrorCode::unsupported_capability,
+                                         "Pending save requires project storage");
         if (candidate.save_intent) {
             const auto& intent = *candidate.save_intent;
             const auto canonical = state_->store->acquire_project(intent.path);
@@ -911,14 +868,19 @@ Result<DocumentInfo> MemoryApplication::recover_document(const Caller& caller,
         candidate.document->durable = true;
         candidate.recoverable = false;
         candidate.previews.clear();
+        recover_owned_rows(candidate);
+        update_document(candidate);
         candidate.host_operations.emplace(key, HostOperation{"", *candidate.document});
         if (auto error =
-                persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+                persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
             return {Status::failed, std::nullopt, std::move(error)};
         using std::swap;
         swap(state_->data, candidate);
-        state_->store->release_projects_except(state_->data.document->saved_path);
+        if (state_->store)
+            state_->store->release_projects_except(state_->data.document->saved_path);
         return success(*state_->data.document);
+    } catch (const RecordError& error) {
+        return failure<DocumentInfo>(Status::failed, error.code(), error.what());
     } catch (const StorageError& error) {
         return failure<DocumentInfo>(Status::failed,
                                      error.uncertain() ? ErrorCode::storage_uncertain
@@ -926,7 +888,7 @@ Result<DocumentInfo> MemoryApplication::recover_document(const Caller& caller,
                                      error.what());
     }
 }
-Result<DocumentInfo> MemoryApplication::save_document(const Caller& caller,
+Result<DocumentInfo> RecordApplication::save_document(const Caller& caller,
                                                       const WriteContext& context,
                                                       const std::string& path,
                                                       bool save_as,
@@ -996,7 +958,7 @@ Result<DocumentInfo> MemoryApplication::save_document(const Caller& caller,
                     return failure<DocumentInfo>(Status::conflict,
                                                  ErrorCode::invalid_input,
                                                  "Save-as target already exists");
-                const auto old_data = decode_project(old.payload, candidate.limits);
+                const auto old_data = decode_project(old.payload, candidate.options);
                 if (candidate.document->project_id.empty() ||
                     old_data.document->project_id != candidate.document->project_id)
                     return failure<DocumentInfo>(Status::conflict,
@@ -1016,9 +978,9 @@ Result<DocumentInfo> MemoryApplication::save_document(const Caller& caller,
                                     : candidate.document->project_id;
             intent.snapshot = encode_project(candidate, intent.project_id);
             intent.save_as = save_as;
-            candidate.save_intent = std::move(intent);
+            candidate.save_intent = std::make_shared<const SaveIntent>(std::move(intent));
             if (auto error =
-                    persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+                    persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
                 return {Status::failed, std::nullopt, std::move(error)};
             using std::swap;
             swap(state_->data, candidate);
@@ -1035,7 +997,7 @@ Result<DocumentInfo> MemoryApplication::save_document(const Caller& caller,
                                              ErrorCode::idempotency_key_conflict,
                                              "Save target contains another snapshot");
             else {
-                const auto old_data = decode_project(old.payload, state_->data.limits);
+                const auto old_data = decode_project(old.payload, state_->data.options);
                 if (old_data.document->project_id != state_->data.document->project_id)
                     return failure<DocumentInfo>(Status::conflict,
                                                  ErrorCode::invalid_input,
@@ -1055,13 +1017,13 @@ Result<DocumentInfo> MemoryApplication::save_document(const Caller& caller,
         finished.host_operations.emplace(key, HostOperation{signature, *finished.document});
         finished.save_intent.reset();
         if (auto error =
-                persist(finished, state_->store.get(), state_->generation, state_->poisoned))
+                persist(finished, state_->records.get(), state_->generation, state_->poisoned))
             return {Status::failed, std::nullopt, std::move(error)};
         using std::swap;
         swap(state_->data, finished);
         state_->store->release_projects_except(canonical);
         return success(*state_->data.document);
-    } catch (const state_codec::CodecError& error) {
+    } catch (const RecordError& error) {
         return failure<DocumentInfo>(Status::failed, ErrorCode::schema_unsupported, error.what());
     } catch (const StorageError& error) {
         if (error.uncertain())
@@ -1072,7 +1034,7 @@ Result<DocumentInfo> MemoryApplication::save_document(const Caller& caller,
                                      error.what());
     }
 }
-Result<DocumentInfo> MemoryApplication::close_document(const Caller& caller,
+Result<DocumentInfo> RecordApplication::close_document(const Caller& caller,
                                                        const WriteContext& context,
                                                        ClosePolicy policy,
                                                        const std::string& idempotency_key) {
@@ -1095,6 +1057,11 @@ Result<DocumentInfo> MemoryApplication::close_document(const Caller& caller,
         return *error;
     if (auto error = check_revision<DocumentInfo>(state_->data, context))
         return *error;
+    if (owned_rows_block_close(state_->data))
+        return failure<DocumentInfo>(
+            Status::conflict,
+            ErrorCode::invalid_input,
+            "Active background work must finish or be cancelled before closing");
     if (state_->data.save_intent)
         return failure<DocumentInfo>(
             Status::conflict, ErrorCode::storage_uncertain, "Save intent needs reconciliation");
@@ -1102,18 +1069,19 @@ Result<DocumentInfo> MemoryApplication::close_document(const Caller& caller,
     const auto result = *candidate.document;
     candidate.host_operations.emplace(key, HostOperation{signature, result});
     candidate.previews.clear();
-    if (policy == ClosePolicy::keep_recovery && state_->store)
+    if (policy == ClosePolicy::keep_recovery && state_->records)
         candidate.recoverable = true;
     else {
         candidate.document.reset();
-        candidate.model = {};
+        clear_document_rows(candidate);
         candidate.history.clear();
         candidate.cursor = 0;
         candidate.operations.clear();
         candidate.initial_content_state.clear();
         candidate.recoverable = false;
     }
-    if (auto error = persist(candidate, state_->store.get(), state_->generation, state_->poisoned))
+    if (auto error =
+            persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
         return {Status::failed, std::nullopt, std::move(error)};
     using std::swap;
     swap(state_->data, candidate);
@@ -1121,58 +1089,4 @@ Result<DocumentInfo> MemoryApplication::close_document(const Caller& caller,
         state_->store->release_projects_except("");
     return success(result);
 }
-const char* status_name(Status status) {
-    switch (status) {
-    case Status::success:
-        return "success";
-    case Status::needs_input:
-        return "needs_input";
-    case Status::conflict:
-        return "conflict";
-    case Status::failed:
-        return "failed";
-    }
-    return "unknown";
-}
-
-const char* error_name(ErrorCode code) {
-    switch (code) {
-    case ErrorCode::missing_input:
-        return "MISSING_INPUT";
-    case ErrorCode::invalid_input:
-        return "INVALID_INPUT";
-    case ErrorCode::invalid_unit:
-        return "INVALID_UNIT";
-    case ErrorCode::entity_not_found:
-        return "ENTITY_NOT_FOUND";
-    case ErrorCode::document_not_found:
-        return "DOCUMENT_NOT_FOUND";
-    case ErrorCode::document_already_open:
-        return "DOCUMENT_ALREADY_OPEN";
-    case ErrorCode::document_epoch_expired:
-        return "DOCUMENT_EPOCH_EXPIRED";
-    case ErrorCode::revision_conflict:
-        return "REVISION_CONFLICT";
-    case ErrorCode::preview_expired:
-        return "PREVIEW_EXPIRED";
-    case ErrorCode::idempotency_key_conflict:
-        return "IDEMPOTENCY_KEY_CONFLICT";
-    case ErrorCode::nothing_to_undo:
-        return "NOTHING_TO_UNDO";
-    case ErrorCode::nothing_to_redo:
-        return "NOTHING_TO_REDO";
-    case ErrorCode::resource_limit:
-        return "RESOURCE_LIMIT";
-    case ErrorCode::unsupported_capability:
-        return "UNSUPPORTED_CAPABILITY";
-    case ErrorCode::storage_failure:
-        return "STORAGE_FAILURE";
-    case ErrorCode::storage_uncertain:
-        return "STORAGE_UNCERTAIN";
-    case ErrorCode::schema_unsupported:
-        return "SCHEMA_UNSUPPORTED";
-    }
-    return "UNKNOWN";
-}
-
 } // namespace qcae

@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""Generate deterministic typed wire adapters/metadata from explicit operation schemas.
+
+This generator owns no document authority. IDs and field ordering come from the
+schema, not traversal or registration order. No external Python packages required.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import re
+import sys
+
+TYPES = {
+    'string': 'std::string',
+    'entity_id': 'EntityId',
+    'quantity': 'Quantity',
+    'vector3_mm': 'std::array<double, 3>',
+    'positive_uint32': 'std::uint32_t',
+    'finite_number': 'double',
+    'entity_id_array': 'std::vector<EntityId>',
+}
+CONTEXT_REQUIRED = ('document', 'epoch', 'expected_revision', 'idempotency_key')
+CONTEXT = (*CONTEXT_REQUIRED, 'expected_profile')
+EFFECTS = {'read_only', 'document_write', 'preview', 'background_task'}
+IDENTIFIER = re.compile(r'[A-Za-z][A-Za-z0-9_]*\Z')
+WIRE_ID = re.compile(r'[a-z][a-z0-9_.]*\Z')
+
+
+def literal(value: str) -> str:
+    return json.dumps(value, ensure_ascii=True)
+
+
+def unique_object(pairs: list[tuple[str, object]]) -> dict:
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('Duplicate JSON object key: ' + key)
+        result[key] = value
+    return result
+
+
+def load_schemas(directory: Path) -> list[dict]:
+    files = sorted(directory.glob('*.json'))
+    if not files:
+        raise ValueError('Operation schema directory is empty')
+    operations = []
+    op_ids, schema_ids, type_names = set(), set(), set()
+    for file in files:
+        schema = json.loads(file.read_text(encoding='utf-8'), object_pairs_hook=unique_object)
+        if set(schema) != {'schema_version', 'status', 'operations'} or schema['schema_version'] != 1:
+            raise ValueError(f'{file}: unsupported operation schema envelope')
+        if not isinstance(schema['operations'], list) or not schema['operations']:
+            raise ValueError(f'{file}: operations must be a nonempty list')
+        for operation in schema['operations']:
+            required = {'operation_id', 'version', 'schema_id', 'type_name', 'effect', 'context', 'fields'}
+            if set(operation) != required:
+                raise ValueError(f'{file}: operation fields must be exactly {sorted(required)}')
+            op = dict(operation)
+            for key in ('operation_id', 'schema_id'):
+                if not isinstance(op[key], str) or not WIRE_ID.fullmatch(op[key]):
+                    raise ValueError(f'{file}: invalid {key}')
+            if not isinstance(op['type_name'], str) or not IDENTIFIER.fullmatch(op['type_name']):
+                raise ValueError(f'{file}: invalid generated type name')
+            if op['operation_id'] in op_ids or op['schema_id'] in schema_ids or op['type_name'] in type_names:
+                raise ValueError(f'{file}: duplicate operation, schema or type identity')
+            if type(op['version']) is not int or not 1 <= op['version'] <= 0xFFFFFFFF:
+                raise ValueError(f'{file}: operation version must be a positive uint32')
+            if op['effect'] not in EFFECTS or set(op['context']) - set(CONTEXT) or not set(CONTEXT_REQUIRED) <= set(op['context']):
+                raise ValueError(f'{file}: unknown effect/context requirement')
+            op['context'] = {**op['context'], 'expected_profile': op['context'].get('expected_profile', False)}
+            if any(type(op['context'][flag]) is not bool for flag in CONTEXT):
+                raise ValueError(f'{file}: context flags must be boolean')
+            if not isinstance(op['fields'], list) or not op['fields']:
+                raise ValueError(f'{file}: fields must be a nonempty list')
+            field_ids, field_names = set(), set()
+            for field in op['fields']:
+                if set(field) - {'field_id', 'name', 'type', 'units', 'optional'} or not {'field_id', 'name', 'type'} <= set(field):
+                    raise ValueError(f'{file}: invalid input field keys')
+                if type(field['field_id']) is not int or not 1 <= field['field_id'] <= 0xFFFFFFFF:
+                    raise ValueError(f'{file}: field IDs must be explicit positive uint32')
+                if field['field_id'] in field_ids or field['name'] in field_names:
+                    raise ValueError(f'{file}: duplicate field identity')
+                if not isinstance(field['name'], str) or not IDENTIFIER.fullmatch(field['name']):
+                    raise ValueError(f'{file}: invalid field identifier')
+                if 'optional' in field and type(field['optional']) is not bool:
+                    raise ValueError(f'{file}: optional field flag must be boolean')
+                if field['type'] not in TYPES:
+                    raise ValueError(f'{file}: unknown input type')
+                units = field.get('units', [])
+                if not isinstance(units, list) or any(not isinstance(unit, str) or not unit for unit in units) or len(units) != len(set(units)):
+                    raise ValueError(f'{file}: unit choices must be unique nonempty strings')
+                if field['type'] == 'quantity' and not units:
+                    raise ValueError(f'{file}: quantity requires explicit allowed units')
+                if field['type'] == 'vector3_mm' and units != ['mm']:
+                    raise ValueError(f'{file}: canonical coordinate vector must declare mm')
+                if field['type'] not in {'quantity', 'vector3_mm', 'finite_number'} and units:
+                    raise ValueError(f'{file}: units attached to nonquantity field')
+                field_ids.add(field['field_id'])
+                field_names.add(field['name'])
+            op['fields'] = sorted(op['fields'], key=lambda field: field['field_id'])
+            operations.append(op)
+            op_ids.add(op['operation_id'])
+            schema_ids.add(op['schema_id'])
+            type_names.add(op['type_name'])
+    return sorted(operations, key=lambda op: op['operation_id'])
+
+
+def render(operations: list[dict]) -> str:
+    canonical = json.dumps(operations, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
+    digest = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+    lines = [
+        '// Generated by tools/generate_operation_contracts.py; edit schemas/operations instead.',
+        '#pragma once', '#include "qcae/operation_registry.hpp"', '',
+        'namespace qcae::operations {',
+        f'inline constexpr std::string_view operation_schema_digest = "{digest}";', '',
+    ]
+    for op in operations:
+        name = op['type_name']
+        fields = op['fields']
+        lines.append(f'struct {name} {{')
+        lines.extend(f"    {('std::optional<' + TYPES[field['type']] + '>') if field.get('optional', False) else TYPES[field['type']]} {field['name']}{{}};" for field in fields)
+        lines.extend(['};', '', f'template <> struct InputTraits<{name}> {{',
+                      f'    static constexpr std::string_view operation_id = {literal(op["operation_id"])};',
+                      f'    static constexpr std::string_view schema_id = {literal(op["schema_id"])};',
+                      '    static OperationDefinition definition() {',
+                      f'        return {{{literal(op["operation_id"])}, {op["version"]}, {literal(op["schema_id"])},',
+                      f'                OperationEffect::{op["effect"]},',
+                      '                {' + ', '.join(str(op['context'][flag]).lower() for flag in CONTEXT) + '},',
+                      '                {'])
+        for index, field in enumerate(fields):
+            comma = ',' if index + 1 != len(fields) else ''
+            units = ', '.join(literal(unit) for unit in field.get('units', []))
+            lines.append(f'                    {{{field["field_id"]}, {literal(field["name"])}, {literal(field["type"])}, {{{units}}}, {str(not field.get("optional", False)).lower()}}}{comma}')
+        lines.extend(['                }};', '    }', '',
+                      f'    static Result<{name}> from_value(const Value& value) {{',
+                      f'        static constexpr std::array<std::string_view, {len(fields)}> allowed{{' + ', '.join(literal(f['name']) for f in fields) + '};',
+                      f'        static constexpr std::array<std::string_view, {sum(not field.get("optional", False) for field in fields)}> required{{' + ', '.join(literal(field['name']) for field in fields if not field.get('optional', False)) + '};',
+                      '        const auto object = wire::object_fields(value, allowed, required, "input");',
+                      '        if (!object.ok()) {',
+                      '            return {object.status, std::nullopt, object.error};',
+                      '        }', '        const auto& fields = **object.value;'])
+        for field in fields:
+            key = field['name']
+            optional = field.get('optional', False)
+            indent = '            ' if optional else '        '
+            if optional:
+                lines.append(f"        std::optional<{TYPES[field['type']]}> {key};")
+                lines.append(f'        if (const auto found = fields.find({literal(key)}); found != fields.end()) {{')
+                arguments = 'found->second'
+                decoded = key + '_decoded'
+            else:
+                arguments = f'fields.at({literal(key)})'
+                decoded = key
+            if field['type'] == 'quantity':
+                units = field['units']
+                lines.append(f'{indent}static constexpr std::array<std::string_view, {len(units)}> {key}_units{{' + ', '.join(literal(unit) for unit in units) + '};')
+                arguments += f', {key}_units'
+            decoder = {'string': 'string_value', 'vector3_mm': 'vector3'}.get(field['type'], field['type'])
+            arguments += f', {literal("input." + key)}'
+            lines.extend([f'{indent}const auto {decoded} = wire::{decoder}({arguments});',
+                          f'{indent}if (!{decoded}.ok()) {{',
+                          f'{indent}    return {{{decoded}.status, std::nullopt, {decoded}.error}};',
+                          indent + '}'])
+            if optional:
+                lines.extend([f'{indent}{key} = *{decoded}.value;', '        }'])
+        values = [field['name'] if field.get('optional', False) else '*' + field['name'] + '.value' for field in fields]
+        lines.extend([f'        return {{Status::success, {name}{{' + ', '.join(values) + '}, std::nullopt};',
+                      '    }', '', f'    static Value to_value(const {name}& input) {{',
+                      '        Value::Object object;'])
+        for field in fields:
+            key = field['name']
+            kind = field['type']
+            optional = field.get('optional', False)
+            value = f'*input.{key}' if optional else f'input.{key}'
+            if kind == 'entity_id':
+                expression = f'Value({value}.value)' if not optional else f'Value(input.{key}->value)'
+            elif kind == 'positive_uint32':
+                expression = f'Value(static_cast<std::int64_t>({value}))'
+            elif kind in {'quantity', 'vector3_mm', 'entity_id_array'}:
+                expression = f'wire::to_value({value})'
+            else:
+                expression = f'Value({value})'
+            if optional:
+                lines.extend([f'        if (input.{key}) {{', f'            object.emplace({literal(key)}, {expression});', '        }'])
+            else:
+                lines.append(f'        object.emplace({literal(key)}, {expression});')
+        lines.extend(['        return Value(std::move(object));', '    }', '};', ''])
+    lines.extend(['} // namespace qcae::operations', ''])
+    return '\n'.join(lines)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('schema_directory', type=Path)
+    parser.add_argument('output', type=Path)
+    parser.add_argument('--check', action='store_true')
+    args = parser.parse_args()
+    try:
+        expected = render(load_schemas(args.schema_directory))
+        if args.check:
+            if not args.output.is_file() or args.output.read_text(encoding='utf-8') != expected:
+                raise ValueError('Generated operation adapters differ; regenerate from schema')
+            print('PASS: generated operation contracts are byte-identical')
+        else:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(expected, encoding='utf-8')
+        return 0
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print('operation contract generation failed: ' + str(error), file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

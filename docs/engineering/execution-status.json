@@ -3,29 +3,68 @@
   "baseline_commit": "62e2b1d",
   "branch": "codex/platform-skeleton",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-09-26T05:37:25Z",
+  "updated_utc": "2026-09-26T07:18:38.844826+00:00",
   "status": "in_progress",
   "phases": {
-    "R0": "in_progress",
-    "R1": "in_progress",
-    "R2": "design_in_progress",
-    "R3": "not_started",
-    "R4": "not_started",
-    "R5": "not_started"
+    "R0": "partial_committed",
+    "R1": "committed",
+    "R2": "in_progress",
+    "R3": "C2_subset_in_progress",
+    "R4": "C2_subset_in_progress",
+    "R5": "deferred"
   },
   "quantitative_gates_passed": [],
   "assignments": [
-    {"task": "R2 core interfaces and data/transaction design", "model": "gpt-6-astra", "reasoning": "ultra", "agent": "r2_core_architect"},
-    {"task": "R1 module ownership and build isolation", "model": "gpt-6-astra", "reasoning": "high", "agent": "r1_modules"},
-    {"task": "R0 immutable legacy fixtures", "model": "gpt-6-sol", "reasoning": "high", "agent": "r0_legacy_fixtures"},
-    {"task": "R0 reference inventory and contracts", "model": "gpt-6-sol", "reasoning": "high", "agent": "r0_reference_inventory"}
+    {
+      "task": "R2 core interfaces and data/transaction design",
+      "model": "gpt-6-astra",
+      "reasoning": "ultra",
+      "agent": "r2_core_architect"
+    },
+    {
+      "task": "R1 module ownership and build isolation",
+      "model": "gpt-6-astra",
+      "reasoning": "high",
+      "agent": "r1_modules"
+    },
+    {
+      "task": "R0 immutable legacy fixtures",
+      "model": "gpt-6-sol",
+      "reasoning": "high",
+      "agent": "r0_legacy_fixtures"
+    },
+    {
+      "task": "R0 reference inventory and contracts",
+      "model": "gpt-6-sol",
+      "reasoning": "high",
+      "agent": "r0_reference_inventory"
+    }
   ],
   "verified_evidence": [
-    {"scope": "pre-migration pure-core Release regression", "passed": 12, "total": 12, "note": "R1 agent /private/tmp/qcae-r1-baseline; not a new skeleton gate pass"}
+    {
+      "scope": "pre-migration pure-core Release regression",
+      "passed": 12,
+      "total": 12,
+      "note": "R1 agent /private/tmp/qcae-r1-baseline; not a new skeleton gate pass"
+    }
   ],
   "notes": [
     "Existing .idea is preserved and not committed.",
     "Agents own nonoverlapping files; only coordinator creates git commits.",
-    "Pending or partially implemented metrics are never marked passed."
-  ]
+    "Pending or partially implemented metrics are never marked passed.",
+    "C2 chosen by user; full SK gates remain unclaimed. Deferred results/visualization drafts preserved on codex/skeleton-c3-wip."
+  ],
+  "selected_stop_checkpoint": "C2",
+  "checkpoint_contract": "docs/engineering/checkpoints-c1-c2.md",
+  "checkpoints": {
+    "C1": "in_progress",
+    "C2": "in_progress",
+    "C3": "deferred",
+    "C4": "deferred"
+  },
+  "commits": {
+    "module_ownership": "fa79d52",
+    "legacy_reference_freeze": "94d856b",
+    "deferred_wip": "b8379a2"
+  }
 }

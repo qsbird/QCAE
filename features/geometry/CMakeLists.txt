@@ -1,0 +1,5 @@
+add_library(qcae_geometry_features STATIC src/geometry_features.cpp)
+target_include_directories(qcae_geometry_features PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_geometry_features PUBLIC cxx_std_20)
+target_link_libraries(qcae_geometry_features PUBLIC qcae_application)
+qcae_warnings(qcae_geometry_features)

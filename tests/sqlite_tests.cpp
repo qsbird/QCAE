@@ -50,7 +50,7 @@ bool uncertain(const std::function<void()>& action) {
     return false;
 }
 
-void child_must_fail(const std::function<void()>& action) {
+void child_must_fail(const char* label, const std::function<void()>& action) {
     pid_t child = ::fork();
     assert(child >= 0);
     if (child == 0) {
@@ -63,6 +63,13 @@ void child_must_fail(const std::function<void()>& action) {
     }
     int status = 0;
     assert(::waitpid(child, &status, 0) == child);
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        std::fprintf(stderr,
+                     "%s: child status=%d (exit=%d, signal=%d)\n",
+                     label,
+                     status,
+                     WIFEXITED(status) ? WEXITSTATUS(status) : -1,
+                     WIFSIGNALED(status) ? WTERMSIG(status) : 0);
     assert(WIFEXITED(status) && WEXITSTATUS(status) == 0);
 }
 
@@ -82,10 +89,11 @@ void test_workspace() {
         assert(loaded && loaded->generation == 1 && loaded->payload == binary);
         assert(throws([&] { store.commit(0, "stale"); }));
         assert(store.load()->payload == binary);
-        child_must_fail([&] { qcae::SqliteWorkspaceStore second(path); });
+        child_must_fail("workspace path", [&] { qcae::SqliteWorkspaceStore second(path); });
         const auto alias = sandbox.path / "working-alias.sqlite";
         fs::create_hard_link(path, alias);
-        child_must_fail([&] { qcae::SqliteWorkspaceStore second(alias.string()); });
+        child_must_fail("workspace hardlink",
+                        [&] { qcae::SqliteWorkspaceStore second(alias.string()); });
         assert(throws([&] { store.acquire_project(alias.string()); }));
         qcae::StoreOptions quota;
         quota.max_payload_bytes = 2;
@@ -183,17 +191,17 @@ void test_project_publish() {
         assert(store.acquire_project(alias.string()) == canonical);
         const auto hardlink = sandbox.path / "project-hardlink.qcae";
         fs::create_hard_link(project, hardlink);
-        child_must_fail([&] {
+        child_must_fail("project hardlink", [&] {
             qcae::SqliteWorkspaceStore second((sandbox.path / "other.sqlite").string());
             second.acquire_project(hardlink.string());
         });
-        child_must_fail([&] {
+        child_must_fail("project symlink", [&] {
             qcae::SqliteWorkspaceStore second((sandbox.path / "other.sqlite").string());
             second.acquire_project(alias.string());
         });
         store.publish_project(canonical, {"token-2", "new"});
         assert(store.read_project(canonical).payload == "new");
-        child_must_fail([&] {
+        child_must_fail("project hardlink after save", [&] {
             qcae::SqliteWorkspaceStore second((sandbox.path / "after-save.sqlite").string());
             second.acquire_project(hardlink.string());
         });

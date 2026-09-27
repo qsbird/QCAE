@@ -28,6 +28,7 @@ struct ChangeReceipt {
     Revision current_revision{};
     std::string current_content_state;
     bool replayed{};
+    EntityId primary_entity{};
 };
 struct HistoryItem {
     TransactionId transaction;

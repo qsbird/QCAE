@@ -33,14 +33,19 @@
         "modules/contracts/include/qcae/document_info.hpp",
         "modules/contracts/include/qcae/profile_provider.hpp",
         "modules/contracts/include/qcae/render_packet.hpp",
-        "modules/contracts/include/qcae/workspace_store.hpp"
+        "modules/contracts/include/qcae/workspace_store.hpp",
+        "modules/contracts/include/qcae/record_store.hpp",
+        "modules/contracts/include/qcae/view_session.hpp"
       ],
       "sources": [],
       "public_dependencies": [
         "qcae_foundation"
       ],
       "private_dependencies": [],
-      "external_dependencies": []
+      "external_dependencies": [],
+      "generated_public_include_dirs": [
+        "generated"
+      ]
     },
     {
       "target": "qcae_document",
@@ -58,12 +63,22 @@
         "modules/document/include/qcae/model_codec.hpp",
         "modules/document/include/qcae/model_delta.hpp",
         "modules/document/include/qcae/state_codec.hpp",
-        "modules/document/include/qcae/read_view.hpp"
+        "modules/document/include/qcae/read_view.hpp",
+        "modules/document/include/qcae/record_registry.hpp",
+        "modules/document/include/qcae/document_view.hpp",
+        "modules/document/include/qcae/edit_session.hpp",
+        "modules/document/include/qcae/records.hpp",
+        "modules/document/include/qcae/records_model_bridge.hpp"
       ],
       "sources": [
         "modules/document/src/model.cpp",
         "modules/document/src/model_delta.cpp",
-        "modules/document/src/state_codec.cpp"
+        "modules/document/src/state_codec.cpp",
+        "modules/document/src/record_registry.cpp",
+        "modules/document/src/document_view.cpp",
+        "modules/document/src/edit_session.cpp",
+        "modules/document/src/record_model_bridge.cpp",
+        "modules/document/src/records_rules.cpp"
       ],
       "public_dependencies": [
         "qcae_foundation",
@@ -84,7 +99,7 @@
         "modules/application/src"
       ],
       "public_headers": [
-        "modules/application/include/qcae/core.hpp"
+        "modules/application/include/qcae/record_application.hpp"
       ],
       "sources": [
         "modules/application/src/core.cpp",
@@ -119,7 +134,9 @@
         "modules/query/include/qcae/query.hpp"
       ],
       "sources": [
-        "modules/query/src/query.cpp"
+        "modules/query/src/query.cpp",
+        "modules/query/src/query_legacy.cpp",
+        "modules/query/src/entity_queries.cpp"
       ],
       "public_dependencies": [
         "qcae_document",
@@ -226,7 +243,7 @@
         "adapters/engine_api/src/ipc_selection.cpp"
       ],
       "public_dependencies": [
-        "qcae_application",
+        "qcae_legacy_api",
         "qcae_query",
         "qcae_contracts",
         "Qt6::Core"
@@ -383,7 +400,7 @@
       "public_headers": [],
       "sources": [],
       "public_dependencies": [
-        "qcae_application",
+        "qcae_legacy_api",
         "qcae_query"
       ],
       "private_dependencies": [],
@@ -401,6 +418,231 @@
       "public_dependencies": [
         "qcae_engine_api",
         "qcae_transport_local"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_legacy_api",
+      "path": "features/legacy_api",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "features/legacy_api/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "features/legacy_api/include/qcae/core.hpp",
+        "features/legacy_api/include/qcae/legacy_migration.hpp"
+      ],
+      "private_headers": [
+        "features/legacy_api/src/legacy_state.hpp"
+      ],
+      "sources": [
+        "features/legacy_api/src/core.cpp",
+        "features/legacy_api/src/legacy_state.cpp",
+        "features/legacy_api/src/legacy_migration.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_application",
+        "qcae_document",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [
+        "qcae_parameters"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_parameters",
+      "path": "modules/parameters",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/parameters/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/parameters/include/qcae/quantities.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "modules/parameters/src/quantities.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_foundation",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_operations",
+      "path": "modules/operations",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/operations/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/operations/include/qcae/operation_registry.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "modules/operations/src/operation_registry.cpp",
+        "modules/operations/src/canonical_value.cpp",
+        "modules/operations/src/change_receipt_value.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_foundation",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": [],
+      "generated_public_include_dirs": [
+        "generated"
+      ]
+    },
+    {
+      "target": "qcae_runtime",
+      "path": "modules/runtime",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/runtime/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/runtime/include/qcae/task_service.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "modules/runtime/src/task_record.cpp",
+        "modules/runtime/src/task_service.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_foundation",
+        "qcae_contracts"
+      ],
+      "private_dependencies": [
+        "Threads::Threads"
+      ],
+      "external_dependencies": [
+        "Threads::Threads"
+      ]
+    },
+    {
+      "target": "qcae_task_application",
+      "path": "modules/runtime/record_application",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/runtime/record_application/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/runtime/record_application/include/qcae/task_application.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "modules/runtime/record_application/src/task_application.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_runtime",
+        "qcae_application"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_geometry_features",
+      "path": "features/geometry",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "features/geometry/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "features/geometry/include/qcae/geometry_features.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "features/geometry/src/geometry_features.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_application"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_mesh_generation",
+      "path": "features/mesh_generation",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "features/mesh_generation/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "features/mesh_generation/include/qcae/line_mesh_task.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "features/mesh_generation/src/line_mesh_task.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_task_application"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_material_features",
+      "path": "features/materials",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "features/materials/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "features/materials/include/qcae/material_operations.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "features/materials/src/material_operations.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_application",
+        "qcae_operations",
+        "qcae_parameters"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_mesh_editing",
+      "path": "features/mesh_editing",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "features/mesh_editing/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "features/mesh_editing/src/mesh_editing_operations.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_application",
+        "qcae_operations",
+        "qcae_parameters"
       ],
       "private_dependencies": [],
       "external_dependencies": []

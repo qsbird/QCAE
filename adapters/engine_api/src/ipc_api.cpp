@@ -158,7 +158,7 @@ QJsonObject dispatch(MemoryApplication& app,
         if (op == "capabilities.list") {
             fields(params, {});
             QJsonArray catalog;
-            for (const auto& descriptor : operations) {
+            for (const auto& descriptor : operation_catalog) {
                 QJsonObject entry{
                     {"name", qs(descriptor.name)},
                     {"description", qs(descriptor.description)},

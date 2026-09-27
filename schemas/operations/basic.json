@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "status": "implemented_typed_adapter_contracts_not_engine_handlers",
+  "operations": [
+    {
+      "operation_id": "material.create",
+      "version": 1,
+      "schema_id": "qcae.operation.material.create.v1",
+      "type_name": "MaterialCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "young_modulus",
+          "type": "quantity",
+          "units": [
+            "Pa",
+            "kPa",
+            "MPa",
+            "GPa"
+          ]
+        },
+        {
+          "field_id": 3,
+          "name": "poisson_ratio",
+          "type": "finite_number",
+          "units": [
+            "1"
+          ],
+          "optional": true
+        }
+      ]
+    },
+    {
+      "operation_id": "material.set_young_modulus",
+      "version": 1,
+      "schema_id": "qcae.operation.material.set_young_modulus.v1",
+      "type_name": "MaterialSetYoungModulusInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "entity_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "young_modulus",
+          "type": "quantity",
+          "units": [
+            "Pa",
+            "kPa",
+            "MPa",
+            "GPa"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "node.move",
+      "version": 1,
+      "schema_id": "qcae.operation.node.move.v1",
+      "type_name": "NodeMoveInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "entity_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "position_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "geometry.create_line",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.create_line.v1",
+      "type_name": "GeometryCreateLineInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "start_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        },
+        {
+          "field_id": 2,
+          "name": "end_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "mesh.generate_line",
+      "version": 1,
+      "schema_id": "qcae.operation.mesh.generate_line.v1",
+      "type_name": "MeshGenerateLineInput",
+      "effect": "background_task",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "segments",
+          "type": "positive_uint32"
+        }
+      ]
+    },
+    {
+      "operation_id": "beam.assign_section",
+      "version": 1,
+      "schema_id": "qcae.operation.beam.assign_section.v1",
+      "type_name": "BeamAssignSectionInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "beam_ids",
+          "type": "entity_id_array"
+        },
+        {
+          "field_id": 2,
+          "name": "section_id",
+          "type": "entity_id"
+        }
+      ]
+    },
+    {
+      "operation_id": "section.create",
+      "version": 1,
+      "schema_id": "qcae.operation.section.create.v1",
+      "type_name": "SectionCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "material_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 3,
+          "name": "area_mm2",
+          "type": "finite_number",
+          "units": [
+            "mm2"
+          ]
+        },
+        {
+          "field_id": 4,
+          "name": "i1_mm4",
+          "type": "finite_number",
+          "units": [
+            "mm4"
+          ]
+        },
+        {
+          "field_id": 5,
+          "name": "i2_mm4",
+          "type": "finite_number",
+          "units": [
+            "mm4"
+          ]
+        },
+        {
+          "field_id": 6,
+          "name": "torsion_mm4",
+          "type": "finite_number",
+          "units": [
+            "mm4"
+          ]
+        }
+      ]
+    }
+  ]
+}

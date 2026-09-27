@@ -5,9 +5,12 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
+#include <cstdlib>
+#include <fstream>
 #include <filesystem>
 #include <limits>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -28,6 +31,9 @@ namespace fs = std::filesystem;
 constexpr int kWorkspaceId = 0x51434157; // QCAW
 constexpr int kProjectId = 0x51434150;   // QCAP
 constexpr int kSchemaVersion = 1;
+constexpr int kRowsSchemaVersion = 2;
+constexpr int kRecordVersion = 1;
+constexpr const char* kRowsMagic = "QCAE-ROWS";
 
 [[noreturn]] void fail(const std::string& message) {
     throw StorageError(message);
@@ -175,6 +181,92 @@ struct Db {
     }
 };
 
+// A read-only WAL database may still need writable shared-memory sidecars.
+// Stage a quiescent legacy source while its inode lease is held so SQLite can
+// reconstruct those sidecars without touching the protected source directory.
+struct LegacyReadSnapshot {
+    fs::path directory;
+    std::string path;
+    std::string source;
+    struct stat main_before{}, wal_before{};
+    bool had_wal{};
+    static struct stat metadata(const std::string& path) {
+        struct stat value{};
+        if (::lstat(path.c_str(), &value) != 0 || !S_ISREG(value.st_mode))
+            fail("legacy source changed while reading");
+        return value;
+    }
+    static bool same_metadata(const struct stat& left, const struct stat& right) {
+#if defined(__APPLE__)
+        const auto modified_left = left.st_mtimespec, modified_right = right.st_mtimespec;
+        const auto changed_left = left.st_ctimespec, changed_right = right.st_ctimespec;
+#else
+        const auto modified_left = left.st_mtim, modified_right = right.st_mtim;
+        const auto changed_left = left.st_ctim, changed_right = right.st_ctim;
+#endif
+        return left.st_dev == right.st_dev && left.st_ino == right.st_ino &&
+               left.st_size == right.st_size && modified_left.tv_sec == modified_right.tv_sec &&
+               modified_left.tv_nsec == modified_right.tv_nsec &&
+               changed_left.tv_sec == changed_right.tv_sec &&
+               changed_left.tv_nsec == changed_right.tv_nsec;
+    }
+    static bool same_bytes(const std::string& source, const std::string& copy) {
+        std::ifstream original(source, std::ios::binary), staged(copy, std::ios::binary);
+        if (!original || !staged)
+            return false;
+        char left[65536], right[65536];
+        do {
+            original.read(left, sizeof(left));
+            staged.read(right, sizeof(right));
+            if (original.gcount() != staged.gcount() ||
+                std::memcmp(left, right, static_cast<std::size_t>(original.gcount())) != 0)
+                return false;
+        } while (original && staged);
+        return original.eof() && staged.eof();
+    }
+    void verify_source() const {
+        if (!same_metadata(main_before, metadata(source)) || exists(source + "-wal") != had_wal ||
+            (had_wal && !same_metadata(wal_before, metadata(source + "-wal"))) ||
+            !same_bytes(source, path) || (had_wal && !same_bytes(source + "-wal", path + "-wal")) ||
+            !same_metadata(main_before, metadata(source)) || exists(source + "-wal") != had_wal ||
+            (had_wal && !same_metadata(wal_before, metadata(source + "-wal"))))
+            fail("legacy source changed while reading");
+    }
+    explicit LegacyReadSnapshot(const std::string& source_path) : source(source_path) {
+        main_before = metadata(source);
+        had_wal = exists(source + "-wal");
+        if (had_wal)
+            wal_before = metadata(source + "-wal");
+        std::string pattern = (fs::temp_directory_path() / "qcae-legacy-read-XXXXXX").string();
+        const auto created = ::mkdtemp(pattern.data());
+        if (!created)
+            fail(system_error("create legacy read snapshot"));
+        directory = fs::canonical(created);
+        path = (directory / "source.sqlite").string();
+        try {
+            fs::copy_file(source, path);
+            if (had_wal)
+                fs::copy_file(source + "-wal", path + "-wal");
+            verify_source();
+            // A protected source may itself be mode 0444. Only its private
+            // copy needs write permission for SQLite's WAL recovery.
+            fs::permissions(path, fs::perms::owner_read | fs::perms::owner_write);
+            if (had_wal)
+                fs::permissions(path + "-wal", fs::perms::owner_read | fs::perms::owner_write);
+        } catch (const std::exception& error) {
+            std::error_code unused;
+            fs::remove_all(directory, unused);
+            fail("stage legacy read snapshot: " + std::string(error.what()));
+        }
+    }
+    ~LegacyReadSnapshot() {
+        std::error_code unused;
+        fs::remove_all(directory, unused);
+    }
+    LegacyReadSnapshot(const LegacyReadSnapshot&) = delete;
+    LegacyReadSnapshot& operator=(const LegacyReadSnapshot&) = delete;
+};
+
 void exec(sqlite3* db, const char* sql) {
     char* message = nullptr;
     int rc = sqlite3_exec(db, sql, nullptr, nullptr, &message);
@@ -222,6 +314,97 @@ void validate(sqlite3* db, int application_id, bool project) {
         fail("invalid QCAE SQLite schema");
     if (project && rc != SQLITE_ROW)
         fail("invalid project state");
+}
+
+struct RowState {
+    std::uint64_t generation;
+    std::uint64_t rows;
+    std::uint64_t bytes;
+};
+
+RowState row_state(sqlite3* db) {
+    Statement read(db,
+                   "SELECT magic,record_version,generation,row_count,payload_bytes "
+                   "FROM record_state WHERE id=1");
+    if (sqlite3_step(read.stmt) != SQLITE_ROW || sqlite3_column_type(read.stmt, 0) != SQLITE_TEXT ||
+        sqlite3_column_bytes(read.stmt, 0) != static_cast<int>(std::strlen(kRowsMagic)) ||
+        std::strcmp(reinterpret_cast<const char*>(sqlite3_column_text(read.stmt, 0)), kRowsMagic) !=
+            0 ||
+        sqlite3_column_type(read.stmt, 1) != SQLITE_INTEGER ||
+        sqlite3_column_int64(read.stmt, 1) != kRecordVersion)
+        fail("unsupported record workspace state");
+    for (int index = 2; index < 5; ++index)
+        if (sqlite3_column_type(read.stmt, index) != SQLITE_INTEGER ||
+            sqlite3_column_int64(read.stmt, index) < (index == 2 ? 1 : 0))
+            fail("invalid record workspace counters");
+    return {static_cast<std::uint64_t>(sqlite3_column_int64(read.stmt, 2)),
+            static_cast<std::uint64_t>(sqlite3_column_int64(read.stmt, 3)),
+            static_cast<std::uint64_t>(sqlite3_column_int64(read.stmt, 4))};
+}
+
+bool row_mode(sqlite3* db) {
+    if (scalar(db, "PRAGMA application_id") != kWorkspaceId)
+        fail("unsupported QCAE workspace identity");
+    const int version = scalar(db, "PRAGMA user_version");
+    if (version != kSchemaVersion && version != kRowsSchemaVersion)
+        fail("unsupported QCAE workspace format");
+    return version == kRowsSchemaVersion;
+}
+
+void validate_workspace(sqlite3* db) {
+    if (!row_mode(db)) {
+        validate(db, kWorkspaceId, false);
+        return;
+    }
+    row_state(db);
+    Statement check(db, "PRAGMA quick_check");
+    if (sqlite3_step(check.stmt) != SQLITE_ROW || !sqlite3_column_text(check.stmt, 0) ||
+        std::strcmp(reinterpret_cast<const char*>(sqlite3_column_text(check.stmt, 0)), "ok") != 0)
+        fail("corrupt QCAE record database");
+    Statement rows(db, "SELECT space,identity,value FROM store_rows LIMIT 0");
+    if (sqlite3_step(rows.stmt) != SQLITE_DONE)
+        fail("invalid QCAE record schema");
+}
+
+bool valid_space(StoreSpace space) {
+    const auto value = static_cast<std::uint8_t>(space);
+    return value >= static_cast<std::uint8_t>(StoreSpace::document_record) &&
+           value <= static_cast<std::uint8_t>(StoreSpace::artifact_record);
+}
+
+void validate_key(const StoreKey& key, const StoreOptions& options) {
+    if (!valid_space(key.space) || key.identity.empty() ||
+        key.identity.size() > options.max_key_bytes ||
+        key.identity.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()) ||
+        key.identity.find('\0') != std::string::npos)
+        fail("invalid record workspace key");
+}
+
+void bind_key(sqlite3* db, sqlite3_stmt* stmt, const StoreKey& key) {
+    if (sqlite3_bind_int(stmt, 1, static_cast<int>(key.space)) != SQLITE_OK ||
+        sqlite3_bind_text(stmt,
+                          2,
+                          key.identity.data(),
+                          static_cast<int>(key.identity.size()),
+                          SQLITE_TRANSIENT) != SQLITE_OK)
+        fail("bind record workspace key: " + std::string(sqlite3_errmsg(db)));
+}
+
+void initialize_rows(sqlite3* db) {
+    // Called only inside the first successful row transaction on an empty store.
+    exec(db, "DROP TABLE workspace");
+    exec(db, "PRAGMA user_version=2");
+    exec(db,
+         "CREATE TABLE record_state(id INTEGER PRIMARY KEY CHECK(id=1),"
+         "magic TEXT NOT NULL,record_version INTEGER NOT NULL,"
+         "generation INTEGER NOT NULL CHECK(generation>=1),"
+         "row_count INTEGER NOT NULL CHECK(row_count>=0),"
+         "payload_bytes INTEGER NOT NULL CHECK(payload_bytes>=0),"
+         "transaction_id TEXT NOT NULL)");
+    exec(db,
+         "CREATE TABLE store_rows(space INTEGER NOT NULL CHECK(space BETWEEN 1 AND 7),"
+         "identity TEXT NOT NULL CHECK(length(identity)>0),value BLOB NOT NULL,"
+         "PRIMARY KEY(space,identity)) WITHOUT ROWID");
 }
 
 void initialize(sqlite3* db, int application_id, bool project) {
@@ -292,6 +475,7 @@ struct SqliteWorkspaceStore::Impl {
     StoreOptions options;
     Lease workspace;
     std::unique_ptr<Db> db;
+    bool writable{};
     std::map<std::string, Lease> projects;
 
     Impl(const std::string& requested, StoreOptions opts)
@@ -306,16 +490,15 @@ struct SqliteWorkspaceStore::Impl {
                 fail(system_error("create working database"));
             workspace.inode = lock_inode_file(std::move(created));
         }
-        if (existing) {
-            Db reader(path, SQLITE_OPEN_READONLY);
-            validate(reader.db, kWorkspaceId, false);
-        }
         try {
-            db = std::make_unique<Db>(path, SQLITE_OPEN_READWRITE);
-            if (existing)
-                configure_existing(db->db);
-            else
+            db =
+                std::make_unique<Db>(path, existing ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE);
+            if (existing) {
+                validate_workspace(db->db);
+            } else {
                 initialize(db->db, kWorkspaceId, false);
+                writable = true;
+            }
             ensure_same_inode(path, workspace.inode);
         } catch (...) {
             db.reset();
@@ -330,6 +513,17 @@ struct SqliteWorkspaceStore::Impl {
             }
             throw;
         }
+    }
+
+    void ensure_writer() {
+        if (writable)
+            return;
+        ensure_same_inode(path, workspace.inode);
+        auto writer = std::make_unique<Db>(path, SQLITE_OPEN_READWRITE);
+        db = std::move(writer);
+        configure_existing(db->db);
+        ensure_same_inode(path, workspace.inode);
+        writable = true;
     }
 
     void fault(const char* milestone, bool uncertain = false) {
@@ -349,8 +543,47 @@ SqliteWorkspaceStore::SqliteWorkspaceStore(const std::string& path, StoreOptions
     : impl_(std::make_unique<Impl>(path, std::move(options))) {}
 SqliteWorkspaceStore::~SqliteWorkspaceStore() = default;
 
+StoredWorkspace read_legacy_workspace_readonly(const std::string& requested,
+                                               std::size_t max_payload_bytes) {
+    try {
+        const std::string path = canonical_path(requested);
+        if (!exists(path))
+            fail("legacy workspace source does not exist");
+        const auto inode = lock_inode_if_present(path);
+        ensure_same_inode(path, inode);
+        LegacyReadSnapshot snapshot(path);
+        ensure_same_inode(path, inode);
+        // Only the disposable copy permits sidecar recovery. The source has
+        // never been opened through a SQLite writer.
+        Db reader(snapshot.path, SQLITE_OPEN_READWRITE);
+        exec(reader.db, "BEGIN");
+        try {
+            validate(reader.db, kWorkspaceId, false);
+            Statement read(reader.db, "SELECT generation,payload FROM workspace WHERE id=1");
+            if (sqlite3_step(read.stmt) != SQLITE_ROW ||
+                sqlite3_column_type(read.stmt, 0) != SQLITE_INTEGER ||
+                sqlite3_column_int64(read.stmt, 0) < 1)
+                fail("legacy workspace source has no valid state");
+            StoredWorkspace snapshot{static_cast<std::uint64_t>(sqlite3_column_int64(read.stmt, 0)),
+                                     column_blob(read.stmt, 1, max_payload_bytes)};
+            sqlite3_reset(read.stmt);
+            ensure_same_inode(path, inode);
+            exec(reader.db, "COMMIT");
+            ensure_same_inode(path, inode);
+            return snapshot;
+        } catch (...) {
+            sqlite3_exec(reader.db, "ROLLBACK", nullptr, nullptr, nullptr);
+            throw;
+        }
+    } catch (const StorageError& error) {
+        throw StorageError("legacy_readonly_unavailable: " + std::string(error.what()));
+    }
+}
+
 std::optional<StoredWorkspace> SqliteWorkspaceStore::load() {
     ensure_same_inode(impl_->path, impl_->workspace.inode);
+    if (row_mode(impl_->db->db))
+        fail("record workspace requires load_rows");
     validate(impl_->db->db, kWorkspaceId, false);
     Statement statement(impl_->db->db, "SELECT generation,payload FROM workspace WHERE id=1");
     int rc = sqlite3_step(statement.stmt);
@@ -368,11 +601,14 @@ std::optional<StoredWorkspace> SqliteWorkspaceStore::load() {
 std::uint64_t SqliteWorkspaceStore::commit(std::uint64_t expected_generation,
                                            const std::string& payload) {
     ensure_same_inode(impl_->path, impl_->workspace.inode);
+    if (row_mode(impl_->db->db))
+        fail("record workspace requires commit_rows");
     if (payload.size() > impl_->options.max_payload_bytes)
         fail("workspace payload exceeds quota");
     if (expected_generation >=
         static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
         fail("workspace generation exhausted");
+    impl_->ensure_writer();
     sqlite3* db = impl_->db->db;
     exec(db, "BEGIN IMMEDIATE");
     bool committed = false;
@@ -407,6 +643,182 @@ std::uint64_t SqliteWorkspaceStore::commit(std::uint64_t expected_generation,
         }
         impl_->fault("after_db_commit", true);
         return actual + 1;
+    } catch (...) {
+        if (!committed)
+            sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, nullptr);
+        throw;
+    }
+}
+
+LoadedRows SqliteWorkspaceStore::load_rows() {
+    ensure_same_inode(impl_->path, impl_->workspace.inode);
+    sqlite3* db = impl_->db->db;
+    if (!row_mode(db)) {
+        auto legacy = load();
+        const auto generation = legacy ? legacy->generation : 0;
+        return {generation, {}, std::move(legacy)};
+    }
+    const auto state = row_state(db);
+    if (state.rows > impl_->options.max_rows || state.bytes > impl_->options.max_payload_bytes)
+        fail("record workspace exceeds quota");
+    LoadedRows loaded{state.generation, {}, std::nullopt};
+    loaded.rows.reserve(static_cast<std::size_t>(state.rows));
+    Statement read(db, "SELECT space,identity,value FROM store_rows ORDER BY space,identity");
+    std::uint64_t bytes = 0;
+    int rc;
+    while ((rc = sqlite3_step(read.stmt)) == SQLITE_ROW) {
+        if (loaded.rows.size() >= impl_->options.max_rows ||
+            sqlite3_column_type(read.stmt, 0) != SQLITE_INTEGER ||
+            sqlite3_column_int(read.stmt, 0) < 1 || sqlite3_column_int(read.stmt, 0) > 7 ||
+            sqlite3_column_type(read.stmt, 1) != SQLITE_TEXT)
+            fail("invalid record workspace row");
+        const int key_bytes = sqlite3_column_bytes(read.stmt, 1);
+        if (key_bytes < 1 || static_cast<std::size_t>(key_bytes) > impl_->options.max_key_bytes)
+            fail("invalid record workspace key length");
+        StoreKey key{static_cast<StoreSpace>(sqlite3_column_int(read.stmt, 0)),
+                     std::string(reinterpret_cast<const char*>(sqlite3_column_text(read.stmt, 1)),
+                                 static_cast<std::size_t>(key_bytes))};
+        validate_key(key, impl_->options);
+        auto value = column_blob(read.stmt, 2, impl_->options.max_payload_bytes);
+        if (value.size() > impl_->options.max_payload_bytes - bytes)
+            fail("record workspace payload exceeds quota");
+        bytes += value.size();
+        loaded.rows.push_back(
+            {std::move(key), std::make_shared<const std::string>(std::move(value))});
+    }
+    if (rc != SQLITE_DONE || loaded.rows.size() != state.rows || bytes != state.bytes)
+        fail("record workspace counters do not match rows");
+    return loaded;
+}
+
+BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
+    ensure_same_inode(impl_->path, impl_->workspace.inode);
+    const auto& options = impl_->options;
+    if (batch.expected_generation >=
+        static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
+        fail("record workspace generation exhausted");
+    if (batch.transaction_id.empty() || batch.transaction_id.size() > options.max_key_bytes ||
+        batch.transaction_id.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()) ||
+        batch.transaction_id.find('\0') != std::string::npos)
+        fail("invalid record transaction identity");
+    if (batch.mutations.size() > options.max_batch_rows)
+        fail("record batch exceeds row quota");
+    std::set<StoreKey> keys;
+    std::uint64_t payload_bytes = 0;
+    std::uint64_t after_rows = 0;
+    for (const auto& mutation : batch.mutations) {
+        validate_key(mutation.key, options);
+        if (!keys.insert(mutation.key).second)
+            fail("duplicate record batch key");
+        if (mutation.after) {
+            if (mutation.after->size() > options.max_payload_bytes - payload_bytes)
+                fail("record batch exceeds payload quota");
+            payload_bytes += mutation.after->size();
+            ++after_rows;
+        }
+    }
+    if (!row_mode(impl_->db->db) &&
+        scalar(impl_->db->db, "SELECT count(*) FROM workspace WHERE id=1") != 0)
+        fail("legacy workspace requires explicit migration to a separate destination");
+    impl_->ensure_writer();
+    sqlite3* db = impl_->db->db;
+    exec(db, "BEGIN IMMEDIATE");
+    bool committed = false;
+    try {
+        RowState state{0, 0, 0};
+        if (row_mode(db)) {
+            state = row_state(db);
+        } else {
+            Statement legacy(db, "SELECT generation FROM workspace WHERE id=1");
+            const int rc = sqlite3_step(legacy.stmt);
+            if (rc == SQLITE_ROW)
+                fail("legacy workspace requires explicit migration to a separate destination");
+            if (rc != SQLITE_DONE)
+                fail("read legacy workspace state failed");
+        }
+        if (state.generation != batch.expected_generation)
+            fail("stale record workspace generation");
+        if (state.rows > options.max_rows || state.bytes > options.max_payload_bytes)
+            fail("record workspace exceeds quota");
+        if (state.generation == 0)
+            initialize_rows(db);
+        Statement previous(db,
+                           "SELECT length(value) FROM store_rows WHERE space=?1 AND identity=?2");
+        Statement upsert(db,
+                         "INSERT INTO store_rows(space,identity,value) VALUES(?1,?2,?3) "
+                         "ON CONFLICT(space,identity) DO UPDATE SET value=excluded.value");
+        Statement remove(db, "DELETE FROM store_rows WHERE space=?1 AND identity=?2");
+        // Count the final batch state before writes so a full store can replace
+        // deleted keys in either input order, without transient quota failures.
+        for (const auto& mutation : batch.mutations) {
+            sqlite3_reset(previous.stmt);
+            sqlite3_clear_bindings(previous.stmt);
+            bind_key(db, previous.stmt, mutation.key);
+            const int rc = sqlite3_step(previous.stmt);
+            if (rc != SQLITE_ROW && rc != SQLITE_DONE)
+                fail("read existing record failed");
+            if (rc == SQLITE_ROW) {
+                const auto old_bytes = sqlite3_column_int64(previous.stmt, 0);
+                if (sqlite3_column_type(previous.stmt, 0) != SQLITE_INTEGER || old_bytes < 0 ||
+                    static_cast<std::uint64_t>(old_bytes) > state.bytes || state.rows == 0)
+                    fail("invalid existing record counters");
+                state.bytes -= static_cast<std::uint64_t>(old_bytes);
+                --state.rows;
+            }
+            sqlite3_reset(previous.stmt);
+        }
+        if (after_rows > options.max_rows - state.rows ||
+            payload_bytes > options.max_payload_bytes - state.bytes)
+            fail("record workspace exceeds quota");
+        state.rows += after_rows;
+        state.bytes += payload_bytes;
+        if (state.rows > static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()) ||
+            state.bytes > static_cast<std::uint64_t>(std::numeric_limits<sqlite3_int64>::max()))
+            fail("record workspace counter exhausted");
+        std::uint64_t rows_written = 0;
+        for (const auto& mutation : batch.mutations) {
+            sqlite3_stmt* write = mutation.after ? upsert.stmt : remove.stmt;
+            sqlite3_reset(write);
+            sqlite3_clear_bindings(write);
+            bind_key(db, write, mutation.key);
+            if (mutation.after) {
+                bind_blob(db, write, 3, *mutation.after);
+            }
+            if (sqlite3_step(write) != SQLITE_DONE)
+                fail("write record failed");
+            rows_written += static_cast<std::uint64_t>(sqlite3_changes(db));
+        }
+        Statement metadata(db,
+                           "INSERT INTO record_state(id,magic,record_version,generation,row_count,"
+                           "payload_bytes,transaction_id) VALUES(1,'QCAE-ROWS',1,?1,?2,?3,?4) "
+                           "ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,"
+                           "row_count=excluded.row_count,payload_bytes=excluded.payload_bytes,"
+                           "transaction_id=excluded.transaction_id");
+        if (sqlite3_bind_int64(
+                metadata.stmt, 1, static_cast<sqlite3_int64>(state.generation + 1)) != SQLITE_OK ||
+            sqlite3_bind_int64(metadata.stmt, 2, static_cast<sqlite3_int64>(state.rows)) !=
+                SQLITE_OK ||
+            sqlite3_bind_int64(metadata.stmt, 3, static_cast<sqlite3_int64>(state.bytes)) !=
+                SQLITE_OK ||
+            sqlite3_bind_text(metadata.stmt,
+                              4,
+                              batch.transaction_id.data(),
+                              static_cast<int>(batch.transaction_id.size()),
+                              SQLITE_TRANSIENT) != SQLITE_OK ||
+            sqlite3_step(metadata.stmt) != SQLITE_DONE)
+            fail("write record workspace metadata failed");
+        impl_->fault("before_db_commit");
+        const int commit_rc = sqlite3_exec(db, "COMMIT", nullptr, nullptr, nullptr);
+        if (commit_rc != SQLITE_OK)
+            throw StorageError("SQLite COMMIT: " + std::string(sqlite3_errmsg(db)), true);
+        committed = true;
+        try {
+            ensure_same_inode(impl_->path, impl_->workspace.inode);
+        } catch (const StorageError& error) {
+            throw StorageError(error.what(), true);
+        }
+        impl_->fault("after_db_commit", true);
+        return {state.generation + 1, rows_written, payload_bytes};
     } catch (...) {
         if (!committed)
             sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, nullptr);

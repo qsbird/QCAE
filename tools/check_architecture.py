@@ -15,7 +15,7 @@ import re
 import subprocess
 import sys
 
-PRODUCTION_DIRS = ("modules", "profiles", "adapters", "ui", "apps")
+PRODUCTION_DIRS = ("modules", "features", "profiles", "adapters", "ui", "apps")
 SOURCE_SUFFIXES = {".cpp", ".cc", ".cxx", ".c"}
 HEADER_SUFFIXES = {".hpp", ".h", ".hh", ".hxx"}
 FRAMEWORK = re.compile(r"(?:^|[/ :])(?:Qt[0-9]*(?:::|/)|Q[A-Z][a-z][A-Za-z0-9_]*(?:[/.]|$)|vtk|VTK|sqlite|SQLite|MCP)")
@@ -56,7 +56,8 @@ def cmake_evidence(root: Path, build: Path, refresh: bool) -> tuple[dict, list[d
     if Path(model["paths"]["source"]).resolve() != root:
         raise ValueError("CMake evidence belongs to a different source directory")
     cache = read_json(reply / refs["cache"])
-    evidence = {"configurations": [], "cache": {e["name"]: e["value"] for e in cache["entries"]}}
+    evidence = {"configurations": [], "build": str(build),
+                "cache": {e["name"]: e["value"] for e in cache["entries"]}}
     for configuration in model["configurations"]:
         targets = [read_json(reply / entry["jsonFile"]) for entry in configuration["targets"]]
         evidence["configurations"].append({"name": configuration["name"], "targets": targets})
@@ -210,7 +211,19 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
                 reject("include-root", f"unresolved public include expression on {name}: {path}")
                 continue
             absolute = Path(path).resolve()
-            if absolute.is_relative_to(root):
+            build = Path(evidence["build"]).resolve()
+            generated = set()
+            for directory in row.get("generated_public_include_dirs", []):
+                candidate = (build / directory).resolve()
+                if Path(directory).is_absolute() or not candidate.is_relative_to(build) or candidate == build:
+                    reject("include-root", f"{name} declares unsafe generated include root {directory}")
+                else:
+                    generated.add(candidate)
+            if absolute in generated:
+                continue
+            if absolute.is_relative_to(build):
+                reject("private-include", f"{name} exports undeclared generated include root {absolute}")
+            elif absolute.is_relative_to(root):
                 relative = str(absolute.relative_to(root))
                 if relative not in row["public_include_dirs"]:
                     reject("private-include", f"{name} exports undeclared include root {relative}")

@@ -29,7 +29,7 @@ int main() {
     try {
         check(qcae::api_version == "1.1", "application contract version");
         std::set<std::string_view> names;
-        for (const auto& descriptor : qcae::operations) {
+        for (const auto& descriptor : qcae::operation_catalog) {
             check(names.insert(descriptor.name).second, "duplicate descriptor");
             check(!descriptor.description.empty() && !descriptor.input_type.empty() &&
                       !descriptor.output_type.empty(),

@@ -1,343 +1,722 @@
 #include "application_state.hpp"
-
 #include <algorithm>
 #include <iomanip>
 #include <random>
 #include <sstream>
+#include <set>
 
-namespace qcae::detail {
+namespace qcae {
+namespace {
+class Writer {
+  public:
+    void number(std::uint64_t value) {
+        for (unsigned i = 0; i < 8; ++i)
+            bytes_.push_back(static_cast<char>((value >> (i * 8)) & 255));
+    }
+    void boolean(bool value) {
+        number(value ? 1 : 0);
+    }
+    void text(std::string_view value) {
+        number(value.size());
+        bytes_.append(value);
+    }
+    std::string take() {
+        return std::move(bytes_);
+    }
+
+  private:
+    std::string bytes_;
+};
+class Reader {
+  public:
+    explicit Reader(std::string_view bytes) : bytes_(bytes) {}
+    std::uint64_t number() {
+        require(8);
+        std::uint64_t value{};
+        for (unsigned i = 0; i < 8; ++i)
+            value |= std::uint64_t(static_cast<unsigned char>(bytes_[offset_++])) << (i * 8);
+        return value;
+    }
+    bool boolean() {
+        auto value = number();
+        if (value > 1)
+            bad();
+        return value != 0;
+    }
+    std::string text() {
+        auto size = number();
+        require(size);
+        auto value = std::string(bytes_.substr(offset_, size));
+        offset_ += size;
+        return value;
+    }
+    std::size_t count() {
+        auto value = number();
+        if (value > 2000000 || value > (bytes_.size() - offset_) / 8)
+            bad();
+        return value;
+    }
+    void finish() const {
+        if (offset_ != bytes_.size())
+            bad();
+    }
+
+  private:
+    static void bad() {
+        throw RecordError(ErrorCode::schema_unsupported, "Malformed record application image");
+    }
+    void require(std::uint64_t size) const {
+        if (size > bytes_.size() - offset_)
+            bad();
+    }
+    std::string_view bytes_;
+    std::size_t offset_{};
+};
+SharedStoreBytes bytes(std::string value) {
+    return std::make_shared<const std::string>(std::move(value));
+}
+void write_info(Writer& w, const DocumentInfo& i) {
+    w.text(i.document.id.value);
+    w.text(i.document.epoch.value);
+    w.number(i.revision);
+    w.text(i.content_state);
+    w.text(i.name);
+    w.text(i.project_id);
+    w.text(i.saved_path);
+    w.text(i.saved_content_state);
+    w.number(i.material_count);
+    w.boolean(i.dirty);
+    w.boolean(i.durable);
+}
+DocumentInfo read_info(Reader& r) {
+    DocumentInfo i;
+    i.document.id = DocumentId(r.text());
+    i.document.epoch = DocumentEpoch(r.text());
+    i.revision = r.number();
+    i.content_state = r.text();
+    i.name = r.text();
+    i.project_id = r.text();
+    i.saved_path = r.text();
+    i.saved_content_state = r.text();
+    i.material_count = r.number();
+    i.dirty = r.boolean();
+    i.durable = r.boolean();
+    return i;
+}
+void write_receipt(Writer& w, const ChangeReceipt& v) {
+    w.text(v.transaction.value);
+    w.number(v.committed_revision);
+    w.number(v.current_revision);
+    w.text(v.current_content_state);
+    w.text(v.primary_entity.value);
+}
+ChangeReceipt read_receipt(Reader& r, bool primary_entity) {
+    ChangeReceipt v;
+    v.transaction = TransactionId(r.text());
+    v.committed_revision = r.number();
+    v.current_revision = r.number();
+    v.current_content_state = r.text();
+    if (primary_entity)
+        v.primary_entity = EntityId(r.text());
+    return v;
+}
+StoreKey record_key(const RecordKey& key) {
+    return {StoreSpace::document_record, std::to_string(key.type.value) + ":" + key.identity};
+}
+SharedStoreBytes record_bytes(const Record& record) {
+    return SharedStoreBytes(record, &record->encoded());
+}
+SharedStoreBytes encode_history(const RecordHistoryImage& h, RecordStats* stats = nullptr) {
+    Writer w;
+    w.text(h.transaction.value);
+    w.text(h.label);
+    w.text(h.content_state);
+    w.text(encode_record_changes(h.changes, stats));
+    if (stats)
+        for (const auto& change : h.changes.records)
+            stats->model_bytes_copied += (change.before ? (*change.before)->encoded().size() : 0) +
+                                         (change.after ? (*change.after)->encoded().size() : 0);
+    return bytes(w.take());
+}
+SharedStoreBytes encode_operation(const RecordOperationImage& o) {
+    Writer w;
+    w.text("QCAE-OPERATION-FACT");
+    w.number(1);
+    w.text(o.signature);
+    write_receipt(w, o.receipt);
+    return bytes(w.take());
+}
+SharedStoreBytes encode_host(const RecordHostImage& h) {
+    Writer w;
+    w.text(h.signature);
+    write_info(w, h.result);
+    return bytes(w.take());
+}
+const OwnedRowHandler& row_handler(std::span<const OwnedRowHandler> handlers,
+                                   const OwnedRowImage& row) {
+    if ((row.key.space != StoreSpace::task_record &&
+         row.key.space != StoreSpace::artifact_record) ||
+        row.key.identity.empty() || row.owner.empty() || !row.schema_version || !row.payload)
+        throw RecordError(ErrorCode::schema_unsupported, "Malformed owned workspace row");
+    const OwnedRowHandler* result = nullptr;
+    for (const auto& handler : handlers)
+        if (handler.space == row.key.space && handler.owner == row.owner) {
+            if (result || !handler.validate)
+                throw RecordError(ErrorCode::schema_unsupported,
+                                  "Ambiguous owned-row registration");
+            result = &handler;
+        }
+    if (!result)
+        throw RecordError(
+            ErrorCode::schema_unsupported, "Unregistered workspace row owner", row.owner);
+    result->validate(row);
+    return *result;
+}
+std::shared_ptr<const OwnedRowImage> prepare_owned(const OwnedRowImage& row,
+                                                   std::span<const OwnedRowHandler> handlers) {
+    row_handler(handlers, row);
+    auto result = std::make_shared<OwnedRowImage>(row);
+    Writer w;
+    w.text("QCAE-OWNED-ROW");
+    w.number(1);
+    w.text(row.owner);
+    w.number(row.schema_version);
+    w.text(*row.payload);
+    result->encoded = bytes(w.take());
+    return result;
+}
+std::shared_ptr<const OwnedRowImage> decode_owned(const StoreKey& key,
+                                                  SharedStoreBytes encoded,
+                                                  std::span<const OwnedRowHandler> handlers) {
+    if (!encoded || encoded->size() > 128 * 1024)
+        throw RecordError(ErrorCode::resource_limit, "Owned-row encoding exceeds quota");
+    Reader r(*encoded);
+    if (r.text() != "QCAE-OWNED-ROW" || r.number() != 1)
+        throw RecordError(ErrorCode::schema_unsupported, "Unsupported owned-row envelope");
+    auto result = std::make_shared<OwnedRowImage>();
+    result->key = key;
+    result->owner = r.text();
+    const auto version = r.number();
+    if (version > UINT32_MAX)
+        throw RecordError(ErrorCode::schema_unsupported, "Unsupported owned-row schema");
+    result->schema_version = static_cast<std::uint32_t>(version);
+    result->payload = bytes(r.text());
+    r.finish();
+    result->encoded = std::move(encoded);
+    row_handler(handlers, *result);
+    return result;
+}
+SharedStoreBytes encode_metadata(const RecordStateImage& d) {
+    Writer w;
+    w.text("QCAE-RECORD-WORKSPACE");
+    w.number(1);
+    w.text(d.application_nonce);
+    w.number(d.next_id);
+    w.boolean(d.document.has_value());
+    if (d.document)
+        write_info(w, *d.document);
+    w.text(d.initial_content_state);
+    w.number(d.history.size());
+    for (const auto& h : d.history)
+        w.text(h->transaction.value);
+    w.number(d.cursor);
+    w.boolean(d.recoverable);
+    w.boolean(bool(d.save_intent));
+    if (d.save_intent) {
+        const auto& i = *d.save_intent;
+        w.text(i.host_key);
+        w.text(i.signature);
+        w.text(i.path);
+        w.text(i.token);
+        w.text(i.project_id);
+        w.text(i.snapshot);
+        w.boolean(i.save_as);
+    }
+    return bytes(w.take());
+}
+void verify_image(RecordStateImage& d, Limits limits) {
+    if (d.application_nonce.empty() || d.next_id == 0 || d.cursor > d.history.size() ||
+        d.history.size() > limits.max_history_entries ||
+        d.operations.size() + d.host_operations.size() > limits.max_idempotency_records)
+        throw RecordError(ErrorCode::schema_unsupported, "Invalid record workspace metadata");
+    if (!d.document) {
+        if (d.records.size() || !d.history.empty() || d.cursor || !d.operations.empty() ||
+            d.save_intent || !d.initial_content_state.empty() || d.recoverable ||
+            !d.owned_rows->empty())
+            throw RecordError(ErrorCode::schema_unsupported, "Orphan record workspace");
+        return;
+    }
+    if (d.document->document.id.value.empty() || d.document->document.epoch.value.empty() ||
+        d.document->name.empty() || d.initial_content_state.empty() ||
+        d.document->content_state.empty())
+        throw RecordError(ErrorCode::schema_unsupported, "Invalid document identity");
+    if (d.document->content_state !=
+        (d.cursor ? d.history[d.cursor - 1]->content_state : d.initial_content_state))
+        throw RecordError(ErrorCode::schema_unsupported, "History content state mismatch");
+    d.records = d.records.with_version({d.document->document, d.document->revision});
+    d.records.validate();
+    auto replay = d.records;
+    for (std::size_t i = d.cursor; i > 0; --i)
+        replay = apply_record_changes(replay, d.history[i - 1]->changes, RecordDirection::reverse);
+    replay.validate();
+    for (std::size_t i = 0; i < d.history.size(); ++i) {
+        if (d.history[i]->transaction.value.empty() || d.history[i]->content_state.empty())
+            throw RecordError(ErrorCode::schema_unsupported, "Invalid history identity");
+        replay = apply_record_changes(replay, d.history[i]->changes);
+        replay.validate();
+        if (i + 1 == d.cursor && !diff_record_views(replay, d.records).empty())
+            throw RecordError(ErrorCode::schema_unsupported,
+                              "History does not match current records");
+    }
+}
+} // namespace
+
+std::vector<StoredRow> encode_record_state_image(const RecordStateImage& d) {
+    std::vector<StoredRow> rows;
+    rows.push_back({{StoreSpace::document_metadata, "state"}, encode_metadata(d)});
+    d.records.visit([&](const Record& record) {
+        rows.push_back({record_key(record->key()), record_bytes(record)});
+    });
+    for (const auto& h : d.history)
+        rows.push_back({{StoreSpace::history_entry, h->transaction.value},
+                        h->encoded ? h->encoded : encode_history(*h)});
+    for (const auto& [key, o] : d.operations)
+        rows.push_back(
+            {{StoreSpace::operation_fact, key}, o.encoded ? o.encoded : encode_operation(o)});
+    for (const auto& [key, h] : d.host_operations)
+        rows.push_back(
+            {{StoreSpace::host_operation_fact, key}, h.encoded ? h.encoded : encode_host(h)});
+    for (const auto& [key, row] : *d.owned_rows) {
+        if (!row || !row->encoded)
+            throw RecordError(ErrorCode::schema_unsupported, "Unencoded owned workspace row");
+        rows.push_back({key, row->encoded});
+    }
+    return rows;
+}
+RecordStateImage decode_record_state_image(std::span<const StoredRow> rows,
+                                           std::shared_ptr<const RecordRegistry> registry,
+                                           Limits limits,
+                                           std::span<const OwnedRowHandler> handlers) {
+    RecordStateImage d(registry);
+    std::map<StoreKey, SharedStoreBytes> table;
+    for (const auto& row : rows)
+        if (!row.value || !table.emplace(row.key, row.value).second)
+            throw RecordError(ErrorCode::schema_unsupported, "Duplicate or empty store row");
+    auto meta = table.find({StoreSpace::document_metadata, "state"});
+    if (meta == table.end())
+        throw RecordError(ErrorCode::schema_unsupported, "Workspace metadata missing");
+    Reader r(*meta->second);
+    if (r.text() != "QCAE-RECORD-WORKSPACE" || r.number() != 1)
+        throw RecordError(ErrorCode::schema_unsupported, "Unsupported record workspace schema");
+    d.application_nonce = r.text();
+    d.next_id = r.number();
+    if (r.boolean())
+        d.document = read_info(r);
+    d.initial_content_state = r.text();
+    const auto count = r.count();
+    if (count > limits.max_history_entries)
+        throw RecordError(ErrorCode::resource_limit, "History limit");
+    std::set<std::string> history_ids;
+    for (std::size_t i = 0; i < count; ++i) {
+        auto id = r.text();
+        if (!history_ids.insert(id).second)
+            throw RecordError(ErrorCode::schema_unsupported,
+                              "Duplicate history transaction identity");
+        auto h = table.find({StoreSpace::history_entry, id});
+        if (h == table.end())
+            throw RecordError(ErrorCode::schema_unsupported, "Missing history row");
+        Reader hr(*h->second);
+        auto entry = std::make_shared<RecordHistoryImage>();
+        entry->transaction = TransactionId(hr.text());
+        entry->label = hr.text();
+        entry->content_state = hr.text();
+        entry->changes = decode_record_changes(*registry, hr.text());
+        hr.finish();
+        entry->encoded = h->second;
+        if (entry->transaction.value != id)
+            throw RecordError(ErrorCode::schema_unsupported, "History row identity mismatch");
+        d.history.push_back(std::move(entry));
+    }
+    d.cursor = r.number();
+    d.recoverable = r.boolean();
+    if (r.boolean()) {
+        auto i = std::make_shared<RecordSaveImage>();
+        i->host_key = r.text();
+        i->signature = r.text();
+        i->path = r.text();
+        i->token = r.text();
+        i->project_id = r.text();
+        i->snapshot = r.text();
+        i->save_as = r.boolean();
+        d.save_intent = std::move(i);
+    }
+    r.finish();
+    RecordChangeSet imported;
+    auto owned = std::make_shared<OwnedRowTable>();
+    for (const auto& [key, value] : table) {
+        switch (key.space) {
+        case StoreSpace::document_record: {
+            auto record = registry->decode(*value);
+            if (record_key(record->key()) != key)
+                throw RecordError(ErrorCode::schema_unsupported, "Record key mismatch");
+            imported.records.push_back({record->key(), {}, record, {}});
+            break;
+        }
+        case StoreSpace::operation_fact: {
+            Reader rr(*value);
+            RecordOperationImage o;
+            o.signature = rr.text();
+            const bool versioned = o.signature == "QCAE-OPERATION-FACT";
+            if (versioned) {
+                if (rr.number() != 1)
+                    throw RecordError(ErrorCode::schema_unsupported,
+                                      "Unsupported operation fact schema");
+                o.signature = rr.text();
+            }
+            o.receipt = read_receipt(rr, versioned);
+            rr.finish();
+            o.encoded = value;
+            d.operations.emplace(key.identity, std::move(o));
+            break;
+        }
+        case StoreSpace::host_operation_fact: {
+            Reader rr(*value);
+            RecordHostImage o;
+            o.signature = rr.text();
+            o.result = read_info(rr);
+            rr.finish();
+            o.encoded = value;
+            d.host_operations.emplace(key.identity, std::move(o));
+            break;
+        }
+        case StoreSpace::history_entry:
+            if (std::none_of(d.history.begin(), d.history.end(), [&](const auto& h) {
+                    return h->transaction.value == key.identity;
+                }))
+                throw RecordError(ErrorCode::schema_unsupported, "Orphan history row");
+            break;
+        case StoreSpace::document_metadata:
+            if (key.identity != "state")
+                throw RecordError(ErrorCode::schema_unsupported, "Unknown metadata row");
+            break;
+        case StoreSpace::task_record:
+        case StoreSpace::artifact_record:
+            owned->emplace(key, decode_owned(key, value, handlers));
+            break;
+        default:
+            throw RecordError(ErrorCode::schema_unsupported, "Unsupported workspace row space");
+        }
+    }
+    d.owned_rows = std::move(owned);
+    d.records = apply_record_changes(d.records, imported);
+    verify_image(d, limits);
+    return d;
+}
+std::string encode_record_rows(std::span<const StoredRow> rows) {
+    Writer w;
+    w.text("QCAE-RECORD-ROWS");
+    w.number(1);
+    w.number(rows.size());
+    for (const auto& row : rows) {
+        w.number(static_cast<unsigned>(row.key.space));
+        w.text(row.key.identity);
+        w.text(*row.value);
+    }
+    return w.take();
+}
+std::vector<StoredRow> decode_record_rows(std::string_view payload) {
+    Reader r(payload);
+    if (r.text() != "QCAE-RECORD-ROWS" || r.number() != 1)
+        throw RecordError(ErrorCode::schema_unsupported, "Unsupported row image");
+    auto count = r.count();
+    std::vector<StoredRow> rows;
+    for (std::size_t i = 0; i < count; ++i) {
+        auto space = r.number();
+        if (space < 1 || space > 7)
+            throw RecordError(ErrorCode::schema_unsupported, "Unknown row space");
+        StoreKey key{static_cast<StoreSpace>(space), r.text()};
+        rows.push_back({std::move(key), bytes(r.text())});
+    }
+    r.finish();
+    return rows;
+}
+
+namespace record_detail {
 std::string nonce() {
     std::random_device source;
     std::ostringstream out;
     out << std::hex << std::setfill('0');
-    for (int i = 0; i != 4; ++i)
+    for (int i = 0; i < 4; ++i)
         out << std::setw(8) << source();
     return out.str();
 }
-
-void update_document(Data& data) {
-    data.document->material_count = data.model.materials.size();
-    const auto& clean = data.document->saved_content_state.empty()
-                            ? data.initial_content_state
-                            : data.document->saved_content_state;
-    data.document->dirty = data.document->content_state != clean;
+void update_document(Data& d) {
+    if (!d.document)
+        return;
+    d.document->material_count =
+        d.options->material_count ? d.options->material_count(d.records) : 0;
+    const auto& clean = d.document->saved_content_state.empty() ? d.initial_content_state
+                                                                : d.document->saved_content_state;
+    d.document->dirty = d.document->content_state != clean;
+    d.records = d.records.with_version({d.document->document, d.document->revision});
 }
-
-std::size_t entity_count(const Model& model) {
-    return model.materials.size() + model.nodes.size() + model.sections.size() +
-           model.beams.size() + model.parts.size() + model.assemblies.size() + model.sets.size() +
-           model.includes.size() + model.forces.size() + model.constraints.size() +
-           model.analyses.size();
-}
-
-std::size_t relation_count(const Model& model) {
-    std::size_t count = model.sources.size() * 2;
-    for (const auto& beam : model.beams) {
-        (void)beam;
-        count += 3;
+std::optional<Diagnostic> validate_candidate(const DocumentView& view, const Data& d) {
+    try {
+        view.validate(
+            {d.limits.max_entities, d.limits.max_relations, record_wire::maximum_record_bytes});
+        if (d.options->validate)
+            return d.options->validate(view, d.limits);
+    } catch (const RecordError& e) {
+        return Diagnostic{e.code(), e.what(), e.field()};
     }
-    for (const auto& section : model.sections) {
-        (void)section;
-        ++count;
-    }
-    for (const auto& force : model.forces) {
-        (void)force;
-        ++count;
-    }
-    for (const auto& part : model.parts)
-        count += part.members.size();
-    for (const auto& assembly : model.assemblies)
-        count += assembly.children.size();
-    for (const auto& set : model.sets)
-        count += set.members.size();
-    for (const auto& include : model.includes)
-        count += include.members.size() + (include.parent ? 1 : 0);
-    for (const auto& constraint : model.constraints)
-        count += constraint.nodes.size();
-    for (const auto& analysis : model.analyses)
-        count += analysis.forces.size() + analysis.constraints.size();
-    return count;
+    return {};
 }
-
-bool has_control(const std::string& value) {
-    return std::any_of(
-        value.begin(), value.end(), [](unsigned char c) { return c < 32 || c == 127; });
-}
-
-std::optional<Diagnostic> validate_candidate(const Model& model, const Limits& limits) {
-    if (model.materials.size() > limits.max_materials)
-        return Diagnostic{ErrorCode::resource_limit, "Material limit reached", "materials"};
-    if (entity_count(model) > limits.max_entities)
-        return Diagnostic{ErrorCode::resource_limit, "Entity limit reached", "model"};
-    if (relation_count(model) > limits.max_relations)
-        return Diagnostic{ErrorCode::resource_limit, "Relation limit reached", "model"};
-    for (const auto& entity : model_entities(model)) {
-        if (entity.name.size() > limits.max_name_bytes)
-            return Diagnostic{
-                ErrorCode::resource_limit, "Entity name exceeds byte limit", entity.id.value};
-        if (has_control(entity.name))
-            return Diagnostic{ErrorCode::invalid_input,
-                              "Entity name contains control characters",
-                              entity.id.value};
-    }
-    for (const auto& include : model.includes)
-        if (include.path.size() > limits.max_name_bytes)
-            return Diagnostic{
-                ErrorCode::resource_limit, "Include path exceeds byte limit", include.id.value};
-        else if (has_control(include.path))
-            return Diagnostic{ErrorCode::invalid_input,
-                              "Include path contains control characters",
-                              include.id.value};
-    for (const auto& diagnostic : validate_model(model))
-        return diagnostic;
-    return std::nullopt;
-}
-
-using state_codec::Reader;
-using state_codec::Writer;
-void write_info(Writer& w, const DocumentInfo& info) {
-    w.text(info.document.id.value);
-    w.text(info.document.epoch.value);
-    w.number(info.revision);
-    w.text(info.content_state);
-    w.text(info.name);
-    w.text(info.project_id);
-    w.text(info.saved_path);
-    w.text(info.saved_content_state);
-}
-DocumentInfo read_info(Reader& r) {
-    DocumentInfo info;
-    info.document.id = DocumentId(r.text());
-    info.document.epoch = DocumentEpoch(r.text());
-    info.revision = r.number();
-    info.content_state = r.text();
-    info.name = r.text();
-    info.project_id = r.text();
-    info.saved_path = r.text();
-    info.saved_content_state = r.text();
-    return info;
-}
-void write_receipt(Writer& w, const ChangeReceipt& value) {
-    w.text(value.transaction.value);
-    w.number(value.committed_revision);
-    w.number(value.current_revision);
-    w.text(value.current_content_state);
-}
-ChangeReceipt read_receipt(Reader& r) {
-    ChangeReceipt value;
-    value.transaction = TransactionId(r.text());
-    value.committed_revision = r.number();
-    value.current_revision = r.number();
-    value.current_content_state = r.text();
-    return value;
-}
-std::string encode_data(const Data& data) {
+std::string encode_project(Data& d, const std::string& project_id) {
     Writer w;
-    w.text("QCAE-WORKSPACE");
+    w.text("QCAE-RECORD-PROJECT");
     w.number(2);
-    w.text(data.application_nonce);
-    w.number(data.next_id);
-    w.boolean(data.document.has_value());
-    if (data.document)
-        write_info(w, *data.document);
-    state_codec::write_model(w, data.model);
-    w.text(data.initial_content_state);
-    w.number(data.history.size());
-    for (const auto& entry : data.history) {
-        w.text(entry.transaction.value);
-        w.text(entry.label);
-        w.text(entry.content_state);
-        write_model_delta(w, entry.delta);
-    }
-    w.number(data.cursor);
-    w.number(data.operations.size());
-    for (const auto& [key, op] : data.operations) {
-        w.text(key);
-        w.text(op.signature);
-        write_receipt(w, op.receipt);
-    }
-    w.number(data.host_operations.size());
-    for (const auto& [key, op] : data.host_operations) {
-        w.text(key);
-        w.text(op.signature);
-        write_info(w, op.result);
-    }
-    w.boolean(data.save_intent.has_value());
-    if (data.save_intent) {
-        const auto& intent = *data.save_intent;
-        w.text(intent.host_key);
-        w.text(intent.signature);
-        w.text(intent.path);
-        w.text(intent.token);
-        w.text(intent.project_id);
-        w.text(intent.snapshot);
-        w.boolean(intent.save_as);
-    }
-    w.boolean(data.recoverable);
-    return w.take();
-}
-std::uint64_t bounded_count(Reader& r, std::uint64_t unit = 8) {
-    const auto count = r.number();
-    if (count > 500000 || count > r.remaining() / unit)
-        throw state_codec::CodecError("Malformed state count");
-    return count;
-}
-Data decode_data(std::string_view bytes, Limits limits) {
-    Reader r(bytes);
-    if (r.text() != "QCAE-WORKSPACE" || r.number() != 2)
-        throw state_codec::CodecError("Unsupported workspace schema");
-    Data data;
-    data.limits = limits;
-    data.application_nonce = r.text();
-    data.next_id = r.number();
-    if (data.application_nonce.empty() || data.next_id == 0)
-        throw state_codec::CodecError("Malformed workspace identity");
-    if (r.boolean())
-        data.document = read_info(r);
-    data.model = state_codec::read_model(r, limits.max_entities, limits.max_relations);
-    data.initial_content_state = r.text();
-    const auto history_count = bounded_count(r, 32);
-    if (history_count > limits.max_history_entries)
-        throw state_codec::CodecError("History exceeds configured limit");
-    for (std::uint64_t i = 0; i < history_count; ++i) {
-        HistoryEntry entry;
-        entry.transaction = TransactionId(r.text());
-        entry.label = r.text();
-        entry.content_state = r.text();
-        entry.delta = read_model_delta(r);
-        data.history.push_back(std::move(entry));
-    }
-    data.cursor = r.number();
-    if (data.cursor > data.history.size())
-        throw state_codec::CodecError("Malformed history cursor");
-    const auto operation_count = bounded_count(r, 32);
-    if (operation_count > limits.max_idempotency_records)
-        throw state_codec::CodecError("Operation count exceeds limit");
-    for (std::uint64_t i = 0; i < operation_count; ++i) {
-        auto key = r.text();
-        RecordedOperation op{r.text(), read_receipt(r)};
-        if (!data.operations.emplace(std::move(key), std::move(op)).second)
-            throw state_codec::CodecError("Duplicate operation");
-    }
-    const auto host_count = bounded_count(r, 32);
-    if (host_count > limits.max_idempotency_records - data.operations.size())
-        throw state_codec::CodecError("Operation count exceeds limit");
-    for (std::uint64_t i = 0; i < host_count; ++i) {
-        auto key = r.text();
-        HostOperation op{r.text(), read_info(r)};
-        if (!data.host_operations.emplace(std::move(key), std::move(op)).second)
-            throw state_codec::CodecError("Duplicate host operation");
-    }
-    if (r.boolean()) {
-        SaveIntent intent;
-        intent.host_key = r.text();
-        intent.signature = r.text();
-        intent.path = r.text();
-        intent.token = r.text();
-        intent.project_id = r.text();
-        intent.snapshot = r.text();
-        intent.save_as = r.boolean();
-        data.save_intent = std::move(intent);
-    }
-    data.recoverable = r.boolean();
-    r.finish();
-    if (data.operations.size() + data.host_operations.size() > limits.max_idempotency_records)
-        throw state_codec::CodecError("Operation count exceeds limit");
-    if (data.document) {
-        if (auto diagnostic = validate_candidate(data.model, limits))
-            throw state_codec::CodecError("Invalid stored model: " + diagnostic->message);
-        if (data.initial_content_state.empty() || data.document->content_state.empty() ||
-            data.document->document.id.value.empty() ||
-            data.document->document.epoch.value.empty() || data.document->name.empty())
-            throw state_codec::CodecError("Malformed document identity");
-        const auto expected_state = data.cursor == 0 ? data.initial_content_state
-                                                     : data.history[data.cursor - 1].content_state;
-        if (data.document->content_state != expected_state)
-            throw state_codec::CodecError("History content state mismatch");
-        Model baseline = data.model;
-        for (std::size_t i = data.cursor; i > 0; --i)
-            baseline = apply_model_delta(baseline, data.history[i - 1].delta, false);
-        if (auto diagnostic = validate_candidate(baseline, limits))
-            throw state_codec::CodecError("Invalid history baseline: " + diagnostic->message);
-        Model replay = baseline;
-        for (std::size_t i = 0; i < data.history.size(); ++i) {
-            if (data.history[i].transaction.value.empty() || data.history[i].content_state.empty())
-                throw state_codec::CodecError("Malformed history identity");
-            replay = apply_model_delta(replay, data.history[i].delta, true);
-            if (auto diagnostic = validate_candidate(replay, limits))
-                throw state_codec::CodecError("Invalid history model: " + diagnostic->message);
-            if (i + 1 == data.cursor && replay != data.model)
-                throw state_codec::CodecError("History does not match current model");
-        }
-        if (data.cursor == 0 && baseline != data.model)
-            throw state_codec::CodecError("History baseline mismatch");
-        if (data.save_intent) {
-            const auto& intent = *data.save_intent;
-            if (intent.host_key.empty() || intent.signature.empty() || intent.path.empty() ||
-                intent.token.empty() || intent.project_id.empty())
-                throw state_codec::CodecError("Malformed save intent");
-            Reader project_reader(intent.snapshot);
-            if (project_reader.text() != "QCAE-PROJECT" || project_reader.number() != 1 ||
-                project_reader.text() != intent.project_id ||
-                project_reader.text() != data.document->name ||
-                project_reader.text() != data.document->content_state ||
-                state_codec::read_model(
-                    project_reader, limits.max_entities, limits.max_relations) != data.model)
-                throw state_codec::CodecError("Save intent snapshot mismatch");
-            project_reader.finish();
-        }
-        update_document(data);
-        data.document->durable = true;
-    } else if (entity_count(data.model) != 0 || !data.model.sources.empty() ||
-               !data.history.empty() || data.cursor != 0 || !data.operations.empty() ||
-               data.save_intent || !data.initial_content_state.empty() || data.recoverable)
-        throw state_codec::CodecError("Orphan model state");
-    return data;
-}
-std::string encode_project(const Data& data, const std::string& project_id) {
-    Writer w;
-    w.text("QCAE-PROJECT");
-    w.number(1);
     w.text(project_id);
-    w.text(data.document->name);
-    w.text(data.document->content_state);
-    state_codec::write_model(w, data.model);
+    w.text(d.document->name);
+    w.text(d.document->content_state);
+    w.number(d.records.size());
+    d.records.visit([&](const Record& record) {
+        w.text(record->encoded());
+        d.stats.model_bytes_copied += record->encoded().size();
+    });
+    w.number(d.owned_rows->size());
+    for (const auto& [key, row] : *d.owned_rows) {
+        w.number(static_cast<unsigned>(key.space));
+        w.text(key.identity);
+        w.text(*row->encoded);
+    }
+    note_whole_model_serialization(&d.stats);
     return w.take();
 }
-Data decode_project(std::string_view bytes, Limits limits) {
-    Reader r(bytes);
-    if (r.text() != "QCAE-PROJECT" || r.number() != 1)
-        throw state_codec::CodecError("Unsupported project schema");
-    Data data;
-    data.limits = limits;
-    data.application_nonce = nonce();
+Data decode_project(std::string_view payload,
+                    std::shared_ptr<const RecordApplicationOptions> options) {
+    Data d(options);
+    Reader r(payload);
+    auto magic = r.text();
+    RecordProjectImage image{DocumentView(options->registry), {}, {}, {}};
+    if (magic != "QCAE-RECORD-PROJECT") {
+        if (!options->decode_legacy_project)
+            throw RecordError(ErrorCode::schema_unsupported, "Unsupported project schema");
+        image = options->decode_legacy_project(payload);
+    } else {
+        const auto project_version = r.number();
+        if (project_version != 1 && project_version != 2)
+            throw RecordError(ErrorCode::schema_unsupported, "Unsupported record project schema");
+        image.project_id = r.text();
+        image.name = r.text();
+        image.content_state = r.text();
+        auto count = r.count();
+        RecordChangeSet changes;
+        for (std::size_t i = 0; i < count; ++i) {
+            auto record = options->registry->decode(r.text());
+            changes.records.push_back({record->key(), {}, record, {}});
+        }
+        if (project_version == 2) {
+            auto owned = std::make_shared<OwnedRowTable>();
+            const auto owned_count = r.count();
+            if (owned_count > options->max_owned_rows)
+                throw RecordError(ErrorCode::resource_limit, "Owned-row count exceeds quota");
+            for (std::size_t index = 0; index < owned_count; ++index) {
+                const auto space = r.number();
+                if (space != static_cast<unsigned>(StoreSpace::task_record) &&
+                    space != static_cast<unsigned>(StoreSpace::artifact_record))
+                    throw RecordError(ErrorCode::schema_unsupported,
+                                      "Invalid project owned-row space");
+                StoreKey key{static_cast<StoreSpace>(space), r.text()};
+                auto row = decode_owned(key, bytes(r.text()), options->owned_row_handlers);
+                if (!owned->emplace(key, std::move(row)).second)
+                    throw RecordError(ErrorCode::schema_unsupported, "Duplicate project owned row");
+            }
+            image.owned_rows = std::move(owned);
+        }
+        r.finish();
+        image.records = apply_record_changes(image.records, changes);
+    }
+    if (image.project_id.empty() || image.name.empty() || image.content_state.empty())
+        throw RecordError(ErrorCode::schema_unsupported, "Malformed project identity");
+    d.records = std::move(image.records);
+    d.owned_rows = std::move(image.owned_rows);
     DocumentInfo info;
-    info.project_id = r.text();
-    info.name = r.text();
-    info.content_state = r.text();
-    data.model = state_codec::read_model(r, limits.max_entities, limits.max_relations);
-    r.finish();
-    if (info.project_id.empty() || info.name.empty() || info.content_state.empty())
-        throw state_codec::CodecError("Malformed project identity");
-    if (auto diagnostic = validate_candidate(data.model, limits))
-        throw state_codec::CodecError("Invalid project model: " + diagnostic->message);
-    data.initial_content_state = info.content_state;
-    data.document = std::move(info);
-    return data;
+    d.document = std::move(info);
+    d.document->project_id = image.project_id;
+    d.document->name = image.name;
+    d.document->content_state = image.content_state;
+    d.initial_content_state = image.content_state;
+    d.application_nonce = nonce();
+    if (auto error = validate_candidate(d.records, d))
+        throw RecordError(error->code, error->message, error->field);
+    return d;
+}
+Data decode_data(const LoadedRows& loaded,
+                 std::shared_ptr<const RecordApplicationOptions> options) {
+    if (loaded.legacy)
+        throw RecordError(ErrorCode::schema_unsupported,
+                          "Legacy workspace requires migration to a separate destination");
+    Data d(options);
+    if (loaded.rows.empty()) {
+        d.application_nonce = nonce();
+        return d;
+    }
+    static_cast<RecordStateImage&>(d) = decode_record_state_image(
+        loaded.rows, options->registry, options->limits, options->owned_row_handlers);
+    if (d.owned_rows->size() > options->max_owned_rows)
+        throw RecordError(ErrorCode::resource_limit, "Owned-row count exceeds quota");
+    for (const auto& [unused, row] : *d.owned_rows) {
+        (void)unused;
+        if (row->payload->size() > options->max_owned_row_bytes)
+            throw RecordError(ErrorCode::resource_limit, "Owned-row payload exceeds quota");
+    }
+    if (d.save_intent) {
+        const auto& intent = *d.save_intent;
+        if (intent.host_key.empty() || intent.signature.empty() || intent.path.empty() ||
+            intent.token.empty() || intent.project_id.empty())
+            throw RecordError(ErrorCode::schema_unsupported, "Malformed save intent");
+        const auto snapshot = decode_project(intent.snapshot, options);
+        if (!d.document || snapshot.document->project_id != intent.project_id ||
+            snapshot.document->name != d.document->name ||
+            snapshot.document->content_state != d.document->content_state ||
+            !diff_record_views(snapshot.records, d.records).empty())
+            throw RecordError(ErrorCode::schema_unsupported, "Save intent snapshot mismatch");
+    }
+    if (auto error = validate_candidate(d.records, d))
+        throw RecordError(error->code, error->message, error->field);
+    return d;
+}
+void queue_changes(Data& d, const RecordChangeSet& changes, RecordDirection direction) {
+    for (const auto& change : changes.records) {
+        const auto& record = direction == RecordDirection::forward ? change.after : change.before;
+        d.pending.push_back({record_key(change.key), record ? record_bytes(*record) : nullptr});
+    }
+}
+void queue_owned_rows(Data& d, std::span<const OwnedRowUpdate> updates) {
+    if (updates.empty())
+        return;
+    auto rows = std::make_shared<OwnedRowTable>(*d.owned_rows);
+    std::set<StoreKey> seen;
+    std::vector<RowMutation> pending;
+    for (const auto& update : updates) {
+        if (!seen.insert(update.key).second)
+            throw RecordError(ErrorCode::invalid_input, "Duplicate owned-row update");
+        const auto found = rows->find(update.key);
+        const auto previous = found == rows->end() ? nullptr : found->second;
+        if (bool(previous) != bool(update.expected) ||
+            (previous && *previous->payload != *update.expected))
+            throw RecordError(ErrorCode::revision_conflict, "Owned-row compare-and-swap failed");
+        if (update.after) {
+            if (update.after->key != update.key ||
+                (previous && previous->owner != update.after->owner) || !update.after->payload)
+                throw RecordError(ErrorCode::invalid_input, "Owned-row identity or owner mismatch");
+            if (update.after->payload->size() > d.options->max_owned_row_bytes)
+                throw RecordError(ErrorCode::resource_limit, "Owned-row payload exceeds quota");
+            auto row = prepare_owned(*update.after, d.options->owned_row_handlers);
+            (*rows)[update.key] = row;
+            pending.push_back({update.key, row->encoded});
+        } else {
+            if (!previous)
+                throw RecordError(ErrorCode::entity_not_found, "Owned row does not exist");
+            row_handler(d.options->owned_row_handlers, *previous);
+            rows->erase(update.key);
+            pending.push_back({update.key, {}});
+        }
+    }
+    if (rows->size() > d.options->max_owned_rows)
+        throw RecordError(ErrorCode::resource_limit, "Owned-row count exceeds quota");
+    d.pending.insert(d.pending.end(), pending.begin(), pending.end());
+    d.owned_rows = std::move(rows);
+}
+void recover_owned_rows(Data& d) {
+    std::vector<OwnedRowUpdate> updates;
+    for (const auto& [key, row] : *d.owned_rows) {
+        const auto& handler = row_handler(d.options->owned_row_handlers, *row);
+        if (handler.recover)
+            if (auto recovered = handler.recover(*row))
+                updates.push_back({key, row->payload, std::move(recovered)});
+    }
+    queue_owned_rows(d, updates);
+}
+bool owned_rows_block_close(const Data& d) {
+    for (const auto& [unused, row] : *d.owned_rows) {
+        (void)unused;
+        const auto& handler = row_handler(d.options->owned_row_handlers, *row);
+        if (handler.blocks_close && handler.blocks_close(*row))
+            return true;
+    }
+    return false;
+}
+void replace_records(Data& d, DocumentView view) {
+    d.records.visit(
+        [&](const Record& record) { d.pending.push_back({record_key(record->key()), {}}); });
+    view.visit([&](const Record& record) {
+        d.pending.push_back({record_key(record->key()), record_bytes(record)});
+    });
+    d.records = std::move(view);
+}
+void clear_document_rows(Data& d) {
+    replace_records(d, DocumentView(d.records.registry()));
+    for (const auto& h : d.history)
+        d.pending.push_back({{StoreSpace::history_entry, h->transaction.value}, {}});
+    for (const auto& [key, o] : d.operations) {
+        (void)o;
+        d.pending.push_back({{StoreSpace::operation_fact, key}, {}});
+    }
+    for (const auto& [key, unused] : *d.owned_rows) {
+        (void)unused;
+        d.pending.push_back({key, {}});
+    }
+    d.owned_rows = std::make_shared<const OwnedRowTable>();
+}
+std::shared_ptr<const HistoryEntry> make_history(TransactionId transaction,
+                                                 std::string label,
+                                                 RecordChangeSet changes,
+                                                 std::string content,
+                                                 RecordStats* stats) {
+    auto h = std::make_shared<HistoryEntry>();
+    h->transaction = std::move(transaction);
+    h->label = std::move(label);
+    h->changes = std::move(changes);
+    h->content_state = std::move(content);
+    h->encoded = encode_history(*h, stats);
+    return h;
 }
 std::optional<Diagnostic>
-persist(const Data& candidate, IWorkspaceStore* store, std::uint64_t& generation, bool& poisoned) {
+persist(Data& candidate, IRecordStore* store, std::uint64_t& generation, bool& poisoned) {
     if (poisoned)
         return Diagnostic{
             ErrorCode::storage_uncertain, "Storage outcome needs recovery", "storage"};
-    if (!store)
-        return std::nullopt;
     try {
-        auto bytes = encode_data(candidate);
-        generation = store->commit(generation, bytes);
-        return std::nullopt;
-    } catch (const state_codec::CodecError& error) {
-        return Diagnostic{ErrorCode::resource_limit, error.what(), "storage"};
+        candidate.pending.push_back(
+            {{StoreSpace::document_metadata, "state"}, encode_metadata(candidate)});
+        for (const auto& h : candidate.history) {
+            if (!h->encoded)
+                throw RecordError(ErrorCode::schema_unsupported, "Unencoded history row");
+        }
+        for (auto& [key, o] : candidate.operations)
+            if (!o.encoded) {
+                o.encoded = encode_operation(o);
+                candidate.pending.push_back({{StoreSpace::operation_fact, key}, o.encoded});
+            }
+        for (auto& [key, h] : candidate.host_operations)
+            if (!h.encoded) {
+                h.encoded = encode_host(h);
+                candidate.pending.push_back({{StoreSpace::host_operation_fact, key}, h.encoded});
+            }
+        // Last mutation wins when replacing a record set during explicit open.
+        std::map<StoreKey, SharedStoreBytes> unique;
+        for (const auto& row : candidate.pending)
+            unique[row.key] = row.after;
+        StoreBatch batch{generation, "application-" + std::to_string(generation + 1), {}};
+        for (auto& [key, value] : unique)
+            batch.mutations.push_back({key, std::move(value)});
+        candidate.pending.clear();
+        if (store)
+            generation = store->commit_rows(batch).generation;
+        return {};
+    } catch (const RecordError& error) {
+        return Diagnostic{error.code(), error.what(), error.field()};
     } catch (const StorageError& error) {
         if (error.uncertain())
             poisoned = true;
@@ -347,5 +726,5 @@ persist(const Data& candidate, IWorkspaceStore* store, std::uint64_t& generation
                           "storage"};
     }
 }
-
-} // namespace qcae::detail
+} // namespace record_detail
+} // namespace qcae

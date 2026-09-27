@@ -22,7 +22,7 @@ def generate(source):
              "  bool requires_document, requires_epoch, requires_revision, requires_idempotency_key, requires_profile_match;",
              "};",
              f"inline constexpr std::string_view api_version = {quote(catalog['api_version'])};",
-             f"inline constexpr std::array<OperationDescriptor, {len(rows)}> operations = {{{{"]
+             f"inline constexpr std::array<OperationDescriptor, {len(rows)}> operation_catalog = {{{{"]
     for row in rows:
         strings = [quote(row[key]) for key in ("name", "effect", "description", "input_type", "output_type", "target_context")]
         flags = []
@@ -32,7 +32,7 @@ def generate(source):
             flags.append("true" if row[key] else "false")
         lines.append("  {" + ", ".join(strings + flags) + "},")
     lines += ["}};", "inline constexpr const OperationDescriptor* find_operation(std::string_view name) {",
-              "  for (const auto& operation : operations) if (operation.name == name) return &operation;",
+              "  for (const auto& operation : operation_catalog) if (operation.name == name) return &operation;",
               "  return nullptr;", "}", "} // namespace qcae", ""]
     return "\n".join(lines)
 

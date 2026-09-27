@@ -1,4 +1,5 @@
 #include "qcae/query.hpp"
+#include "qcae/records.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -39,18 +40,25 @@ bool same_document(const DocumentRef& left, const DocumentRef& right) {
     return left.id == right.id && left.epoch == right.epoch;
 }
 
-using IdSet = std::set<EntityId>;
+struct EntityLess {
+    using is_transparent = void;
+    bool operator()(const EntityId& a, const EntityId& b) const {
+        return a.value < b.value;
+    }
+    bool operator()(const EntityId& a, std::string_view b) const {
+        return a.value < b;
+    }
+    bool operator()(std::string_view a, const EntityId& b) const {
+        return a < b.value;
+    }
+};
+using IdSet = std::set<EntityId, EntityLess>;
 
-IdSet entity_ids(const ModelSnapshot& snapshot) {
-    IdSet ids;
-    for (const auto& entity : model_entities(snapshot))
-        ids.insert(entity.id);
-    return ids;
-}
-
-bool valid_ids(const IdSet& available, const std::vector<EntityId>& ids) {
-    return std::all_of(
-        ids.begin(), ids.end(), [&](const EntityId& id) { return available.contains(id); });
+bool valid_ids(const DocumentView& snapshot, const std::vector<EntityId>& ids) {
+    return std::all_of(ids.begin(), ids.end(), [&](const EntityId& id) {
+        auto record = snapshot.find_identity(id.value);
+        return record && !record->descriptor().query_kind.empty();
+    });
 }
 
 std::vector<EntityId> sorted_ids(IdSet ids) {
@@ -101,66 +109,48 @@ bool box_valid(const WorldBox& box) {
 
 class QueryContext {
   public:
-    explicit QueryContext(const ModelSnapshot& snapshot) : snapshot_(snapshot) {
-        for (const auto& entity : model_entities(snapshot))
-            entities_.emplace(entity.id, entity);
-        for (const auto& node : snapshot.nodes)
-            nodes_.emplace(node.id, node.position);
-        for (const auto& section : snapshot.sections)
-            sections_.emplace(section.id, section.material);
-    }
-
-    IdSet all() const {
-        IdSet result;
-        for (const auto& [id, unused] : entities_) {
-            (void)unused;
-            result.insert(id);
-        }
-        return result;
-    }
-
-    bool matches(const EntityId& id, const QueryPredicate& predicate, unsigned depth = 0) const {
+    explicit QueryContext(const DocumentView& snapshot) : snapshot_(snapshot) {}
+    bool matches(std::string_view id, const QueryPredicate& predicate, unsigned depth = 0) const {
         if (depth > 32)
             return false;
-        const auto entity = entities_.find(id);
-        if (entity == entities_.end())
+        const auto record = snapshot_.find_identity(id);
+        if (!record || record->descriptor().query_kind.empty())
             return false;
         switch (predicate.op) {
         case QueryOp::all:
             return true;
         case QueryOp::kind:
-            return entity->second.kind == predicate.text;
+            return record->descriptor().query_kind == predicate.text;
         case QueryOp::ids:
-            return std::find(predicate.ids.begin(), predicate.ids.end(), id) != predicate.ids.end();
+            return std::any_of(predicate.ids.begin(), predicate.ids.end(), [&](const auto& value) {
+                return value.value == id;
+            });
         case QueryOp::name_contains:
-            return entity->second.name.find(predicate.text) != std::string::npos;
+            return (record->descriptor().display_name
+                        ? record->descriptor().display_name(record->object())
+                        : std::string_view{})
+                       .find(predicate.text) != std::string_view::npos;
         case QueryOp::source_number_range:
-            return source_matches(id, predicate);
         case QueryOp::member_of:
-            return members(predicate).contains(id);
         case QueryOp::material:
-            return related_to_material(id, predicate.related_entity);
         case QueryOp::section:
-            return related_to_section(id, predicate.related_entity);
+            return cached(predicate).contains(id);
         case QueryOp::world_box:
-            return spatial_match(id, predicate.box);
+            return spatial_match(record, predicate.box);
         case QueryOp::and_:
-            return std::all_of(
-                predicate.children.begin(),
-                predicate.children.end(),
-                [&](const QueryPredicate& child) { return matches(id, child, depth + 1); });
+            return std::all_of(predicate.children.begin(),
+                               predicate.children.end(),
+                               [&](const auto& child) { return matches(id, child, depth + 1); });
         case QueryOp::or_:
-            return std::any_of(
-                predicate.children.begin(),
-                predicate.children.end(),
-                [&](const QueryPredicate& child) { return matches(id, child, depth + 1); });
+            return std::any_of(predicate.children.begin(),
+                               predicate.children.end(),
+                               [&](const auto& child) { return matches(id, child, depth + 1); });
         case QueryOp::not_:
             return predicate.children.size() == 1 &&
                    !matches(id, predicate.children.front(), depth + 1);
         }
         return false;
     }
-
     bool valid(const QueryPredicate& predicate, unsigned depth = 0) const {
         if (depth > 32 || predicate.children.size() > 64)
             return false;
@@ -178,14 +168,11 @@ class QueryContext {
                 return false;
             break;
         case QueryOp::material:
-            if (std::none_of(
-                    snapshot_.materials.begin(),
-                    snapshot_.materials.end(),
-                    [&](const Material& item) { return item.id == predicate.related_entity; }))
+            if (!snapshot_.find<records::Material>(predicate.related_entity))
                 return false;
             break;
         case QueryOp::section:
-            if (!sections_.contains(predicate.related_entity))
+            if (!snapshot_.find<records::BeamSection>(predicate.related_entity))
                 return false;
             break;
         case QueryOp::world_box:
@@ -206,156 +193,152 @@ class QueryContext {
         }
         return std::all_of(predicate.children.begin(),
                            predicate.children.end(),
-                           [&](const QueryPredicate& child) { return valid(child, depth + 1); });
+                           [&](const auto& child) { return valid(child, depth + 1); });
     }
 
   private:
-    bool source_matches(const EntityId& id, const QueryPredicate& predicate) const {
-        return std::any_of(snapshot_.sources.begin(),
-                           snapshot_.sources.end(),
-                           [&](const SourceIdentifier& source) {
-                               return source.entity == id &&
-                                      (predicate.text.empty() ||
-                                       source.name_space == predicate.text) &&
-                                      source.number >= predicate.first_number &&
-                                      source.number <= predicate.last_number;
-                           });
+    template <class T, class Visitor> void visit(Visitor visitor) const {
+        snapshot_.visit(RecordTraits<T>::type_id,
+                        [&](const Record& record) { visitor(record->get<T>()); });
     }
-
-    bool organization_exists(const QueryPredicate& predicate) const {
-        switch (predicate.membership_kind) {
+    bool organization_exists(const QueryPredicate& p) const {
+        switch (p.membership_kind) {
         case MembershipKind::part:
-            return std::any_of(
-                snapshot_.parts.begin(), snapshot_.parts.end(), [&](const Part& item) {
-                    return item.id == predicate.related_entity;
-                });
+            return bool(snapshot_.find<records::Part>(p.related_entity));
         case MembershipKind::assembly:
-            return std::any_of(
-                snapshot_.assemblies.begin(),
-                snapshot_.assemblies.end(),
-                [&](const Assembly& item) { return item.id == predicate.related_entity; });
+            return bool(snapshot_.find<records::Assembly>(p.related_entity));
         case MembershipKind::set:
-            return std::any_of(
-                snapshot_.sets.begin(), snapshot_.sets.end(), [&](const EntitySet& item) {
-                    return item.id == predicate.related_entity;
-                });
+            return bool(snapshot_.find<records::EntitySet>(p.related_entity));
         case MembershipKind::include:
-            return std::any_of(
-                snapshot_.includes.begin(),
-                snapshot_.includes.end(),
-                [&](const IncludeDocument& item) { return item.id == predicate.related_entity; });
+            return bool(snapshot_.find<records::IncludeDocument>(p.related_entity));
         }
         return false;
     }
-
-    IdSet members(const QueryPredicate& predicate) const {
-        IdSet result;
-        if (predicate.membership_kind == MembershipKind::set) {
-            for (const auto& item : snapshot_.sets)
-                if (item.id == predicate.related_entity)
-                    result.insert(item.members.begin(), item.members.end());
+    const IdSet& cached(const QueryPredicate& p) const {
+        auto [found, fresh] = cache_.try_emplace(&p);
+        if (!fresh)
+            return found->second;
+        auto& result = found->second;
+        if (p.op == QueryOp::source_number_range) {
+            visit<records::SourceIdentifier>([&](const auto& source) {
+                if ((p.text.empty() || source.name_space == p.text) &&
+                    source.number >= p.first_number && source.number <= p.last_number)
+                    result.insert(source.entity);
+            });
             return result;
         }
-        if (predicate.membership_kind == MembershipKind::include) {
-            IdSet includes{predicate.related_entity};
+        if (p.op == QueryOp::material || p.op == QueryOp::section) {
+            result.insert(p.related_entity);
+            IdSet sections;
+            if (p.op == QueryOp::section)
+                sections.insert(p.related_entity);
+            else
+                visit<records::BeamSection>([&](const auto& section) {
+                    if (section.material == p.related_entity) {
+                        sections.insert(section.id);
+                        result.insert(section.id);
+                    }
+                });
+            visit<records::Beam>([&](const auto& beam) {
+                if (beam.section && sections.contains(*beam.section)) {
+                    result.insert(beam.id);
+                    result.insert(beam.nodes.begin(), beam.nodes.end());
+                }
+            });
+            return result;
+        }
+        if (p.membership_kind == MembershipKind::set) {
+            const auto& set =
+                snapshot_.find<records::EntitySet>(p.related_entity)->get<records::EntitySet>();
+            result.insert(set.members.begin(), set.members.end());
+            return result;
+        }
+        if (p.membership_kind == MembershipKind::include) {
+            IdSet includes{p.related_entity};
             bool changed = true;
             while (changed) {
                 changed = false;
-                for (const auto& item : snapshot_.includes)
+                visit<records::IncludeDocument>([&](const auto& item) {
                     if (item.parent && includes.contains(*item.parent))
                         changed |= includes.insert(item.id).second;
+                });
             }
-            for (const auto& item : snapshot_.includes)
+            visit<records::IncludeDocument>([&](const auto& item) {
                 if (includes.contains(item.id))
                     result.insert(item.members.begin(), item.members.end());
+            });
             return result;
         }
         IdSet parts;
-        if (predicate.membership_kind == MembershipKind::part) {
-            parts.insert(predicate.related_entity);
-        } else {
-            IdSet assemblies{predicate.related_entity};
-            bool changed = true;
-            while (changed) {
-                changed = false;
-                for (const auto& assembly : snapshot_.assemblies) {
-                    if (!assemblies.contains(assembly.id))
-                        continue;
-                    for (const auto& child : assembly.children) {
-                        const auto entity = entities_.find(child);
-                        if (entity == entities_.end())
-                            continue;
-                        if (entity->second.kind == "assembly")
-                            changed |= assemblies.insert(child).second;
-                        else
-                            parts.insert(child);
-                    }
+        if (p.membership_kind == MembershipKind::part)
+            parts.insert(p.related_entity);
+        else {
+            IdSet assemblies{p.related_entity};
+            std::vector<EntityId> pending{p.related_entity};
+            while (!pending.empty()) {
+                auto id = pending.back();
+                pending.pop_back();
+                const auto& assembly =
+                    snapshot_.find<records::Assembly>(id)->get<records::Assembly>();
+                for (const auto& child : assembly.children) {
+                    if (snapshot_.find<records::Assembly>(child)) {
+                        if (assemblies.insert(child).second)
+                            pending.push_back(child);
+                    } else
+                        parts.insert(child);
                 }
             }
         }
-        for (const auto& part : snapshot_.parts)
-            if (parts.contains(part.id))
+        for (const auto& id : parts) {
+            const auto record = snapshot_.find<records::Part>(id);
+            if (record) {
+                const auto& part = record->get<records::Part>();
                 result.insert(part.members.begin(), part.members.end());
-        // Part and assembly views include endpoints required by their beams.
-        for (const auto& beam : snapshot_.beams)
+            }
+        }
+        visit<records::Beam>([&](const auto& beam) {
             if (result.contains(beam.id))
                 result.insert(beam.nodes.begin(), beam.nodes.end());
+        });
         return result;
     }
-
-    bool related_to_section(const EntityId& id, const EntityId& section) const {
-        if (id == section)
-            return true;
-        for (const auto& beam : snapshot_.beams) {
-            if (beam.section != section)
-                continue;
-            if (beam.id == id || beam.nodes[0] == id || beam.nodes[1] == id)
-                return true;
-        }
-        return false;
-    }
-
-    bool related_to_material(const EntityId& id, const EntityId& material) const {
-        if (id == material)
-            return true;
-        for (const auto& [section, owner] : sections_)
-            if (owner == material && related_to_section(id, section))
-                return true;
-        return false;
-    }
-
-    bool spatial_match(const EntityId& id, const WorldBox& box) const {
-        const auto node = nodes_.find(id);
-        if (node != nodes_.end())
-            return inside(node->second, box);
-        for (const auto& beam : snapshot_.beams) {
-            if (beam.id != id)
-                continue;
-            const auto first = nodes_.find(beam.nodes[0]);
-            const auto second = nodes_.find(beam.nodes[1]);
-            if (first == nodes_.end() || second == nodes_.end())
+    bool spatial_match(const Record& record, const WorldBox& box) const {
+        auto point = [](const std::array<double, 3>& p) { return Vec3{p[0], p[1], p[2]}; };
+        if (record->key().type == RecordTraits<records::Node>::type_id)
+            return inside(point(record->get<records::Node>().position), box);
+        if (record->key().type == RecordTraits<records::Beam>::type_id) {
+            const auto& beam = record->get<records::Beam>();
+            const auto a = snapshot_.find<records::Node>(beam.nodes[0]);
+            const auto b = snapshot_.find<records::Node>(beam.nodes[1]);
+            if (!a || !b)
                 return false;
-            if (box.relation == BoxRelation::contained)
-                return inside(first->second, box) && inside(second->second, box);
-            return segment_intersects_box(first->second, second->second, box);
+            const auto first = point(a->get<records::Node>().position),
+                       second = point(b->get<records::Node>().position);
+            return box.relation == BoxRelation::contained
+                       ? (inside(first, box) && inside(second, box))
+                       : segment_intersects_box(first, second, box);
+        }
+        if (record->key().type == RecordTraits<records::GeometryLine>::type_id) {
+            const auto& line = record->get<records::GeometryLine>();
+            const auto first = point(line.start), second = point(line.end);
+            return box.relation == BoxRelation::contained
+                       ? (inside(first, box) && inside(second, box))
+                       : segment_intersects_box(first, second, box);
         }
         return false;
     }
-
-    const ModelSnapshot& snapshot_;
-    std::map<EntityId, EntitySummary> entities_;
-    std::map<EntityId, Vec3> nodes_;
-    std::map<EntityId, EntityId> sections_;
+    const DocumentView& snapshot_;
+    mutable std::map<const QueryPredicate*, IdSet> cache_;
 };
 
 } // namespace
 
 Result<QueryResult>
-execute_query(const ModelSnapshot& snapshot, const ViewSession& view, const QuerySpec& spec) {
-    if (!same_document(snapshot.info.document, view.document))
+execute_query(const DocumentView& snapshot, const ViewSession& view, const QuerySpec& spec) {
+    if (!same_document(snapshot.version().document, view.document))
         return failure<QueryResult>(
             ErrorCode::document_epoch_expired, "View belongs to another document or epoch", "view");
-    if (snapshot.info.revision != view.model_revision)
+    if (snapshot.version().revision != view.model_revision)
         return failure<QueryResult>(
             ErrorCode::revision_conflict, "View model revision is stale", "view");
     if (spec.scope.visibility == VisibilityMode::visible_only)
@@ -370,80 +353,90 @@ execute_query(const ModelSnapshot& snapshot, const ViewSession& view, const Quer
     if (!context.valid(spec.predicate))
         return failure<QueryResult>(
             ErrorCode::invalid_input, "Invalid query predicate", "predicate");
-    const IdSet available = context.all();
-    if (!valid_ids(available, view.hidden_ids) ||
-        (spec.scope.candidate_ids && !valid_ids(available, *spec.scope.candidate_ids)))
+    if (!valid_ids(snapshot, view.hidden_ids) ||
+        (spec.scope.candidate_ids && !valid_ids(snapshot, *spec.scope.candidate_ids)))
         return failure<QueryResult>(
             ErrorCode::entity_not_found, "View or candidate contains an unknown entity", "scope");
-    IdSet universe = spec.scope.candidate_ids
-                         ? IdSet(spec.scope.candidate_ids->begin(), spec.scope.candidate_ids->end())
-                         : available;
-    if (!spec.scope.include_hidden) {
-        for (const auto& hidden : view.hidden_ids)
-            universe.erase(hidden);
-    }
+    const IdSet hidden(view.hidden_ids.begin(), view.hidden_ids.end());
     IdSet selected;
-    for (const auto& id : universe)
-        if (context.matches(id, spec.predicate) != spec.scope.invert)
-            selected.insert(id);
-    return success(QueryResult{snapshot.info.document,
-                               snapshot.info.revision,
+    auto consider = [&](std::string_view id) {
+        if ((spec.scope.include_hidden || !hidden.contains(id)) &&
+            context.matches(id, spec.predicate) != spec.scope.invert)
+            selected.emplace(std::string(id));
+    };
+    if (spec.scope.candidate_ids) {
+        for (const auto& id : *spec.scope.candidate_ids)
+            consider(id.value);
+    } else
+        snapshot.visit([&](const Record& record) {
+            if (!record->descriptor().query_kind.empty())
+                consider(record->key().identity);
+        });
+    return success(QueryResult{snapshot.version().document,
+                               snapshot.version().revision,
                                view.id,
                                view.view_revision,
                                sorted_ids(std::move(selected))});
 }
 
-Result<RenderPacket> produce_render_packet(const ModelSnapshot& snapshot,
+Result<RenderPacket> produce_render_packet(const DocumentView& snapshot,
                                            const ViewSession& view,
                                            std::size_t max_entities) {
-    if (!same_document(snapshot.info.document, view.document))
+    if (!same_document(snapshot.version().document, view.document))
         return failure<RenderPacket>(
             ErrorCode::document_epoch_expired, "View belongs to another document or epoch", "view");
-    if (snapshot.info.revision != view.model_revision)
+    if (snapshot.version().revision != view.model_revision)
         return failure<RenderPacket>(
             ErrorCode::revision_conflict, "View model revision is stale", "view");
-    if (!valid_ids(entity_ids(snapshot), view.hidden_ids))
+    if (!valid_ids(snapshot, view.hidden_ids))
         return failure<RenderPacket>(ErrorCode::entity_not_found,
                                      "View contains an unknown hidden entity",
                                      "view.hidden_ids");
     const IdSet hidden(view.hidden_ids.begin(), view.hidden_ids.end());
     IdSet needed;
-    for (const auto& node : snapshot.nodes)
+    snapshot.visit(RecordTraits<records::Node>::type_id, [&](const Record& record) {
+        const auto& node = record->get<records::Node>();
         if (!hidden.contains(node.id))
             needed.insert(node.id);
-    for (const auto& beam : snapshot.beams)
-        if (!hidden.contains(beam.id))
-            needed.insert(beam.nodes.begin(), beam.nodes.end());
+    });
     std::size_t visible_beams = 0;
-    for (const auto& beam : snapshot.beams)
-        visible_beams += !hidden.contains(beam.id);
+    snapshot.visit(RecordTraits<records::Beam>::type_id, [&](const Record& record) {
+        const auto& beam = record->get<records::Beam>();
+        if (!hidden.contains(beam.id)) {
+            ++visible_beams;
+            needed.insert(beam.nodes.begin(), beam.nodes.end());
+        }
+    });
     if (needed.size() + visible_beams > max_entities)
         return failure<RenderPacket>(
             ErrorCode::resource_limit, "Render packet entity limit exceeded", "max_entities");
     RenderPacket packet;
-    packet.document = snapshot.info.document;
-    packet.revision = snapshot.info.revision;
+    packet.document = snapshot.version().document;
+    packet.revision = snapshot.version().revision;
     packet.view_session_id = view.id;
     packet.view_revision = view.view_revision;
     std::map<EntityId, std::size_t> indices;
-    for (const auto& node : snapshot.nodes) {
-        if (!needed.contains(node.id))
-            continue;
-        indices.emplace(node.id, packet.points.size());
-        packet.points.push_back({node.id,
-                                 {node.position.x, node.position.y, node.position.z},
-                                 !hidden.contains(node.id)});
-    }
-    for (const auto& beam : snapshot.beams) {
-        if (hidden.contains(beam.id))
-            continue;
-        const auto first = indices.find(beam.nodes[0]);
-        const auto second = indices.find(beam.nodes[1]);
-        if (first == indices.end() || second == indices.end())
-            return failure<RenderPacket>(
-                ErrorCode::entity_not_found, "Visible beam has a missing endpoint", "beam.nodes");
-        packet.beams.push_back({beam.id, {first->second, second->second}});
-    }
+    snapshot.visit(RecordTraits<records::Node>::type_id, [&](const Record& record) {
+        const auto& node = record->get<records::Node>();
+        if (needed.contains(node.id)) {
+            indices.emplace(node.id, packet.points.size());
+            packet.points.push_back({node.id, node.position, !hidden.contains(node.id)});
+        }
+    });
+    bool missing = false;
+    snapshot.visit(RecordTraits<records::Beam>::type_id, [&](const Record& record) {
+        const auto& beam = record->get<records::Beam>();
+        if (!hidden.contains(beam.id)) {
+            auto a = indices.find(beam.nodes[0]), b = indices.find(beam.nodes[1]);
+            if (a == indices.end() || b == indices.end())
+                missing = true;
+            else
+                packet.beams.push_back({beam.id, {a->second, b->second}});
+        }
+    });
+    if (missing)
+        return failure<RenderPacket>(
+            ErrorCode::entity_not_found, "Visible beam has a missing endpoint", "beam.nodes");
     return success(std::move(packet));
 }
 
@@ -468,19 +461,19 @@ void SelectionService::remember_expired_selection(const std::string& id) {
     }
 }
 
-Result<ViewSession> SelectionService::create_view(const ModelSnapshot& snapshot,
+Result<ViewSession> SelectionService::create_view(const DocumentView& snapshot,
                                                   const Caller& caller,
                                                   std::vector<EntityId> hidden_ids,
                                                   std::string camera_fingerprint) {
     if (caller.principal.empty())
         return failure<ViewSession>(ErrorCode::invalid_input, "Caller is required", "caller");
-    if (!valid_ids(entity_ids(snapshot), hidden_ids))
+    if (!valid_ids(snapshot, hidden_ids))
         return failure<ViewSession>(
             ErrorCode::entity_not_found, "Hidden entity does not exist", "hidden_ids");
     // A single engine has one active document. Its older document/epoch views
     // cannot be used and must not consume the live session quota indefinitely.
     for (auto item = views_.begin(); item != views_.end();) {
-        if (!same_document(item->second.view.document, snapshot.info.document)) {
+        if (!same_document(item->second.view.document, snapshot.version().document)) {
             remember_expired_view(item->first);
             item = views_.erase(item);
         } else {
@@ -488,7 +481,7 @@ Result<ViewSession> SelectionService::create_view(const ModelSnapshot& snapshot,
         }
     }
     for (auto item = selections_.begin(); item != selections_.end();) {
-        if (!same_document(item->second.handle.document, snapshot.info.document)) {
+        if (!same_document(item->second.handle.document, snapshot.version().document)) {
             remember_expired_selection(item->first);
             item = selections_.erase(item);
         } else {
@@ -501,8 +494,8 @@ Result<ViewSession> SelectionService::create_view(const ModelSnapshot& snapshot,
     std::sort(hidden_ids.begin(), hidden_ids.end());
     hidden_ids.erase(std::unique(hidden_ids.begin(), hidden_ids.end()), hidden_ids.end());
     ViewSession view{"view-" + nonce_ + "-" + std::to_string(next_id_++),
-                     snapshot.info.document,
-                     snapshot.info.revision,
+                     snapshot.version().document,
+                     snapshot.version().revision,
                      1,
                      std::move(hidden_ids),
                      std::move(camera_fingerprint)};
@@ -510,25 +503,25 @@ Result<ViewSession> SelectionService::create_view(const ModelSnapshot& snapshot,
     return success(std::move(view));
 }
 
-Result<ViewSession> SelectionService::checked_view(const ModelSnapshot& snapshot,
+Result<ViewSession> SelectionService::checked_view(const DocumentView& snapshot,
                                                    const Caller& caller,
                                                    const std::string& view_id) const {
     auto inspected = inspect_view(snapshot, caller, view_id);
     if (!inspected.ok())
         return inspected;
-    if (inspected.value->model_revision != snapshot.info.revision)
+    if (inspected.value->model_revision != snapshot.version().revision)
         return failure<ViewSession>(
             ErrorCode::revision_conflict, "View model revision is stale", "view");
     return inspected;
 }
 
-Result<ViewSession> SelectionService::get_view(const ModelSnapshot& snapshot,
+Result<ViewSession> SelectionService::get_view(const DocumentView& snapshot,
                                                const Caller& caller,
                                                const std::string& view_id) const {
     return checked_view(snapshot, caller, view_id);
 }
 
-Result<ViewSession> SelectionService::inspect_view(const ModelSnapshot& snapshot,
+Result<ViewSession> SelectionService::inspect_view(const DocumentView& snapshot,
                                                    const Caller& caller,
                                                    const std::string& view_id) const {
     const auto found = views_.find(view_id);
@@ -542,13 +535,13 @@ Result<ViewSession> SelectionService::inspect_view(const ModelSnapshot& snapshot
     if (found->second.owner != caller.principal)
         return failure<ViewSession>(
             ErrorCode::invalid_input, "View belongs to another caller", "caller");
-    if (!same_document(found->second.view.document, snapshot.info.document))
+    if (!same_document(found->second.view.document, snapshot.version().document))
         return failure<ViewSession>(
             ErrorCode::document_epoch_expired, "View belongs to another document or epoch", "view");
     return success(found->second.view);
 }
 
-Result<ViewSession> SelectionService::update_view(const ModelSnapshot& snapshot,
+Result<ViewSession> SelectionService::update_view(const DocumentView& snapshot,
                                                   const Caller& caller,
                                                   const std::string& view_id,
                                                   std::vector<EntityId> hidden_ids,
@@ -556,15 +549,15 @@ Result<ViewSession> SelectionService::update_view(const ModelSnapshot& snapshot,
     auto inspected = inspect_view(snapshot, caller, view_id);
     if (!inspected.ok())
         return inspected;
-    if (!valid_ids(entity_ids(snapshot), hidden_ids))
+    if (!valid_ids(snapshot, hidden_ids))
         return failure<ViewSession>(
             ErrorCode::entity_not_found, "Hidden entity does not exist", "hidden_ids");
     std::sort(hidden_ids.begin(), hidden_ids.end());
     hidden_ids.erase(std::unique(hidden_ids.begin(), hidden_ids.end()), hidden_ids.end());
     auto& view = views_.at(view_id).view;
-    if (view.model_revision != snapshot.info.revision || view.hidden_ids != hidden_ids ||
+    if (view.model_revision != snapshot.version().revision || view.hidden_ids != hidden_ids ||
         view.camera_fingerprint != camera_fingerprint) {
-        view.model_revision = snapshot.info.revision;
+        view.model_revision = snapshot.version().revision;
         view.hidden_ids = std::move(hidden_ids);
         view.camera_fingerprint = std::move(camera_fingerprint);
         ++view.view_revision;
@@ -607,7 +600,7 @@ Result<SelectionHandle> SelectionService::store_selection(const ViewSession& vie
     return success(std::move(handle));
 }
 
-Result<SelectionHandle> SelectionService::select(const ModelSnapshot& snapshot,
+Result<SelectionHandle> SelectionService::select(const DocumentView& snapshot,
                                                  const Caller& caller,
                                                  const std::string& view_id,
                                                  const QuerySpec& spec) {
@@ -621,7 +614,7 @@ Result<SelectionHandle> SelectionService::select(const ModelSnapshot& snapshot,
     return store_selection(*view.value, caller, std::move(query.value->ids));
 }
 
-Result<SelectionHandle> SelectionService::combine(const ModelSnapshot& snapshot,
+Result<SelectionHandle> SelectionService::combine(const DocumentView& snapshot,
                                                   const Caller& caller,
                                                   const std::string& view_id,
                                                   const std::string& left_handle,
@@ -670,7 +663,7 @@ Result<SelectionHandle> SelectionService::combine(const ModelSnapshot& snapshot,
     return store_selection(*view.value, caller, sorted_ids(std::move(output)));
 }
 
-Result<SelectionPage> SelectionService::page(const ModelSnapshot& snapshot,
+Result<SelectionPage> SelectionService::page(const DocumentView& snapshot,
                                              const Caller& caller,
                                              const std::string& handle_id,
                                              std::size_t offset,
@@ -702,7 +695,7 @@ Result<SelectionPage> SelectionService::page(const ModelSnapshot& snapshot,
                                   selection.ids.begin() + static_cast<std::ptrdiff_t>(end)}});
 }
 
-Result<RenderPacket> SelectionService::render_packet(const ModelSnapshot& snapshot,
+Result<RenderPacket> SelectionService::render_packet(const DocumentView& snapshot,
                                                      const Caller& caller,
                                                      const std::string& view_id) const {
     auto view = checked_view(snapshot, caller, view_id);

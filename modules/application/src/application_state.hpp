@@ -1,14 +1,7 @@
 #pragma once
-#include "qcae/core.hpp"
-#include "qcae/model_delta.hpp"
-#include "qcae/state_codec.hpp"
-#include <map>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <vector>
+#include "qcae/record_application.hpp"
 
-namespace qcae::detail {
+namespace qcae::record_detail {
 struct Prepared {
     Caller caller;
     WriteContext context;
@@ -16,55 +9,36 @@ struct Prepared {
     EntityId entity;
     std::string name;
     double modulus{};
-    std::optional<Model> after;
+    std::shared_ptr<const PreparedRecordChange> after;
     std::string label;
 };
-struct HistoryEntry {
-    TransactionId transaction;
-    std::string label;
-    ModelDelta delta;
-    std::string content_state;
-};
-struct RecordedOperation {
-    std::string signature;
-    ChangeReceipt receipt;
-};
-struct HostOperation {
-    std::string signature;
-    DocumentInfo result;
-};
-struct SaveIntent {
-    std::string host_key;
-    std::string signature;
-    std::string path;
-    std::string token;
-    std::string project_id;
-    std::string snapshot;
-    bool save_as{};
-};
-struct Data {
+using HistoryEntry = RecordHistoryImage;
+using RecordedOperation = RecordOperationImage;
+using HostOperation = RecordHostImage;
+using SaveIntent = RecordSaveImage;
+struct Data : RecordStateImage {
+    explicit Data(std::shared_ptr<const RecordApplicationOptions> settings)
+        : RecordStateImage(settings->registry), limits(settings->limits),
+          options(std::move(settings)) {}
     Limits limits;
-    std::string application_nonce;
-    std::uint64_t next_id{1};
-    std::optional<DocumentInfo> document;
-    Model model;
-    std::string initial_content_state;
-    std::vector<HistoryEntry> history;
-    std::size_t cursor{};
+    std::shared_ptr<const RecordApplicationOptions> options;
     std::map<std::string, Prepared> previews;
-    std::map<std::string, RecordedOperation> operations;
-    std::map<std::string, HostOperation> host_operations;
-    std::optional<SaveIntent> save_intent;
-    bool recoverable{};
+    std::vector<RowMutation> pending;
+    RecordStats stats;
 };
 std::string nonce();
 void update_document(Data&);
-std::size_t entity_count(const Model&);
-std::optional<Diagnostic> validate_candidate(const Model&, const Limits&);
-std::string encode_data(const Data&);
-Data decode_data(std::string_view, Limits);
-std::string encode_project(const Data&, const std::string& project_id);
-Data decode_project(std::string_view, Limits);
-std::optional<Diagnostic>
-persist(const Data&, IWorkspaceStore*, std::uint64_t& generation, bool& poisoned);
-} // namespace qcae::detail
+std::optional<Diagnostic> validate_candidate(const DocumentView&, const Data&);
+std::string encode_project(Data&, const std::string&);
+Data decode_project(std::string_view, std::shared_ptr<const RecordApplicationOptions>);
+Data decode_data(const LoadedRows&, std::shared_ptr<const RecordApplicationOptions>);
+void replace_records(Data&, DocumentView);
+void clear_document_rows(Data&);
+void queue_changes(Data&, const RecordChangeSet&, RecordDirection = RecordDirection::forward);
+void queue_owned_rows(Data&, std::span<const OwnedRowUpdate>);
+void recover_owned_rows(Data&);
+bool owned_rows_block_close(const Data&);
+std::shared_ptr<const HistoryEntry>
+make_history(TransactionId, std::string, RecordChangeSet, std::string, RecordStats*);
+std::optional<Diagnostic> persist(Data&, IRecordStore*, std::uint64_t&, bool&);
+} // namespace qcae::record_detail
