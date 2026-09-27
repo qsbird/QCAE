@@ -244,3 +244,62 @@ if(QCAE_BUILD_DESKTOP)
     endif()
   endif()
 endif()
+
+if(BUILD_TESTING)
+  add_executable(qcae_change_event_tests tests/change_event_tests.cpp)
+  target_link_libraries(qcae_change_event_tests PRIVATE qcae_task_application)
+  qcae_warnings(qcae_change_event_tests)
+  add_test(NAME change_events COMMAND qcae_change_event_tests)
+
+  add_executable(qcae_render_projector_tests tests/render_projector_tests.cpp)
+  target_link_libraries(qcae_render_projector_tests PRIVATE qcae_query)
+  qcae_warnings(qcae_render_projector_tests)
+  add_test(NAME render_projector COMMAND qcae_render_projector_tests)
+
+  if(QCAE_BUILD_IPC)
+    add_executable(qcae_event_stream_tests tests/event_stream_tests.cpp)
+    target_link_libraries(qcae_event_stream_tests PRIVATE qcae_engine_api)
+    qcae_warnings(qcae_event_stream_tests)
+    add_test(NAME event_stream COMMAND qcae_event_stream_tests)
+
+    add_executable(qcae_render_wire_tests tests/render_wire_tests.cpp)
+    target_link_libraries(qcae_render_wire_tests PRIVATE qcae_transport_local)
+    qcae_warnings(qcae_render_wire_tests)
+    add_test(NAME render_wire COMMAND qcae_render_wire_tests)
+
+    if(QCAE_BUILD_STORAGE)
+      add_executable(qcae_c3_locality_bench tests/c3_locality_bench.cpp)
+      target_link_libraries(qcae_c3_locality_bench PRIVATE qcae_engine_api qcae_sqlite qcae_transport_local)
+      qcae_warnings(qcae_c3_locality_bench)
+      if(UNIX)
+        add_test(NAME c3_sync_ipc COMMAND Python3::Interpreter
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/c3_sync_ipc_tests.py"
+          --engine "$<TARGET_FILE:qcae-engine>" --cli "$<TARGET_FILE:qcae-cli>"
+          --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/c3_sync_ipc_evidence")
+        set_tests_properties(c3_sync_ipc PROPERTIES TIMEOUT 180)
+      endif()
+    endif()
+  endif()
+
+  if(QCAE_BUILD_DESKTOP AND UNIX)
+    add_executable(qcae_event_client_tests tests/event_client_tests.cpp)
+    target_link_libraries(qcae_event_client_tests PRIVATE qcae_desktop_client Qt6::Test)
+    qcae_warnings(qcae_event_client_tests)
+    set_target_properties(qcae_event_client_tests PROPERTIES AUTOMOC ON)
+    add_test(NAME event_client COMMAND qcae_event_client_tests)
+
+    add_executable(qcae_c3_tool_lifecycle_tests tests/c3_tool_lifecycle_tests.cpp)
+    target_link_libraries(qcae_c3_tool_lifecycle_tests PRIVATE qcae_desktop_ui Qt6::Test)
+    qcae_warnings(qcae_c3_tool_lifecycle_tests)
+    set_target_properties(qcae_c3_tool_lifecycle_tests PROPERTIES AUTOMOC ON)
+    vtk_module_autoinit(TARGETS qcae_c3_tool_lifecycle_tests MODULES ${VTK_LIBRARIES})
+    add_test(NAME c3_tool_lifecycle COMMAND qcae_c3_tool_lifecycle_tests
+      "$<TARGET_FILE:qcae-engine>" "${CMAKE_CURRENT_BINARY_DIR}/c3_tool_lifecycle_evidence")
+    set_tests_properties(c3_tool_lifecycle PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+
+    add_executable(qcae_c3_graphics_bench tests/c3_graphics_bench.cpp)
+    target_link_libraries(qcae_c3_graphics_bench PRIVATE qcae_vtk_view Qt6::Test)
+    qcae_warnings(qcae_c3_graphics_bench)
+    vtk_module_autoinit(TARGETS qcae_c3_graphics_bench MODULES ${VTK_LIBRARIES})
+  endif()
+endif()

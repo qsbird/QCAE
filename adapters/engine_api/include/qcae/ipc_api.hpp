@@ -20,5 +20,6 @@ QJsonObject dispatch(MemoryApplication&,
                      const IModelCodec* codec = nullptr,
                      const ProfileDefinition* profile = nullptr,
                      SelectionService* selections = nullptr,
-                     TypedHost* typed = nullptr);
+                     TypedHost* typed = nullptr,
+                     bool display_services = false);
 } // namespace qcae::ipc

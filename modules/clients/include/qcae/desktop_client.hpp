@@ -5,6 +5,7 @@
 #include <QLocalSocket>
 #include <QObject>
 #include <QTimer>
+#include <cstdint>
 #include <functional>
 
 namespace qcae {
@@ -35,10 +36,26 @@ class DesktopClient : public QObject {
     [[nodiscard]] QString endpoint() const {
         return options_.endpoint;
     }
+    [[nodiscard]] bool supportsEvents() const {
+        return supports_events_;
+    }
+    [[nodiscard]] bool supportsResources() const {
+        return supports_resources_;
+    }
+    [[nodiscard]] QString engineInstanceId() const {
+        return engine_instance_id_;
+    }
+    [[nodiscard]] quint64 eventSequence() const {
+        return event_sequence_;
+    }
+    // Called after an explicit subscription/read baseline and authoritative resync.
+    void setEventCursor(const QString& engine_instance_id, quint64 sequence);
 
   signals:
     void readyChanged(bool ready);
     void transportError(const QString& message);
+    void eventReceived(const QJsonObject& event);
+    void eventGap(const QString& reason);
 
   private:
     struct Pending {
@@ -51,6 +68,8 @@ class DesktopClient : public QObject {
     void onDisconnected();
     void consume();
     void deliver(const QJsonObject& response);
+    void deliverEvent(const QJsonObject& event);
+    void requireEventResync(const QString& reason, quint64 sequence);
     void postReply(Reply callback, QJsonObject response);
     void failPending(const QString& code, const QString& message);
     void checkTimeouts();
@@ -68,6 +87,12 @@ class DesktopClient : public QObject {
     qint64 handshake_deadline_ms_{};
     bool ready_{false};
     bool launched_{false};
+    bool supports_events_{false};
+    bool supports_resources_{false};
+    bool events_need_resync_{true};
+    QString engine_instance_id_;
+    quint64 event_sequence_{};
+    std::uint64_t transport_generation_{};
 };
 
 } // namespace qcae

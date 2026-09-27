@@ -106,3 +106,62 @@ cannot register or declare operations reserved by the intrinsic host controls, e
 operation catalog or `runtime.handshake`. Startup rejects these collisions before publishing
 the host. This is static assembly, not dynamic loading.
 No solver execution, AI bridge, C3 renderer/resource work or large-model claim is implied.
+
+### C3 versioned display resources and events
+
+A handshake advertises `capabilities.resources_version=1` and `events_version=1` only
+when the production host installs both services. Legacy `view.render_data` remains
+available. New operations require `requested_version: 1`; read-only resource/event
+requests never commit a model revision or create undo entries.
+
+`view.render_resource` takes the normal document/epoch/expected_revision envelope,
+plus `view_session_id` and `expected_view_revision`. Optional `base_revision` and
+`base_view_revision` must be supplied together. Its response contains `mode`
+(`full` or `delta`), a `manifest`, bounded `changed_ids`, and `refresh_tree`. A missing,
+expired, or mismatched projection baseline produces a complete resource. Existing
+point coordinates, geometry endpoints, and nonvisual edits can produce a delta;
+topology and visibility changes produce a complete packet. The client validates the
+installed baseline again before any VTK mutation.
+
+A manifest identifies immutable bytes by resource ID, document, epoch, revision,
+view ID/revision, byte length, SHA-256, chunk size/count and media type. Display
+media types are `qcae.render.packet.v1` and `qcae.render.delta.v1`; their explicit
+little-endian codec lives in the transport adapter. Core contracts contain no Qt
+or VTK types. Maximum resource size is 16 MiB; the default cache holds at most
+64 MiB/32 resources, with 60-second leases. Released leases become evictable.
+
+`resources.describe` and `resources.read` require that the authoritative document,
+model and view versions still match. Parameters include `resource_id`, view ID and
+view revision; read also requires an unsigned decimal-string `offset`. A read
+returns the pinned manifest, offset, raw length, `encoding: "base64"`, and
+`data_base64`. Chunks contain at most 128 KiB raw bytes; complete framed responses
+are checked against 256 KiB. This is explicitly chunked binary content inside the
+existing JSON control transport, not a separate raw binary socket protocol.
+`resources.release` needs only the trusted caller and resource ID, so abandoned
+transfers can be released after the active document changes. No client upload or
+arbitrary file access operation is exposed.
+
+The shared resource client rejects gaps, duplicate/out-of-order chunks, malformed
+base64, length/offset errors, digest changes and any context change. It publishes
+bytes only after complete verification. Superseded or destroyed clients release
+buffers and leases; late callbacks cannot install data in another scene.
+
+`events.subscribe`/`events.read` take an engine instance ID and unsigned decimal
+`after_sequence`; a page has at most 64 events. Notifications carry `frame_type`,
+engine instance, monotonic sequence, event kind, document/epoch/revision and data.
+Document, history, project metadata and persisted task changes are observed from
+the same application. The feed retains 256 events and at most 64 subscribers by
+default. Duplicate events are ignored; missing events, a changed engine instance,
+expired retention or uncertain authoritative storage cause explicit resync.
+Notifications never replace current-document/task queries. Reconnection never
+replays a write. Slow socket consumers are disconnected by the host's existing
+output bound and must reconnect/resynchronize.
+
+Desktop synchronization uses notifications with a two-second authoritative poll as
+fallback. A gap immediately disables scene-based selection, clears partial resource
+transfers/previews, and refreshes document/task state before a full display refresh.
+Normal local edits preserve the installed scene baseline until a checked delta
+arrives. VTK partitions point/line geometry into blocks of 1024 entities; selection
+changes update highlight cells without rebuilding the base scene. Structural
+changes still rebuild. Dock/toolbar layout is a local Qt setting and never enters
+the document transaction history.

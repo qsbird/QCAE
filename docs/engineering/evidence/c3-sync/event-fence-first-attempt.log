@@ -1,0 +1,31 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-sync-desktop
+    Start 36: desktop_selection
+1/1 Test #36: desktop_selection ................***Failed   46.66 sec
+********* Start testing of DesktopSelectionTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : DesktopSelectionTests::initTestCase()
+FAIL!  : DesktopSelectionTests::documentEventFencesSelectionsBeforeTheAuthoritativeReply() Compared values are not the same
+   Actual   (engine.requests("selection.evaluate").size()): 0
+   Expected (1)                                           : 1
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/desktop_selection_tests.cpp(390)]
+2026-09-27 23:36:08.367 qcae_desktop_selection_tests[70752:35245741] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+PASS   : DesktopSelectionTests::subscriptionAndViewTimeoutsRetryDisposableState()
+PASS   : DesktopSelectionTests::resourceTimeoutAndEventGapResynchronizeTheVisibleScene()
+PASS   : DesktopSelectionTests::latestTreeSelectionSurvivesViewRefreshAndEnablesMeshTools()
+FAIL!  : DesktopSelectionTests::oldPacketCannotSubmitPicksDuringModelOrViewRefresh() Compared values are not the same
+   Actual   (engine.requests("selection.evaluate").size()): 0
+   Expected (1)                                           : 1
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/desktop_selection_tests.cpp(569)]
+PASS   : DesktopSelectionTests::newerSelectionWinsWhenEvaluateAndGetRepliesAreReordered()
+PASS   : DesktopSelectionTests::cleanupTestCase()
+Totals: 6 passed, 2 failed, 0 skipped, 0 blacklisted, 45141ms
+********* Finished testing of DesktopSelectionTests *********
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =  46.68 sec
+
+The following tests FAILED:
+	 36 - desktop_selection (Failed)
+Errors while running CTest

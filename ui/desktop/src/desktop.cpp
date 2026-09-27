@@ -3,6 +3,8 @@
 #include "qcae/desktop_client.hpp"
 #include "qcae/local_endpoint.hpp"
 #include "qcae/render_packet.hpp"
+#include "qcae/render_wire.hpp"
+#include "qcae/resource_client.hpp"
 #include "qcae/vtk_view.hpp"
 
 #include <QAction>
@@ -27,6 +29,8 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSet>
+#include <QSettings>
+#include <QCloseEvent>
 #include <QSignalBlocker>
 #include <QSplitter>
 #include <QStatusBar>
@@ -45,6 +49,12 @@
 
 namespace {
 using qcae::DesktopClient;
+using qcae::DocumentEpoch;
+using qcae::DocumentId;
+using qcae::ResourceClient;
+using qcae::ResourceVersion;
+using qcae::Result;
+namespace transport = qcae::transport;
 using qcae::VtkView;
 using Done = std::function<void(bool)>;
 
@@ -197,23 +207,66 @@ bool readDeck(const QString& path,
 class DesktopWindow : public QMainWindow {
   public:
     explicit DesktopWindow(DesktopClient::Options options, bool smoke, QString screenshot)
-        : client_(std::move(options), this), smoke_(smoke),
+        : client_(std::move(options), this), resources_(client_, this), smoke_(smoke),
           screenshot_path_(std::move(screenshot)) {
         setWindowTitle("QCAE");
         resize(1400, 850);
         buildUi();
+        if (!smoke_) {
+            QSettings settings("QCAE", "Desktop");
+            restoreGeometry(settings.value("layout/geometry").toByteArray());
+            restoreState(settings.value("layout/state").toByteArray(), 1);
+        }
         connect(&client_, &DesktopClient::readyChanged, this, [this](bool ready) {
             statusBar()->showMessage(ready ? "Connected to local engine"
                                            : "Connecting to local engine");
-            if (ready)
-                pollCurrent();
-            else {
+            if (ready) {
+                poll_.setInterval(client_.supportsEvents() ? 2000 : 500);
+                if (client_.supportsEvents())
+                    subscribeEvents();
+                else
+                    pollCurrent();
+            } else {
+                ++subscription_generation_;
+                subscription_pending_ = false;
                 modeling_->suspend();
                 clearDocument(false);
             }
         });
         connect(&client_, &DesktopClient::transportError, this, [this](const QString& message) {
             statusBar()->showMessage(message, 5000);
+        });
+        connect(&client_, &DesktopClient::eventReceived, this, [this](const QJsonObject& event) {
+            const auto kind = event.value("event").toString();
+            if (kind == "JobChanged")
+                modeling_->refreshTask();
+            if (kind == "HistoryChanged")
+                log_->appendPlainText("History changed at revision " +
+                                      event.value("revision").toString());
+            if (kind == "DocumentChanged" &&
+                (event.value("document_id").toString() != document_id_ ||
+                 event.value("document_epoch").toString() != epoch_ ||
+                 event.value("revision").toString() != revision_ ||
+                 event.value("data").toObject().value("active") == QJsonValue(false))) {
+                // Fence pending replies immediately; the authoritative query may still be queued.
+                scene_invalidated_ = true;
+                context_refresh_required_ = true;
+                ++event_generation_;
+                ++render_generation_;
+                resources_.clear();
+                invalidateSelectionRequests(true);
+            }
+            if (kind == "DocumentChanged" || kind == "ProjectMetadataChanged")
+                pollCurrent();
+        });
+        connect(&client_, &DesktopClient::eventGap, this, [this](const QString& reason) {
+            statusBar()->showMessage(reason, 5000);
+            force_full_render_ = true;
+            resources_.clear();
+            ++render_generation_;
+            invalidateSelectionRequests(true);
+            modeling_->suspend();
+            subscribeEvents();
         });
         poll_.setInterval(500);
         connect(&poll_, &QTimer::timeout, this, [this] { pollCurrent(); });
@@ -232,6 +285,14 @@ class DesktopWindow : public QMainWindow {
                 1500, this, [this] { statusBar()->showMessage("Desktop smoke ready"); });
     }
 
+    void closeEvent(QCloseEvent* event) override {
+        if (!smoke_) {
+            QSettings settings("QCAE", "Desktop");
+            settings.setValue("layout/geometry", saveGeometry());
+            settings.setValue("layout/state", saveState(1));
+        }
+        QMainWindow::closeEvent(event);
+    }
     [[nodiscard]] bool screenshotDone() const {
         return screenshot_done_;
     }
@@ -274,6 +335,7 @@ class DesktopWindow : public QMainWindow {
         left_layout->addWidget(owner_);
         left_layout->addWidget(tree_count_);
         left_layout->addWidget(tree_);
+        left->setObjectName("modelViewsDock");
         left->setWidget(left_content);
         addDockWidget(Qt::LeftDockWidgetArea, left);
         connect(view_kind_, &QComboBox::currentTextChanged, this, [this] {
@@ -306,6 +368,7 @@ class DesktopWindow : public QMainWindow {
         form->addRow("Z (mm)", property_z_);
         form->addRow("E (MPa)", property_e_);
         form->addRow(apply_);
+        right->setObjectName("selectionPropertiesDock");
         right->setWidget(right_content);
         addDockWidget(Qt::RightDockWidgetArea, right);
         connect(apply_, &QPushButton::clicked, this, [this] { applyProperty(); });
@@ -332,6 +395,7 @@ class DesktopWindow : public QMainWindow {
         auto* bottom = new QDockWidget("Operations and history", this);
         log_ = new QPlainTextEdit(bottom);
         log_->setReadOnly(true);
+        bottom->setObjectName("historyDock");
         bottom->setWidget(log_);
         addDockWidget(Qt::BottomDockWidgetArea, bottom);
         statusBar()->showMessage("Connecting to local engine");
@@ -372,10 +436,12 @@ class DesktopWindow : public QMainWindow {
         addActionTo(display, "Isolate selected", [this] { isolateSelected(); });
         addActionTo(display, "Show all", [this] { updateView({}); });
         auto* workspace_toolbar = addToolBar("Workspace");
+        workspace_toolbar->setObjectName("workspaceToolbar");
         for (auto* action :
              {new_action, open_action, save_action, undo_action, redo_action, fit_action})
             workspace_toolbar->addAction(action);
         auto* toolbar = addToolBar("Selection");
+        toolbar->setObjectName("selectionToolbar");
         auto* through = toolbar->addAction("Through selection");
         through->setCheckable(true);
         connect(through, &QAction::toggled, viewport_, &VtkView::setThroughSelection);
@@ -420,7 +486,44 @@ class DesktopWindow : public QMainWindow {
         if (clear_pending)
             pending_selection_.reset();
     }
+    void subscribeEvents() {
+        if (!client_.ready() || subscription_pending_)
+            return;
+        subscription_pending_ = true;
+        const auto generation = ++subscription_generation_;
+        call("events.subscribe",
+             {{"engine_instance_id", client_.engineInstanceId()},
+              {"after_sequence", QString::number(client_.eventSequence())}},
+             {{"requested_version", 1}},
+             [this, generation](const QJsonObject& response) {
+                 if (generation != subscription_generation_)
+                     return;
+                 subscription_pending_ = false;
+                 if (!client_.ready())
+                     return;
+                 if (succeeded(response)) {
+                     const auto data = response.value("data").toObject();
+                     client_.setEventCursor(data.value("engine_instance_id").toString(),
+                                            data.value("next_sequence").toString().toULongLong());
+                     force_full_render_ =
+                         force_full_render_ || data.value("resync_required").toBool();
+                 } else {
+                     QTimer::singleShot(1000, this, [this, generation] {
+                         if (generation == subscription_generation_)
+                             subscribeEvents();
+                     });
+                 }
+                 pollCurrent();
+                 modeling_->refreshTask();
+             });
+    }
     void clearDocument(bool reset_tools = true) {
+        resources_.clear();
+        ++render_generation_;
+        ++view_update_generation_;
+        view_update_pending_ = false;
+        queued_hidden_.reset();
+        force_full_render_ = true;
         invalidateSelectionRequests(true);
         rendered_version_.reset();
         if (reset_tools)
@@ -448,13 +551,24 @@ class DesktopWindow : public QMainWindow {
         selected_label_->setText("No selection");
     }
     void pollCurrent() {
-        if (!client_.ready() || current_pending_)
+        if (!client_.ready())
             return;
+        if (current_pending_) {
+            current_queued_ = true;
+            return;
+        }
         current_pending_ = true;
-        call("project.current", {}, {}, [this](const QJsonObject& response) {
+        const auto event_generation = event_generation_;
+        call("project.current", {}, {}, [this, event_generation](const QJsonObject& response) {
             current_pending_ = false;
+            if (current_queued_) {
+                current_queued_ = false;
+                QTimer::singleShot(0, this, [this] { pollCurrent(); });
+            }
             if (!client_.ready())
                 return;
+            if (event_generation != event_generation_)
+                return; // An event queued a newer authoritative query while this one was in flight.
             if (!succeeded(response)) {
                 if (response.value("error").toObject().value("code") == "DOCUMENT_NOT_FOUND")
                     clearDocument();
@@ -466,6 +580,7 @@ class DesktopWindow : public QMainWindow {
             const auto rev = revisionText(data.value("revision"));
             if (id.isEmpty() || epoch.isEmpty())
                 return;
+            context_refresh_required_ = false;
             const bool changed = id != document_id_ || epoch != epoch_ || rev != revision_;
             const bool new_document = id != document_id_ || epoch != epoch_;
             document_id_ = id;
@@ -476,14 +591,20 @@ class DesktopWindow : public QMainWindow {
             dirty_ = data.value("dirty").toBool();
             setWindowTitle(data.value("name").toString("QCAE") +
                            (dirty_ ? " * — QCAE" : " — QCAE"));
-            if (changed) {
+            if (changed || force_full_render_ || scene_invalidated_) {
+                resources_.clear();
+                ++render_generation_;
                 invalidateSelectionRequests(true);
-                rendered_version_.reset();
                 selected_ids_.clear();
                 viewport_->setSelectedIds({});
                 selected_label_->setText("No selection");
                 loadSelectedProperty();
                 if (new_document) {
+                    ++view_update_generation_;
+                    view_update_pending_ = false;
+                    queued_hidden_.reset();
+                    rendered_version_.reset();
+                    force_full_render_ = true;
                     hidden_ids_.clear();
                     all_ids_.clear();
                     view_id_.clear();
@@ -491,9 +612,11 @@ class DesktopWindow : public QMainWindow {
                     owner_rows_ = {};
                     rebuildOwnerChoices();
                 }
-                owner_->setEnabled(false);
-                loadOwners();
-                loadHistory();
+                if (new_document || !client_.supportsResources() || force_full_render_) {
+                    owner_->setEnabled(false);
+                    loadOwners();
+                    loadHistory();
+                }
                 if (view_id_.isEmpty())
                     createView();
                 else
@@ -828,17 +951,187 @@ class DesktopWindow : public QMainWindow {
                  renderView();
              });
     }
+    void refreshChangedRows(const QJsonArray& ids) {
+        if (ids.isEmpty())
+            return;
+        if (view_kind_->currentText() != "all") {
+            loadOwners();
+            return;
+        }
+        const auto doc = document_id_, epoch = epoch_, rev = revision_;
+        call("entity.query",
+             {{"ids", ids}, {"limit", 1000}},
+             context(),
+             [this, doc, epoch, rev](const QJsonObject& response) {
+                 if (doc != document_id_ || epoch != epoch_ || rev != revision_ ||
+                     !succeeded(response))
+                     return;
+                 const auto rows = response.value("data").toObject().value("entities").toArray();
+                 bool owner_label_changed = false;
+                 for (const auto& value : rows) {
+                     const auto row = value.toObject();
+                     const auto id = entityId(row);
+                     for (int i = 0; i < tree_->topLevelItemCount(); ++i) {
+                         auto* item = tree_->topLevelItem(i);
+                         if (item->data(0, Qt::UserRole).toString() == id)
+                             item->setText(0, entityLabel(row));
+                     }
+                     for (int i = 0; i < owner_rows_.size(); ++i)
+                         if (entityId(owner_rows_[i].toObject()) == id &&
+                             entityLabel(owner_rows_[i].toObject()) != entityLabel(row)) {
+                             owner_rows_[i] = row;
+                             owner_label_changed = true;
+                         }
+                 }
+                 if (owner_label_changed)
+                     rebuildOwnerChoices();
+             });
+    }
+    void renderResource() {
+        if (view_id_.isEmpty() || context_refresh_required_)
+            return;
+        const auto doc = document_id_, epoch = epoch_, rev = revision_, view = view_id_,
+                   view_rev = view_revision_;
+        const auto generation = ++render_generation_;
+        const auto matches = [this, doc, epoch, rev, view, view_rev, generation] {
+            return generation == render_generation_ && doc == document_id_ && epoch == epoch_ &&
+                   rev == revision_ && view == view_id_ && view_rev == view_revision_;
+        };
+        const ResourceVersion expected{
+            {DocumentId(doc.toStdString()), DocumentEpoch(epoch.toStdString())},
+            rev.toULongLong(),
+            view.toStdString(),
+            view_rev.toULongLong()};
+        resources_.setContext(expected);
+        QJsonObject parameters{{"view_session_id", view}, {"expected_view_revision", view_rev}};
+        if (rendered_version_ && !force_full_render_ && rendered_version_->document == doc &&
+            rendered_version_->epoch == epoch && rendered_version_->view == view) {
+            parameters.insert("base_revision", rendered_version_->revision);
+            parameters.insert("base_view_revision", rendered_version_->view_revision);
+        }
+        auto request_context = context(true);
+        request_context.insert("requested_version", 1);
+        call("view.render_resource",
+             parameters,
+             request_context,
+             [this, matches, expected, doc, epoch, rev, view, view_rev](
+                 const QJsonObject& response) {
+                 const auto data = response.value("data").toObject();
+                 const auto manifest =
+                     ResourceClient::parseManifest(data.value("manifest").toObject());
+                 const auto release = [this, &manifest] {
+                     if (manifest.ok())
+                         call(
+                             "resources.release",
+                             {{"resource_id", QString::fromStdString(manifest.value->resource_id)}},
+                             {{"requested_version", 1}},
+                             [](const auto&) {});
+                 };
+                 if (!matches()) {
+                     release();
+                     return;
+                 }
+                 if (!succeeded(response)) {
+                     record("view.render_resource", response);
+                     force_full_render_ = true;
+                     QTimer::singleShot(250, this, [this] { pollCurrent(); });
+                     return;
+                 }
+                 if (!manifest.ok() || !same_resource_version(manifest.value->version, expected)) {
+                     release();
+                     force_full_render_ = true;
+                     statusBar()->showMessage("Display manifest has an invalid version; refreshing",
+                                              5000);
+                     return;
+                 }
+                 const auto media = manifest.value->media_type;
+                 if (media != "qcae.render.packet.v1" && media != "qcae.render.delta.v1") {
+                     release();
+                     force_full_render_ = true;
+                     statusBar()->showMessage("Unsupported display resource format", 5000);
+                     return;
+                 }
+                 resources_.fetch(
+                     *manifest.value,
+                     [this, matches, expected, media, data, doc, epoch, rev, view, view_rev](
+                         Result<QByteArray> bytes) {
+                         if (!matches())
+                             return;
+                         if (!bytes.ok()) {
+                             force_full_render_ = true;
+                             statusBar()->showMessage(
+                                 "Display transfer interrupted; refreshing current state", 5000);
+                             pollCurrent();
+                             return;
+                         }
+                         const auto version_matches = [&expected](const auto& packet) {
+                             return same_resource_version({packet.document,
+                                                           packet.revision,
+                                                           packet.view_session_id,
+                                                           packet.view_revision},
+                                                          expected);
+                         };
+                         bool installed = false;
+                         if (media == "qcae.render.packet.v1") {
+                             auto packet = transport::decode_render_packet(*bytes.value);
+                             if (packet.ok() && version_matches(*packet.value)) {
+                                 viewport_->setPacket(*packet.value);
+                                 all_ids_.clear();
+                                 for (const auto& point : packet.value->points)
+                                     all_ids_.append(QString::fromStdString(point.entity.value));
+                                 for (const auto& beam : packet.value->beams)
+                                     all_ids_.append(QString::fromStdString(beam.entity.value));
+                                 for (const auto& line : packet.value->geometry_lines)
+                                     all_ids_.append(QString::fromStdString(line.entity.value));
+                                 installed = true;
+                             }
+                         } else {
+                             const auto delta = transport::decode_render_delta(*bytes.value);
+                             installed = delta.ok() && version_matches(*delta.value) &&
+                                         viewport_->applyDelta(*delta.value);
+                         }
+                         if (!installed) {
+                             // A rejected delta cannot mutate VTK. The next request has no
+                             // baseline.
+                             const bool already_full = force_full_render_;
+                             force_full_render_ = true;
+                             if (!already_full)
+                                 renderResource();
+                             else
+                                 statusBar()->showMessage(
+                                     "Invalid display resource; scene was not replaced", 5000);
+                             return;
+                         }
+                         rendered_version_ = RenderVersion{doc, epoch, rev, view, view_rev};
+                         force_full_render_ = false;
+                         scene_invalidated_ = false;
+                         viewport_->setSelectedIds(selected_ids_);
+                         if (data.value("refresh_tree").toBool())
+                             loadOwners();
+                         else
+                             refreshChangedRows(data.value("changed_ids").toArray());
+                         evaluatePendingSelection();
+                     });
+             });
+    }
     void renderView() {
+        if (context_refresh_required_)
+            return;
+        if (client_.supportsResources()) {
+            renderResource();
+            return;
+        }
         if (view_id_.isEmpty())
             return;
         const auto doc = document_id_, epoch = epoch_, rev = revision_, view = view_id_;
         const auto view_rev = view_revision_;
+        const auto generation = ++render_generation_;
         call("view.render_data",
              {{"view_session_id", view}, {"expected_view_revision", view_rev}},
              context(true),
-             [this, doc, epoch, rev, view, view_rev](const QJsonObject& response) {
-                 if (doc != document_id_ || epoch != epoch_ || rev != revision_ ||
-                     view != view_id_ || view_rev != view_revision_)
+             [this, doc, epoch, rev, view, view_rev, generation](const QJsonObject& response) {
+                 if (generation != render_generation_ || doc != document_id_ || epoch != epoch_ ||
+                     rev != revision_ || view != view_id_ || view_rev != view_revision_)
                      return;
                  if (!succeeded(response)) {
                      record("view.render_data", response);
@@ -852,6 +1145,8 @@ class DesktopWindow : public QMainWindow {
                  view_revision_ = QString::number(packet->view_revision);
                  viewport_->setPacket(*packet);
                  rendered_version_ = RenderVersion{doc, epoch, rev, view, view_rev};
+                 force_full_render_ = false;
+                 scene_invalidated_ = false;
                  viewport_->setSelectedIds(selected_ids_);
                  all_ids_.clear();
                  for (const auto& point : packet->points)
@@ -871,8 +1166,10 @@ class DesktopWindow : public QMainWindow {
             return;
         }
         view_update_pending_ = true;
+        const auto generation = ++view_update_generation_;
         invalidateSelectionRequests(false);
-        rendered_version_.reset();
+        resources_.clear();
+        ++render_generation_;
         const auto doc = document_id_, epoch = epoch_, rev = revision_, view = view_id_;
         const auto expected_view = view_revision_;
         const auto fingerprint = viewport_->cameraFingerprint();
@@ -886,7 +1183,10 @@ class DesktopWindow : public QMainWindow {
               {"hidden_ids", ids},
               {"camera_fingerprint", fingerprint}},
              extra,
-             [this, doc, epoch, rev, view, hidden, fingerprint](const QJsonObject& response) {
+             [this, doc, epoch, rev, view, hidden, fingerprint, generation](
+                 const QJsonObject& response) {
+                 if (generation != view_update_generation_)
+                     return;
                  view_update_pending_ = false;
                  if (doc != document_id_ || epoch != epoch_ || view != view_id_)
                      return;
@@ -898,11 +1198,14 @@ class DesktopWindow : public QMainWindow {
                  }
                  if (!succeeded(response)) {
                      record("view.update", response);
+                     force_full_render_ = true;
                      const auto code = response.value("error").toObject().value("code").toString();
                      if (code == "ENTITY_NOT_FOUND")
                          updateView({});
                      else if (response.value("status") == "conflict")
                          createView();
+                     else
+                         QTimer::singleShot(1000, this, [this] { pollCurrent(); });
                      return;
                  }
                  hidden_ids_ = hidden;
@@ -934,7 +1237,8 @@ class DesktopWindow : public QMainWindow {
         updateView(hidden);
     }
     bool viewportMatchesContext() const {
-        return client_.ready() && !view_update_pending_ && rendered_version_ &&
+        return client_.ready() && !scene_invalidated_ && !force_full_render_ &&
+               !view_update_pending_ && rendered_version_ &&
                rendered_version_->document == document_id_ && rendered_version_->epoch == epoch_ &&
                rendered_version_->revision == revision_ && rendered_version_->view == view_id_ &&
                rendered_version_->view_revision == view_revision_;
@@ -1080,6 +1384,11 @@ class DesktopWindow : public QMainWindow {
     }
 
     DesktopClient client_;
+    ResourceClient resources_;
+    std::uint64_t render_generation_{}, subscription_generation_{}, event_generation_{};
+    std::uint64_t view_update_generation_{};
+    bool force_full_render_{true}, scene_invalidated_{}, subscription_pending_{}, current_queued_{};
+    bool context_refresh_required_{};
     bool smoke_{};
     QString screenshot_path_;
     bool screenshot_done_{};

@@ -16,6 +16,17 @@ namespace qcae {
 namespace {
 constexpr auto api_version = "1.1";
 constexpr int max_pending = 64;
+bool unsignedString(const QJsonObject& object, const char* field, quint64& result) {
+    const auto value = object.value(QLatin1String(field));
+    if (!value.isString() || value.toString().isEmpty())
+        return false;
+    const auto text = value.toString();
+    if (std::any_of(text.begin(), text.end(), [](QChar c) { return c < '0' || c > '9'; }))
+        return false;
+    bool valid = false;
+    result = text.toULongLong(&valid);
+    return valid;
+}
 } // namespace
 
 DesktopClient::DesktopClient(Options options, QObject* parent)
@@ -82,6 +93,7 @@ void DesktopClient::launchEngine() {
 }
 
 void DesktopClient::onConnected() {
+    ++transport_generation_;
     incoming_.clear();
     ready_ = false;
     handshake_id_ = QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -98,9 +110,13 @@ void DesktopClient::onConnected() {
 }
 
 void DesktopClient::onDisconnected() {
+    ++transport_generation_;
     incoming_.clear();
     handshake_id_.clear();
     handshake_deadline_ms_ = 0;
+    events_need_resync_ = true;
+    supports_events_ = false;
+    supports_resources_ = false;
     if (ready_) {
         ready_ = false;
         QPointer<DesktopClient> self(this);
@@ -110,6 +126,13 @@ void DesktopClient::onDisconnected() {
     }
     failPending("CONNECTION_LOST",
                 "Engine connection was lost; query outcome before retrying a write");
+}
+
+void DesktopClient::setEventCursor(const QString& instance, quint64 sequence) {
+    if (!ready_ || !supports_events_ || instance != engine_instance_id_)
+        return;
+    event_sequence_ = sequence;
+    events_need_resync_ = false;
 }
 
 QString DesktopClient::request(const QString& operation,
@@ -187,6 +210,15 @@ void DesktopClient::consume() {
 }
 
 void DesktopClient::deliver(const QJsonObject& response) {
+    const auto frame_type = response.value("frame_type").toString();
+    if (frame_type == "event" || frame_type == "event_gap") {
+        const auto generation = transport_generation_;
+        QTimer::singleShot(0, this, [this, generation, response] {
+            if (generation == transport_generation_ && ready_)
+                deliverEvent(response);
+        });
+        return;
+    }
     const auto id = response.value("request_id").toString();
     if (id.isEmpty() || !response.value("status").isString()) {
         socket_.abort();
@@ -206,12 +238,85 @@ void DesktopClient::deliver(const QJsonObject& response) {
         }
         ready_ = true;
         launched_ = false;
+        const auto data = response.value("data").toObject();
+        const auto previous_instance = engine_instance_id_;
+        engine_instance_id_ = data.value("engine_instance_id").toString();
+        supports_events_ =
+            !engine_instance_id_.isEmpty() &&
+            data.value("capabilities").toObject().value("events_version").toInt() == 1;
+        supports_resources_ =
+            data.value("capabilities").toObject().value("resources_version").toInt() == 1;
+        events_need_resync_ = true;
+        event_sequence_ = 0;
+        QPointer<DesktopClient> self(this);
         emit readyChanged(true);
+        if (!self)
+            return;
+        if (supports_events_ && !previous_instance.isEmpty()) {
+            const auto generation = transport_generation_;
+            const auto reason = previous_instance == engine_instance_id_
+                                    ? "Engine connection resumed"
+                                    : "Engine instance changed";
+            QTimer::singleShot(0, this, [this, generation, reason] {
+                if (generation == transport_generation_ && ready_)
+                    emit eventGap(reason);
+            });
+        }
         return;
     }
     auto pending = pending_.take(id);
     if (pending.callback)
         postReply(std::move(pending.callback), response);
+}
+
+void DesktopClient::requireEventResync(const QString& reason, quint64 sequence) {
+    event_sequence_ = sequence;
+    events_need_resync_ = true;
+    emit eventGap(reason);
+}
+
+void DesktopClient::deliverEvent(const QJsonObject& event) {
+    quint64 sequence{};
+    if (!supports_events_ || !unsignedString(event, "sequence", sequence) ||
+        event.value("engine_instance_id").toString() != engine_instance_id_) {
+        requireEventResync("Invalid event instance or sequence", event_sequence_);
+        return;
+    }
+    if (event.value("frame_type") == "event_gap") {
+        if (!event.value("resync_required").isBool() || !event.value("resync_required").toBool()) {
+            requireEventResync("Malformed event gap frame", event_sequence_);
+            return;
+        }
+        requireEventResync(event.value("reason").toString("Event retention gap"), sequence);
+        return;
+    }
+    quint64 revision{};
+    if (!sequence || !event.value("event").isString() ||
+        event.value("event").toString().isEmpty() ||
+        event.value("document_id").toString().isEmpty() ||
+        event.value("document_epoch").toString().isEmpty() ||
+        !unsignedString(event, "revision", revision) || !event.value("data").isObject()) {
+        requireEventResync("Malformed event frame", event_sequence_);
+        return;
+    }
+    const auto kind = event.value("event").toString();
+    if (kind != "DocumentChanged" && kind != "HistoryChanged" && kind != "JobChanged" &&
+        kind != "ProjectMetadataChanged") {
+        requireEventResync("Unsupported event kind", event_sequence_);
+        return;
+    }
+    if (sequence <= event_sequence_)
+        return;
+    if (events_need_resync_) {
+        event_sequence_ = sequence;
+        return;
+    }
+    if (sequence - event_sequence_ != 1) {
+        requireEventResync("Event sequence gap", sequence);
+        return;
+    }
+    event_sequence_ = sequence;
+    emit eventReceived(event);
 }
 
 void DesktopClient::postReply(Reply callback, QJsonObject response) {

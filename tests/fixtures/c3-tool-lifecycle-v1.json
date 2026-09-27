@@ -1,0 +1,27 @@
+{
+  "script_id": "c3-line-preview-cancel-apply-undo-v1",
+  "samples": 30,
+  "mode": "Create line",
+  "coordinates_mm": {
+    "startX": 10, "startY": 20, "startZ": 30,
+    "endX": 1010, "endY": 20, "endZ": 30
+  },
+  "steps": [
+    "wait for current desktop context and empty entity tree",
+    "click modelingPreview",
+    "click modelingCancel",
+    "assert authoritative revision, history and entities unchanged",
+    "click modelingPreview",
+    "click modelingApply twice before processing its reply",
+    "wait for Line created and geometry in the entity tree",
+    "assert one geometry, one applied transaction and revision delta one",
+    "trigger the desktop Undo action",
+    "wait for empty entity tree and authoritative empty entities",
+    "assert revision delta two and unapplied history cursor zero"
+  ],
+  "cancel_revision_delta": 0,
+  "apply_revision_delta": 1,
+  "sample_revision_delta": 2,
+  "commits_per_sample": 1,
+  "final_entities": []
+}

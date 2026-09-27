@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1",
   "status": "accepted design catalog; runtime capability discovery reports implemented subsets",
-  "operation_count": 35,
+  "operation_count": 41,
   "notes": [
     "Names and consistency rules form the baseline. Concrete DTO/schema implementations are an M0 task.",
     "Effect metadata is not an authorization decision.",
@@ -466,6 +466,84 @@
       "requires_idempotency_key": false,
       "input_type": "SelectionPageQuery",
       "output_type": "SelectionPage",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "view.render_resource",
+      "effect": "query",
+      "description": "Versioned local display resource",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "RenderResourceQuery",
+      "output_type": "ResourceManifest",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "resources.describe",
+      "effect": "query",
+      "description": "Versioned local display resource",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "ResourceReference",
+      "output_type": "ResourceManifest",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "resources.read",
+      "effect": "query",
+      "description": "Versioned local display resource",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_revision": true,
+      "requires_idempotency_key": false,
+      "input_type": "ResourceChunkQuery",
+      "output_type": "ResourceChunk",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "resources.release",
+      "effect": "query",
+      "description": "Versioned local display resource",
+      "requires_document": false,
+      "requires_epoch": false,
+      "requires_revision": false,
+      "requires_idempotency_key": false,
+      "input_type": "ResourceReference",
+      "output_type": "ResourceRelease",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "events.subscribe",
+      "effect": "query",
+      "description": "Bounded disposable event feed with explicit resynchronization",
+      "requires_document": false,
+      "requires_epoch": false,
+      "requires_revision": false,
+      "requires_idempotency_key": false,
+      "input_type": "EventCursor",
+      "output_type": "EventSubscription",
+      "target_context": "none",
+      "requires_profile_match": false
+    },
+    {
+      "name": "events.read",
+      "effect": "query",
+      "description": "Bounded disposable event feed with explicit resynchronization",
+      "requires_document": false,
+      "requires_epoch": false,
+      "requires_revision": false,
+      "requires_idempotency_key": false,
+      "input_type": "EventCursor",
+      "output_type": "EventBatch",
       "target_context": "none",
       "requires_profile_match": false
     }

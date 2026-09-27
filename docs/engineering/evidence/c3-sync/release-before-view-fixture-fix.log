@@ -1,0 +1,129 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-sync-desktop
+      Start 36: desktop_selection
+      Start 34: c2_workflow
+ 1/52 Test #36: desktop_selection ................***Failed   21.41 sec
+********* Start testing of DesktopSelectionTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : DesktopSelectionTests::initTestCase()
+FAIL!  : DesktopSelectionTests::oldDocumentViewReplyCannotOwnNewDocumentPendingState() 'clickWhenReady(desktop, engine, 0)' returned FALSE. ()
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/desktop_selection_tests.cpp(460)]
+2026-09-27 23:40:52.871 qcae_desktop_selection_tests[72912:35257117] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+PASS   : DesktopSelectionTests::documentEventFencesSelectionsBeforeTheAuthoritativeReply()
+PASS   : DesktopSelectionTests::subscriptionAndViewTimeoutsRetryDisposableState()
+PASS   : DesktopSelectionTests::resourceTimeoutAndEventGapResynchronizeTheVisibleScene()
+PASS   : DesktopSelectionTests::latestTreeSelectionSurvivesViewRefreshAndEnablesMeshTools()
+PASS   : DesktopSelectionTests::oldPacketCannotSubmitPicksDuringModelOrViewRefresh()
+PASS   : DesktopSelectionTests::newerSelectionWinsWhenEvaluateAndGetRepliesAreReordered()
+PASS   : DesktopSelectionTests::cleanupTestCase()
+Totals: 8 passed, 1 failed, 0 skipped, 0 blacklisted, 19817ms
+********* Finished testing of DesktopSelectionTests *********
+
+      Start  2: architecture_gate_unit
+ 2/52 Test  #2: architecture_gate_unit ...........   Passed   20.30 sec
+      Start 31: entity_query_ipc
+ 3/52 Test #34: c2_workflow ......................   Passed   47.86 sec
+      Start 37: c3_desktop_workflow
+ 4/52 Test #31: entity_query_ipc .................   Passed   11.76 sec
+      Start  6: operation_generation
+ 5/52 Test #37: c3_desktop_workflow ..............   Passed   11.36 sec
+      Start 47: record_document
+ 6/52 Test  #6: operation_generation .............   Passed   10.24 sec
+      Start 35: desktop
+ 7/52 Test #47: record_document ..................   Passed   11.21 sec
+      Start 38: modeling_tools
+ 8/52 Test #35: desktop ..........................   Passed    8.45 sec
+      Start 39: desktop_smoke
+ 9/52 Test #38: modeling_tools ...................   Passed    7.02 sec
+      Start 32: engine_contributions_ipc
+10/52 Test #39: desktop_smoke ....................   Passed    7.21 sec
+      Start 30: c3_display_ipc
+11/52 Test #32: engine_contributions_ipc .........   Passed    4.06 sec
+      Start 28: ipc
+12/52 Test #30: c3_display_ipc ...................   Passed    2.92 sec
+      Start 29: m1_ipc
+13/52 Test #28: ipc ..............................   Passed    2.05 sec
+      Start 45: event_client
+14/52 Test #29: m1_ipc ...........................   Passed    1.97 sec
+      Start 33: m23_ipc
+15/52 Test #45: event_client .....................   Passed    2.00 sec
+      Start 11: cpp_format
+16/52 Test #33: m23_ipc ..........................   Passed    2.02 sec
+      Start 52: resources
+17/52 Test #52: resources ........................   Passed    1.01 sec
+      Start 25: geometry_mesh_sqlite
+18/52 Test #11: cpp_format .......................   Passed    1.86 sec
+      Start 27: engine_assembly
+19/52 Test #27: engine_assembly ..................   Passed    0.05 sec
+      Start 41: render_projector
+20/52 Test #41: render_projector .................   Passed    0.01 sec
+      Start 44: c3_sync_ipc
+21/52 Test #25: geometry_mesh_sqlite .............   Passed    0.76 sec
+      Start 20: allocation_atomicity
+22/52 Test #20: allocation_atomicity .............   Passed    0.24 sec
+      Start 51: typed_host
+23/52 Test #51: typed_host .......................   Passed    0.06 sec
+      Start 16: query
+24/52 Test #16: query ............................   Passed    0.02 sec
+      Start 18: core
+25/52 Test #18: core .............................   Passed    0.02 sec
+      Start 12: model
+26/52 Test #12: model ............................   Passed    0.02 sec
+      Start 15: persistence
+27/52 Test #15: persistence ......................   Passed    0.02 sec
+      Start 10: record_query
+28/52 Test #10: record_query .....................   Passed    0.01 sec
+      Start 26: legacy_migration
+29/52 Test #44: c3_sync_ipc ......................   Passed    1.05 sec
+      Start 14: delta
+30/52 Test #14: delta ............................   Passed    0.01 sec
+      Start 24: record_store
+31/52 Test #26: legacy_migration .................   Passed    0.21 sec
+      Start 19: contracts
+32/52 Test #19: contracts ........................   Passed    0.01 sec
+      Start 43: render_wire
+33/52 Test #43: render_wire ......................   Passed    0.05 sec
+      Start 42: event_stream
+34/52 Test #42: event_stream .....................   Passed    0.06 sec
+      Start  1: acceptance_checker
+35/52 Test #24: record_store .....................   Passed    0.26 sec
+      Start  3: record_application
+36/52 Test  #3: record_application ...............   Passed    0.07 sec
+      Start  8: model_operations
+37/52 Test  #8: model_operations .................   Passed    0.02 sec
+      Start 13: nastran
+38/52 Test #13: nastran ..........................   Passed    0.01 sec
+      Start  9: quantity_entry_consistency
+39/52 Test  #9: quantity_entry_consistency .......   Passed    0.01 sec
+      Start 50: geometry_mesh
+40/52 Test #50: geometry_mesh ....................   Passed    0.09 sec
+      Start  7: parameters
+41/52 Test  #7: parameters .......................   Passed    0.01 sec
+      Start  4: operation_registry
+42/52 Test  #4: operation_registry ...............   Passed    0.01 sec
+      Start 48: generated_entities
+43/52 Test  #1: acceptance_checker ...............   Passed    0.43 sec
+      Start 40: change_events
+44/52 Test #40: change_events ....................   Passed    0.03 sec
+      Start 49: runtime
+45/52 Test #49: runtime ..........................   Passed    0.02 sec
+      Start 21: design
+46/52 Test #48: generated_entities ...............   Passed    0.27 sec
+      Start 23: sqlite
+47/52 Test #21: design ...........................   Passed    0.26 sec
+      Start  5: generated_operation_inputs
+48/52 Test  #5: generated_operation_inputs .......   Passed    0.14 sec
+      Start 22: generated_contract
+49/52 Test #22: generated_contract ...............   Passed    0.15 sec
+      Start 17: generated_profile
+50/52 Test #17: generated_profile ................   Passed    0.10 sec
+51/52 Test #23: sqlite ...........................   Passed    0.66 sec
+      Start 46: c3_tool_lifecycle
+52/52 Test #46: c3_tool_lifecycle ................   Passed   21.47 sec
+
+98% tests passed, 1 tests failed out of 52
+
+Total Test time (real) = 111.46 sec
+
+The following tests FAILED:
+	 36 - desktop_selection (Failed)
+Errors while running CTest

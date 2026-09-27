@@ -3,7 +3,9 @@
 
 #include <QFile>
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QDir>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QLocalServer>
 #include <QLocalSocket>
@@ -14,6 +16,16 @@
 #include <QSurfaceFormat>
 #include <QVTKOpenGLNativeWidget.h>
 #include <set>
+#include <map>
+#include <limits>
+#include <vtkActor.h>
+#include <vtkActorCollection.h>
+#include <vtkCamera.h>
+#include <vtkDataArray.h>
+#include <vtkMapper.h>
+#include <vtkMatrix4x4.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
@@ -61,9 +73,146 @@ bool saveEvidence(QVTKOpenGLNativeWidget* widget, const QString& name) {
            (QDir().mkpath(directory) && widget->grab().save(QDir(directory).filePath(name)));
 }
 
+using PointArrays = std::map<vtkPoints*, vtkMTimeType>;
+PointArrays pointArrays(QVTKOpenGLNativeWidget* widget) {
+    PointArrays result;
+    auto* actors = widget->renderWindow()->GetRenderers()->GetFirstRenderer()->GetActors();
+    actors->InitTraversal();
+    while (auto* actor = actors->GetNextActor()) {
+        if (!actor->GetMapper())
+            continue;
+        auto* data = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+        if (data && data->GetPoints())
+            result.emplace(data->GetPoints(), data->GetPoints()->GetMTime());
+    }
+    return result;
+}
+
+qcae::RenderPacket chainPacket(std::size_t nodes) {
+    qcae::RenderPacket packet;
+    packet.document = {qcae::DocumentId("delta-doc"), qcae::DocumentEpoch("delta-epoch")};
+    packet.revision = 7;
+    packet.view_session_id = "delta-view";
+    packet.view_revision = 3;
+    for (std::size_t i = 0; i < nodes; ++i) {
+        packet.points.push_back(
+            {qcae::EntityId("node-" + std::to_string(i)), {static_cast<double>(i), 0, 0}, true});
+        if (i)
+            packet.beams.push_back({qcae::EntityId("beam-" + std::to_string(i - 1)), {i - 1, i}});
+    }
+    return packet;
+}
+
+qcae::RenderDelta deltaFor(const qcae::RenderPacket& packet) {
+    return {packet.document,
+            packet.revision,
+            packet.revision + 1,
+            packet.view_session_id,
+            packet.view_revision,
+            packet.view_revision + 1,
+            {},
+            {}};
+}
+
 class DesktopTests : public QObject {
     Q_OBJECT
   private slots:
+    void frozenPointAndLinePickingMatrix_data() {
+        QTest::addColumn<QJsonObject>("fixture");
+        QTest::addColumn<QJsonObject>("pick_case");
+        QFile source(QFINDTESTDATA("fixtures/vtk-pick-matrix-v1.json"));
+        QVERIFY(source.open(QIODevice::ReadOnly));
+        const auto bytes = source.readAll();
+        const auto digest = QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex();
+        QCOMPARE(digest,
+                 QByteArray("82568cc06c30dbdec9ec418ef86eee1e6afaf349bee4b4173e130b8af84f7400"));
+        const auto fixture = QJsonDocument::fromJson(bytes).object();
+        const auto cases = fixture.value("cases").toArray();
+        QCOMPARE(cases.size(), 8);
+        for (const auto& value : cases) {
+            const auto pick_case = value.toObject();
+            QTest::newRow(qPrintable(pick_case.value("id").toString())) << fixture << pick_case;
+        }
+        qInfo().noquote() << "PICK fixture SHA-256:" << digest;
+    }
+
+    void frozenPointAndLinePickingMatrix() {
+        QFETCH(QJsonObject, fixture);
+        QFETCH(QJsonObject, pick_case);
+        const auto coordinates = [](const QJsonValue& value) {
+            const auto array = value.toArray();
+            return std::array<double, 3>{
+                array[0].toDouble(), array[1].toDouble(), array[2].toDouble()};
+        };
+        qcae::RenderPacket packet;
+        packet.document = {qcae::DocumentId("pick-matrix"), qcae::DocumentEpoch("epoch")};
+        packet.revision = 1;
+        packet.view_session_id = "pick-view";
+        packet.view_revision = 1;
+        if (pick_case.value("topology") == "point") {
+            for (const auto& value : fixture.value("points").toArray()) {
+                const auto row = value.toObject();
+                packet.points.push_back({qcae::EntityId(row.value("id").toString().toStdString()),
+                                         coordinates(row.value("position")),
+                                         row.value("visible").toBool()});
+            }
+        } else {
+            for (const auto& value : fixture.value("lines").toArray()) {
+                const auto row = value.toObject();
+                if (row.value("visible").toBool())
+                    packet.geometry_lines.push_back(
+                        {qcae::EntityId(row.value("id").toString().toStdString()),
+                         coordinates(row.value("start")),
+                         coordinates(row.value("end"))});
+            }
+        }
+        qcae::VtkView view;
+        const auto viewport = fixture.value("viewport_logical_pixels").toArray();
+        view.resize(viewport[0].toInt(), viewport[1].toInt());
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        view.setPacket(packet);
+        auto* widget = view.findChild<QVTKOpenGLNativeWidget*>();
+        QVERIFY(widget);
+        QCOMPARE(widget->size(), QSize(viewport[0].toInt(), viewport[1].toInt()));
+        auto* camera =
+            widget->renderWindow()->GetRenderers()->GetFirstRenderer()->GetActiveCamera();
+        const auto camera_fixture = fixture.value("camera").toObject();
+        camera->SetPosition(coordinates(camera_fixture.value("position")).data());
+        camera->SetFocalPoint(coordinates(camera_fixture.value("focal_point")).data());
+        camera->SetViewUp(coordinates(camera_fixture.value("view_up")).data());
+        camera->SetParallelProjection(true);
+        camera->SetParallelScale(camera_fixture.value("parallel_scale").toDouble());
+        const auto clipping = camera_fixture.value("clipping_range").toArray();
+        camera->SetClippingRange(clipping[0].toDouble(), clipping[1].toDouble());
+        const auto matrix = camera_fixture.value("view_matrix").toArray();
+        for (int row = 0; row < 4; ++row)
+            for (int column = 0; column < 4; ++column)
+                QCOMPARE(camera->GetViewTransformMatrix()->GetElement(row, column),
+                         matrix[row * 4 + column].toDouble());
+        widget->renderWindow()->Render();
+        view.setThroughSelection(pick_case.value("through").toBool());
+        view.setBoxMode(pick_case.value("box_mode") == "contained"
+                            ? qcae::VtkView::BoxMode::contained
+                            : qcae::VtkView::BoxMode::intersecting);
+        const auto box = pick_case.value("box").toArray();
+        QSignalSpy picked(&view, &qcae::VtkView::picked);
+        dragBox(widget, {box[0].toInt(), box[1].toInt()}, {box[2].toInt(), box[3].toInt()});
+        QCOMPARE(picked.size(), 1);
+        const auto reply = picked.takeFirst();
+        QCOMPARE(reply[1].toBool(), pick_case.value("through").toBool());
+        auto actual = reply[0].toStringList();
+        QStringList expected;
+        for (const auto& id : pick_case.value("golden").toArray())
+            expected.append(id.toString());
+        actual.sort();
+        expected.sort();
+        QCOMPARE(actual, expected);
+        qInfo().noquote() << pick_case.value("id").toString()
+                          << "device_pixel_ratio=" << widget->devicePixelRatioF()
+                          << "missed=0 extra=0";
+    }
+
     void asynchronousRepliesRemainCorrelated() {
         QTemporaryDir temp("/private/tmp/qcae-ipc-XXXXXX");
         QVERIFY(temp.isValid());
@@ -403,6 +552,166 @@ class DesktopTests : public QObject {
         }
         view.clearPreview();
         QCOMPARE(previewPixels(widget), 0);
+    }
+
+    void deltaValidationIsAtomic() {
+        qcae::VtkView view;
+        view.resize(640, 420);
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        auto packet = chainPacket(3);
+        packet.geometry_lines = {{qcae::EntityId("line"), {0, 0, 1}, {2, 0, 1}}};
+        view.setPacket(packet);
+        auto* widget = view.findChild<QVTKOpenGLNativeWidget*>();
+        QVERIFY(widget);
+        const auto before = pointArrays(widget);
+        auto valid = deltaFor(packet);
+        valid.points = {{1, {qcae::EntityId("node-1"), {1, 0, .5}, true}}};
+        valid.geometry_lines = {{0, {qcae::EntityId("line"), {0, 0, 1.5}, {2, 0, 1.5}}}};
+        for (int fault = 0; fault < 12; ++fault) {
+            auto invalid = valid;
+            if (fault == 0)
+                invalid.document.id = qcae::DocumentId("other");
+            if (fault == 1)
+                invalid.document.epoch = qcae::DocumentEpoch("other");
+            if (fault == 2)
+                ++invalid.base_revision;
+            if (fault == 3)
+                invalid.view_session_id = "other";
+            if (fault == 4)
+                ++invalid.base_view_revision;
+            if (fault == 5)
+                invalid.points[0].index = 100;
+            if (fault == 6)
+                invalid.points[0].point.entity = qcae::EntityId("wrong");
+            if (fault == 7)
+                invalid.points[0].point.visible = false;
+            if (fault == 8)
+                invalid.points.push_back(invalid.points.front());
+            if (fault == 9)
+                invalid.geometry_lines[0].line.entity = qcae::EntityId("wrong");
+            if (fault == 10)
+                invalid.geometry_lines[0].line.start_mm[0] =
+                    std::numeric_limits<double>::infinity();
+            if (fault == 11)
+                invalid.revision = invalid.base_revision;
+            QVERIFY(!view.applyDelta(invalid));
+            QVERIFY(pointArrays(widget) == before);
+            QCOMPARE(view.lastUpdateStats().coordinate_bytes_copied, std::uint64_t(0));
+        }
+        QVERIFY(view.applyDelta(valid));
+        QCOMPARE(view.lastUpdateStats().node_blocks, std::uint64_t(1));
+        QCOMPARE(view.lastUpdateStats().beam_blocks, std::uint64_t(1));
+        QCOMPARE(view.lastUpdateStats().geometry_blocks, std::uint64_t(1));
+        QVERIFY(!view.applyDelta(valid));
+        const auto updated = pointArrays(widget);
+        auto metadata = valid;
+        metadata.base_revision = valid.revision;
+        metadata.revision = valid.revision + 1;
+        metadata.base_view_revision = valid.view_revision;
+        metadata.view_revision = valid.view_revision + 1;
+        metadata.points.clear();
+        metadata.geometry_lines.clear();
+        QVERIFY(view.applyDelta(metadata));
+        QVERIFY(pointArrays(widget) == updated);
+        QCOMPARE(view.lastUpdateStats().dirty_coordinate_array_bytes, std::uint64_t(0));
+    }
+
+    void localDeltaAndSelectionTouchOnlyBoundedBlocks() {
+        for (const std::size_t count : {2049, 4097, 16385}) {
+            qcae::VtkView view;
+            view.resize(640, 420);
+            view.show();
+            QVERIFY(QTest::qWaitForWindowExposed(&view));
+            auto packet = chainPacket(count);
+            view.setPacket(packet);
+            auto* widget = view.findChild<QVTKOpenGLNativeWidget*>();
+            QVERIFY(widget);
+            const auto before_selection = pointArrays(widget);
+            view.setSelectedIds({"node-1024", "beam-1023", "beam-1024"});
+            QVERIFY(pointArrays(widget) == before_selection);
+            const auto selection = view.lastUpdateStats();
+            QCOMPARE(selection.full_rebuilds, std::uint64_t(0));
+            QCOMPARE(selection.node_blocks + selection.beam_blocks + selection.geometry_blocks,
+                     std::uint64_t(0));
+            QCOMPARE(selection.highlight_blocks, std::uint64_t(3));
+            QCOMPARE(selection.highlight_cells_written, std::uint64_t(3));
+            QCOMPARE(selection.coordinate_bytes_copied, std::uint64_t(0));
+            for (int edit = 0; edit < 20; ++edit) {
+                const auto before = pointArrays(widget);
+                auto delta = deltaFor(packet);
+                delta.points = {
+                    {1024, {qcae::EntityId("node-1024"), {1024, 0, double(edit + 1)}, true}}};
+                QVERIFY(view.applyDelta(delta));
+                const auto after = pointArrays(widget);
+                QCOMPARE(after.size(), before.size());
+                std::uint64_t changed_arrays{}, dirty_bytes{};
+                for (const auto& [points, modified] : before) {
+                    QVERIFY(after.contains(points));
+                    if (after.at(points) != modified) {
+                        ++changed_arrays;
+                        dirty_bytes +=
+                            points->GetData()->GetDataSize() * points->GetData()->GetDataTypeSize();
+                    }
+                }
+                QCOMPARE(changed_arrays, std::uint64_t(3));
+                const auto stats = view.lastUpdateStats();
+                QCOMPARE(stats.full_rebuilds, std::uint64_t(0));
+                QCOMPARE(stats.node_blocks, std::uint64_t(1));
+                QCOMPARE(stats.beam_blocks, std::uint64_t(2));
+                QCOMPARE(stats.geometry_blocks, std::uint64_t(0));
+                QCOMPARE(stats.highlight_blocks, std::uint64_t(0));
+                QCOMPARE(stats.coordinate_bytes_copied, std::uint64_t(96));
+                QCOMPARE(stats.dirty_coordinate_array_bytes, dirty_bytes);
+                QCOMPARE(dirty_bytes, std::uint64_t(122880));
+                packet.revision = delta.revision;
+                packet.view_revision = delta.view_revision;
+            }
+        }
+    }
+
+    void geometryDeltaPreservesPickingAndPreview() {
+        qcae::VtkView view;
+        view.resize(640, 420);
+        view.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&view));
+        auto packet = chainPacket(3);
+        packet.geometry_lines = {{qcae::EntityId("moving-line"), {0, 0, 1}, {2, 0, 1}}};
+        view.setPacket(packet);
+        view.setSelectedIds({"moving-line"});
+        view.setPreview({{{0, -.1, 2}, {2, -.1, 2}}, {{0, 1}}});
+        view.standardView(qcae::VtkView::StandardView::front);
+        view.fit();
+        auto* widget = view.findChild<QVTKOpenGLNativeWidget*>();
+        QVERIFY(widget);
+        const auto camera = view.cameraFingerprint();
+        const auto preview_count = previewPixels(widget);
+        QVERIFY(preview_count > 20);
+        const auto old_position = viewportPosition(widget, {1, 0, 1});
+        auto delta = deltaFor(packet);
+        delta.geometry_lines = {{0, {qcae::EntityId("moving-line"), {0, 0, 1.4}, {2, 0, 1.4}}}};
+        QVERIFY(view.applyDelta(delta));
+        QCOMPARE(view.lastUpdateStats().geometry_blocks, std::uint64_t(1));
+        QCOMPARE(view.lastUpdateStats().coordinate_bytes_copied, std::uint64_t(96));
+        QCOMPARE(view.lastUpdateStats().dirty_coordinate_array_bytes, std::uint64_t(48));
+        QCOMPARE(view.cameraFingerprint(), camera);
+        QCOMPARE(previewPixels(widget), preview_count);
+        QVERIFY(highlightedPixels(widget) > 20);
+        QSignalSpy picked(&view, &qcae::VtkView::picked);
+        for (const bool through : {false, true}) {
+            view.setThroughSelection(through);
+            QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, old_position);
+            QCOMPARE(picked.size(), 1);
+            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+            QTest::mouseClick(
+                widget, Qt::LeftButton, Qt::NoModifier, viewportPosition(widget, {1, 0, 1.4}));
+            QCOMPARE(picked.size(), 1);
+            QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"moving-line"}));
+            QTest::mouseClick(
+                widget, Qt::LeftButton, Qt::NoModifier, viewportPosition(widget, {1, -.1, 2}));
+            QCOMPARE(picked.size(), 1);
+            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+        }
     }
 };
 } // namespace

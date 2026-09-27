@@ -25,6 +25,7 @@ class ModelingTools : public QWidget {
     };
     ModelingTools(DesktopClient&, Actions, QWidget* parent = nullptr);
     void suspend();
+    void refreshTask();
     void setContext(const QJsonObject&);
     void setSelectedGeometry(const QString& id, const QString& label);
 

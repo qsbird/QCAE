@@ -25,6 +25,9 @@ struct Data : RecordStateImage {
     std::map<std::string, Prepared> previews;
     std::vector<RowMutation> pending;
     RecordStats stats;
+    // Transient, bounded and never written to a workspace/project snapshot.
+    std::shared_ptr<const std::vector<std::shared_ptr<const CommittedRecordChange>>> change_journal;
+    ChangeJournalStats journal_stats;
 };
 std::string nonce();
 void update_document(Data&);

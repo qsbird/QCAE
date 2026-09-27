@@ -8,7 +8,9 @@
 #include <QVTKOpenGLNativeWidget.h>
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <set>
+#include <unordered_map>
 #include <vtkActor.h>
 #include <vtkCamera.h>
 #include <vtkCellArray.h>
@@ -73,21 +75,35 @@ bool segmentIntersectsRect(const QPointF& a, const QPointF& b, const QRectF& r) 
 } // namespace
 
 struct VtkView::Impl {
+    static constexpr std::size_t block_capacity = 1024;
+    enum class Kind { node, beam, geometry };
+    struct Location {
+        Kind kind;
+        std::size_t index;
+    };
+    struct Endpoint {
+        std::size_t block, point;
+    };
+    struct Block {
+        Kind kind;
+        std::size_t begin;
+        vtkSmartPointer<vtkActor> actor, highlight;
+        vtkSmartPointer<vtkPoints> points;
+        std::vector<std::size_t> cell_entities;
+        std::set<std::size_t> selected;
+    };
     QVTKOpenGLNativeWidget* widget{};
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> window;
     vtkSmartPointer<vtkRenderer> renderer;
-    vtkSmartPointer<vtkActor> nodes;
-    vtkSmartPointer<vtkActor> beams;
-    vtkSmartPointer<vtkActor> geometry_lines;
-    vtkSmartPointer<vtkActor> selected_nodes;
-    vtkSmartPointer<vtkActor> selected_beams;
-    vtkSmartPointer<vtkActor> selected_geometry_lines;
     vtkSmartPointer<vtkActor> preview;
     RenderPacket packet;
-    QStringList selected;
-    std::vector<std::size_t> node_cell_ids;
-    std::vector<std::size_t> beam_cell_ids;
-    std::vector<std::size_t> geometry_cell_ids;
+    std::vector<Block> node_blocks, beam_blocks, geometry_blocks;
+    std::unordered_map<std::string, Location> locations;
+    std::map<const vtkProp*, Block*> actors;
+    std::vector<std::vector<Endpoint>> incident_endpoints;
+    std::set<std::string> selected;
+    VtkUpdateStats stats;
+    bool delta_ready{};
     QPoint press;
     bool mouse_down{false};
     bool box_active{false};
@@ -112,7 +128,7 @@ struct VtkView::Impl {
                                               : segmentIntersectsRect(pa, pb, rect);
         };
         for (const auto& point : packet.points)
-            if (inside(screenPoint(point.position_mm), rect))
+            if (point.visible && inside(screenPoint(point.position_mm), rect))
                 selected_ids.insert(qs(point.entity.value));
         for (const auto& beam : packet.beams) {
             if (beam.points[0] >= packet.points.size() || beam.points[1] >= packet.points.size())
@@ -145,14 +161,21 @@ struct VtkView::Impl {
             const auto* cells = vtkIdTypeArray::SafeDownCast(node->GetSelectionList());
             if (!cells)
                 continue;
+            const auto found = actors.find(prop);
+            if (found == actors.end())
+                continue;
+            const auto& block = *found->second;
             for (vtkIdType j = 0; j < cells->GetNumberOfValues(); ++j) {
                 const auto index = static_cast<std::size_t>(cells->GetValue(j));
-                if (prop == nodes && index < node_cell_ids.size())
-                    ids.insert(qs(packet.points[node_cell_ids[index]].entity.value));
-                if (prop == beams && index < beam_cell_ids.size())
-                    ids.insert(qs(packet.beams[beam_cell_ids[index]].entity.value));
-                if (prop == geometry_lines && index < geometry_cell_ids.size())
-                    ids.insert(qs(packet.geometry_lines[geometry_cell_ids[index]].entity.value));
+                if (index >= block.cell_entities.size())
+                    continue;
+                const auto entity = block.cell_entities[index];
+                if (block.kind == Kind::node)
+                    ids.insert(qs(packet.points[entity].entity.value));
+                else if (block.kind == Kind::beam)
+                    ids.insert(qs(packet.beams[entity].entity.value));
+                else
+                    ids.insert(qs(packet.geometry_lines[entity].entity.value));
             }
         }
         return QStringList(ids.begin(), ids.end());
@@ -190,68 +213,260 @@ struct VtkView::Impl {
             actor->GetProperty()->SetLineWidth(width);
     }
 
-    void rebuild() {
-        node_cell_ids.clear();
-        beam_cell_ids.clear();
-        geometry_cell_ids.clear();
-        vtkNew<vtkPoints> points;
-        vtkNew<vtkCellArray> point_cells;
-        vtkNew<vtkCellArray> line_cells;
-        vtkNew<vtkCellArray> selected_point_cells;
-        vtkNew<vtkCellArray> selected_line_cells;
-        vtkNew<vtkPoints> geometry_points;
-        vtkNew<vtkCellArray> geometry_cells;
-        vtkNew<vtkCellArray> selected_geometry_cells;
-        for (std::size_t index = 0; index < packet.points.size(); ++index) {
-            const auto& point = packet.points[index];
-            const auto id = points->InsertNextPoint(point.position_mm.data());
-            if (!point.visible)
-                continue;
-            point_cells->InsertNextCell(1, &id);
-            node_cell_ids.push_back(index);
-            if (selected.contains(qs(point.entity.value)))
-                selected_point_cells->InsertNextCell(1, &id);
+    static bool finite(const std::array<double, 3>& point) {
+        return std::all_of(
+            point.begin(), point.end(), [](double value) { return std::isfinite(value); });
+    }
+    Block& blockAt(const Location& location) {
+        const auto index = location.index / block_capacity;
+        return location.kind == Kind::node   ? node_blocks[index]
+               : location.kind == Kind::beam ? beam_blocks[index]
+                                             : geometry_blocks[index];
+    }
+    void refreshHighlight(Block& block) {
+        vtkNew<vtkCellArray> cells;
+        for (const auto index : block.selected) {
+            if (block.kind == Kind::node) {
+                if (!packet.points[index].visible)
+                    continue;
+                const vtkIdType point = static_cast<vtkIdType>(index - block.begin);
+                cells->InsertNextCell(1, &point);
+            } else {
+                if (block.kind == Kind::beam &&
+                    (packet.beams[index].points[0] >= packet.points.size() ||
+                     packet.beams[index].points[1] >= packet.points.size()))
+                    continue;
+                const auto first = static_cast<vtkIdType>((index - block.begin) * 2);
+                const vtkIdType endpoints[]{first, first + 1};
+                cells->InsertNextCell(2, endpoints);
+            }
+            ++stats.highlight_cells_written;
         }
-        for (std::size_t index = 0; index < packet.beams.size(); ++index) {
-            const auto& beam = packet.beams[index];
-            if (beam.points[0] >= packet.points.size() || beam.points[1] >= packet.points.size())
-                continue;
-            const vtkIdType ends[]{static_cast<vtkIdType>(beam.points[0]),
-                                   static_cast<vtkIdType>(beam.points[1])};
-            line_cells->InsertNextCell(2, ends);
-            beam_cell_ids.push_back(index);
-            if (selected.contains(qs(beam.entity.value)))
-                selected_line_cells->InsertNextCell(2, ends);
-        }
-        // Geometry endpoints are display coordinates, never mesh nodes or pick identities.
-        for (std::size_t index = 0; index < packet.geometry_lines.size(); ++index) {
-            const auto& line = packet.geometry_lines[index];
-            const vtkIdType ends[]{geometry_points->InsertNextPoint(line.start_mm.data()),
-                                   geometry_points->InsertNextPoint(line.end_mm.data())};
-            geometry_cells->InsertNextCell(2, ends);
-            geometry_cell_ids.push_back(index);
-            if (selected.contains(qs(line.entity.value)))
-                selected_geometry_cells->InsertNextCell(2, ends);
+        const double color[]{1.0, 0.62, 0.13};
+        makeActor(block.highlight,
+                  block.points,
+                  cells,
+                  block.kind == Kind::node,
+                  color,
+                  block.kind == Kind::node ? 13 : 7);
+        block.highlight->PickableOff();
+        ++stats.highlight_blocks;
+    }
+    Block makeBlock(Kind kind, std::size_t begin, std::size_t count) {
+        Block block{kind,
+                    begin,
+                    vtkSmartPointer<vtkActor>::New(),
+                    vtkSmartPointer<vtkActor>::New(),
+                    vtkSmartPointer<vtkPoints>::New(),
+                    {},
+                    {}};
+        block.points->SetDataTypeToDouble();
+        block.points->SetNumberOfPoints(
+            static_cast<vtkIdType>(count * (kind == Kind::node ? 1 : 2)));
+        vtkNew<vtkCellArray> cells;
+        for (std::size_t local = 0; local < count; ++local) {
+            const auto index = begin + local;
+            const EntityId* entity{};
+            if (kind == Kind::node) {
+                const auto& point = packet.points[index];
+                entity = &point.entity;
+                delta_ready = delta_ready && finite(point.position_mm);
+                block.points->SetPoint(static_cast<vtkIdType>(local), point.position_mm.data());
+                if (point.visible) {
+                    const auto cell = static_cast<vtkIdType>(local);
+                    cells->InsertNextCell(1, &cell);
+                    block.cell_entities.push_back(index);
+                }
+            } else {
+                std::array<double, 3> first{}, last{};
+                if (kind == Kind::beam) {
+                    const auto& beam = packet.beams[index];
+                    entity = &beam.entity;
+                    if (beam.points[0] >= packet.points.size() ||
+                        beam.points[1] >= packet.points.size()) {
+                        delta_ready = false;
+                        continue;
+                    }
+                    first = packet.points[beam.points[0]].position_mm;
+                    last = packet.points[beam.points[1]].position_mm;
+                    incident_endpoints[beam.points[0]].push_back(
+                        {begin / block_capacity, local * 2});
+                    incident_endpoints[beam.points[1]].push_back(
+                        {begin / block_capacity, local * 2 + 1});
+                } else {
+                    const auto& line = packet.geometry_lines[index];
+                    entity = &line.entity;
+                    first = line.start_mm;
+                    last = line.end_mm;
+                    delta_ready = delta_ready && finite(first) && finite(last);
+                }
+                const auto cell = static_cast<vtkIdType>(local * 2);
+                block.points->SetPoint(cell, first.data());
+                block.points->SetPoint(cell + 1, last.data());
+                const vtkIdType endpoints[]{cell, cell + 1};
+                cells->InsertNextCell(2, endpoints);
+                block.cell_entities.push_back(index);
+            }
+            if (entity->value.empty() ||
+                !locations.emplace(entity->value, Location{kind, index}).second)
+                delta_ready = false;
+            if (selected.contains(entity->value))
+                block.selected.insert(index);
         }
         const double node_color[]{0.22, 0.7, 0.95};
         const double beam_color[]{0.8, 0.85, 0.91};
         const double geometry_color[]{0.42, 0.87, 0.68};
-        const double selected_color[]{1.0, 0.62, 0.13};
-        makeActor(nodes, points, point_cells, true, node_color, 7);
-        makeActor(beams, points, line_cells, false, beam_color, 3);
-        makeActor(selected_nodes, points, selected_point_cells, true, selected_color, 13);
-        makeActor(selected_beams, points, selected_line_cells, false, selected_color, 7);
-        makeActor(geometry_lines, geometry_points, geometry_cells, false, geometry_color, 3);
-        makeActor(selected_geometry_lines,
-                  geometry_points,
-                  selected_geometry_cells,
-                  false,
-                  selected_color,
-                  7);
-        selected_nodes->PickableOff();
-        selected_beams->PickableOff();
-        selected_geometry_lines->PickableOff();
+        makeActor(block.actor,
+                  block.points,
+                  cells,
+                  kind == Kind::node,
+                  kind == Kind::node   ? node_color
+                  : kind == Kind::beam ? beam_color
+                                       : geometry_color,
+                  kind == Kind::node ? 7 : 3);
+        refreshHighlight(block);
+        stats.coordinate_bytes_copied += block.points->GetNumberOfPoints() * 3 * sizeof(double);
+        stats.dirty_coordinate_array_bytes +=
+            block.points->GetNumberOfPoints() * 3 * sizeof(double);
+        return block;
+    }
+    void rebuild() {
+        stats = {};
+        stats.full_rebuilds = 1;
+        stats.coordinate_bytes_copied = packet.points.size() * 3 * sizeof(double) +
+                                        packet.geometry_lines.size() * 6 * sizeof(double);
+        for (auto* blocks : {&node_blocks, &beam_blocks, &geometry_blocks}) {
+            for (auto& block : *blocks) {
+                renderer->RemoveActor(block.actor);
+                renderer->RemoveActor(block.highlight);
+            }
+            blocks->clear();
+        }
+        actors.clear();
+        locations.clear();
+        locations.reserve(packet.points.size() + packet.beams.size() +
+                          packet.geometry_lines.size());
+        incident_endpoints.clear();
+        incident_endpoints.resize(packet.points.size());
+        delta_ready = !packet.view_session_id.empty();
+        const auto build = [&](std::vector<Block>& blocks, Kind kind, std::size_t size) {
+            blocks.reserve((size + block_capacity - 1) / block_capacity);
+            for (std::size_t begin = 0; begin < size; begin += block_capacity)
+                blocks.push_back(makeBlock(kind, begin, std::min(block_capacity, size - begin)));
+        };
+        build(node_blocks, Kind::node, packet.points.size());
+        build(beam_blocks, Kind::beam, packet.beams.size());
+        build(geometry_blocks, Kind::geometry, packet.geometry_lines.size());
+        for (auto* blocks : {&beam_blocks, &geometry_blocks, &node_blocks})
+            for (auto& block : *blocks) {
+                actors.emplace(block.actor, &block);
+                renderer->AddActor(block.actor);
+                renderer->AddActor(block.highlight);
+            }
+        stats.node_blocks = node_blocks.size();
+        stats.beam_blocks = beam_blocks.size();
+        stats.geometry_blocks = geometry_blocks.size();
         window->Render();
+    }
+    void select(const QStringList& ids) {
+        stats = {};
+        std::set<std::string> next;
+        for (const auto& id : ids)
+            if (locations.contains(id.toStdString()))
+                next.insert(id.toStdString());
+        std::set<Block*> dirty;
+        for (const auto& id : selected)
+            if (!next.contains(id)) {
+                const auto found = locations.find(id);
+                if (found == locations.end())
+                    continue;
+                auto& block = blockAt(found->second);
+                block.selected.erase(found->second.index);
+                dirty.insert(&block);
+            }
+        for (const auto& id : next)
+            if (!selected.contains(id)) {
+                const auto location = locations.at(id);
+                auto& block = blockAt(location);
+                block.selected.insert(location.index);
+                dirty.insert(&block);
+            }
+        selected = std::move(next);
+        for (auto* block : dirty)
+            refreshHighlight(*block);
+        if (!dirty.empty())
+            window->Render();
+    }
+    bool apply(const RenderDelta& delta) {
+        stats = {};
+        if (!delta_ready || delta.document.id != packet.document.id ||
+            delta.document.epoch != packet.document.epoch ||
+            delta.view_session_id != packet.view_session_id ||
+            delta.base_revision != packet.revision ||
+            delta.base_view_revision != packet.view_revision ||
+            delta.revision < delta.base_revision ||
+            delta.view_revision < delta.base_view_revision ||
+            ((!delta.points.empty() || !delta.geometry_lines.empty()) &&
+             delta.revision == delta.base_revision))
+            return false;
+        std::set<std::size_t> point_indices, geometry_indices;
+        std::set<Block*> dirty_nodes, dirty_beams, dirty_geometry;
+        // Build every affected-block set before touching either the packet or VTK arrays.
+        for (const auto& update : delta.points) {
+            if (update.index >= packet.points.size() ||
+                !point_indices.insert(update.index).second ||
+                update.point.entity != packet.points[update.index].entity ||
+                update.point.visible != packet.points[update.index].visible ||
+                !finite(update.point.position_mm))
+                return false;
+            dirty_nodes.insert(&node_blocks[update.index / block_capacity]);
+            for (const auto& endpoint : incident_endpoints[update.index])
+                dirty_beams.insert(&beam_blocks[endpoint.block]);
+        }
+        for (const auto& update : delta.geometry_lines) {
+            if (update.index >= packet.geometry_lines.size() ||
+                !geometry_indices.insert(update.index).second ||
+                update.line.entity != packet.geometry_lines[update.index].entity ||
+                !finite(update.line.start_mm) || !finite(update.line.end_mm))
+                return false;
+            dirty_geometry.insert(&geometry_blocks[update.index / block_capacity]);
+        }
+        for (const auto& update : delta.points) {
+            packet.points[update.index].position_mm = update.point.position_mm;
+            node_blocks[update.index / block_capacity].points->SetPoint(
+                static_cast<vtkIdType>(update.index % block_capacity),
+                update.point.position_mm.data());
+            stats.coordinate_bytes_copied += 6 * sizeof(double);
+            for (const auto& endpoint : incident_endpoints[update.index]) {
+                beam_blocks[endpoint.block].points->SetPoint(static_cast<vtkIdType>(endpoint.point),
+                                                             update.point.position_mm.data());
+                stats.coordinate_bytes_copied += 3 * sizeof(double);
+            }
+        }
+        for (const auto& update : delta.geometry_lines) {
+            auto& line = packet.geometry_lines[update.index];
+            line.start_mm = update.line.start_mm;
+            line.end_mm = update.line.end_mm;
+            auto& points = geometry_blocks[update.index / block_capacity].points;
+            const auto first = static_cast<vtkIdType>((update.index % block_capacity) * 2);
+            points->SetPoint(first, line.start_mm.data());
+            points->SetPoint(first + 1, line.end_mm.data());
+            stats.coordinate_bytes_copied += 12 * sizeof(double);
+        }
+        for (const auto* dirty : {&dirty_nodes, &dirty_beams, &dirty_geometry})
+            for (auto* block : *dirty) {
+                block->points->Modified();
+                stats.dirty_coordinate_array_bytes +=
+                    block->points->GetNumberOfPoints() * 3 * sizeof(double);
+            }
+        stats.node_blocks = dirty_nodes.size();
+        stats.beam_blocks = dirty_beams.size();
+        stats.geometry_blocks = dirty_geometry.size();
+        packet.revision = delta.revision;
+        packet.view_revision = delta.view_revision;
+        if (!dirty_nodes.empty() || !dirty_beams.empty() || !dirty_geometry.empty())
+            window->Render();
+        return true;
     }
 
     void setPreview(const RenderPreview& value) {
@@ -287,22 +502,9 @@ VtkView::VtkView(QWidget* parent) : QWidget(parent), impl_(std::make_unique<Impl
     impl_->renderer->SetBackground(0.08, 0.11, 0.16);
     impl_->renderer->SetBackground2(0.16, 0.2, 0.26);
     impl_->renderer->GradientBackgroundOn();
-    impl_->nodes = vtkSmartPointer<vtkActor>::New();
-    impl_->beams = vtkSmartPointer<vtkActor>::New();
-    impl_->geometry_lines = vtkSmartPointer<vtkActor>::New();
-    impl_->selected_nodes = vtkSmartPointer<vtkActor>::New();
-    impl_->selected_beams = vtkSmartPointer<vtkActor>::New();
-    impl_->selected_geometry_lines = vtkSmartPointer<vtkActor>::New();
     impl_->preview = vtkSmartPointer<vtkActor>::New();
     impl_->preview->PickableOff();
-    for (auto* actor : {impl_->beams.GetPointer(),
-                        impl_->geometry_lines.GetPointer(),
-                        impl_->nodes.GetPointer(),
-                        impl_->selected_beams.GetPointer(),
-                        impl_->selected_geometry_lines.GetPointer(),
-                        impl_->selected_nodes.GetPointer(),
-                        impl_->preview.GetPointer()})
-        impl_->renderer->AddActor(actor);
+    impl_->renderer->AddActor(impl_->preview);
     impl_->widget->installEventFilter(this);
     impl_->camera_timer.setSingleShot(true);
     impl_->camera_timer.setInterval(150);
@@ -325,8 +527,15 @@ void VtkView::setPacket(const RenderPacket& packet) {
 }
 
 void VtkView::setSelectedIds(const QStringList& ids) {
-    impl_->selected = ids;
-    impl_->rebuild();
+    impl_->select(ids);
+}
+
+bool VtkView::applyDelta(const RenderDelta& delta) {
+    return impl_->apply(delta);
+}
+
+VtkUpdateStats VtkView::lastUpdateStats() const {
+    return impl_->stats;
 }
 
 void VtkView::setPreview(const RenderPreview& preview) {

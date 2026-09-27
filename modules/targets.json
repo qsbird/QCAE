@@ -35,7 +35,8 @@
         "modules/contracts/include/qcae/render_packet.hpp",
         "modules/contracts/include/qcae/workspace_store.hpp",
         "modules/contracts/include/qcae/record_store.hpp",
-        "modules/contracts/include/qcae/view_session.hpp"
+        "modules/contracts/include/qcae/view_session.hpp",
+        "modules/contracts/include/qcae/resource.hpp"
       ],
       "sources": [],
       "public_dependencies": [
@@ -131,12 +132,14 @@
         "modules/query/src"
       ],
       "public_headers": [
-        "modules/query/include/qcae/query.hpp"
+        "modules/query/include/qcae/query.hpp",
+        "modules/query/include/qcae/render_projector.hpp"
       ],
       "sources": [
         "modules/query/src/query.cpp",
         "modules/query/src/query_legacy.cpp",
-        "modules/query/src/entity_queries.cpp"
+        "modules/query/src/entity_queries.cpp",
+        "modules/query/src/render_projector.cpp"
       ],
       "public_dependencies": [
         "qcae_document",
@@ -207,7 +210,8 @@
       ],
       "private_include_dirs": [],
       "public_headers": [
-        "adapters/transport_local/include/qcae/local_endpoint.hpp"
+        "adapters/transport_local/include/qcae/local_endpoint.hpp",
+        "adapters/transport_local/include/qcae/render_wire.hpp"
       ],
       "sources": [],
       "public_dependencies": [
@@ -237,14 +241,20 @@
         "adapters/engine_api/include/qcae/ipc_model.hpp",
         "adapters/engine_api/include/qcae/ipc_selection.hpp",
         "adapters/engine_api/include/qcae/typed_host.hpp",
-        "adapters/engine_api/include/qcae/engine_contributions.hpp"
+        "adapters/engine_api/include/qcae/engine_contributions.hpp",
+        "adapters/engine_api/include/qcae/resource_store.hpp",
+        "adapters/engine_api/include/qcae/event_stream.hpp",
+        "adapters/engine_api/include/qcae/render_service.hpp"
       ],
       "sources": [
         "adapters/engine_api/src/ipc_api.cpp",
         "adapters/engine_api/src/ipc_model.cpp",
         "adapters/engine_api/src/ipc_selection.cpp",
         "adapters/engine_api/src/typed_host.cpp",
-        "adapters/engine_api/src/engine_contributions.cpp"
+        "adapters/engine_api/src/engine_contributions.cpp",
+        "adapters/engine_api/src/resource_store.cpp",
+        "adapters/engine_api/src/event_stream.cpp",
+        "adapters/engine_api/src/render_service.cpp"
       ],
       "public_dependencies": [
         "qcae_legacy_api",
@@ -258,7 +268,9 @@
         "qcae_mesh_generation",
         "qcae_task_application"
       ],
-      "private_dependencies": [],
+      "private_dependencies": [
+        "qcae_transport_local"
+      ],
       "external_dependencies": [
         "Qt6::Core"
       ],
@@ -278,10 +290,12 @@
         "modules/clients/src"
       ],
       "public_headers": [
-        "modules/clients/include/qcae/desktop_client.hpp"
+        "modules/clients/include/qcae/desktop_client.hpp",
+        "modules/clients/include/qcae/resource_client.hpp"
       ],
       "sources": [
-        "modules/clients/src/desktop_client.cpp"
+        "modules/clients/src/desktop_client.cpp",
+        "modules/clients/src/resource_client.cpp"
       ],
       "public_dependencies": [
         "qcae_transport_local",

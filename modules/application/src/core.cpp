@@ -130,6 +130,44 @@ void drop_expired_previews(Data& data) {
     }
 }
 
+void append_change_journal(Data& candidate,
+                           Revision base_revision,
+                           const TransactionId& transaction,
+                           const std::shared_ptr<const HistoryEntry>& history,
+                           RecordDirection direction) {
+    const auto limit = candidate.options->max_change_journal_entries;
+    if (!limit) {
+        candidate.change_journal.reset();
+        return;
+    }
+    using Journal = std::vector<std::shared_ptr<const CommittedRecordChange>>;
+    auto journal = std::make_shared<Journal>();
+    const auto previous_size = candidate.change_journal ? candidate.change_journal->size() : 0;
+    const auto retained = std::min(previous_size, limit - 1);
+    journal->reserve(retained + 1);
+    if (retained)
+        journal->insert(journal->end(),
+                        candidate.change_journal->end() - static_cast<std::ptrdiff_t>(retained),
+                        candidate.change_journal->end());
+    auto changes = std::shared_ptr<const RecordChangeSet>(history, &history->changes);
+    auto entry = std::make_shared<const CommittedRecordChange>(
+        CommittedRecordChange{candidate.document->document,
+                              base_revision,
+                              candidate.document->revision,
+                              transaction,
+                              std::move(changes),
+                              direction});
+    const auto bytes = (retained + 1) * sizeof(std::shared_ptr<const CommittedRecordChange>) +
+                       sizeof(CommittedRecordChange) + entry->document.id.value.size() +
+                       entry->document.epoch.value.size() + entry->transaction.value.size();
+    candidate.stats.metadata_bytes_copied += bytes;
+    candidate.journal_stats.metadata_bytes_copied += bytes;
+    ++candidate.journal_stats.entries_published;
+    candidate.journal_stats.records_referenced += history->changes.records.size();
+    journal->push_back(std::move(entry));
+    candidate.change_journal = std::move(journal);
+}
+
 } // namespace
 
 struct RecordApplication::State {
@@ -207,6 +245,7 @@ Result<DocumentInfo> RecordApplication::create_document(const Caller& caller,
     info.durable = static_cast<bool>(state_->records);
     candidate.initial_content_state = info.content_state;
     candidate.document = info;
+    candidate.change_journal.reset();
     update_document(candidate);
     candidate.host_operations.emplace(key, HostOperation{name, info});
     if (auto error =
@@ -224,6 +263,56 @@ Result<RecordSnapshot> RecordApplication::snapshot(const DocumentRef& ref) const
     if (auto error = check_document<RecordSnapshot>(state_->data, ref))
         return *error;
     return success(RecordSnapshot{state_->data.records, *state_->data.document});
+}
+Result<RecordChangeBatch> RecordApplication::changes_since(const DocumentRef& ref,
+                                                           Revision since) const {
+    std::lock_guard lock(state_->mutex);
+    if (state_->poisoned)
+        return failure<RecordChangeBatch>(
+            Status::failed, ErrorCode::storage_uncertain, "Storage outcome needs recovery");
+    if (auto error = check_document<RecordChangeBatch>(state_->data, ref))
+        return *error;
+    const auto current = state_->data.document->revision;
+    if (since > current)
+        return failure<RecordChangeBatch>(Status::conflict,
+                                          ErrorCode::revision_conflict,
+                                          "Change cursor is newer than the document",
+                                          "revision");
+    RecordChangeBatch batch{ref, since, current, false, {}};
+    const auto& journal = state_->data.change_journal;
+    if (since < current) {
+        if (!journal || journal->empty() || journal->front()->base_revision > since)
+            batch.resync_required = true;
+        else {
+            Revision expected = since;
+            for (const auto& entry : *journal) {
+                if (entry->revision <= since)
+                    continue;
+                if (!same_document(entry->document, ref) || entry->base_revision != expected) {
+                    batch.resync_required = true;
+                    batch.changes.clear();
+                    break;
+                }
+                batch.changes.push_back(*entry);
+                expected = entry->revision;
+            }
+            if (expected != current) {
+                batch.resync_required = true;
+                batch.changes.clear();
+            }
+        }
+    }
+    std::uint64_t bytes = sizeof(RecordChangeBatch) + ref.id.value.size() + ref.epoch.value.size();
+    for (const auto& entry : batch.changes)
+        bytes += sizeof(CommittedRecordChange) + entry.document.id.value.size() +
+                 entry.document.epoch.value.size() + entry.transaction.value.size();
+    state_->data.stats.metadata_bytes_copied += bytes;
+    state_->data.journal_stats.metadata_bytes_copied += bytes;
+    return success(std::move(batch));
+}
+ChangeJournalStats RecordApplication::change_journal_stats() const {
+    std::lock_guard lock(state_->mutex);
+    return state_->data.journal_stats;
 }
 RecordStats RecordApplication::stats() const {
     std::lock_guard lock(state_->mutex);
@@ -419,6 +508,11 @@ RecordApplication::State::commit(const Caller& caller,
             direct_signature.value_or(commit_signature(context, preview_id, prepared)), receipt});
     drop_expired_previews(candidate);
     auto result = success(std::move(receipt));
+    append_change_journal(candidate,
+                          context.expected_revision,
+                          result.value->transaction,
+                          candidate.history.back(),
+                          RecordDirection::forward);
     if (auto error =
             persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
         return {Status::failed, std::nullopt, std::move(error)};
@@ -572,6 +666,7 @@ Result<ChangeReceipt> move_history(Data& data,
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::resource_limit, "Idempotency record limit reached");
     Data candidate = data;
+    const auto changed_history = candidate.history[undo ? candidate.cursor - 1 : candidate.cursor];
     if (undo) {
         queue_changes(
             candidate, candidate.history[candidate.cursor - 1]->changes, RecordDirection::reverse);
@@ -611,6 +706,11 @@ Result<ChangeReceipt> move_history(Data& data,
     candidate.operations.emplace(key, RecordedOperation{signature, receipt});
     drop_expired_previews(candidate);
     auto result = success(std::move(receipt));
+    append_change_journal(candidate,
+                          context.expected_revision,
+                          result.value->transaction,
+                          changed_history,
+                          undo ? RecordDirection::reverse : RecordDirection::forward);
     if (auto error = persist(candidate, store, generation, poisoned))
         return {Status::failed, std::nullopt, std::move(error)};
     using std::swap;
@@ -773,6 +873,7 @@ Result<DocumentInfo> RecordApplication::open_document(const Caller& caller,
         info.saved_content_state = info.content_state;
         info.durable = true;
         candidate.document = info;
+        candidate.change_journal.reset();
         candidate.initial_content_state = info.content_state;
         update_document(candidate);
         candidate.host_operations.emplace(key, HostOperation{path, *candidate.document});
@@ -865,6 +966,7 @@ Result<DocumentInfo> RecordApplication::recover_document(const Caller& caller,
             }
         }
         candidate.document->document.epoch = DocumentEpoch(new_id(candidate, "epoch"));
+        candidate.change_journal.reset();
         candidate.document->durable = true;
         candidate.recoverable = false;
         candidate.previews.clear();
@@ -1067,6 +1169,7 @@ Result<DocumentInfo> RecordApplication::close_document(const Caller& caller,
             Status::conflict, ErrorCode::storage_uncertain, "Save intent needs reconciliation");
     Data candidate = state_->data;
     const auto result = *candidate.document;
+    candidate.change_journal.reset();
     candidate.host_operations.emplace(key, HostOperation{signature, result});
     candidate.previews.clear();
     if (policy == ClosePolicy::keep_recovery && state_->records)

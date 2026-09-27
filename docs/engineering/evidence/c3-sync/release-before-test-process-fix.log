@@ -1,0 +1,116 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-sync-desktop
+      Start 34: c2_workflow
+      Start  2: architecture_gate_unit
+ 1/52 Test  #2: architecture_gate_unit ...........   Passed   21.29 sec
+      Start 31: entity_query_ipc
+ 2/52 Test #31: entity_query_ipc .................   Passed   11.40 sec
+      Start 37: c3_desktop_workflow
+ 3/52 Test #37: c3_desktop_workflow ..............   Passed   12.15 sec
+      Start  6: operation_generation
+ 4/52 Test #34: c2_workflow ......................   Passed   54.25 sec
+      Start 47: record_document
+ 5/52 Test  #6: operation_generation .............   Passed   11.12 sec
+      Start 35: desktop
+ 6/52 Test #47: record_document ..................   Passed   10.48 sec
+      Start 39: desktop_smoke
+ 7/52 Test #35: desktop ..........................   Passed    9.59 sec
+      Start 38: modeling_tools
+ 8/52 Test #39: desktop_smoke ....................   Passed    7.04 sec
+      Start 32: engine_contributions_ipc
+ 9/52 Test #38: modeling_tools ...................   Passed    7.38 sec
+      Start 36: desktop_selection
+10/52 Test #32: engine_contributions_ipc .........   Passed    5.39 sec
+      Start 28: ipc
+11/52 Test #28: ipc ..............................   Passed    2.11 sec
+      Start 30: c3_display_ipc
+12/52 Test #30: c3_display_ipc ...................   Passed    3.01 sec
+      Start 29: m1_ipc
+13/52 Test #29: m1_ipc ...........................   Passed    2.00 sec
+      Start 33: m23_ipc
+14/52 Test #33: m23_ipc ..........................   Passed    2.01 sec
+      Start 45: event_client
+15/52 Test #36: desktop_selection ................   Passed   14.24 sec
+      Start 25: geometry_mesh_sqlite
+16/52 Test #25: geometry_mesh_sqlite .............   Passed    0.78 sec
+      Start 52: resources
+17/52 Test #45: event_client .....................   Passed    2.49 sec
+      Start 26: legacy_migration
+18/52 Test #26: legacy_migration .................   Passed    0.20 sec
+      Start 24: record_store
+19/52 Test #24: record_store .....................   Passed    0.23 sec
+      Start 20: allocation_atomicity
+20/52 Test #52: resources ........................   Passed    1.45 sec
+      Start 23: sqlite
+21/52 Test #23: sqlite ...........................Subprocess aborted***Exception:   0.15 sec
+project hardlink: child status=11 (exit=-1, signal=11)
+Assertion failed: (WIFEXITED(status) && WEXITSTATUS(status) == 0), function child_must_fail, file sqlite_tests.cpp, line 73.
+
+      Start 51: typed_host
+22/52 Test #20: allocation_atomicity .............   Passed    0.70 sec
+      Start 27: engine_assembly
+23/52 Test #51: typed_host .......................   Passed    0.96 sec
+      Start 41: render_projector
+24/52 Test #27: engine_assembly ..................   Passed    1.74 sec
+      Start  3: record_application
+25/52 Test  #3: record_application ...............   Passed    0.06 sec
+      Start  8: model_operations
+26/52 Test  #8: model_operations .................   Passed    0.02 sec
+      Start 12: model
+27/52 Test #41: render_projector .................   Passed    1.52 sec
+      Start 13: nastran
+28/52 Test #13: nastran ..........................   Passed    0.01 sec
+      Start 16: query
+29/52 Test #12: model ............................   Passed    0.85 sec
+      Start 18: core
+30/52 Test #16: query ............................   Passed    1.02 sec
+      Start  9: quantity_entry_consistency
+31/52 Test  #9: quantity_entry_consistency .......   Passed    0.01 sec
+      Start 15: persistence
+32/52 Test #18: core .............................   Passed    0.93 sec
+      Start 10: record_query
+33/52 Test #15: persistence ......................   Passed    0.87 sec
+      Start 14: delta
+34/52 Test #10: record_query .....................   Passed    0.86 sec
+      Start  7: parameters
+35/52 Test  #7: parameters .......................   Passed    0.01 sec
+      Start  4: operation_registry
+36/52 Test  #4: operation_registry ...............   Passed    0.01 sec
+      Start 19: contracts
+37/52 Test #14: delta ............................   Passed    0.83 sec
+      Start 50: geometry_mesh
+38/52 Test #50: geometry_mesh ....................   Passed    0.07 sec
+      Start 49: runtime
+39/52 Test #49: runtime ..........................   Passed    0.02 sec
+      Start  1: acceptance_checker
+40/52 Test #19: contracts ........................   Passed    0.79 sec
+      Start 40: change_events
+41/52 Test #40: change_events ....................   Passed    0.04 sec
+      Start 42: event_stream
+42/52 Test  #1: acceptance_checker ...............   Passed    0.42 sec
+      Start 48: generated_entities
+43/52 Test #48: generated_entities ...............   Passed    0.32 sec
+      Start 43: render_wire
+44/52 Test #42: event_stream .....................   Passed    0.76 sec
+      Start 21: design
+45/52 Test #21: design ...........................   Passed    0.21 sec
+      Start  5: generated_operation_inputs
+46/52 Test  #5: generated_operation_inputs .......   Passed    0.16 sec
+      Start 22: generated_contract
+47/52 Test #22: generated_contract ...............   Passed    0.15 sec
+      Start 17: generated_profile
+48/52 Test #43: render_wire ......................   Passed    0.96 sec
+      Start 11: cpp_format
+49/52 Test #17: generated_profile ................   Passed    0.10 sec
+      Start 44: c3_sync_ipc
+50/52 Test #44: c3_sync_ipc ......................   Passed    1.01 sec
+51/52 Test #11: cpp_format .......................   Passed    1.80 sec
+      Start 46: c3_tool_lifecycle
+52/52 Test #46: c3_tool_lifecycle ................   Passed   20.48 sec
+
+98% tests passed, 1 tests failed out of 52
+
+Total Test time (real) = 118.87 sec
+
+The following tests FAILED:
+	 23 - sqlite (Subprocess aborted)
+Errors while running CTest

@@ -11,13 +11,18 @@
 #include <cstdlib>
 #include <filesystem>
 #include <functional>
+#include <spawn.h>
 #include <stdexcept>
 #include <string>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
+
+extern char** environ;
 
 namespace {
 namespace fs = std::filesystem;
+std::string test_executable;
 
 struct Sandbox {
     fs::path path;
@@ -50,19 +55,25 @@ bool uncertain(const std::function<void()>& action) {
     return false;
 }
 
-void child_must_fail(const char* label, const std::function<void()>& action) {
-    pid_t child = ::fork();
-    assert(child >= 0);
-    if (child == 0) {
-        try {
-            action();
-        } catch (const qcae::StorageError&) {
-            _exit(0);
-        }
-        _exit(1);
-    }
+void child_must_succeed(const char* label, std::vector<std::string> arguments) {
+    arguments.insert(arguments.begin(), test_executable);
+    std::vector<char*> argv;
+    for (auto& argument : arguments)
+        argv.push_back(argument.data());
+    argv.push_back(nullptr);
+    pid_t child{};
+    // SQLite and macOS logging are not safe to initialize in a fork-only child.
+    // A fresh executable also drops our CLOEXEC descriptors while the parent
+    // keeps holding the locks under test.
+    const auto spawned =
+        ::posix_spawn(&child, test_executable.c_str(), nullptr, nullptr, argv.data(), environ);
+    assert(spawned == 0);
     int status = 0;
-    assert(::waitpid(child, &status, 0) == child);
+    pid_t waited{};
+    do {
+        waited = ::waitpid(child, &status, 0);
+    } while (waited < 0 && errno == EINTR);
+    assert(waited == child);
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
         std::fprintf(stderr,
                      "%s: child status=%d (exit=%d, signal=%d)\n",
@@ -71,6 +82,39 @@ void child_must_fail(const char* label, const std::function<void()>& action) {
                      WIFEXITED(status) ? WEXITSTATUS(status) : -1,
                      WIFSIGNALED(status) ? WTERMSIG(status) : 0);
     assert(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+}
+
+int child_mode(int argc, char** argv) {
+    if (argc == 4 && std::string(argv[1]) == "--expect-lock-failure") {
+        try {
+            qcae::SqliteWorkspaceStore second(argv[2]);
+            if (*argv[3])
+                second.acquire_project(argv[3]);
+        } catch (const qcae::StorageError& error) {
+            if (std::string(error.what()).find("already in use") != std::string::npos)
+                return 0;
+            std::fprintf(stderr, "Unexpected lock-probe failure: %s\n", error.what());
+        }
+        return 1;
+    }
+    const bool workspace = argc == 4 && std::string(argv[1]) == "--crash-workspace";
+    const bool project = argc == 5 && std::string(argv[1]) == "--crash-project";
+    if (!workspace && !project)
+        return 2;
+    const std::string milestone = argv[project ? 4 : 3];
+    qcae::StoreOptions options;
+    options.fault = [milestone](const std::string& point) {
+        if (point == milestone)
+            _exit(0);
+    };
+    qcae::SqliteWorkspaceStore store(argv[2], options);
+    if (workspace)
+        store.commit(1, "new");
+    else {
+        const auto path = store.acquire_project(argv[3]);
+        store.publish_project(path, {"new-token", "new"});
+    }
+    return 1; // A crash-window probe must terminate at its exact fault milestone.
 }
 
 void set_pragma(sqlite3* db, const char* statement) {
@@ -89,11 +133,10 @@ void test_workspace() {
         assert(loaded && loaded->generation == 1 && loaded->payload == binary);
         assert(throws([&] { store.commit(0, "stale"); }));
         assert(store.load()->payload == binary);
-        child_must_fail("workspace path", [&] { qcae::SqliteWorkspaceStore second(path); });
+        child_must_succeed("workspace path", {"--expect-lock-failure", path, ""});
         const auto alias = sandbox.path / "working-alias.sqlite";
         fs::create_hard_link(path, alias);
-        child_must_fail("workspace hardlink",
-                        [&] { qcae::SqliteWorkspaceStore second(alias.string()); });
+        child_must_succeed("workspace hardlink", {"--expect-lock-failure", alias.string(), ""});
         assert(throws([&] { store.acquire_project(alias.string()); }));
         qcae::StoreOptions quota;
         quota.max_payload_bytes = 2;
@@ -191,20 +234,18 @@ void test_project_publish() {
         assert(store.acquire_project(alias.string()) == canonical);
         const auto hardlink = sandbox.path / "project-hardlink.qcae";
         fs::create_hard_link(project, hardlink);
-        child_must_fail("project hardlink", [&] {
-            qcae::SqliteWorkspaceStore second((sandbox.path / "other.sqlite").string());
-            second.acquire_project(hardlink.string());
-        });
-        child_must_fail("project symlink", [&] {
-            qcae::SqliteWorkspaceStore second((sandbox.path / "other.sqlite").string());
-            second.acquire_project(alias.string());
-        });
+        child_must_succeed(
+            "project hardlink",
+            {"--expect-lock-failure", (sandbox.path / "other.sqlite").string(), hardlink.string()});
+        child_must_succeed(
+            "project symlink",
+            {"--expect-lock-failure", (sandbox.path / "other.sqlite").string(), alias.string()});
         store.publish_project(canonical, {"token-2", "new"});
         assert(store.read_project(canonical).payload == "new");
-        child_must_fail("project hardlink after save", [&] {
-            qcae::SqliteWorkspaceStore second((sandbox.path / "after-save.sqlite").string());
-            second.acquire_project(hardlink.string());
-        });
+        child_must_succeed("project hardlink after save",
+                           {"--expect-lock-failure",
+                            (sandbox.path / "after-save.sqlite").string(),
+                            hardlink.string()});
     }
     {
         qcae::SqliteWorkspaceStore store(working);
@@ -300,42 +341,13 @@ void test_crash_windows() {
         store.publish_project(path, {"old-token", "old"});
     }
     for (const auto* milestone : {"before_db_commit", "after_db_commit"}) {
-        pid_t child = ::fork();
-        assert(child >= 0);
-        if (child == 0) {
-            qcae::StoreOptions options;
-            options.fault = [milestone](const std::string& point) {
-                if (point == milestone)
-                    _exit(0);
-            };
-            qcae::SqliteWorkspaceStore store(working, options);
-            store.commit(1, "new");
-            _exit(1);
-        }
-        int status = 0;
-        assert(::waitpid(child, &status, 0) == child);
-        assert(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+        child_must_succeed(milestone, {"--crash-workspace", working, milestone});
         qcae::SqliteWorkspaceStore recovered(working);
         assert(recovered.load()->payload ==
                (milestone == std::string("before_db_commit") ? "old" : "new"));
     }
     for (const auto* milestone : {"before_project_publish", "after_project_publish"}) {
-        pid_t child = ::fork();
-        assert(child >= 0);
-        if (child == 0) {
-            qcae::StoreOptions options;
-            options.fault = [milestone](const std::string& point) {
-                if (point == milestone)
-                    _exit(0);
-            };
-            qcae::SqliteWorkspaceStore store(working, options);
-            const auto path = store.acquire_project(project);
-            store.publish_project(path, {"new-token", "new"});
-            _exit(1);
-        }
-        int status = 0;
-        assert(::waitpid(child, &status, 0) == child);
-        assert(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+        child_must_succeed(milestone, {"--crash-project", working, project, milestone});
         qcae::SqliteWorkspaceStore recovered(working);
         const auto path = recovered.acquire_project(project);
         assert(recovered.read_project(path).payload ==
@@ -344,7 +356,16 @@ void test_crash_windows() {
 }
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    test_executable = fs::absolute(argv[0]).string();
+    if (argc > 1) {
+        try {
+            return child_mode(argc, argv);
+        } catch (const std::exception& error) {
+            std::fprintf(stderr, "Child storage probe failed: %s\n", error.what());
+            return 2;
+        }
+    }
     test_workspace();
     test_unknown_and_corrupt();
     test_commit_faults();

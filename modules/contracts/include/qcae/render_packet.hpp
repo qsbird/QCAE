@@ -32,4 +32,21 @@ struct RenderPacket {
     std::vector<RenderBeam> beams;
     std::vector<RenderGeometryLine> geometry_lines;
 };
+struct RenderPointUpdate {
+    std::size_t index{};
+    RenderPoint point;
+};
+struct RenderGeometryUpdate {
+    std::size_t index{};
+    RenderGeometryLine line;
+};
+// Applies only to the named installed scene. Topology/visibility changes use a new packet.
+struct RenderDelta {
+    DocumentRef document;
+    Revision base_revision{}, revision{};
+    std::string view_session_id;
+    std::uint64_t base_view_revision{}, view_revision{};
+    std::vector<RenderPointUpdate> points;
+    std::vector<RenderGeometryUpdate> geometry_lines;
+};
 } // namespace qcae

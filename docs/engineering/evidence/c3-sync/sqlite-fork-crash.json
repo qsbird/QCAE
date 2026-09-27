@@ -1,0 +1,65 @@
+{
+  "source_crash_report": "qcae_sqlite_tests-2026-09-27-233347.000.ips",
+  "capture_time": "2026-09-27 23:33:47.7493 +0800",
+  "process": "qcae_sqlite_tests",
+  "pid": 70186,
+  "parent_pid": 70183,
+  "exception": {
+    "codes": "0x0000000000000001, 0x0000000104e4493b",
+    "rawCodes": [
+      1,
+      4377037115
+    ],
+    "type": "EXC_BAD_ACCESS",
+    "signal": "SIGSEGV",
+    "subtype": "KERN_INVALID_ADDRESS at 0x0000000104e4493b"
+  },
+  "triggered_frames": [
+    {
+      "symbol": "_os_log_preferences_refresh",
+      "image": "libsystem_trace.dylib"
+    },
+    {
+      "symbol": "os_signpost_enabled",
+      "image": "libsystem_trace.dylib"
+    },
+    {
+      "symbol": "os_signpost_id_make_with_pointer",
+      "image": "libsystem_trace.dylib"
+    },
+    {
+      "symbol": "openDatabase",
+      "image": "libsqlite3.dylib"
+    },
+    {
+      "symbol": "qcae::(anonymous namespace)::Db::Db(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, int)",
+      "image": "qcae_sqlite_tests"
+    },
+    {
+      "symbol": "qcae::SqliteWorkspaceStore::Impl::Impl(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, qcae::StoreOptions)",
+      "image": "qcae_sqlite_tests"
+    },
+    {
+      "symbol": "qcae::SqliteWorkspaceStore::SqliteWorkspaceStore(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&, qcae::StoreOptions)",
+      "image": "qcae_sqlite_tests"
+    },
+    {
+      "symbol": "std::__1::__function::__func<(anonymous namespace)::test_project_publish()::$_0, void ()>::operator()()",
+      "image": "qcae_sqlite_tests"
+    },
+    {
+      "symbol": "(anonymous namespace)::child_must_fail(char const*, std::__1::function<void ()> const&)",
+      "image": "qcae_sqlite_tests"
+    },
+    {
+      "symbol": "main",
+      "image": "qcae_sqlite_tests"
+    },
+    {
+      "symbol": "start",
+      "image": "dyld"
+    }
+  ],
+  "isolated_reproducer": "ctest --test-dir build-c3-sync-desktop -R ^sqlite$ --output-on-failure --repeat until-fail:20",
+  "observed_reproducer": "two passes, third repetition aborted after project-hardlink child SIGSEGV"
+}

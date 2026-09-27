@@ -1,0 +1,34 @@
+{
+  "schema": "qcae.vtk-pick-matrix.v1",
+  "viewport_logical_pixels": [640, 420],
+  "camera": {
+    "position": [0, -500, 0],
+    "focal_point": [0, 0, 0],
+    "view_up": [0, 0, 1],
+    "parallel_scale": 100,
+    "clipping_range": [1, 1000],
+    "view_matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, -500, 0, 0, 0, 1]
+  },
+  "points": [
+    {"id": "point-behind", "position": [0, 20, 0], "visible": true},
+    {"id": "point-front", "position": [0, -20, 0], "visible": true},
+    {"id": "point-outside", "position": [70, 0, 50], "visible": true},
+    {"id": "point-hidden", "position": [0, -40, 0], "visible": false}
+  ],
+  "lines": [
+    {"id": "line-behind", "start": [-60, 20, 0], "end": [60, 20, 0], "visible": true},
+    {"id": "line-front", "start": [-60, -20, 0], "end": [60, -20, 0], "visible": true},
+    {"id": "line-outside", "start": [-60, 0, 50], "end": [60, 0, 50], "visible": true},
+    {"id": "line-hidden", "start": [-60, -40, 0], "end": [60, -40, 0], "visible": false}
+  ],
+  "cases": [
+    {"id": "point-contained", "topology": "point", "box_mode": "contained", "through": true, "box": [300, 190, 340, 230], "golden": ["point-behind", "point-front"]},
+    {"id": "point-intersecting", "topology": "point", "box_mode": "intersecting", "through": true, "box": [300, 190, 340, 230], "golden": ["point-behind", "point-front"]},
+    {"id": "point-occluded-visible", "topology": "point", "box_mode": "intersecting", "through": false, "box": [300, 190, 340, 230], "golden": ["point-front"]},
+    {"id": "point-occluded-through", "topology": "point", "box_mode": "intersecting", "through": true, "box": [300, 190, 340, 230], "golden": ["point-behind", "point-front"]},
+    {"id": "line-contained", "topology": "line", "box_mode": "contained", "through": true, "box": [180, 190, 460, 230], "golden": ["line-behind", "line-front"]},
+    {"id": "line-intersecting", "topology": "line", "box_mode": "intersecting", "through": true, "box": [300, 190, 340, 230], "golden": ["line-behind", "line-front"]},
+    {"id": "line-occluded-visible", "topology": "line", "box_mode": "intersecting", "through": false, "box": [300, 190, 340, 230], "golden": ["line-front"]},
+    {"id": "line-occluded-through", "topology": "line", "box_mode": "intersecting", "through": true, "box": [300, 190, 340, 230], "golden": ["line-behind", "line-front"]}
+  ]
+}

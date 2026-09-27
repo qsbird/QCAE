@@ -8,6 +8,14 @@
 
 namespace qcae {
 
+struct VtkUpdateStats {
+    std::uint64_t full_rebuilds{}, node_blocks{}, beam_blocks{}, geometry_blocks{};
+    std::uint64_t highlight_blocks{}, highlight_cells_written{};
+    // Coordinates written to retained packet/VTK buffers, and complete VTK arrays marked dirty.
+    // These are not a measurement of graphics-driver allocation or GPU transfer bytes.
+    std::uint64_t coordinate_bytes_copied{}, dirty_coordinate_array_bytes{};
+};
+
 class VtkView : public QWidget {
     Q_OBJECT
   public:
@@ -17,6 +25,9 @@ class VtkView : public QWidget {
     explicit VtkView(QWidget* parent = nullptr);
     ~VtkView() override;
     void setPacket(const RenderPacket& packet);
+    [[nodiscard]] bool applyDelta(const RenderDelta& delta);
+    // Most recent packet, delta or selection update; camera/preview work is excluded.
+    [[nodiscard]] VtkUpdateStats lastUpdateStats() const;
     void setSelectedIds(const QStringList& ids);
     void setPreview(const RenderPreview& preview);
     void clearPreview();

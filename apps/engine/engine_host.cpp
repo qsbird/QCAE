@@ -1,4 +1,6 @@
 #include "qcae/engine_host.hpp"
+#include "qcae/event_stream.hpp"
+#include "qcae/render_service.hpp"
 #include "qcae/ipc_api.hpp"
 #include "qcae/nastran_codec.hpp"
 #include "qcae/query.hpp"
@@ -20,6 +22,8 @@
 #include <QLockFile>
 #include <QTextStream>
 #include <QUuid>
+#include <QTimer>
+#include <map>
 #include <filesystem>
 #include <memory>
 
@@ -28,6 +32,7 @@ struct Connection {
     QLocalSocket* socket;
     QByteArray buffer;
     bool ready{false};
+    QString id;
 };
 void send(QLocalSocket* socket, const QJsonObject& response) {
     auto bytes = QJsonDocument(response).toJson(QJsonDocument::Compact) + '\n';
@@ -167,12 +172,36 @@ int qcae_run_engine(int argc,
     // M0 is a single local OS-user host. Request JSON cannot choose this identity.
     const qcae::Caller caller{"local-user"};
     const auto engine_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    qcae::ipc::ResourceStore resources;
+    qcae::ipc::RenderService renders(core.record_application(), selections, resources);
+    qcae::ipc::EventStream events(core.record_application(), engine_id);
+    std::map<QString, std::weak_ptr<Connection>> connections;
+    const auto publish_events = [&] {
+        events.refresh();
+        for (auto it = connections.begin(); it != connections.end();) {
+            if (auto connection = it->second.lock()) {
+                ++it; // send may synchronously disconnect and erase this connection.
+                if (connection->ready &&
+                    connection->socket->state() == QLocalSocket::ConnectedState) {
+                    for (const auto& event : events.drain(connection->id))
+                        send(connection->socket, event.toObject());
+                }
+            } else
+                it = connections.erase(it);
+        }
+    };
+    QTimer event_timer;
+    event_timer.setInterval(50);
+    QObject::connect(&event_timer, &QTimer::timeout, &app, publish_events);
+    event_timer.start();
     const auto version = QString::fromUtf8(qcae::api_version.data(),
                                            static_cast<qsizetype>(qcae::api_version.size()));
     QObject::connect(&server, &QLocalServer::newConnection, &app, [&] {
         while (auto* socket = server.nextPendingConnection()) {
             socket->setReadBufferSize(qcae::transport::max_frame_bytes + 1);
-            auto connection = std::make_shared<Connection>(Connection{socket, {}, false});
+            auto connection = std::make_shared<Connection>(
+                Connection{socket, {}, false, QUuid::createUuid().toString(QUuid::WithoutBraces)});
+            connections.emplace(connection->id, connection);
             auto consume = [&, connection] {
                 auto* client = connection->socket;
                 connection->buffer += client->readAll();
@@ -231,11 +260,19 @@ int qcae_run_engine(int argc,
                                       {"engine_instance_id", engine_id},
                                       {"pid", QString::number(QCoreApplication::applicationPid())},
                                       {"storage_mode", core.durable() ? "sqlite" : "memory"},
-                                      {"durable", core.durable()}}}});
+                                      {"durable", core.durable()},
+                                      {"capabilities",
+                                       QJsonObject{{"resources_version", 1},
+                                                   {"events_version", 1}}}}}});
                     } else if (!connection->ready) {
                         send(client,
                              qcae::ipc::failure(
                                  id, "HANDSHAKE_REQUIRED", "Perform runtime.handshake first"));
+                    } else if (events.supports(request.value("operation").toString())) {
+                        events.refresh();
+                        send(client, events.dispatch(request, connection->id));
+                    } else if (renders.supports(request.value("operation").toString())) {
+                        send(client, renders.dispatch(request, caller));
                     } else
                         send(client,
                              qcae::ipc::dispatch(core,
@@ -244,10 +281,16 @@ int qcae_run_engine(int argc,
                                                  &codec,
                                                  &codec.definition(),
                                                  &selections,
-                                                 typed.get()));
+                                                 typed.get(),
+                                                 true));
+                    publish_events();
                 }
             };
             QObject::connect(socket, &QLocalSocket::readyRead, &app, consume);
+            QObject::connect(socket, &QLocalSocket::disconnected, &app, [&, id = connection->id] {
+                events.unsubscribe(id);
+                connections.erase(id);
+            });
             QObject::connect(socket, &QLocalSocket::disconnected, socket, &QObject::deleteLater);
             if (socket->bytesAvailable())
                 consume();

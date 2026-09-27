@@ -103,6 +103,10 @@ bool ModelingTools::lineMode() const {
 bool ModelingTools::activeTask() const {
     return !task_id_.isEmpty() && !terminal(task_state_);
 }
+void ModelingTools::refreshTask() {
+    if (activeTask() && !suspended_)
+        pollTask();
+}
 void ModelingTools::suspend() {
     // Transport loss is not project closure. Keep the admitted task or immutable write
     // intent until project.current identifies the reconnected document and epoch.

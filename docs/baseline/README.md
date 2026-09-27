@@ -1,6 +1,6 @@
 # QCAE 设计基线 1.1
 
-状态：当前开发基线；平台骨架已交付至C1/C2，运行及范围见[C2交接](../implementation/c2-handoff.md)，证据见[C2验证](../engineering/c2-validation.md)。后续 NEXT-01—03 入口一致性已交付，见[独立验证记录](../engineering/next-validation.md)。C3首个显示交互切片见[实施与验证](../engineering/c3-display-validation.md)；完整SK及P0尚未验收。此文将v0.1—v0.8讨论中已选择的方向收敛为当前依据，后续架构变更通过ADR记录。
+状态：当前开发基线；平台骨架已交付至C1/C2，运行及范围见[C2交接](../implementation/c2-handoff.md)，证据见[C2验证](../engineering/c2-validation.md)。后续 NEXT-01—03 入口一致性已交付，见[独立验证记录](../engineering/next-validation.md)。C3显示交互首片见[实施与验证](../engineering/c3-display-validation.md)，资源/事件/局部显示续片见[验证与边界](../engineering/c3-sync-validation.md)；完整SK及P0尚未验收。此文将v0.1—v0.8讨论中已选择的方向收敛为当前依据，后续架构变更通过ADR记录。
 
 ## 确定决策
 
@@ -52,7 +52,7 @@ P0装配为部件层级组织；重复变换实例、复杂CAD/网格、完整�
 
 ## 交付与预算
 
-当前已交付M0/M1、[M2/M3工作区](../implementation/m2-m3.md)及[C1/C2平台骨架](../engineering/checkpoints-c1-c2.md)：记录模型、统一提交/历史、SQLite迁移与后台线网格已贯通。NEXT-01—03已补齐查询、操作契约与生产装配；C3首个切片已接通几何显示/拾取与建线、网格桌面工具。按[接续计划](development-plan.md#c2之后的接续计划)继续C3资源、事件与局部显示，再推进C4；文件产物发布、真实Nastran求解、AI及完整性能仍待完成。
+当前已交付M0/M1、[M2/M3工作区](../implementation/m2-m3.md)及[C1/C2平台骨架](../engineering/checkpoints-c1-c2.md)：记录模型、统一提交/历史、SQLite迁移与后台线网格已贯通。NEXT-01—03已补齐查询、操作契约与生产装配；C3已接通几何显示/拾取、建线/网格工具、分块资源、事件重同步及局部显示。按[接续计划](development-plan.md#c2之后的接续计划)补齐端到端字节账本，再冻结C4扩展基线；文件产物发布、真实Nastran求解、AI及完整性能仍待完成。
 
 完整本地P0＋限定外部AI场景仍使用500万—1000万累计研发输入/输出token作为低置信度规划区间；不是已耗用量或自动执行上限。首次运行时/事务切片完成后重估，运行时AI推理成本另计。历史推导见 [v0.6方案](../P0-AI接口与悬臂梁交付方案-v0.6.md)。
 

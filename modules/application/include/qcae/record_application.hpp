@@ -11,6 +11,24 @@ struct RecordSnapshot {
     DocumentView records;
     DocumentInfo info;
 };
+// Notifications and render deltas borrow immutable records from committed history.
+// A reverse entry applies its changes' after->before images without copying records.
+struct CommittedRecordChange {
+    DocumentRef document;
+    Revision base_revision{}, revision{};
+    TransactionId transaction;
+    std::shared_ptr<const RecordChangeSet> changes;
+    RecordDirection direction{RecordDirection::forward};
+};
+struct RecordChangeBatch {
+    DocumentRef document;
+    Revision base_revision{}, current_revision{};
+    bool resync_required{};
+    std::vector<CommittedRecordChange> changes;
+};
+struct ChangeJournalStats {
+    std::uint64_t metadata_bytes_copied{}, entries_published{}, records_referenced{};
+};
 struct RecordPreparedOperation {
     PreparedRecordChange change;
     std::string label;
@@ -103,6 +121,7 @@ struct RecordApplicationOptions {
     std::vector<OwnedRowHandler> owned_row_handlers;
     std::size_t max_owned_rows{4096};
     std::size_t max_owned_row_bytes{65536};
+    std::size_t max_change_journal_entries{128};
 };
 std::vector<StoredRow> encode_record_state_image(const RecordStateImage&);
 RecordStateImage decode_record_state_image(std::span<const StoredRow>,
@@ -131,6 +150,8 @@ class RecordApplication {
     Result<DocumentInfo>
     host_operation(const Caller&, const std::string&, const std::string&) const;
     Result<RecordSnapshot> snapshot(const DocumentRef&) const;
+    Result<RecordChangeBatch> changes_since(const DocumentRef&, Revision) const;
+    ChangeJournalStats change_journal_stats() const;
     Result<ChangePreview> preview(const Caller&, const WriteContext&, const RecordPrepare&);
     Result<ChangeReceipt>
     commit(const Caller&, const WriteContext&, const PreviewId&, const std::string&);

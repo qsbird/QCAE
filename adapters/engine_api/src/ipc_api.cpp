@@ -124,7 +124,8 @@ QJsonObject dispatch(MemoryApplication& app,
                      const IModelCodec* codec,
                      const ProfileDefinition* profile,
                      SelectionService* selections,
-                     TypedHost* typed) {
+                     TypedHost* typed,
+                     bool display_services) {
     const QString id =
         request.value("request_id").isString() ? request.value("request_id").toString() : QString{};
     if (id.toUtf8().size() > 128)
@@ -182,6 +183,12 @@ QJsonObject dispatch(MemoryApplication& app,
                     {"requires_idempotency_key", descriptor.requires_idempotency_key},
                     {"requires_profile_match", descriptor.requires_profile_match},
                     {"implementation_status", supported(descriptor.name) ? "partial" : "planned"}};
+                if (display_services && (descriptor.name == "view.render_resource" ||
+                                         descriptor.name.starts_with("resources.") ||
+                                         descriptor.name.starts_with("events."))) {
+                    entry.insert("implementation_status", "implemented");
+                    entry.insert("requested_version", 1);
+                }
                 if (descriptor.name == "changes.preview")
                     entry.insert("supported_commands",
                                  QJsonArray{"material.create",
