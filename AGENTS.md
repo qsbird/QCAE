@@ -11,7 +11,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Root-level versioned `docs/*-v0.*.md` are historical research. `.omx/` is local runtime context, not canonical project documentation and not committed.
 
-M0/M1 plus the M2 persistence and M3 Qt/VTK desktop slices are implemented; see docs/implementation/m2-m3.md for current runtime and limits. Follow-up work continues from the development plan without repeating the interview. Current user instructions override earlier research assumptions.
+The platform skeleton is delivered through C1/C2 on top of the M0/M1 and M2/M3 slices; see docs/implementation/c2-handoff.md and docs/engineering/c2-validation.md for current runtime and evidence. The Qt/VTK desktop retains the M2/M3 tools; C2 geometry and mesh tools are CLI/IPC only. Follow-up priorities are recorded in docs/baseline/development-plan.md; planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
 
 ## Binding architecture
 

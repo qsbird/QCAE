@@ -11,7 +11,7 @@
 | [运行时与数据](architecture/runtime-and-data.md) | 文档身份、事务、保存、恢复、任务 |
 | [接口契约](contracts/README.md) | OperationDescriptor、请求/响应、语义报告 |
 | [组件与环境](baseline/components-and-environment.md) | 固定组件角色及开发环境门禁 |
-| [开发计划](baseline/development-plan.md) | M0—M6切片和任务依赖 |
+| [开发计划](baseline/development-plan.md) | M0—M6、C1/C2当前状态及入口补强的接续任务 |
 | [验收](baseline/acceptance.md) | 需求追溯与完成证据 |
 | [设计验证记录](baseline/validation-record.md) | 已执行的文档检查与尚未执行的产品验证 |
 
@@ -19,15 +19,17 @@
 
 ## 工程化重构提案
 
-[以简单场景验收平台骨架](architecture/engineering-skeleton-proposal.md)：实际结构问题、目标模块、实体/操作扩展机制、完整核心链路、迁移顺序和EXT-01—05验收。当前为设计提案，尚未执行重构。
+[以简单场景验收平台骨架](architecture/engineering-skeleton-proposal.md)：重构前问题、目标模块、实体/操作扩展机制、核心链路、R0—R5顺序和EXT-01—05验收。已实现C1/C2范围，完整目标尚未完成。
 
-[Archer架构对照与对齐目标](architecture/archer-architecture-parity.md)：20个参考功能域的最低覆盖清单、原提案缺口、指定改进目标及可验收标准；仍属未实施设计。
+[Archer架构对照与对齐目标](architecture/archer-architecture-parity.md)：20个参考功能域的最低覆盖清单、原提案缺口、指定改进目标及可验收标准；参考库存及C1/C2已有证据，完整架构对齐尚未验收。
 
 [骨架检查点与完成预期](baseline/skeleton-acceptance.md)：SK-01—14及97项数值/布尔指标、固定夹具、采样公式、扩展触碰上限与机器可读目标。
 
 ## 当前实现
 
 [C2 交接与当前边界](implementation/c2-handoff.md)：当前停止在 C2，记录核心、后台线网格、CLI/薄客户端与保存/恢复已贯通。
+
+[C2 扩展审查](engineering/extensibility-audit-c2.md)：生产查询、操作契约、装配及拓扑/显示的剩余缺口；接续任务纳入[开发计划](baseline/development-plan.md#c2之后的接续计划)。
 
 [平台框架逐文件导读](engineering/code-walkthrough/README.md)：按四条阅读链说明现有 109 个生产源码与配置文件，区分记录主链、旧兼容边界和尚未贯通的入口。
 

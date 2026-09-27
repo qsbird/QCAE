@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-M0的材料内存切片及本地IPC、M1的文档与受控格式切片已经实现，见[M0说明](docs/implementation/m0.md)和[M1说明](docs/implementation/m1.md)。后续按[开发计划](docs/baseline/development-plan.md)接续；完整P0尚未完成。
+当前已交付平台骨架 C1/C2，保留 M0/M1 及 M2/M3 桌面回归。运行与边界见[C2交接](docs/implementation/c2-handoff.md)，已执行证据见[C2验证](docs/engineering/c2-validation.md)。后续按[开发计划](docs/baseline/development-plan.md)先补齐查询、操作契约和生产装配入口；C3/C4、完整SK及P0尚未完成。
 
 开始一个开发切片前，读取对应需求、架构边界和验收ID，先定义该切片的完成证据。不要一次性生成所有模块空壳或扩大未列功能。
 
@@ -39,7 +39,7 @@ Not-tested: External solver integration
 
 当前文档基线：`python3 tools/check_design.py` 和 `git diff --check`。
 
-当前还需按[M0说明](docs/implementation/m0.md)运行CMake/CTest；后续按切片补充：核心单元/契约、事务故障注入、IPC/生命周期、选择显示、格式往返、真实求解和AI联合验收。现有构建配置与命令已由M0记录；不要在文档里报告未运行的测试。
+代码切片按[C2验证记录](docs/engineering/c2-validation.md)运行相关核心、本地引擎、桌面及公共头消费者构建/回归，保留原M0—M3适用测试；后续按改动补充任务、事件、资源、结果及真实求解/AI验收。仅文档或IDE配置改动执行对应静态检查，并明确未重跑产品测试；不要将历史日志写成本轮运行结果。
 
 ## 代码可读性门禁
 

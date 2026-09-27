@@ -1,6 +1,6 @@
 # 模块职责、接口与依赖
 
-状态：设计基线1.1；M0已实现最小切片，完整模块职责仍为后续目标。本文细化 [架构总览](README.md)。以下为计划目录和逻辑模块；当前M0先在include/qcae、src和apps中实现少量目标，不要求每个逻辑模块单独生成库。
+状态：设计基线1.1；平台骨架已实现C1/C2限定范围，完整模块职责仍为后续目标。本文细化[架构总览](README.md)，以下为逻辑职责。当前源码已按modules/features/adapters/apps/ui等目录归属，实际构建目标见[目标清单](../../modules/targets.json)，实现链路见[源码导读](../engineering/code-walkthrough/README.md)；不要求每个逻辑模块单独生成库。
 
 ## 1. 核心模型与数据归属
 
