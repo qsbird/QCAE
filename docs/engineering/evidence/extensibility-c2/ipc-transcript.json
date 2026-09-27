@@ -1,0 +1,179 @@
+[
+  {
+    "request": {
+      "api_version": "1.1",
+      "request_id": "probe-0",
+      "operation": "project.create",
+      "parameters": {
+        "name": "IPC audit"
+      },
+      "idempotency_key": "create"
+    },
+    "response": {
+      "data": {
+        "content_state": "state-20a0e0895127d2b8b7a8858d50d75b50-3",
+        "dirty": false,
+        "document_epoch": "epoch-20a0e0895127d2b8b7a8858d50d75b50-2",
+        "document_id": "doc-20a0e0895127d2b8b7a8858d50d75b50-1",
+        "durable": true,
+        "material_count": 0,
+        "name": "IPC audit",
+        "project_id": "",
+        "revision": "0",
+        "saved_content_state": "",
+        "saved_path": ""
+      },
+      "request_id": "probe-0",
+      "revision": "0",
+      "status": "success"
+    }
+  },
+  {
+    "request": {
+      "api_version": "1.1",
+      "request_id": "probe-1",
+      "operation": "geometry.create_line",
+      "parameters": {
+        "start_mm": [
+          0,
+          0,
+          0
+        ],
+        "end_mm": [
+          1000,
+          0,
+          0
+        ]
+      },
+      "document_id": "doc-20a0e0895127d2b8b7a8858d50d75b50-1",
+      "document_epoch": "epoch-20a0e0895127d2b8b7a8858d50d75b50-2",
+      "expected_revision": "0",
+      "idempotency_key": "line"
+    },
+    "response": {
+      "data": {
+        "committed_revision": "1",
+        "current_revision": "1",
+        "entity_id": "entity-20a0e0895127d2b8b7a8858d50d75b50-4",
+        "replayed": false,
+        "transaction_id": "transaction-20a0e0895127d2b8b7a8858d50d75b50-6"
+      },
+      "request_id": "probe-1",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "request": {
+      "api_version": "1.1",
+      "request_id": "probe-2",
+      "operation": "project.current",
+      "parameters": {}
+    },
+    "response": {
+      "data": {
+        "content_state": "state-20a0e0895127d2b8b7a8858d50d75b50-7",
+        "dirty": true,
+        "document_epoch": "epoch-20a0e0895127d2b8b7a8858d50d75b50-2",
+        "document_id": "doc-20a0e0895127d2b8b7a8858d50d75b50-1",
+        "durable": true,
+        "material_count": 0,
+        "name": "IPC audit",
+        "project_id": "",
+        "revision": "1",
+        "saved_content_state": "",
+        "saved_path": ""
+      },
+      "request_id": "probe-2",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "request": {
+      "api_version": "1.1",
+      "request_id": "probe-3",
+      "operation": "entity.query",
+      "parameters": {
+        "kind": "geometry"
+      },
+      "document_id": "doc-20a0e0895127d2b8b7a8858d50d75b50-1",
+      "document_epoch": "epoch-20a0e0895127d2b8b7a8858d50d75b50-2",
+      "expected_revision": "1"
+    },
+    "response": {
+      "data": {
+        "entities": [
+          {
+            "end_mm": [
+              1000,
+              0,
+              0
+            ],
+            "entity_id": "entity-20a0e0895127d2b8b7a8858d50d75b50-4",
+            "geometry_revision": "1",
+            "kind": "geometry",
+            "name": "",
+            "start_mm": [
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "limit": 100,
+        "offset": 0,
+        "revision": "1",
+        "total": 1
+      },
+      "request_id": "probe-3",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "request": {
+      "api_version": "1.1",
+      "request_id": "probe-4",
+      "operation": "entity.query",
+      "parameters": {},
+      "document_id": "doc-20a0e0895127d2b8b7a8858d50d75b50-1",
+      "document_epoch": "epoch-20a0e0895127d2b8b7a8858d50d75b50-2",
+      "expected_revision": "1"
+    },
+    "response": {
+      "data": {
+        "entities": [],
+        "limit": 100,
+        "offset": 0,
+        "revision": "1",
+        "total": 0
+      },
+      "request_id": "probe-4",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  {
+    "request": {
+      "api_version": "1.1",
+      "request_id": "probe-5",
+      "operation": "entity.query",
+      "parameters": {
+        "kind": "geometry",
+        "name_contains": ""
+      },
+      "document_id": "doc-20a0e0895127d2b8b7a8858d50d75b50-1",
+      "document_epoch": "epoch-20a0e0895127d2b8b7a8858d50d75b50-2",
+      "expected_revision": "1"
+    },
+    "response": {
+      "error": {
+        "code": "INVALID_INPUT",
+        "message": "Unknown entity kind"
+      },
+      "request_id": "probe-5",
+      "status": "failed"
+    }
+  }
+]
