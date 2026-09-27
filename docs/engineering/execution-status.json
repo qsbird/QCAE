@@ -3,14 +3,14 @@
   "baseline_commit": "62e2b1d",
   "branch": "codex/platform-skeleton",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-09-26T07:18:38.844826+00:00",
-  "status": "in_progress",
+  "updated_utc": "2026-09-27T06:39:49.748492+00:00",
+  "status": "completed_to_C2",
   "phases": {
     "R0": "partial_committed",
     "R1": "committed",
-    "R2": "in_progress",
-    "R3": "C2_subset_in_progress",
-    "R4": "C2_subset_in_progress",
+    "R2": "C1_C2_scope_completed",
+    "R3": "C2_subset_completed",
+    "R4": "C2_subset_completed",
     "R5": "deferred"
   },
   "quantitative_gates_passed": [],
@@ -19,52 +19,134 @@
       "task": "R2 core interfaces and data/transaction design",
       "model": "gpt-6-astra",
       "reasoning": "ultra",
-      "agent": "r2_core_architect"
+      "agent": "r2_core_architect",
+      "status": "historical"
     },
     {
       "task": "R1 module ownership and build isolation",
       "model": "gpt-6-astra",
       "reasoning": "high",
-      "agent": "r1_modules"
+      "agent": "r1_modules",
+      "status": "historical"
     },
     {
       "task": "R0 immutable legacy fixtures",
       "model": "gpt-6-sol",
       "reasoning": "high",
-      "agent": "r0_legacy_fixtures"
+      "agent": "r0_legacy_fixtures",
+      "status": "historical"
     },
     {
       "task": "R0 reference inventory and contracts",
       "model": "gpt-6-sol",
       "reasoning": "high",
-      "agent": "r0_reference_inventory"
+      "agent": "r0_reference_inventory",
+      "status": "historical"
+    },
+    {
+      "task": "C2 cross-layer release review",
+      "model": "gpt-6-sol",
+      "reasoning": "xhigh",
+      "agent": "c2_release_review_sol",
+      "status": "completed"
+    },
+    {
+      "task": "C1 SQLite failure diagnostics",
+      "model": "gpt-6-sol",
+      "reasoning": "medium",
+      "agent": "c1_sqlite_release_failure",
+      "status": "completed"
+    },
+    {
+      "task": "C2 handoff document",
+      "model": "gpt-6-luna",
+      "reasoning": "xhigh",
+      "agent": "c2_handoff_docs",
+      "status": "completed"
+    },
+    {
+      "task": "C2 final handoff review",
+      "model": "gpt-6-sol",
+      "reasoning": "medium",
+      "agent": "c2_final_handoff_review",
+      "status": "completed"
     }
   ],
   "verified_evidence": [
     {
-      "scope": "pre-migration pure-core Release regression",
-      "passed": 12,
-      "total": 12,
-      "note": "R1 agent /private/tmp/qcae-r1-baseline; not a new skeleton gate pass"
+      "scope": "C1 independent Release full build",
+      "passed": 34,
+      "total": 34,
+      "evidence": "docs/engineering/c1-validation.md"
+    },
+    {
+      "scope": "C2 Release Qt/VTK/SQLite/IPC regression",
+      "passed": 36,
+      "total": 36,
+      "evidence": "docs/engineering/evidence/c2/release-tests.log"
+    },
+    {
+      "scope": "C2 Release pure core",
+      "passed": 25,
+      "total": 25,
+      "evidence": "docs/engineering/evidence/c2/core-tests.log"
+    },
+    {
+      "scope": "C2 real SQLite CLI and thin-script workflows",
+      "passed": 6,
+      "total": 6,
+      "note": "CLI 3, script 3; semantic differences 0; recovery and normal open verified."
+    },
+    {
+      "scope": "SQLite geometry tasks",
+      "passed": 30,
+      "total": 30,
+      "note": "Success/cancel/stale each ten; one edit +100 undo/redo gives revision delta 201."
+    },
+    {
+      "scope": "Read-only legacy migration",
+      "passed": 6,
+      "total": 6,
+      "note": "Full model/reference comparison; frozen source SHA-256 unchanged."
+    },
+    {
+      "scope": "Public API consumers",
+      "passed": 42,
+      "total": 42,
+      "note": "Independent compile/link; final incremental rebuild passed."
     }
   ],
   "notes": [
     "Existing .idea is preserved and not committed.",
-    "Agents own nonoverlapping files; only coordinator creates git commits.",
-    "Pending or partially implemented metrics are never marked passed.",
-    "C2 chosen by user; full SK gates remain unclaimed. Deferred results/visualization drafts preserved on codex/skeleton-c3-wip."
+    "C2 selected by user and completed; no C3/C4 execution. Full SK gates remain unclaimed.",
+    "C3 WIP archived on codex/skeleton-c3-wip; not release-validated.",
+    "One C1 SQLite child-lock assertion failure did not reproduce in 192 targeted runs; cause remains unidentified. Raw failure and case diagnostics retained.",
+    "ASan/UBSan initial run, fixture correction and affected rechecks are reported separately, not as one uninterrupted passing run.",
+    "Final handoff portability review changed only the Unix workflow temp root; full 36-test Release suite then passed again.",
+    "New geometry/mesh tools are CLI/IPC only; no new GUI, actual solver, external AI, billion-scale or full P0 acceptance."
   ],
   "selected_stop_checkpoint": "C2",
   "checkpoint_contract": "docs/engineering/checkpoints-c1-c2.md",
   "checkpoints": {
-    "C1": "in_progress",
-    "C2": "in_progress",
+    "C1": "passed",
+    "C2": "passed",
     "C3": "deferred",
     "C4": "deferred"
   },
   "commits": {
     "module_ownership": "fa79d52",
     "legacy_reference_freeze": "94d856b",
-    "deferred_wip": "b8379a2"
-  }
+    "deferred_wip": "b8379a2",
+    "c1": "92b115124e26454fe1204ec410bee83f6a5774ac"
+  },
+  "model_policy": {
+    "complex": "gpt-6-sol xhigh",
+    "regular": "gpt-6-sol medium",
+    "mechanical": "gpt-6-luna xhigh"
+  },
+  "tags": {
+    "C1": "checkpoint/c1",
+    "C2": "checkpoint/c2"
+  },
+  "validation_report": "docs/engineering/c2-validation.md"
 }

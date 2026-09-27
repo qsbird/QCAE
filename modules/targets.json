@@ -235,18 +235,26 @@
       "public_headers": [
         "adapters/engine_api/include/qcae/ipc_api.hpp",
         "adapters/engine_api/include/qcae/ipc_model.hpp",
-        "adapters/engine_api/include/qcae/ipc_selection.hpp"
+        "adapters/engine_api/include/qcae/ipc_selection.hpp",
+        "adapters/engine_api/include/qcae/typed_host.hpp"
       ],
       "sources": [
         "adapters/engine_api/src/ipc_api.cpp",
         "adapters/engine_api/src/ipc_model.cpp",
-        "adapters/engine_api/src/ipc_selection.cpp"
+        "adapters/engine_api/src/ipc_selection.cpp",
+        "adapters/engine_api/src/typed_host.cpp"
       ],
       "public_dependencies": [
         "qcae_legacy_api",
         "qcae_query",
         "qcae_contracts",
-        "Qt6::Core"
+        "Qt6::Core",
+        "qcae_operations",
+        "qcae_material_features",
+        "qcae_mesh_editing",
+        "qcae_geometry_features",
+        "qcae_mesh_generation",
+        "qcae_task_application"
       ],
       "private_dependencies": [],
       "external_dependencies": [

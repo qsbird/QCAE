@@ -160,6 +160,10 @@ if(QCAE_BUILD_IPC)
       add_test(NAME m23_ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/m23_ipc_tests.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
       set_tests_properties(m23_ipc PROPERTIES TIMEOUT 90)
+      add_test(NAME c2_workflow COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/c2_workflow_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/c2-evidence/workflow")
+      set_tests_properties(c2_workflow PROPERTIES TIMEOUT 180)
     endif()
   endif()
 endif()

@@ -2,6 +2,8 @@
 #include "qcae/ipc_model.hpp"
 #include "qcae/ipc_selection.hpp"
 #include "qcae/operations.hpp"
+#include "qcae/typed_host.hpp"
+#include "qcae/records.hpp"
 
 #include <QJsonArray>
 #include <QSet>
@@ -93,7 +95,8 @@ QJsonObject receipt_json(const ChangeReceipt& receipt) {
             {"committed_revision", number(receipt.committed_revision)},
             {"current_revision", number(receipt.current_revision)},
             {"current_content_state", qs(receipt.current_content_state)},
-            {"replayed", receipt.replayed}};
+            {"replayed", receipt.replayed},
+            {"entity_id", qs(receipt.primary_entity.value)}};
 }
 bool supported(std::string_view name) {
     return name == "project.current" || name == "project.open" || name == "project.close" ||
@@ -120,7 +123,8 @@ QJsonObject dispatch(MemoryApplication& app,
                      const Caller& caller,
                      const IModelCodec* codec,
                      const ProfileDefinition* profile,
-                     SelectionService* selections) {
+                     SelectionService* selections,
+                     TypedHost* typed) {
     const QString id =
         request.value("request_id").isString() ? request.value("request_id").toString() : QString{};
     if (id.toUtf8().size() > 128)
@@ -140,13 +144,15 @@ QJsonObject dispatch(MemoryApplication& app,
             return failure(
                 id, "API_VERSION_UNSUPPORTED", "Expected API version " + qs(api_version));
         const auto op = string_field(request, "operation").toStdString();
-        if (!find_operation(op) || !supported(op))
+        if ((!find_operation(op) || !supported(op)) && !(typed && typed->supports(op)))
             return failure(id,
                            "UNSUPPORTED_CAPABILITY",
                            "Operation is not implemented in the current memory slice");
         if (!request.value("parameters").isObject())
             throw InvalidRequest("parameters must be an object");
         const auto params = request.value("parameters").toObject();
+        if (typed && typed->supports(op))
+            return typed->dispatch(request, caller);
         if (selections) {
             if (const auto selection_response =
                     dispatch_selection(app, *selections, request, caller))
@@ -188,13 +194,18 @@ QJsonObject dispatch(MemoryApplication& app,
                     entry.insert("supported_scope", "global_catalog_only");
                 catalog.append(entry);
             }
+            if (typed) {
+                for (const auto& descriptor : typed->capabilities())
+                    catalog.append(descriptor);
+            }
             const QJsonObject data{
                 {"operations", catalog},
                 {"storage_mode", app.durable() ? "sqlite" : "memory"},
                 {"durable", app.durable()},
                 {"recovery_available", app.recovery_available()},
                 {"implementation_scope",
-                 "M2 workspace/save/recovery and M3 query/render contracts; no solver execution or "
+                 "C2 typed operations and background line mesh; M2 workspace/save/recovery and M3 "
+                 "query/render; no solver execution or "
                  "AI bridge"},
                 {"max_name_bytes", 1024},
                 {"configured_solver_profiles", QJsonArray{}},
@@ -275,6 +286,15 @@ QJsonObject dispatch(MemoryApplication& app,
                         data.insert("include_count", static_cast<qint64>(snapshot.includes.size()));
                         data.insert("analysis_count",
                                     static_cast<qint64>(snapshot.analyses.size()));
+                    }
+                    const auto records = app.record_application().snapshot(document_ref(request));
+                    if (records.ok()) {
+                        data.insert("geometry_count",
+                                    static_cast<qint64>(records.value->records.count(
+                                        RecordTraits<records::GeometryLine>::type_id)));
+                        data.insert("mesh_count",
+                                    static_cast<qint64>(records.value->records.count(
+                                        RecordTraits<records::Mesh>::type_id)));
                     }
                     return data;
                 });
@@ -369,11 +389,16 @@ QJsonObject dispatch(MemoryApplication& app,
                 original = "undo";
             else if (original == "history.redo")
                 original = "redo";
+            else if (typed && typed->supports(original))
+                return result_json(id,
+                                   app.record_application().action_outcome(
+                                       caller,
+                                       document_ref(request),
+                                       original,
+                                       string_field(params, "idempotency_key").toStdString()),
+                                   receipt_json);
             else
-                return failure(
-                    id,
-                    "UNSUPPORTED_CAPABILITY",
-                    "Only changes.commit/history.undo/history.redo outcomes are available");
+                return failure(id, "UNSUPPORTED_CAPABILITY", "Operation outcome is unavailable");
             response =
                 result_json(id,
                             app.operation(caller,
@@ -381,6 +406,14 @@ QJsonObject dispatch(MemoryApplication& app,
                                           original,
                                           string_field(params, "idempotency_key").toStdString()),
                             receipt_json);
+        }
+        if (typed && response.value("status").toString() == "success" &&
+            (op == "project.create" || op == "project.open" || op == "project.close")) {
+            const auto reconciled = typed->reconcile();
+            if (!reconciled.ok())
+                return failure(id,
+                               QString::fromLatin1(error_name(reconciled.error->code)),
+                               qs(reconciled.error->message));
         }
         if (response.value("data").isObject()) {
             const auto data = response.value("data").toObject();

@@ -1,0 +1,27 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c2-desktop
+    Start 29: c2_workflow
+1/1 Test #29: c2_workflow ......................***Failed    0.25 sec
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/c2_workflow_tests.py", line 243, in <module>
+    main()
+    ~~~~^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/c2_workflow_tests.py", line 229, in main
+    result, model = run_once(str(Path(args.engine).resolve()), str(Path(args.cli).resolve()),
+                    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                             mode, run, args.evidence_dir)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/c2_workflow_tests.py", line 103, in run_once
+    caps = start()
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/c2_workflow_tests.py", line 95, in start
+    raise AssertionError(log.read())
+AssertionError: QLocalServer::listen: Unknown error 1
+
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =   0.26 sec
+
+The following tests FAILED:
+	 29 - c2_workflow (Failed)
+Errors while running CTest

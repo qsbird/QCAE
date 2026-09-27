@@ -1,4 +1,6 @@
 #include "qcae/ipc_model.hpp"
+#include "qcae/query.hpp"
+#include "qcae/records.hpp"
 #include <QJsonArray>
 #include <QUuid>
 #include <algorithm>
@@ -118,6 +120,51 @@ Vec3 vec(const QJsonObject& o, const char* key) {
 QJsonArray vec_json(const Vec3& v) {
     return {v.x, v.y, v.z};
 }
+QJsonArray vector_json(const std::array<double, 3>& value) {
+    return {value[0], value[1], value[2]};
+}
+QJsonObject record_entity_json(const EntitySummary& entity, const DocumentView& view) {
+    QJsonObject result{
+        {"entity_id", qs(entity.id.value)}, {"kind", qs(entity.kind)}, {"name", qs(entity.name)}};
+    const auto record = view.find_identity(entity.id.value);
+    if (entity.kind == "node") {
+        const auto& value = record->get<records::Node>();
+        result.insert("position_mm", vector_json(value.position));
+        if (value.mesh)
+            result.insert("mesh_id", qs(value.mesh->value));
+    } else if (entity.kind == "beam") {
+        const auto& value = record->get<records::Beam>();
+        result.insert("nodes", QJsonArray{qs(value.nodes[0].value), qs(value.nodes[1].value)});
+        result.insert("section_id",
+                      value.section ? QJsonValue(qs(value.section->value)) : QJsonValue());
+        result.insert("orientation", vector_json(value.orientation));
+        if (value.mesh)
+            result.insert("mesh_id", qs(value.mesh->value));
+    } else if (entity.kind == "material") {
+        const auto& value = record->get<records::Material>();
+        result.insert("young_modulus_mpa", value.young_modulus_mpa);
+        if (value.poisson_ratio)
+            result.insert("poisson_ratio", *value.poisson_ratio);
+    } else if (entity.kind == "section") {
+        const auto& value = record->get<records::BeamSection>();
+        result.insert("material_id", qs(value.material.value));
+        result.insert("area_mm2", value.area_mm2);
+        result.insert("i1_mm4", value.i1_mm4);
+        result.insert("i2_mm4", value.i2_mm4);
+        result.insert("torsion_mm4", value.torsion_mm4);
+    } else if (entity.kind == "geometry") {
+        const auto& value = record->get<records::GeometryLine>();
+        result.insert("start_mm", vector_json(value.start));
+        result.insert("end_mm", vector_json(value.end));
+        result.insert("geometry_revision", QString::number(value.geometry_revision));
+    } else if (entity.kind == "mesh") {
+        const auto& value = record->get<records::Mesh>();
+        if (value.geometry)
+            result.insert("geometry_id", qs(value.geometry->value));
+        result.insert("stale", value.stale);
+    }
+    return result;
+}
 QJsonObject entity_json(const EntitySummary& e, const Model& m) {
     QJsonObject o{{"entity_id", qs(e.id.value)}, {"kind", qs(e.kind)}, {"name", qs(e.name)}};
     for (const auto& n : m.nodes)
@@ -214,6 +261,46 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
     if (!edit && op != "entity.query" && op != "entity.references" && op != "model.export_preview")
         return std::nullopt;
     try {
+        // Basic paging reads records directly, including geometry and unassigned line beams.
+        // The existing organization/filter protocol remains available below.
+        if (op == "entity.query" && !p.contains("ids") && !p.contains("name_contains") &&
+            !p.contains("view") && !p.contains("owner_id")) {
+            fields(p, {"kind", "offset", "limit"});
+            const auto kind = p.contains("kind") ? str(p, "kind") : std::string{};
+            const bool native_kind = kind == "node" || kind == "beam" || kind == "material" ||
+                                     kind == "section" || kind == "geometry" || kind == "mesh";
+            if (native_kind) {
+                auto index = [&](const char* key, int fallback, int maximum) {
+                    if (!p.contains(key))
+                        return fallback;
+                    const auto value = p.value(QLatin1String(key));
+                    if (!value.isDouble() || value.toDouble() < 0 || value.toDouble() > maximum ||
+                        std::floor(value.toDouble()) != value.toDouble())
+                        throw BadInput("Invalid pagination");
+                    return value.toInt();
+                };
+                const auto offset = index("offset", 0, 100000);
+                const auto limit = index("limit", 100, 1000);
+                const auto snapshot = app.record_application().snapshot(ref(r));
+                if (!snapshot.ok())
+                    return error(id, snapshot);
+                const auto page = query_entities(snapshot.value->records,
+                                                 static_cast<std::size_t>(offset),
+                                                 static_cast<std::size_t>(limit),
+                                                 kind);
+                if (!page.ok())
+                    return error(id, page);
+                QJsonArray rows;
+                for (const auto& entity : page.value->entities)
+                    rows.append(record_entity_json(entity, snapshot.value->records));
+                return ok(id,
+                          {{"entities", rows},
+                           {"total", static_cast<qint64>(page.value->total)},
+                           {"offset", offset},
+                           {"limit", limit}},
+                          snapshot.value->info.revision);
+            }
+        }
         const auto snap = app.snapshot(ref(r));
         if (!snap.ok())
             return error(id, snap);

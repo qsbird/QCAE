@@ -1,8 +1,11 @@
 #include "qcae/ipc_api.hpp"
 #include "qcae/nastran_codec.hpp"
 #include "qcae/query.hpp"
+#include "qcae/typed_host.hpp"
 #ifdef QCAE_HAS_SQLITE
 #include "qcae/sqlite_store.hpp"
+#include "qcae/legacy_migration.hpp"
+#include "qcae/records.hpp"
 #endif
 #include "qcae/local_endpoint.hpp"
 #include "qcae/operations.hpp"
@@ -53,7 +56,13 @@ int main(int argc, char** argv) {
     parser.addHelpOption();
     parser.addOption({{"s", "socket"}, "Local endpoint path", "path"});
     parser.addOption({"workspace", "SQLite working recovery database", "path"});
+    parser.addOption(
+        {"migrate-from", "Read a legacy workspace into a new --workspace destination", "path"});
     parser.process(app);
+    if (parser.isSet("migrate-from") && !parser.isSet("workspace")) {
+        QTextStream(stderr) << "--migrate-from requires a new --workspace destination\n";
+        return 2;
+    }
     const QString endpoint =
         parser.isSet("socket") ? parser.value("socket") : qcae::transport::default_endpoint();
     if (endpoint.isEmpty() || !QFileInfo(endpoint).isAbsolute() ||
@@ -104,22 +113,47 @@ int main(int argc, char** argv) {
     try {
         if (parser.isSet("workspace")) {
 #ifdef QCAE_HAS_SQLITE
-            store = std::make_shared<qcae::SqliteWorkspaceStore>(
+            std::optional<qcae::LoadedRows> migration;
+            if (parser.isSet("migrate-from")) {
+                const auto destination = parser.value("workspace");
+                if (!QFileInfo(destination).isAbsolute() || QFileInfo::exists(destination) ||
+                    QFileInfo(destination).isSymLink())
+                    throw std::runtime_error("Migration requires a new absolute destination path");
+                migration =
+                    qcae::migrate_legacy_workspace(qcae::read_legacy_workspace_readonly(
+                                                       parser.value("migrate-from").toStdString()),
+                                                   qcae::make_record_registry());
+            }
+            auto sqlite = std::make_shared<qcae::SqliteWorkspaceStore>(
                 parser.value("workspace").toStdString());
+            if (migration) {
+                // The source was decoded read-only; only this fresh destination is published.
+                qcae::StoreBatch batch{0, "legacy-migration", {}};
+                for (const auto& row : migration->rows)
+                    batch.mutations.push_back({row.key, row.value});
+                sqlite->commit_rows(batch);
+            }
+            store = std::move(sqlite);
 #else
             throw std::runtime_error("This build does not include SQLite persistence");
 #endif
         }
         application = std::make_unique<qcae::MemoryApplication>(
-            qcae::Limits{}, store, [&](const qcae::ProfileRef& profile) {
+            qcae::Limits{},
+            store,
+            [&](const qcae::ProfileRef& profile) {
                 return profile == codec.definition().reference;
-            });
+            },
+            std::vector<qcae::OwnedRowHandler>{qcae::task_row_handler()});
     } catch (const std::exception& error) {
         QTextStream(stderr) << "Workspace initialization failed: " << error.what() << '\n';
         return 5;
     }
     auto& core = *application;
     qcae::SelectionService selections;
+    qcae::ipc::TypedHost typed(core.record_application(), [&](const qcae::ProfileRef& profile) {
+        return profile == codec.definition().reference;
+    });
     // M0 is a single local OS-user host. Request JSON cannot choose this identity.
     const qcae::Caller caller{"local-user"};
     const auto engine_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -194,8 +228,13 @@ int main(int argc, char** argv) {
                                  id, "HANDSHAKE_REQUIRED", "Perform runtime.handshake first"));
                     } else
                         send(client,
-                             qcae::ipc::dispatch(
-                                 core, request, caller, &codec, &codec.definition(), &selections));
+                             qcae::ipc::dispatch(core,
+                                                 request,
+                                                 caller,
+                                                 &codec,
+                                                 &codec.definition(),
+                                                 &selections,
+                                                 &typed));
                 }
             };
             QObject::connect(socket, &QLocalSocket::readyRead, &app, consume);

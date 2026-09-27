@@ -9,6 +9,7 @@ namespace qcae {
 class SelectionService;
 }
 namespace qcae::ipc {
+class TypedHost;
 QJsonObject failure(const QString& request_id,
                     const QString& code,
                     const QString& message,
@@ -18,5 +19,6 @@ QJsonObject dispatch(MemoryApplication&,
                      const Caller& trusted_caller,
                      const IModelCodec* codec = nullptr,
                      const ProfileDefinition* profile = nullptr,
-                     SelectionService* selections = nullptr);
+                     SelectionService* selections = nullptr,
+                     TypedHost* typed = nullptr);
 } // namespace qcae::ipc

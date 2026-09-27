@@ -1,0 +1,11 @@
+CMAKE_BUILD_TYPE=Debug
+QCAE_ENABLE_SANITIZERS=ON
+QCAE_BUILD_IPC=ON
+QCAE_BUILD_STORAGE=ON
+QCAE_BUILD_DESKTOP=OFF
+CMAKE_PREFIX_PATH=/opt/homebrew/opt/qt
+ASAN_OPTIONS=halt_on_error=1:abort_on_error=1
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
+Excluded tests: ipc,m1_ipc,m23_ipc,c2_workflow
+Build concurrency: 2
+CTest concurrency: 2

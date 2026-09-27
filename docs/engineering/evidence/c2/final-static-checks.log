@@ -1,0 +1,12 @@
+$ python3 tools/check_design.py
+PASS: 120 portable links; 33 JSON files; 32-module acyclic graph
+PASS: 35 operation descriptors; 12 contract examples; 20 requirements; 38 acceptance cases
+Design checks only. This command does not run product builds, solver runs or AI acceptance.
+Exit code: 0
+$ python3 tools/check_cpp_format.py
+PASS: 104 C++ files match clang-format 21
+Exit code: 0
+$ git diff --check
+Exit code: 0
+$ git diff --cached --check
+Exit code: 0
