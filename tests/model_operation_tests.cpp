@@ -376,6 +376,122 @@ void direct_retry_and_history() {
     check(fixture.snapshot().records.find<records::Material>(material) != nullptr,
           "redo restores original identity");
 }
+void material_description_edits() {
+    Fixture fixture;
+    fixture.invoke("material.create",
+                   fixture.context("first-material"),
+                   InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, .3}));
+    const auto material = only_id<records::Material>(fixture.snapshot().records);
+    fixture.invoke("material.create",
+                   fixture.context("second-material"),
+                   InputTraits<MaterialCreateInput>::to_value({"Aluminium", {70, "GPa"}, .33}));
+    const auto before = fixture.snapshot();
+    const auto prior = before.records.find<records::Material>(material)->get<records::Material>();
+    const auto history_before = good(fixture.app.history(before.info.document), "history before");
+    const auto generation = fixture.rows->generation;
+    const auto context = fixture.context("description");
+    const auto input = InputTraits<MaterialSetDescriptionInput>::to_value(
+        {material, std::string("Steel used by the cantilever")});
+    const auto edited = fixture.invoke("material.set_description", context, input);
+    const auto after = fixture.snapshot();
+    const auto& current = after.records.find<records::Material>(material)->get<records::Material>();
+    check(current.description == "Steel used by the cantilever" && current.id == prior.id &&
+              current.name == prior.name && current.young_modulus_mpa == prior.young_modulus_mpa &&
+              current.poisson_ratio == prior.poisson_ratio,
+          "description update preserves Material engineering properties");
+    const auto changes = diff_record_views(before.records, after.records);
+    check(changes.records.size() == 1 && changes.records.front().key.identity == material.value,
+          "description edit changes one Material");
+    const auto committed =
+        good(fixture.app.changes_since(before.info.document, before.info.revision),
+             "committed description changes");
+    check(committed.changes.size() == 1 &&
+              committed.changes.front().changes->records.front().fields ==
+                  std::vector<RecordFieldId>{{5}},
+          "committed transaction identifies only the description field");
+    before.records.visit([&](const Record& record) {
+        if (record->key().identity != material.value)
+            check(after.records.find(record->key()) == record,
+                  "all other records retain their exact immutable allocation");
+    });
+    check(after.info.revision == before.info.revision + 1 &&
+              fixture.rows->generation == generation + 1 &&
+              good(fixture.app.history(after.info.document), "history after").items.size() ==
+                  history_before.items.size() + 1,
+          "successful description edit commits exactly one transaction");
+    const auto replay = fixture.invoke("material.set_description", context, input);
+    check(replayed(replay) && transaction(replay) == transaction(edited) &&
+              fixture.rows->generation == generation + 1,
+          "description retry returns original transaction with no extra commit");
+    auto expect_unchanged = [&](const Result<Value>& result, ErrorCode code, const char* label) {
+        bad(result, code, label);
+        check(fixture.snapshot().info.revision == after.info.revision &&
+                  fixture.rows->generation == generation + 1,
+              "invalid description request has no partial persistent transaction");
+    };
+    expect_unchanged(fixture.registry.invoke("material.set_description",
+                                             context,
+                                             InputTraits<MaterialSetDescriptionInput>::to_value(
+                                                 {material, std::string("Different")})),
+                     ErrorCode::idempotency_key_conflict,
+                     "same description key rejects different input");
+    for (const auto& invalid : {Value(true), Value(1), Value(), Value(Value::Array{})}) {
+        auto wrong = object(input);
+        wrong["description"] = invalid;
+        expect_unchanged(fixture.registry.invoke("material.set_description",
+                                                 fixture.context("invalid-type"),
+                                                 Value(wrong)),
+                         ErrorCode::invalid_input,
+                         "description rejects non-string type");
+    }
+    expect_unchanged(fixture.registry.invoke("material.set_description",
+                                             fixture.context("invalid-text"),
+                                             InputTraits<MaterialSetDescriptionInput>::to_value(
+                                                 {material, std::string("Invalid\ncontrol")})),
+                     ErrorCode::invalid_input,
+                     "generated text validation rejects controls");
+    auto stale = fixture.context("stale-description");
+    --*stale.expected_revision;
+    expect_unchanged(fixture.registry.invoke("material.set_description", stale, input),
+                     ErrorCode::revision_conflict,
+                     "stale description revision rejected");
+    auto expired = fixture.context("expired-description");
+    expired.document->epoch = DocumentEpoch("old-epoch");
+    expect_unchanged(fixture.registry.invoke("material.set_description", expired, input),
+                     ErrorCode::document_epoch_expired,
+                     "old description epoch rejected");
+    expect_unchanged(fixture.registry.invoke("material.set_description",
+                                             fixture.context("empty-description"),
+                                             InputTraits<MaterialSetDescriptionInput>::to_value(
+                                                 {material, std::string()})),
+                     ErrorCode::invalid_input,
+                     "empty description is cleared through omission");
+    good(fixture.app.undo(fixture.caller, {after.info.document, after.info.revision}, "undo"),
+         "undo description");
+    check(!fixture.snapshot()
+               .records.find<records::Material>(material)
+               ->get<records::Material>()
+               .description,
+          "undo restores null description");
+    fixture.invoke("material.set_description", context, input);
+    check(!fixture.snapshot()
+               .records.find<records::Material>(material)
+               ->get<records::Material>()
+               .description,
+          "retry after undo does not reapply description");
+    const auto undone = fixture.snapshot().info;
+    good(fixture.app.redo(fixture.caller, {undone.document, undone.revision}, "redo"),
+         "redo description");
+    fixture.invoke("material.set_description",
+                   fixture.context("clear-description"),
+                   InputTraits<MaterialSetDescriptionInput>::to_value({material, std::nullopt}));
+    check(!fixture.snapshot()
+               .records.find<records::Material>(material)
+               ->get<records::Material>()
+               .description,
+          "omitted optional description clears the value");
+}
+
 void retained_create_identity() {
     const auto rows = std::make_shared<MemoryRows>();
     const Caller caller{"recover-feature-test"};
@@ -559,6 +675,7 @@ int main() {
         normalizers_and_optional_fields();
         material_entry_boundary_consistency();
         direct_retry_and_history();
+        material_description_edits();
         retained_create_identity();
         edits_sections_and_reference_failures();
         std::cout << "PASS: reusable record feature operations, normalization, references and "

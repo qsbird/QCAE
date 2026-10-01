@@ -9,7 +9,8 @@ using namespace operations;
 void observe_record_temporary(const records::Material& value) noexcept {
     ledger::add(ledger::Stage::application,
                 ledger::Metric::model_copy_bytes,
-                sizeof(value) + value.id.value.size() + value.name.size());
+                sizeof(value) + value.id.value.size() + value.name.size() +
+                    (value.description ? value.description->size() : 0));
 }
 void observe_record_temporary(const records::BeamSection& value) noexcept {
     ledger::add(ledger::Stage::application,
@@ -38,6 +39,12 @@ void observe_capture_move(const MaterialSetYoungModulusInput& input) noexcept {
                 ledger::Metric::model_copy_bytes,
                 2 * (sizeof(input.young_modulus.value) + moved_string_bytes(input.entity_id.value) +
                      moved_string_bytes(input.young_modulus.unit)));
+}
+void observe_capture_move(const MaterialSetDescriptionInput& input) noexcept {
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::model_copy_bytes,
+                2 * (sizeof(input.description) + moved_string_bytes(input.entity_id.value) +
+                     (input.description ? moved_string_bytes(*input.description) : 0)));
 }
 void observe_capture_move(const SectionCreateInput& input) noexcept {
     ledger::add(ledger::Stage::application,
@@ -209,6 +216,43 @@ prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput& input)
     return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
 }
 
+Result<OperationPlan>
+prepare_set_description(const operations::MaterialSetDescriptionInput& input) {
+    auto signature = canonical_value(InputTraits<MaterialSetDescriptionInput>::to_value(input));
+    if (!signature.ok()) {
+        return {signature.status, std::nullopt, signature.error};
+    }
+    auto canonical = input;
+    wire::observe_input_copy(canonical, canonical.entity_id, canonical.description);
+    observe_capture_move(canonical);
+    observe_signature_capture(*signature.value);
+    RecordPrepare prepare = [canonical = std::move(canonical), signature = *signature.value](
+                                const DocumentView& view, const RecordIdentityAllocator&) {
+        try {
+            EditSession edit(view);
+            edit.update<records::Material>(canonical.entity_id, [&](auto& material) {
+                material.description = canonical.description;
+                ledger::add(ledger::Stage::application,
+                            ledger::Metric::model_copy_bytes,
+                            sizeof(material.description) +
+                                (material.description ? material.description->size() : 0));
+            });
+            return prepared(edit.prepare(),
+                            "Set material description",
+                            canonical.entity_id,
+                            signature,
+                            0,
+                            false);
+        } catch (const RecordError& error) {
+            return failed<RecordPreparedOperation>(error);
+        }
+    };
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::metadata_copy_bytes,
+                moved_string_bytes(*signature.value));
+    return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
+}
+
 Result<OperationPlan> prepare_create_section(const operations::SectionCreateInput& input) {
     auto canonical = input;
     wire::observe_input_copy(canonical, canonical.name, canonical.material_id);
@@ -285,6 +329,13 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
         InputTraits<MaterialSetYoungModulusInput>::definition(),
         [&app](const OperationContext& context, const MaterialSetYoungModulusInput& input) {
             return execute(app, context, input, prepare_set_young_modulus);
+        });
+    if (!registered.ok())
+        return registered;
+    registered = registry.register_typed<MaterialSetDescriptionInput>(
+        InputTraits<MaterialSetDescriptionInput>::definition(),
+        [&app](const OperationContext& context, const MaterialSetDescriptionInput& input) {
+            return execute(app, context, input, prepare_set_description);
         });
     if (!registered.ok())
         return registered;

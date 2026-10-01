@@ -4,6 +4,8 @@
 #include "qcae/operation_ledger.hpp"
 
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <numeric>
 #include <random>
@@ -236,6 +238,33 @@ void schemas_and_registration() {
         "node record limit includes its encoded identity and header");
 }
 
+void frozen_material_v1() {
+    const auto path =
+        std::filesystem::path(__FILE__).parent_path() / "fixtures/ext01-material-v1.record";
+    std::ifstream source(path, std::ios::binary);
+    check(source.is_open(), "frozen baseline Material input exists");
+    const std::string bytes{std::istreambuf_iterator<char>(source),
+                            std::istreambuf_iterator<char>()};
+    const auto input = record_wire::decode(bytes);
+    check(input.version == 1 && !record_wire::find(input, RecordFieldId{5}),
+          "original baseline bytes contain v1 Material without description");
+    const auto registry = make_record_registry();
+    const auto record = registry->decode(bytes);
+    const auto& material = record->get<r::Material>();
+    check(material.id == id("c4-legacy-material") && material.name == "Legacy Steel" &&
+              material.young_modulus_mpa == 210000 && material.poisson_ratio == .3 &&
+              !material.description,
+          "old Material codec defaults new optional field to null and preserves old values");
+    check(registry->decode(record->encoded())->get<r::Material>() == material,
+          "old Material can be re-encoded with the supported current schema");
+    auto future = input;
+    future.version = registry->find(RecordTraits<r::Material>::type_id)->current_version + 1;
+    rejects(
+        ErrorCode::schema_unsupported,
+        [&] { registry->decode(record_wire::encode(future)); },
+        "future Material version is unsupported");
+}
+
 void stable_changes_and_bridges() {
     const auto registry = make_record_registry();
     const auto original = legacy_model();
@@ -401,6 +430,7 @@ void locality() {
 int main() {
     try {
         schemas_and_registration();
+        frozen_material_v1();
         stable_changes_and_bridges();
         geometry_and_ownership();
         version_copy_ledger();

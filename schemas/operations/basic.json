@@ -74,6 +74,32 @@
       ]
     },
     {
+      "operation_id": "material.set_description",
+      "version": 1,
+      "schema_id": "qcae.operation.material.set_description.v1",
+      "type_name": "MaterialSetDescriptionInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "entity_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "description",
+          "type": "string",
+          "optional": true
+        }
+      ]
+    },
+    {
       "operation_id": "node.move",
       "version": 1,
       "schema_id": "qcae.operation.node.move.v1",

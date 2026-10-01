@@ -193,6 +193,12 @@ QJsonObject record_entity_json(const EntitySummary& entity, const DocumentView& 
             if (descriptor.kind == RecordFieldKind::target)
                 result.insert("profile_ref",
                               profile_ref_json(record_wire::read_target(field->payload).profile));
+        } else if (descriptor.optional && descriptor.introduced_version > 1) {
+            // Newly introduced optional fields expose their null default on old records too.
+            const auto key = entity_field_name(descriptor);
+            const QJsonValue value;
+            result.insert(key, value);
+            copies.insert(key, value, true, false);
         } else if (entity.kind == "beam" && descriptor.name == "section")
             result.insert("section_id", QJsonValue());
     }
