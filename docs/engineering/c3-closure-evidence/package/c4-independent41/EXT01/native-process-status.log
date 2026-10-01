@@ -1,0 +1,6 @@
+67046 17621       06:38 /Library/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python docs/engineering/c4-ext01-evidence/run.py native-desktop-tests test ctest --test-dir build-ext01-local -R ^(desktop|desktop_selection|c3_desktop_workflow|desktop_smoke|modeling_tools|event_client|c3_tool_lifecycle)$ --output-on-failure
+67052 67046       06:38 ctest --test-dir build-ext01-local -R ^(desktop|desktop_selection|c3_desktop_workflow|desktop_smoke|modeling_tools|event_client|c3_tool_lifecycle)$ --output-on-failure
+73231 67052       04:51 /private/tmp/qcae-c4-ext01-41/build-ext01-local/qcae_c3_desktop_workflow_tests /private/tmp/qcae-c4-ext01-41/build-ext01-local/qcae-engine /private/tmp/qcae-c4-ext01-41/build-ext01-local/c3-evidence/desktop
+88883 17621       00:00 /Library/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python docs/engineering/c4-ext01-evidence/run.py native-process-status diagnostic sh -c ps -Ao pid,ppid,etime,command | rg 'run.py native-desktop-tests|build-ext01-local/qcae_|ctest --test-dir build-ext01-local'
+88893 88883       00:00 sh -c ps -Ao pid,ppid,etime,command | rg 'run.py native-desktop-tests|build-ext01-local/qcae_|ctest --test-dir build-ext01-local'
+88895 88893       00:00 rg run.py native-desktop-tests|build-ext01-local/qcae_|ctest --test-dir build-ext01-local

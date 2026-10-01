@@ -1,0 +1,1011 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6ff0fa4..32f11af 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -88,6 +88,10 @@ if(BUILD_TESTING)
+   target_link_libraries(qcae_model_operation_tests PRIVATE qcae_material_features qcae_mesh_editing qcae_legacy_api)
+   qcae_warnings(qcae_model_operation_tests)
+   add_test(NAME model_operations COMMAND qcae_model_operation_tests)
++  add_executable(qcae_tri3_tests tests/tri3_tests.cpp)
++  target_link_libraries(qcae_tri3_tests PRIVATE qcae_mesh_editing qcae_query qcae_nastran qcae_analysis_features)
++  qcae_warnings(qcae_tri3_tests)
++  add_test(NAME tri3 COMMAND qcae_tri3_tests)
+   add_executable(qcae_quantity_entry_consistency_tests tests/quantity_entry_consistency_tests.cpp)
+   target_link_libraries(qcae_quantity_entry_consistency_tests PRIVATE qcae_legacy_api qcae_parameters)
+   qcae_warnings(qcae_quantity_entry_consistency_tests)
+@@ -166,6 +170,11 @@ if(QCAE_BUILD_STORAGE)
+     target_link_libraries(qcae_record_store_tests PRIVATE qcae_sqlite ${QCAE_SQLITE_TARGET})
+     qcae_warnings(qcae_record_store_tests)
+     add_test(NAME record_store COMMAND qcae_record_store_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/legacy")
++    add_executable(qcae_tri3_sqlite_tests tests/tri3_tests.cpp)
++    target_link_libraries(qcae_tri3_sqlite_tests PRIVATE qcae_mesh_editing qcae_query qcae_nastran qcae_analysis_features qcae_sqlite)
++    target_compile_definitions(qcae_tri3_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
++    qcae_warnings(qcae_tri3_sqlite_tests)
++    add_test(NAME tri3_sqlite COMMAND qcae_tri3_sqlite_tests)
+     add_executable(qcae_geometry_mesh_sqlite_tests tests/geometry_mesh_tests.cpp)
+     target_link_libraries(qcae_geometry_mesh_sqlite_tests PRIVATE qcae_geometry_features qcae_mesh_generation qcae_sqlite)
+     target_compile_definitions(qcae_geometry_mesh_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
+@@ -254,6 +263,11 @@ if(QCAE_BUILD_IPC)
+         "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_check_ipc_tests.py"
+         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+       set_tests_properties(analysis_check_ipc PROPERTIES TIMEOUT 90)
++      add_test(NAME tri3_ipc COMMAND Python3::Interpreter
++        "${CMAKE_CURRENT_SOURCE_DIR}/tests/tri3_ipc_tests.py"
++        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
++        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/ext03-evidence/ipc")
++      set_tests_properties(tri3_ipc PROPERTIES TIMEOUT 90)
+       add_test(NAME force_vector_ipc COMMAND Python3::Interpreter
+         "${CMAKE_CURRENT_SOURCE_DIR}/tests/force_vector_ipc_tests.py"
+         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+diff --git a/adapters/engine_api/src/ipc_model.cpp b/adapters/engine_api/src/ipc_model.cpp
+index 5e1b34f..7dfc643 100644
+--- a/adapters/engine_api/src/ipc_model.cpp
++++ b/adapters/engine_api/src/ipc_model.cpp
+@@ -470,6 +470,17 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
+             return op == "entity.query" ? entity_query(id, p, *snapshot.value)
+                                         : entity_references(id, p, *snapshot.value);
+         }
++        if (op == "model.export_preview") {
++            const auto records = app.record_application().snapshot(ref(r));
++            if (!records.ok())
++                return error(id, records);
++            if (ctx(r).expected_revision != records.value->info.revision)
++                return failure(
++                    id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
++            if (records.value->records.count(RecordTraits<records::Tri3>::type_id))
++                return failure(
++                    id, "UNSUPPORTED_CAPABILITY", "Tri3 shell export is not implemented");
++        }
+         const auto snap = app.snapshot(ref(r));
+         if (!snap.ok())
+             return error(id, snap);
+diff --git a/features/analysis/src/analysis_checks.cpp b/features/analysis/src/analysis_checks.cpp
+index 552022a..2b1c721 100644
+--- a/features/analysis/src/analysis_checks.cpp
++++ b/features/analysis/src/analysis_checks.cpp
+@@ -81,6 +81,10 @@ std::span<const RuleDefinition> RuleCatalog::definitions() const noexcept {
+     return detail::cantilever_rules();
+ }
+ Result<CheckReport> RuleCatalog::check(const DocumentView& view, const EntityId& identity) const {
++    if (view.count(RecordTraits<records::Tri3>::type_id))
++        return failed<CheckReport>(ErrorCode::unsupported_capability,
++                                   "Tri3 shell analysis checks are not implemented",
++                                   "tri3");
+     const auto record = view.find<records::AnalysisDefinition>(identity);
+     if (!record)
+         return failed<CheckReport>(
+diff --git a/features/analysis/src/analysis_input.cpp b/features/analysis/src/analysis_input.cpp
+index 3fe2402..fccbef2 100644
+--- a/features/analysis/src/analysis_input.cpp
++++ b/features/analysis/src/analysis_input.cpp
+@@ -54,6 +54,10 @@ Result<FrozenAnalysisInput> freeze_analysis_input(const DocumentView& view,
+                                                   const ProfileRef& profile,
+                                                   std::span<const ExportIdentifier> mapping) {
+     try {
++        if (view.count(RecordTraits<records::Tri3>::type_id))
++            invalid(ErrorCode::unsupported_capability,
++                    "Tri3 shell analysis is not implemented",
++                    "tri3");
+         const auto record = view.find<records::AnalysisDefinition>(identity);
+         if (!record)
+             invalid(
+diff --git a/features/mesh_editing/include/qcae/mesh_editing_operations.hpp b/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
+index 7155869..7d44eb6 100644
+--- a/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
++++ b/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
+@@ -10,5 +10,6 @@ struct OperationPlan {
+ [[nodiscard]] Result<OperationPlan> prepare_move_node(const operations::NodeMoveInput&);
+ [[nodiscard]] Result<OperationPlan>
+ prepare_assign_section(const operations::BeamAssignSectionInput&);
++[[nodiscard]] Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input&);
+ [[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
+ } // namespace qcae::features::mesh_editing
+diff --git a/features/mesh_editing/src/mesh_editing_operations.cpp b/features/mesh_editing/src/mesh_editing_operations.cpp
+index 3e1ea24..e3635ac 100644
+--- a/features/mesh_editing/src/mesh_editing_operations.cpp
++++ b/features/mesh_editing/src/mesh_editing_operations.cpp
+@@ -102,6 +102,39 @@ Result<OperationPlan> prepare_assign_section(const operations::BeamAssignSection
+     return success(OperationPlan{*signature.value, std::move(prepare)});
+ }
+ 
++Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input& input) {
++    const auto nodes = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
++    const auto mesh = wire::entity_id(Value(input.mesh_id.value), "mesh_id");
++    if (!nodes.ok())
++        return {nodes.status, std::nullopt, nodes.error};
++    if (!mesh.ok())
++        return {mesh.status, std::nullopt, mesh.error};
++    if (input.node_ids.size() != 3)
++        return {
++            Status::failed,
++            std::nullopt,
++            Diagnostic{ErrorCode::invalid_input, "Tri3 requires exactly three nodes", "node_ids"}};
++    // Node order is topology: preserve its winding in both storage and retry signatures.
++    const auto signature = canonical_value(InputTraits<MeshCreateTri3Input>::to_value(input));
++    if (!signature.ok())
++        return {signature.status, std::nullopt, signature.error};
++    RecordPrepare prepare = [input, signature = *signature.value](
++                                const DocumentView& view, const RecordIdentityAllocator& allocate) {
++        try {
++            const auto id = allocate();
++            EditSession edit(view);
++            edit.put(records::Tri3{id,
++                                   {input.node_ids[0], input.node_ids[1], input.node_ids[2]},
++                                   records::MeshId(input.mesh_id.value)});
++            return success(RecordPreparedOperation{
++                edit.prepare(), "Create Tri3 topology", id, signature, 0, true});
++        } catch (const RecordError& error) {
++            return failed<RecordPreparedOperation>(error);
++        }
++    };
++    return success(OperationPlan{*signature.value, std::move(prepare)});
++}
++
+ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
+     const auto registered = registry.register_typed<NodeMoveInput>(
+         InputTraits<NodeMoveInput>::definition(),
+@@ -110,10 +143,17 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
+         });
+     if (!registered.ok())
+         return registered;
+-    return registry.register_typed<BeamAssignSectionInput>(
++    const auto section = registry.register_typed<BeamAssignSectionInput>(
+         InputTraits<BeamAssignSectionInput>::definition(),
+         [&app](const OperationContext& context, const BeamAssignSectionInput& input) {
+             return execute(app, context, input, prepare_assign_section);
+         });
++    if (!section.ok())
++        return section;
++    return registry.register_typed<MeshCreateTri3Input>(
++        InputTraits<MeshCreateTri3Input>::definition(),
++        [&app](const OperationContext& context, const MeshCreateTri3Input& input) {
++            return execute(app, context, input, prepare_create_tri3);
++        });
+ }
+ } // namespace qcae::features::mesh_editing
+diff --git a/modules/document/include/qcae/records.hpp b/modules/document/include/qcae/records.hpp
+index 15c09bb..4a266bb 100644
+--- a/modules/document/include/qcae/records.hpp
++++ b/modules/document/include/qcae/records.hpp
+@@ -1,5 +1,5 @@
+ // Generated by tools/generate_entities.py; do not edit.
+-// Semantic schema SHA-256: f7c767ece357330c8aee791f5c4be41e4c18d7721b420dbfa562a15712dd4155
++// Semantic schema SHA-256: a33fd010321ab7fb92c822e5372c7a44d6c731df0fc2f225f7a96b96ef5e12d2
+ #pragma once
+ #include "qcae/document_view.hpp"
+ #include <algorithm>
+@@ -127,6 +127,13 @@ struct LoadCase {
+     std::vector<EntityId> constraints{};
+     bool operator==(const LoadCase&) const = default;
+ };
++struct Tri3 {
++    EntityId id{};
++    std::array<EntityId, 3> nodes;
++    MeshId mesh{};
++    bool operator==(const Tri3&) const = default;
++};
++void validate_record(const Tri3&, const DocumentView&);
+ void validate_relations(const DocumentView&);
+ } // namespace records
+ 
+@@ -1713,6 +1720,92 @@ template <> struct RecordTraits<records::LoadCase> {
+         return result;
+     }
+ };
++template <> struct RecordTraits<records::Tri3> {
++    using Value = records::Tri3;
++    static constexpr RecordTypeId type_id{4112};
++    inline static const unsigned char token_value{};
++    static const void* token() noexcept {
++        return &token_value;
++    }
++    static const std::string& identity(const Value& value) noexcept {
++        return value.id.value;
++    }
++    static void validate_fields(const Value& value) {
++        records_detail::check_text(value.id.value, true, "id");
++        records_detail::check_references(value.nodes, "nodes");
++        records_detail::check_text((value.mesh).value, true, "mesh");
++    }
++    static RecordDescriptor descriptor() {
++        RecordDescriptor result;
++        result.type = type_id;
++        result.name = "Tri3";
++        result.query_kind = "tri3";
++        result.display_name = [](const void*) -> std::string_view { return {}; };
++        result.current_version = 1;
++        result.cpp_type_token = token();
++        result.maximum_encoded_bytes = 4096;
++        result.fields = {
++            {RecordFieldId{2},
++             "nodes",
++             RecordFieldKind::references,
++             false,
++             "",
++             {RecordTypeId{4098}},
++             1},
++            {RecordFieldId{3},
++             "mesh",
++             RecordFieldKind::reference,
++             false,
++             "",
++             {RecordTypeId{4110}},
++             1},
++        };
++        result.encode = [](const void* object) {
++            const auto& value = *static_cast<const Value*>(object);
++            validate_fields(value);
++            RecordInput input{{type_id, value.id.value}, 1, {}};
++            input.fields.push_back({RecordFieldId{2},
++                                    RecordFieldKind::references,
++                                    "",
++                                    records_detail::pack_references(value.nodes)});
++            input.fields.push_back({RecordFieldId{3},
++                                    RecordFieldKind::reference,
++                                    "",
++                                    record_wire::text((value.mesh).value)});
++            return input;
++        };
++        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
++            Value value;
++            value.id = decltype(value.id)(input.key.identity);
++            value.nodes = records_detail::unpack_references<std::array<EntityId, 3>>(
++                record_wire::require(input, RecordFieldId{2}).payload);
++            value.mesh = records::MeshId(
++                record_wire::read_text(record_wire::require(input, RecordFieldId{3}).payload));
++            validate_fields(value);
++            return std::make_shared<const Value>(std::move(value));
++        };
++        result.owned_bytes = [](const void* object) {
++            const auto& value = *static_cast<const Value*>(object);
++            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
++                   records_detail::dynamic_bytes(value.nodes) +
++                   records_detail::dynamic_bytes(value.mesh);
++        };
++        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
++            const auto& value = *static_cast<const Value*>(object);
++            static constexpr std::array targets_2{RecordTypeId{4098}};
++            for (const auto& item : value.nodes)
++                visitor(RecordFieldId{2}, item.value, targets_2);
++            static constexpr std::array targets_3{RecordTypeId{4110}};
++            visitor(RecordFieldId{3}, value.mesh.value, targets_3);
++        };
++        result.validate = [](const void* object, const DocumentView& view) {
++            const auto& value = *static_cast<const Value*>(object);
++            validate_fields(value);
++            records::validate_record(value, view);
++        };
++        return result;
++    }
++};
+ inline std::vector<RecordDescriptor> generated_record_descriptors() {
+     return {
+         RecordTraits<records::Material>::descriptor(),
+@@ -1730,6 +1823,7 @@ inline std::vector<RecordDescriptor> generated_record_descriptors() {
+         RecordTraits<records::GeometryLine>::descriptor(),
+         RecordTraits<records::Mesh>::descriptor(),
+         RecordTraits<records::LoadCase>::descriptor(),
++        RecordTraits<records::Tri3>::descriptor(),
+     };
+ }
+ std::shared_ptr<const RecordRegistry> make_record_registry();
+diff --git a/modules/document/src/records_rules.cpp b/modules/document/src/records_rules.cpp
+index 3478c9e..eec9e9d 100644
+--- a/modules/document/src/records_rules.cpp
++++ b/modules/document/src/records_rules.cpp
+@@ -66,6 +66,28 @@ void validate_record(const Beam& value, const DocumentView& view) {
+     if (left.mesh != right.mesh || value.mesh != left.mesh)
+         invalid("Beam and its nodes must belong to the same mesh", value.id.value);
+ }
++void validate_record(const Tri3& value, const DocumentView& view) {
++    std::array<std::array<double, 3>, 3> points{};
++    for (std::size_t index = 0; index < value.nodes.size(); ++index) {
++        const auto record = view.find<Node>(value.nodes[index]);
++        if (!record)
++            invalid("Tri3 node is missing", value.id.value);
++        const auto& node = record->get<Node>();
++        if (!node.mesh || *node.mesh != value.mesh)
++            invalid("Tri3 and its nodes must belong to the same mesh", value.id.value);
++        points[index] = node.position;
++    }
++    // Compute area from the ordered connectivity; both windings have positive magnitude.
++    std::array<long double, 3> a{}, b{};
++    for (std::size_t index = 0; index < 3; ++index) {
++        a[index] = static_cast<long double>(points[1][index]) - points[0][index];
++        b[index] = static_cast<long double>(points[2][index]) - points[0][index];
++    }
++    const auto doubled_area =
++        std::hypot(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]);
++    if (!std::isfinite(doubled_area) || doubled_area <= 0)
++        invalid("Tri3 requires positive finite area", value.id.value);
++}
+ void validate_record(const Constraint& value, const DocumentView&) {
+     if (value.dofs.find_first_not_of("123456") != std::string::npos ||
+         std::set<char>(value.dofs.begin(), value.dofs.end()).size() != value.dofs.size())
+diff --git a/modules/query/src/render_projector.cpp b/modules/query/src/render_projector.cpp
+index 4439660..84edb22 100644
+--- a/modules/query/src/render_projector.cpp
++++ b/modules/query/src/render_projector.cpp
+@@ -92,6 +92,13 @@ RenderContributions default_render_contributions() {
+              return RenderCellSource{
+                  beam.id, RenderCellKind::polyline, {beam.nodes.begin(), beam.nodes.end()}};
+          }});
++    result.add(
++        {RecordTraits<records::Tri3>::type_id, "tri3", [](const Record& record) -> RenderItem {
++             const auto& triangle = record->get<records::Tri3>();
++             return RenderCellSource{triangle.id,
++                                     RenderCellKind::polygon,
++                                     {triangle.nodes.begin(), triangle.nodes.end()}};
++         }});
+     result.add({RecordTraits<records::GeometryLine>::type_id,
+                 "geometry_line",
+                 [](const Record& record) -> RenderItem {
+diff --git a/profiles/nastran/src/nastran_package.cpp b/profiles/nastran/src/nastran_package.cpp
+index ad8e0f3..748c6d3 100644
+--- a/profiles/nastran/src/nastran_package.cpp
++++ b/profiles/nastran/src/nastran_package.cpp
+@@ -61,6 +61,10 @@ void register_nastran_core_rules(RecordRegistry& registry, const ProfileRef& ins
+ Result<ArtifactPlan> validate_nastran_export(const DocumentView& view,
+                                              const EntityId& analysis,
+                                              const NastranCodec& codec) {
++    if (view.count(RecordTraits<records::Tri3>::type_id))
++        return bad<ArtifactPlan>(
++            ErrorCode::unsupported_capability,
++            "Tri3 shell export is not implemented in the controlled Nastran profile");
+     const auto exported =
+         codec.encode(model_from_records(view), analysis, codec.definition().reference);
+     if (!exported.report.complete || !exported.artifact) {
+diff --git a/schemas/entities/entities.json b/schemas/entities/entities.json
+index 90a3e0f..8febd9e 100644
+--- a/schemas/entities/entities.json
++++ b/schemas/entities/entities.json
+@@ -581,6 +581,38 @@
+       ],
+       "query_kind": "load_case",
+       "display_field": "name"
++    },
++    {
++      "id": 4112,
++      "name": "Tri3",
++      "version": 1,
++      "fields": [
++        {
++          "id": 2,
++          "name": "nodes",
++          "kind": "references",
++          "targets": [
++            "Node"
++          ],
++          "count": 3
++        },
++        {
++          "id": 3,
++          "name": "mesh",
++          "kind": "reference",
++          "targets": [
++            "Mesh"
++          ],
++          "id_type": "MeshId"
++        }
++      ],
++      "maximum_encoded_bytes": 4096,
++      "custom_rule": true,
++      "reserved_field_ids": [
++        1
++      ],
++      "rule_version": 1,
++      "query_kind": "tri3"
+     }
+   ],
+   "relation_rules_version": 1
+diff --git a/schemas/operations/basic.json b/schemas/operations/basic.json
+index 8f715dc..105bd8b 100644
+--- a/schemas/operations/basic.json
++++ b/schemas/operations/basic.json
+@@ -324,6 +324,31 @@
+           ]
+         }
+       ]
++    },
++    {
++      "operation_id": "mesh.create_tri3",
++      "version": 1,
++      "schema_id": "qcae.operation.mesh.create_tri3.v1",
++      "type_name": "MeshCreateTri3Input",
++      "effect": "document_write",
++      "context": {
++        "document": true,
++        "epoch": true,
++        "expected_revision": true,
++        "idempotency_key": true
++      },
++      "fields": [
++        {
++          "field_id": 1,
++          "name": "node_ids",
++          "type": "entity_id_array"
++        },
++        {
++          "field_id": 2,
++          "name": "mesh_id",
++          "type": "entity_id"
++        }
++      ]
+     }
+   ]
+ }
+diff --git a/tests/desktop_tests.cpp b/tests/desktop_tests.cpp
+index a7e8f84..510c01b 100644
+--- a/tests/desktop_tests.cpp
++++ b/tests/desktop_tests.cpp
+@@ -234,6 +234,22 @@ class DesktopTests : public QObject {
+             QTest::newRow(qPrintable(pick_case.value("id").toString())) << fixture << pick_case;
+         }
+         qInfo().noquote() << "PICK fixture SHA-256:" << digest;
++        QFile triangles(QFINDTESTDATA("fixtures/vtk-tri3-pick-matrix-v1.json"));
++        QVERIFY(triangles.open(QIODevice::ReadOnly));
++        const auto triangle_bytes = triangles.readAll();
++        const auto triangle_digest =
++            QCryptographicHash::hash(triangle_bytes, QCryptographicHash::Sha256).toHex();
++        QCOMPARE(triangle_digest,
++                 QByteArray("3cf184545acdf140d28718f5b1cc8fd525c93a136a7137105cc3032695d27ac3"));
++        const auto triangle_fixture = QJsonDocument::fromJson(triangle_bytes).object();
++        const auto triangle_cases = triangle_fixture.value("cases").toArray();
++        QCOMPARE(triangle_cases.size(), 4);
++        for (const auto& value : triangle_cases) {
++            const auto pick_case = value.toObject();
++            QTest::newRow(qPrintable(pick_case.value("id").toString()))
++                << triangle_fixture << pick_case;
++        }
++        qInfo().noquote() << "Tri3 PICK fixture SHA-256:" << triangle_digest;
+     }
+ 
+     void frozenPointAndLinePickingMatrix() {
+@@ -256,7 +272,7 @@ class DesktopTests : public QObject {
+                                          coordinates(row.value("position")),
+                                          row.value("visible").toBool()});
+             }
+-        } else {
++        } else if (pick_case.value("topology") == "line") {
+             for (const auto& value : fixture.value("lines").toArray()) {
+                 const auto row = value.toObject();
+                 packet.geometry_lines.push_back(
+@@ -265,6 +281,23 @@ class DesktopTests : public QObject {
+                      coordinates(row.value("end")),
+                      row.value("visible").toBool()});
+             }
++        } else {
++            for (const auto& value : fixture.value("triangles").toArray()) {
++                const auto row = value.toObject();
++                const auto id = row.value("id").toString();
++                const auto base = packet.points.size();
++                for (const auto& point : row.value("positions").toArray()) {
++                    packet.points.push_back(
++                        {qcae::EntityId(
++                             (id + "-node-" + QString::number(packet.points.size())).toStdString()),
++                         coordinates(point),
++                         false});
++                }
++                packet.cells.push_back({qcae::EntityId(id.toStdString()),
++                                        qcae::RenderCellKind::polygon,
++                                        {base, base + 1, base + 2},
++                                        row.value("visible").toBool()});
++            }
+         }
+         qcae::VtkView view;
+         const auto viewport = fixture.value("viewport_logical_pixels").toArray();
+@@ -291,6 +324,19 @@ class DesktopTests : public QObject {
+                 QCOMPARE(camera->GetViewTransformMatrix()->GetElement(row, column),
+                          matrix[row * 4 + column].toDouble());
+         widget->renderWindow()->Render();
++        if (fixture.contains("device_pixel_ratio")) {
++            QCOMPARE(widget->devicePixelRatioF(), fixture.value("device_pixel_ratio").toDouble());
++            const auto pixels = fixture.value("framebuffer_pixels").toArray();
++            QCOMPARE(widget->renderWindow()->GetSize()[0], pixels[0].toInt());
++            QCOMPARE(widget->renderWindow()->GetSize()[1], pixels[1].toInt());
++            const auto projection = camera_fixture.value("projection_matrix").toArray();
++            auto* actual_projection = camera->GetProjectionTransformMatrix(
++                static_cast<double>(widget->width()) / widget->height(), -1, 1);
++            for (int row = 0; row < 4; ++row)
++                for (int column = 0; column < 4; ++column)
++                    QVERIFY(std::abs(actual_projection->GetElement(row, column) -
++                                     projection[row * 4 + column].toDouble()) < 1e-12);
++        }
+         view.setThroughSelection(pick_case.value("through").toBool());
+         view.setBoxMode(pick_case.value("box_mode") == "contained"
+                             ? qcae::VtkView::BoxMode::contained
+@@ -308,9 +354,26 @@ class DesktopTests : public QObject {
+         actual.sort();
+         expected.sort();
+         QCOMPARE(actual, expected);
++        QVERIFY(saveEvidence(widget, pick_case.value("id").toString() + ".png"));
++        if (pick_case.value("topology") == "tri3") {
++            auto stale = deltaFor(packet);
++            stale.base_revision = 0;
++            stale.visibility = {{qcae::RenderPrimitive::cell, 0, packet.cells[0].entity, false}};
++            QVERIFY(!view.applyDelta(stale));
++            stale = deltaFor(packet);
++            stale.base_view_revision = 0;
++            QVERIFY(!view.applyDelta(stale));
++            stale = deltaFor(packet);
++            stale.document.epoch = qcae::DocumentEpoch("expired");
++            QVERIFY(!view.applyDelta(stale));
++            QCOMPARE(view.installedVersion()->revision, packet.revision);
++            QCOMPARE(view.installedVersion()->view_revision, packet.view_revision);
++        }
+         qInfo().noquote() << pick_case.value("id").toString()
+                           << "device_pixel_ratio=" << widget->devicePixelRatioF()
+-                          << "missed=0 extra=0";
++                          << "qt_platform=" << QGuiApplication::platformName()
++                          << "vtk_window=" << widget->renderWindow()->GetClassName()
++                          << "actual_ids=" << actual.join(',') << "missed=0 extra=0";
+     }
+ 
+     void asynchronousRepliesRemainCorrelated() {
+diff --git a/tests/fixtures/vtk-tri3-pick-matrix-v1.json b/tests/fixtures/vtk-tri3-pick-matrix-v1.json
+new file mode 100644
+index 0000000..4f58a3d
+--- /dev/null
++++ b/tests/fixtures/vtk-tri3-pick-matrix-v1.json
+@@ -0,0 +1,27 @@
++{
++  "schema": "qcae.vtk-tri3-pick-matrix.v1",
++  "viewport_logical_pixels": [640, 420],
++  "framebuffer_pixels": [1280, 840],
++  "device_pixel_ratio": 2,
++  "camera": {
++    "position": [0, -500, 0],
++    "focal_point": [0, 0, 0],
++    "view_up": [0, 0, 1],
++    "parallel_scale": 100,
++    "clipping_range": [1, 1000],
++    "view_matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, -500, 0, 0, 0, 1],
++    "projection_matrix": [0.0065625, 0, 0, 0, 0, 0.01, 0, 0, 0, 0, -0.002002002002002002, -1.002002002002002, 0, 0, 0, 1]
++  },
++  "triangles": [
++    {"id": "tri3-behind", "positions": [[-60, 20, -30], [60, 20, -30], [0, 20, 30]], "visible": true},
++    {"id": "tri3-front", "positions": [[-60, -20, -30], [60, -20, -30], [0, -20, 30]], "visible": true},
++    {"id": "tri3-outside", "positions": [[70, 0, 50], [90, 0, 50], [80, 0, 70]], "visible": true},
++    {"id": "tri3-hidden", "positions": [[-60, -40, -30], [60, -40, -30], [0, -40, 30]], "visible": false}
++  ],
++  "cases": [
++    {"id": "tri3-contained", "topology": "tri3", "box_mode": "contained", "through": true, "box": [180, 130, 460, 285], "golden": ["tri3-behind", "tri3-front"]},
++    {"id": "tri3-intersecting", "topology": "tri3", "box_mode": "intersecting", "through": true, "box": [300, 200, 340, 230], "golden": ["tri3-behind", "tri3-front"]},
++    {"id": "tri3-occluded-visible", "topology": "tri3", "box_mode": "intersecting", "through": false, "box": [300, 200, 340, 230], "golden": ["tri3-front"]},
++    {"id": "tri3-occluded-through", "topology": "tri3", "box_mode": "intersecting", "through": true, "box": [300, 200, 340, 230], "golden": ["tri3-behind", "tri3-front"]}
++  ]
++}
+diff --git a/tests/tri3_ipc_tests.py b/tests/tri3_ipc_tests.py
+new file mode 100644
+index 0000000..20d617a
+--- /dev/null
++++ b/tests/tri3_ipc_tests.py
+@@ -0,0 +1,139 @@
++#!/usr/bin/env python3
++"""EXT-03 through production engine/CLI, real meshed M and explicit SQLite."""
++import argparse
++import json
++from pathlib import Path
++import subprocess
++import tempfile
++import time
++
++from analysis_check_ipc_tests import Client
++from result_fixture_ipc_tests import create_m
++
++
++def run(args):
++    args.evidence_dir.mkdir(parents=True, exist_ok=True)
++    with tempfile.TemporaryDirectory(prefix="qcae-tri3-ipc-", dir="/private/tmp") as folder:
++        root = Path(folder)
++        client = Client(args.engine, args.cli, str(root / "engine.sock"), "cli")
++        process = None
++        with (args.evidence_dir / "engine.log").open("w+") as log:
++            def start():
++                nonlocal process
++                process = subprocess.Popen([args.engine, "--socket", client.endpoint,
++                                            "--workspace", str(root / "work.sqlite")],
++                                           stdout=log, stderr=log)
++                deadline = time.monotonic() + 15
++                while time.monotonic() < deadline:
++                    if process.poll() is not None:
++                        log.seek(0)
++                        raise AssertionError(log.read())
++                    try:
++                        return client.call("capabilities.list")
++                    except (OSError, AssertionError, json.JSONDecodeError):
++                        time.sleep(.05)
++                raise AssertionError("Engine startup timed out")
++
++            def rows():
++                return client.call("entity.query", context=client.current())["entities"]
++
++            try:
++                capabilities = start()
++                assert capabilities["durable"]
++                declared = {item["name"]: item for item in capabilities["operations"]}
++                assert declared["mesh.create_tri3"]["available"]
++                profile = capabilities["declared_solver_profiles"][0]["profile_ref"]
++                nodes, beams, material, part, analysis = create_m(client, profile)
++                assert len(nodes) == 11 and len(beams) == 10
++                mesh = client.entities("mesh")[0]["entity_id"]
++                client.call("node.move", {"entity_id": nodes[5], "position_mm": [500, 1, 0]},
++                            client.current(), "bend-node5")
++                before = client.current()
++                original_rows = rows()
++                history = client.call("history.list", context=before)
++                valid = {"node_ids": [nodes[4], nodes[5], nodes[6]], "mesh_id": mesh}
++                for index, invalid in enumerate((
++                        {"node_ids": valid["node_ids"][:2], "mesh_id": mesh},
++                        {"node_ids": [nodes[4], nodes[5], nodes[5]], "mesh_id": mesh},
++                        {"node_ids": [nodes[4], nodes[5], "unknown"], "mesh_id": mesh},
++                        {"node_ids": [nodes[4], nodes[5], material], "mesh_id": mesh},
++                        {"node_ids": [nodes[0], nodes[1], nodes[2]], "mesh_id": mesh},
++                        {"node_ids": valid["node_ids"], "mesh_id": material},
++                        {"node_ids": valid["node_ids"], "mesh_id": "unknown"},
++                        {"node_ids": "bad", "mesh_id": mesh},
++                )):
++                    client.call("mesh.create_tri3", invalid, before, f"invalid-{index}", expected="failed")
++                    assert rows() == original_rows and client.current() == before
++                    assert client.call("history.list", context=before) == history
++                view = client.call("view.create", {"hidden_ids": [], "camera_fingerprint": "tri3"}, before)
++                selection = client.call("selection.evaluate", {
++                    "view_session_id": view["view_session_id"],
++                    "expected_view_revision": view["view_revision"],
++                    "predicate": {"op": "all"},
++                    "scope": {"visibility": "through", "candidate_ids": [nodes[5]], "include_hidden": False}}, before)
++                created = client.call("mesh.create_tri3", valid, before, "create-triangle")
++                triangle = created["entity_id"]
++                after = client.current()
++                assert int(after["revision"]) == int(before["revision"]) + 1
++                assert client.fields(triangle) == {"nodes": valid["node_ids"], "mesh": mesh}
++                queried = client.entities("tri3")
++                assert len(queried) == 1 and queried[0]["entity_id"] == triangle
++                assert queried[0]["nodes"] == valid["node_ids"] and queried[0]["mesh_id"] == mesh
++                after_rows = rows()
++                assert [row for row in after_rows if row["kind"] != "tri3"] == original_rows
++                incoming = client.call("entity.references", {"entity_id": nodes[5], "direction": "incoming"}, after)["references"]
++                assert {"from": triangle, "to": nodes[5], "role": "tri3.node"} in incoming
++                retry = client.call("mesh.create_tri3", valid, before, "create-triangle")
++                assert retry["transaction_id"] == created["transaction_id"] and retry["replayed"]
++                assert client.current() == after
++                changed = {**valid, "node_ids": list(reversed(valid["node_ids"]))}
++                conflict = client.call("mesh.create_tri3", changed, before, "create-triangle", expected="conflict")
++                assert conflict["error"]["code"] == "IDEMPOTENCY_KEY_CONFLICT"
++                client.call("mesh.create_tri3", valid, before, "stale-revision", expected="conflict")
++                client.call("mesh.create_tri3", valid, {**after, "document_epoch": "old"}, "stale-epoch", expected="conflict")
++                client.call("selection.get", {"selection_handle": selection["selection_handle"]}, after, expected="conflict")
++                collapse = client.call("node.move", {"entity_id": nodes[5], "position_mm": [500, 0, 0]},
++                                       after, "collapse", expected="failed")
++                assert collapse["error"]["code"] == "INVALID_INPUT" and rows() == after_rows
++                deleted = client.call("changes.preview", {"command": "entity.delete", "entity_id": nodes[5]}, after, expected="failed")
++                assert deleted["error"]["code"] == "INVALID_INPUT" and rows() == after_rows
++                preview = client.call("model.export_preview", {"analysis_id": analysis, "expected_profile_ref": profile}, after, expected="failed")
++                assert preview["error"]["code"] == "UNSUPPORTED_CAPABILITY"
++                for operation, parameters, key in (
++                        ("analysis.check", {"analysis_id": analysis}, "check-shell"),
++                        ("model.export", {"analysis_id": analysis, "output_directory": str(root / "shell-export")}, "export-shell")):
++                    reply = client.call(operation, parameters, after, key, expected="failed", profile=profile)
++                    assert reply["error"]["code"] == "UNSUPPORTED_CAPABILITY"
++                assert not (root / "shell-export").exists() and rows() == after_rows
++                client.call("history.undo", context=after, key="undo-triangle")
++                assert rows() == original_rows
++                client.call("mesh.create_tri3", valid, before, "create-triangle")
++                assert rows() == original_rows
++                client.call("history.redo", context=client.current(), key="redo-triangle")
++                assert rows() == after_rows
++                saved = client.call("project.save", {"path": str(root / "tri3.qcae")}, client.current(), "save")
++                client.call("project.close", {"policy": "discard"}, saved, "close")
++                opened = client.call("project.open", {"mode": "normal", "path": str(root / "tri3.qcae")}, key="normal-open")
++                assert opened["document_id"] != saved["document_id"] and opened["revision"] == "0"
++                assert rows() == after_rows
++                process.kill()
++                process.wait(timeout=10)
++                assert start()["recovery_available"]
++                recovered = client.call("project.open", {"mode": "recover"}, key="recover")
++                assert recovered["document_id"] == opened["document_id"]
++                assert recovered["document_epoch"] != opened["document_epoch"] and rows() == after_rows
++                client.call("mesh.create_tri3", valid, opened, "old-open-epoch", expected="conflict")
++                print("PASS: production CLI/IPC Tri3 on real 11-node/10-Line2 M; query/references, atomic errors, history, actual save/open/process recovery, stale selection, explicit analysis/export refusal")
++            finally:
++                if process and process.poll() is None:
++                    process.terminate()
++                    process.wait(timeout=10)
++                (args.evidence_dir / "transcript.json").write_text(json.dumps(client.transcript, indent=2) + "\n")
++
++
++if __name__ == "__main__":
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--engine", required=True)
++    parser.add_argument("--cli", required=True)
++    parser.add_argument("--evidence-dir", type=Path, required=True)
++    run(parser.parse_args())
+diff --git a/tests/tri3_tests.cpp b/tests/tri3_tests.cpp
+new file mode 100644
+index 0000000..24283a1
+--- /dev/null
++++ b/tests/tri3_tests.cpp
+@@ -0,0 +1,283 @@
++#include "qcae/analysis_features.hpp"
++#include "qcae/analysis_input.hpp"
++#include "qcae/mesh_editing_operations.hpp"
++#include "qcae/nastran_package.hpp"
++#include "qcae/records.hpp"
++#include "qcae/render_projector.hpp"
++#include <filesystem>
++#include <iostream>
++#include <map>
++#include <random>
++#include <stdexcept>
++#ifdef QCAE_TEST_SQLITE
++#include "qcae/sqlite_store.hpp"
++#endif
++
++using namespace qcae;
++using namespace qcae::operations;
++namespace {
++void check(bool value, const char* message) {
++    if (!value)
++        throw std::runtime_error(message);
++}
++template <class T> T good(Result<T> value) {
++    if (!value.ok())
++        throw std::runtime_error(value.error ? value.error->message : "Missing result");
++    return std::move(*value.value);
++}
++template <class T> void bad(const Result<T>& value, ErrorCode code) {
++    check(!value.ok() && value.error && value.error->code == code, "Expected atomic rejection");
++}
++struct MemoryRows final : IRecordStore {
++    std::map<StoreKey, SharedStoreBytes> rows;
++    std::uint64_t generation{};
++    LoadedRows load_rows() override {
++        LoadedRows result;
++        result.generation = generation;
++        for (const auto& [key, value] : rows)
++            result.rows.push_back({key, value});
++        return result;
++    }
++    BatchReceipt commit_rows(const StoreBatch& batch) override {
++        check(batch.expected_generation == generation, "Generation must match");
++        auto next = rows;
++        for (const auto& mutation : batch.mutations)
++            if (mutation.after)
++                next[mutation.key] = mutation.after;
++            else
++                next.erase(mutation.key);
++        rows.swap(next);
++        return {++generation, batch.mutations.size(), 0};
++    }
++};
++WriteContext at(const DocumentInfo& info) {
++    return {info.document, info.revision};
++}
++OperationContext context(RecordApplication& app, std::string key) {
++    const auto info = good(app.current_document());
++    return {Caller{"tri3-tests"}, info.document, info.revision, std::move(key), {}, "tri3"};
++}
++RecordPrepare seed() {
++    return [](const DocumentView& view, const RecordIdentityAllocator&) {
++        EditSession edit(view);
++        edit.put(records::Mesh{records::MeshId("mesh"), "Surface", "manual", {}, 0, false});
++        edit.put(records::Mesh{records::MeshId("other"), "Other", "manual", {}, 0, false});
++        const records::MeshId mesh("mesh");
++        edit.put(records::Node{EntityId("a"), {0, 0, 0}, mesh});
++        edit.put(records::Node{EntityId("b"), {2, 0, 0}, mesh});
++        edit.put(records::Node{EntityId("c"), {0, 2, 0}, mesh});
++        edit.put(records::Node{EntityId("d"), {4, 0, 0}, mesh});
++        edit.put(records::Node{EntityId("foreign"), {0, 0, 2}, records::MeshId("other")});
++        edit.put(records::Material{EntityId("material"), "Steel", 210000, .3});
++        return Result<RecordPreparedOperation>{
++            Status::success,
++            RecordPreparedOperation{edit.prepare(), "Seed", EntityId{}, "seed", 0, true},
++            {}};
++    };
++}
++void run() {
++    const auto directory = std::filesystem::temp_directory_path() /
++                           ("qcae-tri3-" + std::to_string(std::random_device{}()));
++    std::filesystem::create_directory(directory);
++    struct Cleanup {
++        std::filesystem::path path;
++        ~Cleanup() {
++            std::filesystem::remove_all(path);
++        }
++    } cleanup{directory};
++    RecordApplicationOptions options;
++    options.registry = make_record_registry();
++#ifdef QCAE_TEST_SQLITE
++    auto sqlite = std::make_shared<SqliteWorkspaceStore>((directory / "work.sqlite").string());
++    options.records = sqlite;
++    options.projects = sqlite;
++#else
++    options.records = std::make_shared<MemoryRows>();
++#endif
++    DocumentInfo final;
++    EntityId triangle;
++    DocumentView expected(options.registry);
++    const Caller caller{"tri3-tests"};
++    OperationContext original_context;
++    {
++        RecordApplication app(options);
++        auto info = good(app.create_document(caller, "Tri3", "create"));
++        good(app.execute(caller, at(info), "test.seed", "seed", seed(), "seed"));
++        OperationRegistry registry;
++        good(features::mesh_editing::register_handlers(registry, app));
++        const auto snapshot = [&] {
++            return good(app.snapshot(good(app.current_document()).document));
++        };
++        const auto input =
++            MeshCreateTri3Input{{EntityId("a"), EntityId("b"), EntityId("c")}, EntityId("mesh")};
++        const auto before = snapshot();
++        const auto reject = [&](const MeshCreateTri3Input& invalid, const char* key) {
++            const auto generation = options.records->load_rows().generation;
++            check(!registry
++                       .invoke("mesh.create_tri3",
++                               context(app, key),
++                               InputTraits<MeshCreateTri3Input>::to_value(invalid))
++                       .ok(),
++                  "Invalid connectivity must be rejected");
++            check(options.records->load_rows().generation == generation &&
++                      diff_record_views(before.records, snapshot().records).empty() &&
++                      snapshot().info.revision == before.info.revision,
++                  "Invalid topology must not change records, revision or durable rows");
++        };
++        reject({{EntityId("a"), EntityId("b")}, EntityId("mesh")}, "short");
++        reject({{EntityId("a"), EntityId("b"), EntityId("b")}, EntityId("mesh")}, "duplicate");
++        reject({{EntityId("a"), EntityId("b"), EntityId("unknown")}, EntityId("mesh")}, "missing");
++        reject({{EntityId("a"), EntityId("b"), EntityId("material")}, EntityId("mesh")}, "type");
++        reject({{EntityId("a"), EntityId("b"), EntityId("d")}, EntityId("mesh")}, "zero-area");
++        reject({{EntityId("a"), EntityId("b"), EntityId("foreign")}, EntityId("mesh")}, "owner");
++        reject({input.node_ids, EntityId("other")}, "mesh-mismatch");
++        reject({input.node_ids, EntityId("unknown")}, "mesh-missing");
++        reject({input.node_ids, EntityId("material")}, "mesh-type");
++        original_context = context(app, "create-tri3");
++        const auto created =
++            good(registry.invoke("mesh.create_tri3",
++                                 original_context,
++                                 InputTraits<MeshCreateTri3Input>::to_value(input)));
++        triangle = EntityId(
++            std::get<std::string>(std::get<Value::Object>(created.data).at("entity_id").data));
++        const auto after = snapshot();
++        check(after.info.revision == before.info.revision + 1 &&
++                  diff_record_views(before.records, after.records).records.size() == 1,
++              "Tri3 creation must publish exactly one record and one transaction");
++        const auto record = after.records.find<records::Tri3>(triangle);
++        check(record && record->get<records::Tri3>().nodes ==
++                            std::array<EntityId, 3>{EntityId("a"), EntityId("b"), EntityId("c")},
++              "Tri3 must persist ordered connectivity");
++        auto encoded = RecordTraits<records::Tri3>::descriptor().encode(record->object());
++        encoded.version = 2;
++        try {
++            options.registry->from_input(encoded);
++            check(false, "Future Tri3 schema must be rejected");
++        } catch (const RecordError& error) {
++            check(error.code() == ErrorCode::schema_unsupported, "Future schema error");
++        }
++        const auto generation = options.records->load_rows().generation;
++        const auto replay =
++            good(registry.invoke("mesh.create_tri3",
++                                 original_context,
++                                 InputTraits<MeshCreateTri3Input>::to_value(input)));
++        check(std::get<Value::Object>(replay.data).at("transaction_id") ==
++                      std::get<Value::Object>(created.data).at("transaction_id") &&
++                  options.records->load_rows().generation == generation,
++              "Retry must return the original transaction without publication");
++        auto changed = input;
++        std::swap(changed.node_ids[0], changed.node_ids[1]);
++        bad(registry.invoke("mesh.create_tri3",
++                            original_context,
++                            InputTraits<MeshCreateTri3Input>::to_value(changed)),
++            ErrorCode::idempotency_key_conflict);
++        auto stale = context(app, "stale");
++        stale.expected_revision = before.info.revision;
++        bad(registry.invoke(
++                "mesh.create_tri3", stale, InputTraits<MeshCreateTri3Input>::to_value(input)),
++            ErrorCode::revision_conflict);
++        stale = context(app, "epoch");
++        stale.document->epoch = DocumentEpoch("old");
++        bad(registry.invoke(
++                "mesh.create_tri3", stale, InputTraits<MeshCreateTri3Input>::to_value(input)),
++            ErrorCode::document_epoch_expired);
++        for (const RecordKey& key : {RecordKey{RecordTraits<records::Node>::type_id, "a"},
++                                     RecordKey{RecordTraits<records::Mesh>::type_id, "mesh"}}) {
++            const auto removed = app.execute(
++                caller,
++                at(after.info),
++                "test.erase",
++                key.identity,
++                [key](const DocumentView& view, const RecordIdentityAllocator&) {
++                    EditSession edit(view);
++                    edit.erase(key);
++                    return Result<RecordPreparedOperation>{
++                        Status::success,
++                        RecordPreparedOperation{
++                            edit.prepare(), "Erase", EntityId{}, key.identity, 0, false},
++                        {}};
++                },
++                "erase-" + key.identity);
++            check(!removed.ok() && diff_record_views(after.records, snapshot().records).empty(),
++                  "Referenced node/mesh deletion must leave no dangling topology");
++        }
++        bad(registry.invoke("node.move",
++                            context(app, "collapse"),
++                            InputTraits<NodeMoveInput>::to_value({EntityId("c"), {1, 0, 0}})),
++            ErrorCode::invalid_input);
++        check(snapshot().info.revision == after.info.revision &&
++                  options.records->load_rows().generation == generation,
++              "Dependent area validation must atomically reject node collapse");
++        ViewSession view;
++        view.id = "tri3-view";
++        view.document = after.info.document;
++        view.model_revision = after.info.revision;
++        view.view_revision = 1;
++        RenderProjector projector;
++        const auto render = good(projector.update(after.records, view));
++        check(render.full && render.full->cells.size() == 1 &&
++                  render.full->cells[0].kind == RenderCellKind::polygon &&
++                  render.full->cells[0].points.size() == 3 &&
++                  render.full->cells[0].entity == triangle && !render.legacy_line2_compatible,
++              "Production render contribution must project Tri3 to a three-point polygon");
++        bad(validate_nastran_export(after.records, EntityId("analysis"), NastranCodec{}),
++            ErrorCode::unsupported_capability);
++        bad(features::analysis::freeze_analysis_input(
++                after.records, EntityId("analysis"), ProfileRef{}, {}),
++            ErrorCode::unsupported_capability);
++        bad(features::analysis::RuleCatalog{}.check(after.records, EntityId("analysis")),
++            ErrorCode::unsupported_capability);
++        good(app.undo(caller, at(after.info), "undo"));
++        check(diff_record_views(before.records, snapshot().records).empty(),
++              "Undo removes only Tri3");
++        good(registry.invoke("mesh.create_tri3",
++                             original_context,
++                             InputTraits<MeshCreateTri3Input>::to_value(input)));
++        check(diff_record_views(before.records, snapshot().records).empty(),
++              "Retry after undo must not reapply Tri3");
++        good(app.redo(caller, at(snapshot().info), "redo"));
++        check(diff_record_views(after.records, snapshot().records).empty(),
++              "Redo restores all records");
++#ifdef QCAE_TEST_SQLITE
++        info = good(app.save_document(
++            caller, at(snapshot().info), (directory / "tri3.qcae").string(), false, "save"));
++        good(app.close_document(caller, at(info), ClosePolicy::discard, "close"));
++        const auto opened =
++            good(app.open_document(caller, (directory / "tri3.qcae").string(), "open"));
++        check(opened.document.id != info.document.id && opened.revision == 0 &&
++                  diff_record_views(after.records, snapshot().records).empty(),
++              "Normal open must renew document and preserve every Tri3 field/reference");
++#endif
++        final = snapshot().info;
++        expected = snapshot().records;
++    }
++#ifdef QCAE_TEST_SQLITE
++    options.projects.reset();
++    options.records.reset();
++    sqlite.reset();
++    sqlite = std::make_shared<SqliteWorkspaceStore>((directory / "work.sqlite").string());
++    options.records = sqlite;
++    options.projects = sqlite;
++#endif
++    RecordApplication recovered(options);
++    const auto info = good(recovered.recover_document(caller, "recover"));
++    check(info.document.id == final.document.id && info.document.epoch != final.document.epoch &&
++              info.revision == final.revision &&
++              diff_record_views(expected, good(recovered.snapshot(info.document)).records).empty(),
++          "Recovery must renew epoch while retaining all Tri3 records and revision");
++    std::cout << "PASS: Tri3 typed registry, atomic references/area/mesh, history, render, "
++                 "unsupported analysis/export, recovery";
++#ifdef QCAE_TEST_SQLITE
++    std::cout << ", actual SQLite save/normal open/reopen";
++#endif
++    std::cout << '\n';
++}
++} // namespace
++int main() {
++    try {
++        run();
++    } catch (const std::exception& error) {
++        std::cerr << error.what() << '\n';
++        return 1;
++    }
++}

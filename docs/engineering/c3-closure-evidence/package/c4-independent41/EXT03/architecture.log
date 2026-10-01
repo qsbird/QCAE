@@ -1,0 +1,977 @@
+--- docs/architecture/README.md (10071 UTF-8 bytes) ---
+# QCAE P0 模块与架构设计 1.1
+
+状态：已确定的开发设计基线；实现已交付至[C1/C2](../implementation/c2-handoff.md)，完整架构与P0仍待完成。依据已确认的本地中小模型、底层优先、Nastran 悬臂梁闭环、GUI 与外部 AI 共用能力的范围。本文作为当前架构依据，需求和验收以 ../baseline/ 下的基线文档配套；不恢复远程亿级路线。
+
+## 文档入口
+
+- [模块职责、接口与依赖](modules.md)
+- [求解器能力包与多目标扩展边界](solver-profiles.md)
+- [运行时、事务与持久化](runtime-and-data.md)
+- [关键决策、实施顺序与架构验收](decisions-and-verification.md)
+- [机器可检查的模块依赖清单](module-dependencies.json)
+- [既有 AI 场景验收](../P0-AI验收用例-v0.6.md)
+
+## 1. 需求与决策依据
+
+| 已确认约束 | 架构对应 |
+|---|---|
+| [本地中小模型 P0](../P0本地平台可行性分析-v0.2.md) | 本机按需启动，不部署远程服务或分布式存储 |
+| [GUI 与无界面能力分离](../P0本地平台可行性分析-v0.2.md) | 统一应用服务，核心不依赖窗口和渲染环境 |
+| [多种组织关系](../P0本地平台可行性分析-v0.2.md) | 装配、部件、集合、INCLUDE、物理引用分开建模 |
+| [Undo 与持久化](../P0本地平台可行性分析-v0.2.md) | 单写者、事务差量、工作恢复库、明确保存点 |
+| [外部 AI 入口](../P0-AI接口与悬臂梁交付方案-v0.6.md) | MCP 桥与 GUI 接入同一本地核心进程 |
+| [接口与结果证据](../P0-AI接口与悬臂梁交付方案-v0.6.md) | 显式版本、单位、幂等、任务状态与分析输入摘要 |
+
+设计主线：**模块化的单个应用核心，配独立本地宿主进程；外部能力通过少量明确的适配接口接入。** 模块不等于微服务，也不要求每个模块成为独立动态库。
+
+## 2. 运行部署图
+
+```mermaid
+flowchart LR
+    User[工程用户] --> GUI["qcae-desktop<br/>Qt + VTK"]
+    AI[外部 AI 客户端] -->|MCP stdio| Bridge["qcae-mcp<br/>薄工具适配"]
+    GUI -->|本地 IPC| Engine["qcae-engine<br/>唯一业务宿主"]
+    Bridge -->|同一本地 IPC| Engine
+    CLI[无界面 CLI / 测试客户端] -->|本地 IPC| Engine
+    Engine --> Work[("工作恢复库<br/>SQLite")]
+    Engine --> Project[("已保存工程<br/>.qcae 快照")]
+    Engine -->|任务适配器| Solver[已有 Nastran 求解器进程]
+    Engine -.按需.-> Render[离屏图像辅助进程]
+```
+
+以下为目标组件分工。qcae-engine、qcae-cli及Qt/VTK桌面已有实现；C2新增几何/网格从CLI/IPC调用，C3首个显示交互切片补上相同操作的GUI入口。MCP桥、真实求解器执行和离屏图像辅助进程仍待实现，图中的目标连线不代表这些能力已接入：
+
+- **qcae-engine**：文档、事务、查询、分析、任务与恢复的唯一持有者。
+- **qcae-desktop**：GUI、交互、视图状态和 VTK 显示缓存；不直接写工程库。
+- **qcae-mcp**：外部客户端启动的 stdio 工具桥；发现并连接既有 engine，禁止自己建立另一份文档核心。
+- **qcae-cli**：无 GUI 验收和批处理入口，可与测试客户端合并实现。
+- **求解器进程**：受 engine 管理，读取冻结输入，产生任务产物。
+- **离屏图像辅助进程**：按需提供截图能力，失败不阻断非图形业务；可在最小流程中后置。
+
+选择独立 engine 的原因是 GUI 与 AI 已经需要并存、重连和无界面运行。同进程内嵌核心仍适合单一 GUI 演示，但当前容易形成 GUI 宿主/headless 宿主两套运行路径。这里多付出本地 IPC 和生命周期管理成本，换取一种业务所有权与恢复路径。
+
+Qt 的 QLocalSocket 在 Windows 使用命名管道，在 Unix 使用本地域套接字，可作为本地 IPC 候选；QtCore/QtNetwork 只进入宿主及传输适配层。[Qt 官方说明](https://doc.qt.io/qt-6/qlocalsocket.html)
+
+## 3. 逻辑分层图
+
+```mermaid
+flowchart TB
+    subgraph Entry[交互入口]
+      GUI[GUI / ViewModel]
+      MCP[MCP 工具桥]
+      CLI[CLI / 自动化客户端]
+    end
+    Entry --> Contract[公共契约与客户端 SDK]
+    Contract --> Transport[本地传输与请求分派]
+    Transport --> App[应用服务：会话与用例编排]
+    App --> Query[查询 / 选择]
+    App --> Tx[命令 / 事务 / 历史]
+    App --> Analysis[分析设置 / 场景 / 证据]
+    App --> Profiles[求解器能力与规则解析]
+    App --> Jobs[任务 / 配额 / 运行状态]
+    App --> Check[检查与诊断]
+    Query --> Domain[领域模型与不变量]
+    Tx --> Domain
+    Analysis --> Domain
+    Check --> Domain
+    App --> Ports[外部能力接口]
+    Ports -.由适配器实现.-> Storage[SQLite / 工程快照]
+    Ports -.由适配器实现.-> Nastran[Nastran 读写 / 求解 / 结果]
+    Ports -.由适配器实现.-> IO[任务执行 / 文件资源]
+```
+
+图中实线主要表达调用关系；编译依赖严格从外部适配器指向核心定义的接口，核心不反向引用适配器。GUI 和 MCP 不直接链接业务实现。详细 DAG 见依赖清单。
+
+## 4. 模块划分概览
+
+| 模块 | 核心职责 | 权威数据/输出 |
+|---|---|---|
+| 公共契约 | 请求、响应、错误码、ID、量纲和能力描述 | 版本化 DTO；不保存业务状态 |
+| 文档模型 | 节点、单元、材料、属性、组织关系、引用不变量 | 已提交文档快照 |
+| 查询与选择 | 条件组合、关系/空间查询、集合运算、分页 | 带版本的结果集与句柄 |
+| 命令与事务 | 预览、提交协调、幂等、历史、undo/redo | 变更集、事务、修订与历史游标 |
+| 求解器能力包 | 按分析目标解析不可变定义、能力、专有schema、校验/映射规则 | ProfileRef与目标能力；P0只注册Nastran |
+| 分析与场景 | 悬臂梁输入、单位、事实/假设、适用范围 | AnalysisSetup、场景状态与输入摘要 |
+| 检查与诊断 | 基础模型检查、结果数值检查 | 带版本及依据的检查报告 |
+| 任务与资源 | 队列、进度、取消、状态、配额 | Job 与资源引用；不直接修改模型 |
+| 应用服务 | 生命周期、用例编排、调用者上下文 | 对外业务 API；唯一协调入口 |
+| 存储与产物适配 | 工作恢复库、工程文件、另存、资源清单 | 持久化事务与文件资源 |
+| Nastran 适配 | 格式读写、固定求解器启动、结果读取 | 导入候选、BDF、求解产物 |
+| 显示适配 | 渲染数据转换、VTK 视口、精确 ID 映射 | 可重建显示缓存与截图 |
+| 入口与宿主 | GUI/MCP/CLI、IPC、进程组装 | 连接与会话；不复制核心状态 |
+
+P0 不自建全功能依赖注入框架、事件溯源框架或插件市场。用明确构造关系和少量端口即可。
+
+## 5. 必须共同遵守的边界
+
+1. 一份打开的工程只有一个 engine 文档实例、一个提交队列、一套历史。
+2. GUI、MCP、脚本不能直接修改内存实体、SQLite、VTK 权威数据或求解输入。
+3. 核心不包含 Qt/VTK/SQLite/MCP SDK 的公开类型。
+4. 所有业务修改经过相同校验与原子提交；历史重放不能走另一条不校验的路径。
+5. 内部 EntityId、Nastran 编号、存储偏移、渲染 ID 分开管理。
+6. 文档修订、文档打开代号、分析输入摘要、视图版本分别表达不同一致性。
+7. 大数据经批量、分页与二进制块通道；不逐节点做 JSON 调用。
+8. 应用事件用于刷新和通知，不能替代当前状态查询；丢事件可以重同步。
+9. 外部求解与文件发布不宣称属于同一个 SQLite 原子事务。
+10. 核心可独立构建、启动和测试；图形上下文与 AI 运行时均可缺席。
+
+## 6. 组件选择与预算影响
+
+技术基线固定为 C++20、Qt 6 Widgets/Core/Network、VTK 和 SQLite 3；角色边界固定，当前已验证版本见[C2环境记录](../engineering/c2-validation.md)。独立本地 engine 引入 QtCore/QtNetwork 的宿主/IPC用途，仍是 Qt 组件，不把 Qt 引入领域层。MCP SDK 的语言选择延后到接入原型；如官方 SDK 使用辅助语言，桥接进程必须单独打包，不渗透核心接口。
+
+OCCT、Netgen/Gmsh、HDF5 等不因架构预留就立即接入，保持按实际用例引入。图形只在 GUI/图像进程加载；P0 的基本线性梁流程无需 CAD 内核。
+
+独立 engine 的 IPC、连接恢复、数据传输测试比早期“同进程亦可”的估算更具体，实施前需要用第一个运行时切片校准。既有 500万—1000万 token 仍是宽区间占位，不因本设计就认为足够，也不在缺少原型数据时再次随意增大总额。
+
+## 7. 当前开放项
+
+当前macOS工具链、SQLite恢复及有界历史/任务已有C2记录；待完成门禁包括目标硬件性能分档、跨平台验证、实际外部AI客户端及Nastran方言/真实求解器。重复实例装配、复杂CAD/网格、远程亿级、内置聊天仍不进入本轮。
+
+架构文档中的职责与链路是目标合同；当前范围以C2、[NEXT入口一致性记录](../engineering/next-validation.md)及[C3首个显示交互切片](../engineering/c3-display-validation.md)为准。已实现入口补强及后续C3/C4顺序见[开发计划](../baseline/development-plan.md#c2之后的接续计划)。
+
+
+## 后续参考研究
+
+[Gmsh、CalculiX与FreeCAD FEM参考](../research/Gmsh-CalculiX-FreeCAD架构参考-v0.8.md)提供API定义、格式能力报告及变化影响分类建议。其中OperationDescriptor、格式转换报告、按引用传播的ChangeImpact已在设计基线1.1吸收；其余建议仍不自动引入依赖。
+
+
+## 设计基线1.1补充
+
+已接受[能力包边界](solver-profiles.md)：实体不内嵌单值求解器编号，分析绑定目标，公共物理类型与受控专有扩展分开，输入/结果端口通用化，profile/映射版本进入预览、报告与运行依据。P0仍只有Nastran受控子集，不承诺跨求解器转换或无损往返。
+--- docs/architecture/modules.md (16088 UTF-8 bytes) ---
+# 模块职责、接口与依赖
+
+状态：设计基线1.1；平台骨架已实现C1/C2限定范围，完整模块职责仍为后续目标。本文细化[架构总览](README.md)，以下为逻辑职责。当前源码已按modules/features/adapters/apps/ui等目录归属，实际构建目标见[目标清单](../../modules/targets.json)，实现链路见[源码导读](../engineering/code-walkthrough/README.md)；不要求每个逻辑模块单独生成库。
+
+## 1. 核心模型与数据归属
+
+### domain/document
+
+维护 DocumentSnapshot 与稳定 EntityId。节点坐标、连接等密集数据使用有明确所有权的数组；P0 先以中小模型验证，容器布局允许后续分块优化。内部引用只使用EntityId；原始编号保存在SourceIdentifier，导出编号保存在按目标/命名空间/运行冻结的ExportIdentityMap，见[求解器能力包](solver-profiles.md)。
+
+子域包括：
+
+- Mesh：Node、Element、必要坐标系；连接及局部方向。
+- Organization：Part、Assembly、EntitySet、IncludeDocument。
+- Physics：Material、Property、Load、Constraint、AnalysisDefinition及受控NativeExtension。
+- Context：单位、分析意图、输入来源、假设、场景版本。
+
+装配层次、部件归属、集合成员、文件归属和物理引用分别记录；UI 模型树是投影。共享节点不能为满足树归属而复制。P0 装配先按层级组织，不悄然包含多实例变换系统。
+
+正向引用属于模型事实；反向引用索引可重建，但每次提交发布的模型与反向索引必须一致。域内不变量检查是纯逻辑，不依赖数据库或渲染器。
+
+P0确定的最小对象职责字段（概念字段，不是已冻结的C++结构体）：
+
+| 对象 | 关键字段/关系 |
+|---|---|
+| Node | EntityId、坐标、必要坐标系引用；不内嵌单值求解器编号 |
+| Element | EntityId、拓扑/公共物理类别、节点引用、截面/属性引用、局部方向；求解器实现选项归分析目标 |
+| Material / Property | EntityId、公共材料/截面语义、强类型字段和引用；卡片投影由profile/codec负责 |
+| Part / Assembly | 稳定身份、名称、部件成员、装配层级；不隐含复制共享节点 |
+| EntitySet | 名称、实体类别、明确成员；P0查询保存为成员快照，不默认动态规则集合 |
+| IncludeDocument | 来源资源、相对路径基准、包含关系、实体归属；检测循环及重复定义 |
+| Load / Constraint | 类型、目标实体/集合、量值与单位、坐标系、必要自由度 |
+| AnalysisDefinition | analysis_id、模型和物理设置引用、场景版本、输入/假设来源、TargetBinding |
+| TargetBinding / NativeExtension | 不可变ProfileRef、目标实现选择及带schema/引用的专有数据 |
+| SourceIdentifier / ExportIdentityMap | 有来源模型和namespace的原编号；按导出/运行冻结的目标编号映射 |
+| DocumentSnapshot | DocumentId/Epoch/Revision、ContentStateId、实体表/数组、组织关系、分析上下文 |
+
+这些对象组成可查询的关系图；持久化时才映射为SQLite表/块数据。数值字段的合法性由公共物理类型及已绑定目标/场景规则共同定义，不能用任意字符串属性包替代核心物理类型。
+
+### contracts 与 types
+
+types：稳定ID、Quantity、Revision、ContentStateId、ProfileRef、基础错误类型。
+
+contracts：命令/查询/任务 DTO、批量数据描述、能力定义、诊断与事件。使用标准 C++ 类型；JSON/MCP只是边缘编码。边界中的大整数身份使用字符串表达。
+
+### query
+
+输入 ReadView、QuerySpec、SelectionScope；输出 SelectionHandle、计数、分页实体/摘要。支持 P0 类型/ID/名称/归属/属性等组合、集合交并差、必要空间条件。
+
+SelectionHandle 绑定 document_id、document_epoch、revision、候选范围；不是可修改的实体指针。显式区分隐藏、被遮挡、穿透、完全包含/相交、反选候选域。
+
+普通查询读取领域索引。精确可见性选择通过 IVisibilityQueryPort 请求显式视图的可见 ID 集，再与业务候选集合相交。GUI 可以用 VTK 先取得候选 ID，但提交前必须由 engine 校验版本、实体和范围。无界面的同类图形选择使用同一显式相机/视图描述；缺图形能力时返回能力不可用，不能悄悄切换成穿透选择。
+
+### commands 与 history
+
+commands 将领域操作转换为 PreparedChange：DocumentId、DocumentEpoch、基础Revision、目标集、before/after、组织/引用变化、资源预估及影响说明。P0 的操作使用显式命令，不提供任意表达式写模型。
+
+history 管理线性逻辑编辑与游标；undo/redo 产生补偿变更，交给同一个提交协调器。正常新编辑截断 redo 分支；事务审计与幂等结果保留策略独立，不能随 redo 被删而消失。
+
+修改共享属性与为选中对象分配新属性是不同命令。一次复合操作可成为一个可撤销事务；其子修改不能各自提前发布。
+
+### analysis
+
+维护 AnalysisIntent、AnalysisSetup、InputEvidence、Assumption、场景版本及输入完整性。悬臂梁场景将受控输入转换为核心支持的命令计划，并提供缺参问题、检查目标与解释用事实。
+
+不调用大模型、不把提示词当物理规则、不直接写模型。外部 AI 负责自然语言，analysis 模块负责可验证的场景语义和适用范围。
+
+### solver_profiles
+
+纯C++注册/解析逻辑；定义ProfileDefinition、能力与扩展schema版本，按AnalysisDefinition的TargetBinding解析不可变ProfileRef。它不依赖具体Nastran实现；IProfileProvider由ports定义，宿主静态注册profile_nastran。
+
+公共字段、专有字段及派生投影只有一个权威来源。目标字段、引用、校验和复杂编辑行为在GUI/AI共用服务中执行。P0只提供一个Nastran profile，目标版本未配置时明确不可用；不做全局当前求解器或动态插件体系。
+
+### validation
+
+维护两个层次：提交前必要不变量由 domain 提供；可独立运行的模型/分析/结果检查由 validation 编排规则函数，生成带版本的 Issue 和 CheckEvidence。
+
+检查结果没有权力直接修复文档；修复建议转为 commands。结果包括规则/版本、对象、严重度、实际/期望、容差和证据引用。用户能区分未检查、通过、失败、过期。
+
+## 2. 应用协调与任务
+
+### application
+
+公开 ProjectService、QueryService、ChangeService、AnalysisService、ValidationService、JobService、ViewService。接口名表示职责，不要求立即拆成多个对象框架。
+
+负责：文档生命周期、连接上下文、工具能力、预览注册、请求授权上下文、幂等协调、串行提交以及业务事件。**只有这里的 DocumentCommitCoordinator 能发布新文档状态。**
+
+创建/打开/关闭的宿主级意图由工作区登记簿保存，使用同一storage_sqlite适配提供的登记能力；文档建立前即可按可信调用者和幂等键查回结果。它只保存生命周期事实和工作库位置，不成为第二份模型权威，也不要求新增服务进程。
+
+所有入口使用同一 Dispatcher。ChangeService 不直接依赖 SQLite 实现，而通过 IWorkspaceStore 提交已准备变更。AnalysisService 调用分析场景、任务服务和求解端口；避免 jobs 与 application 双向编译依赖。
+
+### jobs
+
+维护任务记录、状态转换、取消令牌、并发/内存/临时磁盘配额，以及可恢复的运行标识。通过 IExecutorPort 提交工作函数；工作函数读取冻结快照，返回结果或 PreparedChange。
+
+jobs 不直接写领域模型。任务完成后应用层同时校验DocumentId、DocumentEpoch和Revision是否仍可提交；任一冲突返回明确状态。求解作业可以完成旧快照计算，但结果明确属于原输入及原工作库。关闭/放弃后的原上下文保留到任务终态，不能将旧结果挂到新打开的文档。
+
+资源控制先是可计量的额度和有限并发；非合作式第三方算法的硬中止/硬内存上限依赖进程隔离和平台能力，不虚称单个计数器能保证。
+
+### ports
+
+只为实际外部边界定义接口：IProfileProvider、IWorkspaceStore、IProjectSnapshotStore、IModelCodec、ISolverRunner、IResultReader、IArtifactStore、IExecutorPort、IVisibilityQueryPort、ISnapshotRenderer。
+
+方法形状以实际用例决定。不要为每个函数新增抽象。适配器依赖 ports 及相关类型，核心不 include 适配器；运行宿主负责注入。
+
+| 端口 | 输入→输出方向 |
+|---|---|
+| IWorkspaceStore | PreparedCommit→持久化CommitReceipt；恢复请求→已提交状态/历史/操作结果 |
+| IProjectSnapshotStore | 固定内容与save intent→临时工程及快照清单；发布/核对→保存结果 |
+| IProfileProvider | 不可变ProfileDefinition、能力/扩展schema与目标校验；P0为静态Nastran提供者 |
+| IModelCodec | 输入资源＋来源目标→候选模型/来源映射/报告；冻结分析＋ProfileRef→目标格式ArtifactPlan/导出映射/报告；P0为BDF/INCLUDE |
+| ISolverRunner | 已核验目标产物＋兼容RunConfiguration→进程运行句柄；查询/取消/核实→真实状态 |
+| IResultReader | 固定运行/编号映射与结果资源→带量纲、位置、坐标基、工况/采样及来源的ResultBundle；P0只读位移/反力 |
+| IArtifactStore | 临时资源→发布清单；资源ID→受控读取及可用性 |
+| IVisibilityQueryPort | RenderPacket与ViewSpec/候选范围→精确可见实体ID及版本 |
+| ISnapshotRenderer | RenderPacket与ViewSpec→图片资源及模型/视图版本 |
+
+PreparedCommit包括模型差量、历史、幂等、修订和相关任务结果，避免存储适配器只能分多次写入这些数据。RenderPacket定义于contracts，包含模型/打开代号/修订、坐标与连接数据块、真实EntityId映射、显示属性和局部更新标识；ViewSpec包含相机、投影、裁切、显隐及ViewRevision。图形进程只接收显示所需数据，不持有领域对象。
+
+## 3. 适配器与入口
+
+| 计划模块 | 实现内容 | 禁止承担的职责 |
+|---|---|---|
+| adapters/storage_sqlite | 工作库事务、工程快照、save intent、恢复读取、历史/幂等记录 | 不决定领域命令是否合法 |
+| adapters/artifacts_local | 运行目录、临时产物、发布清单、hash与资源读取 | 不凭文件存在就判定求解成功 |
+| profiles/nastran | 提供一个版本化能力包、字段/规则/映射描述，由宿主静态注册 | 不改核心公共类型，不直接提交模型 |
+| adapters/nastran_codec | 支持子集读写、INCLUDE解析、编号映射、文件/行诊断 | 不在解析中直接改活动模型 |
+| adapters/solver_local | 固定可执行配置、进程启动/取消、日志与退出信息 | 不执行AI给出的任意shell串 |
+| adapters/result_reader | 位移/反力读取及输入运行关联 | 不输出无依据的工程结论 |
+| adapters/runtime_local | 任务执行、进程能力、时间/配额观测 | 不再建一套任务状态权威 |
+| adapters/graphics_local | 转发离屏出图/可见性请求到图像辅助进程 | 不在engine创建VTK图形上下文 |
+| adapters/ipc_local | 帧边界、JSON控制消息、二进制块、版本协商、连接事件 | 不在传输层实现载荷/属性业务规则 |
+| visualization/render_data | engine侧纯C++ producer：ReadView转换为contracts中的RenderPacket、实体映射、块描述 | GUI/VTK/离屏进程不得链接此producer或domain |
+| visualization/vtk | 仅消费RenderPacket/ViewSpec的VTK场景、拾取、高亮、相机及图像/可见性渲染 | 不读取domain、不链接render_data，不写文档或定义默认选择域 |
+| clients/sdk | GUI/CLI使用的契约调用、重连、事件与资源访问 | 不对超时修改自动换幂等键重发 |
+| clients/desktop | Qt工作区、ViewModel、可见性/相机、表单草稿 | 不持有权威实体/事务/数据库连接 |
+| clients/mcp | MCP工具说明与参数/结果转换，转发到engine | 不实例化领域核心或绕过事务 |
+| apps/engine | 组装服务、适配器、线程和本地端点 | 不把宿主生命周期写入domain |
+
+## 4. 数据谁负责
+
+| 状态 | 唯一负责者 | 其他模块如何使用 |
+|---|---|---|
+| 当前已提交模型、修订 | engine应用层；workingDB持久化 | 只读快照/查询/事件 |
+| 部件、集合、INCLUDE、物理引用 | domain文档 | 多种组织投影 |
+| 预览与历史 | engine的ChangeService/协调器 | UI与AI共享查询和操作 |
+| 任务与输入快照 | engine的JobService/AnalysisService | 客户端订阅或查询 |
+| GUI相机、临时高亮、未提交表单 | 对应客户端视图会话 | 需要共享时发布显式view_session_id |
+| 命名集合 | domain文档 | 持久化、可撤销 |
+| 临时选择句柄 | engine查询会话 | 带版本、有限寿命，不混为持久集合 |
+| VTK缓存与反向渲染ID映射 | 显示适配器 | 可丢弃重建 |
+| 项目已保存状态 | ProjectService + 快照存储 | 查询clean/dirty与保存身份 |
+| 求解文件和图像 | ArtifactStore | 资源ID和清单，不将裸路径当权限 |
+
+“AI操作我当前选中的对象”需要显式关联GUI视图会话并读取其选择；没有关联时不能读取一个全局隐式选择。AI和GUI可有独立视图，但始终共享文档。
+
+## 5. 依赖规则
+
+基础类型无外部依赖；domain与contracts只依赖基础类型。query、commands、history、analysis、solver_profiles、validation、jobs 是纯C++业务模块。application汇总它们及ports；适配器实现ports；apps只做组装。
+
+GUI依赖contracts、client SDK和消费端VTK显示适配，不链接application/domain或engine侧render_data。MCP依赖契约/传输桥而不链接领域核心；若MCP SDK采用另一语言，复用协议契约而不强求链接同一C++客户端二进制。测试可直接链接核心服务，以最小依赖验证业务；进程级测试另覆盖真实IPC。
+
+依赖清单把逻辑组件作为节点，先做静态DAG检查。真正实施时再依据目录体量合并CMake target；纯核心目标必须能在禁用Qt、VTK、SQLite、MCP的构建配置下编译和运行内存适配测试。
+
+## 6. 计划目录
+
+```text
+src/
+  types/  contracts/  domain/
+  query/  commands/  history/  analysis/  solver_profiles/  validation/  jobs/
+  application/  ports/
+  profiles/nastran/
+  adapters/
+    storage_sqlite/  artifacts_local/  nastran_codec/
+    solver_local/  result_reader/  runtime_local/  ipc_local/  graphics_local/
+  visualization/
+    render_data/  vtk/
+  clients/
+    sdk/  desktop/  mcp/  cli/
+  apps/
+    engine/  desktop/  mcp/  snapshot/
+scenarios/cantilever/
+tests/
+  unit/  contracts/  persistence/  integration/  ui/  ai/  e2e/
+```
+
+该目录是后续实施布局，不在本轮创建空壳源代码。核心接口与一致性规则优先，避免先造完整目录再补行为。
+
+
+## 设计基线1.1吸收的接口规则
+
+OperationDescriptor由contracts定义、application登记实际处理器，向GUI/CLI/MCP提供一致参数、单位、错误和能力描述；不为每个入口手工复制业务语义。
+
+ImportReport/ExportReport属于格式适配结果，由validation/application决定是否允许提交或发布；未知/丢失语义不能只记录日志后返回成功。
+
+ChangeImpact在PreparedChange中记录，沿实际引用传播到分析输入、诊断和显示缓存。只改变相机不触发物理重算，载荷引用的集合成员变化必须使相关分析结果过期。
+
+
+## 1.1 补充规则
+
+目标能力、编号映射、公共/专有字段所有权、绑定与转换、版本及结果语义以[求解器能力包设计](solver-profiles.md)为准。P0只实现一个Nastran包；共享对象变更必须诊断全部受影响分析，不以当前GUI分析为唯一范围。
+--- docs/architecture/module-dependencies.json (7018 UTF-8 bytes) ---
+{
+  "schema_version": "1.1",
+  "status": "accepted design dependency graph; product build targets not implemented",
+  "direction": "module depends on listed dependencies; runtime injection reverses interface implementation ownership",
+  "notes": [
+    "Logical modules may be merged into fewer build targets.",
+    "A non-C++ MCP bridge can implement the same client protocol instead of linking the C++ client SDK; its SDK language/runtime is fixed by ENV-06 before M5.",
+    "Only composition hosts wire concrete adapters into application ports.",
+    "engine_host must not transitively depend on VTK or QtWidgets.",
+    "GUI and MCP must not transitively depend on domain or application.",
+    "Only one production profile is planned for P0; core solver_profiles must not depend on concrete profile_nastran or nastran_codec."
+  ],
+  "modules": [
+    {
+      "name": "types",
+      "layer": "core",
+      "dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "name": "contracts",
+      "layer": "core",
+      "dependencies": [
+        "types"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "domain",
+      "layer": "core",
+      "dependencies": [
+        "types"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "ports",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "solver_profiles",
+      "layer": "core",
+      "dependencies": [
+        "types",
+        "domain",
+        "contracts",
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "query",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "contracts",
+        "ports",
+        "solver_profiles"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "validation",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "query",
+        "contracts",
+        "solver_profiles"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "commands",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "query",
+        "validation",
+        "contracts",
+        "solver_profiles"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "history",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "types"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "analysis",
+      "layer": "core",
+      "dependencies": [
+        "domain",
+        "query",
+        "validation",
+        "contracts",
+        "solver_profiles"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "jobs",
+      "layer": "core",
+      "dependencies": [
+        "types",
+        "contracts",
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "application",
+      "layer": "core",
+      "dependencies": [
+        "contracts",
+        "domain",
+        "query",
+        "commands",
+        "history",
+        "analysis",
+        "validation",
+        "jobs",
+        "ports",
+        "solver_profiles"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "storage_sqlite",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": [
+        "SQLite"
+      ]
+    },
+    {
+      "name": "artifacts_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "nastran_codec",
+      "layer": "adapter",
+      "dependencies": [
+        "ports",
+        "domain"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "solver_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports",
+        "artifacts_local"
+      ],
+      "external_dependencies": [
+        "QtCore"
+      ]
+    },
+    {
+      "name": "result_reader",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "runtime_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports"
+      ],
+      "external_dependencies": [
+        "QtCore"
+      ]
+    },
+    {
+      "name": "ipc_local",
+      "layer": "adapter",
+      "dependencies": [
+        "contracts"
+      ],
+      "external_dependencies": [
+        "QtCore",
+        "QtNetwork"
+      ]
+    },
+    {
+      "name": "graphics_local",
+      "layer": "adapter",
+      "dependencies": [
+        "ports",
+        "ipc_local",
+        "runtime_local"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "render_data",
+      "layer": "adapter",
+      "dependencies": [
+        "domain",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "render_vtk",
+      "layer": "adapter",
+      "dependencies": [
+        "contracts"
+      ],
+      "external_dependencies": [
+        "VTK"
+      ]
+    },
+    {
+      "name": "client_sdk",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "ipc_local"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "desktop",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "client_sdk",
+        "render_vtk"
+      ],
+      "external_dependencies": [
+        "QtWidgets"
+      ]
+    },
+    {
+      "name": "mcp",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "client_sdk"
+      ],
+      "external_dependencies": [
+        "MCP_SDK"
+      ]
+    },
+    {
+      "name": "cli",
+      "layer": "client",
+      "dependencies": [
+        "contracts",
+        "client_sdk"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "engine_host",
+      "layer": "composition",
+      "dependencies": [
+        "application",
+        "storage_sqlite",
+        "artifacts_local",
+        "nastran_codec",
+        "solver_local",
+        "result_reader",
+        "runtime_local",
+        "ipc_local",
+        "graphics_local",
+        "render_data",
+        "profile_nastran"
+      ],
+      "external_dependencies": [
+        "QtCore"
+      ]
+    },
+    {
+      "name": "desktop_host",
+      "layer": "composition",
+      "dependencies": [
+        "desktop"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "mcp_host",
+      "layer": "composition",
+      "dependencies": [
+        "mcp"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "cli_host",
+      "layer": "composition",
+      "dependencies": [
+        "cli"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "snapshot_host",
+      "layer": "composition",
+      "dependencies": [
+        "render_vtk",
+        "ipc_local",
+        "contracts"
+      ],
+      "external_dependencies": []
+    },
+    {
+      "name": "profile_nastran",
+      "layer": "adapter",
+      "dependencies": [
+        "ports",
+        "domain",
+        "contracts"
+      ],
+      "external_dependencies": []
+    }
+  ]
+}
+--- docs/architecture/runtime-and-data.md (16847 UTF-8 bytes) ---
+# 运行时、事务与持久化设计
+
+本文件属于[设计基线1.1](README.md)，定义P0应实现和验证的行为。当前记录事务、SQLite迁移及持久线网格任务见[C2交接](../implementation/c2-handoff.md)和[记录合同](../engineering/r2-record-contract.md)。[M2/M3说明](../implementation/m2-m3.md)及其[ADR](m2-m3-decisions.md)保留该阶段历史取舍；以下完整P0合同中的事件、批量传输和外部求解任务尚未验收。
+
+## 1. 引擎发现、所有权与生命周期
+
+P0每个本地用户/应用实例范围只启动一个engine，同时只维护一份活动可编辑工程。GUI、CLI和MCP桥使用同一个连接或启动流程：获得实例启动锁 → 探测端点并握手 → 已有实例则连接，未运行则启动。并发启动的失败方重新发现，不另外建立核心。
+
+端点记录包含协议版本、engine启动代号和连接信息。不能仅凭PID或旧文件存在判断实例存活。连接限制在当前用户允许的本地端点，授权上下文由宿主建立；AI参数中的actor/approved字段不能赋予权限。
+
+工程写锁与engine单实例锁分别存在。工程锁按规范路径及可用的文件身份判定，不单靠ProjectId或窗口标题；复制出来的文件可能有相同ProjectId但不是同一物理文件。已经被其他写入者持有的目标不得再作为第二个可写工程打开。
+
+客户端断开只释放连接和视图订阅，不隐式取消已提交任务。关闭文档、取消任务和退出engine是不同操作。有运行任务或其他客户端时，GUI关闭不会直接杀死engine；无客户端、无任务且工作库已持久化时，可按明确的空闲策略退出并保留恢复状态。
+
+MCP桥可以被每个外部AI客户端独立启动，但桥始终连接同一个engine。无界面先启动后再打开GUI，也只连接已有文档。
+
+## 2. 请求、版本和连接恢复
+
+关键身份：
+
+| 字段 | 含义 |
+|---|---|
+| ProjectId | 工程快照身份与来源追溯，不作为唯一文件锁依据 |
+| DocumentId | 当前工作文档/恢复库的稳定身份 |
+| DocumentEpoch | 每次打开/恢复激活产生的新代号，阻止旧会话请求作用于重新打开的模型 |
+| Revision | 当前激活文档中的单调提交序号；undo也递增 |
+| ContentStateId | 模型、组织及分析上下文的业务内容状态，用于clean/dirty；不含保存路径、ProjectId或相机 |
+| AnalysisFingerprint | 物理输入、TargetBinding/ProfileRef、单位、场景及映射/导出规则等的确定性摘要 |
+| ProfileRef | profile_id、profile_version、definition_digest；不与本机RunConfiguration混用 |
+| ViewSessionId / ViewRevision | 相机、裁切、显隐与临时选择所属视图及其版本 |
+
+从.qcae正常建立工作副本时生成新的DocumentId及DocumentEpoch，不激活快照中旧的运行幂等命名空间或未完成任务。可携带历史作为历史数据加载；活动任务只能由其原工作库恢复。从现有workingDB故障恢复时保留DocumentId、幂等和任务事实，仅产生新DocumentEpoch。SaveAs仍是同一活动工作文档，保留DocumentId及幂等记录。
+
+修改请求至少带DocumentId、DocumentEpoch、expected_revision、idempotency_key和明确操作参数。request_id仅用于一次通信尝试；重试换request_id但保留同一逻辑操作的幂等键。
+
+文档修改的幂等记录按工作文档、可信调用者范围和键保存规范化参数摘要及原结果。
+
+project.create/open/close等文档生命周期操作由宿主级工作区登记簿记录，键为可信调用者范围、操作名和idempotency_key，不以尚未知晓或已经关闭的DocumentId作为查找前提。operations.get支持host作用域（无需DocumentId）和document作用域（明确DocumentId），均按实际调用者权限过滤。
+
+创建/打开先持久化宿主意图，预先分配目标DocumentId及工作库位置，再建立并验证工作库，最后登记完成及可重放结果。若响应丢失或宿主中断，重试按同一意图核对既定工作库，完成或报告中断，不分配第二份文档。宿主登记簿与工作库并非一个原子事务，工作库的意图ID/就绪标记用于恢复核对；不明确的状态返回待核实，不擅自重建。打开不同工程时不隐式关闭已有可编辑工程，应先显式关闭；同一工程可连接既有实例。
+
+关闭操作先持久化宿主意图，按明确的保存/保留恢复/放弃策略处理文档与未结束任务，然后登记关闭事实；既有幂等事实至少保留到声明保证期结束。文档关闭后，host作用域仍可查回该生命周期结果。调用者范围在重连/恢复后可识别，不能采用每次连接都变化的临时连接ID。相同操作已经提交则返回原事务，不创建新修订；同键异参拒绝。即使原事务后来被undo，重试也只返回原提交事实，同时报告当前修订及当前效果状态，不重新应用。
+
+DocumentEpoch不同的旧修改请求一律不直接执行。重连取得新epoch后，通过operations.get查询旧操作结果，再决定是否需要重新生成预览。这样既防止打开旧快照后修订号碰巧相同造成误提交，也不会因为连接丢失而重复修改。
+
+客户端订阅DocumentChanged、JobChanged、HistoryChanged、IssueChanged。事件带序号/版本；发现间隙或重连时重新查询快照和任务，不能认为事件永久不丢失。过期预览/选择句柄返回错误，由调用者重建。
+
+## 3. 线程与数据传输
+
+engine的本地传输事件循环负责收发与分派。每个文档有一个串行提交队列，后台线程池负责解析、查询索引构建、检查和候选计算；读取使用不可变的已提交快照，不持有可写实体指针。
+
+GUI线程只处理界面，VTK渲染资源在其规定的渲染线程/上下文中使用。提交或任务结果通过事件触发增量刷新，不能让工作线程直接操作Qt控件或VTK场景。
+
+控制消息使用有长度边界和大小上限的结构化编码，带协议/应用契约版本。批量坐标、连接和显示缓冲走独立二进制帧或受控只读资源；P0允许批量复制，记录成本，不先实现共享内存或传裸指针。队列和缓冲设上限，拖动相机只保留必要的最新更新。
+
+服务返回可显示缓存的版本/块标识及原实体映射；客户端不会下载全部业务对象来重建第二个可写模型。大列表分页，选择结果可保留在engine以句柄访问。
+
+## 4. 三份模型状态
+
+```text
+用户保存的 .qcae 文件：明确保存的可携带工程快照
+                ↑ 一致快照导出 / 打开时初始化
+本地 working.sqlite：当前工作文档的持久化权威
+                ↓ 启动恢复 / 提交成功后发布
+RAM DocumentSnapshot：运行时只读/编辑基础
+                ↓ 可重建
+引用索引、空间索引、显示缓存
+```
+
+工作库保存模型、关系、有限历史、幂等结果、任务与资源索引。每次正式模型提交持久化工作库；定时保存不是额外绕过事务的通路。
+
+已保存工程文件只在明确保存/另存时更新，便于保持未保存/放弃修改语义。未命名工程也有独立恢复库。P0可接受打开/保存时完整快照复制，不构建多版本文件系统。
+
+拖动预览、未提交表单、临时选择可以只在内存。文件格式使用schema版本，未知未来版本不静默覆盖。恢复库损坏或不兼容时进入诊断/只读恢复流程，不能把空模型误当成功恢复。
+
+SQLite事务提供数据库内原子性；是否使用WAL及同步配置在持久化原型固定。WAL文件不能忽略，数据库备份使用官方一致快照能力，不能直接复制正被写入的主文件。[SQLite WAL](https://sqlite.org/wal.html)、[Backup API](https://sqlite.org/backup.html)
+
+## 5. 一次修改与撤销的提交链
+
+```mermaid
+sequenceDiagram
+    participant C as GUI或AI
+    participant A as 应用服务
+    participant T as 提交协调器
+    participant D as 工作SQLite
+    participant M as RAM快照
+    C->>A: 提交预览 / expected revision / 幂等键
+    A->>T: 已验证的领域操作
+    T->>D: 查询是否已有提交
+    T->>T: 准备候选状态、差量、引用与配额
+    T->>T: 串行区复查版本和取消
+    T->>D: 原子写入模型、历史、修订、幂等结果
+    D-->>T: COMMIT成功
+    T->>M: 发布已准备好的根状态
+    T-->>A: 原事务结果及新修订
+    A-->>C: success
+    A-->>C: 变更事件 / 缓存失效通知
+```
+
+关键约束：
+
+- DB提交前准备完整可发布状态、必要索引和历史数据，做完可能否决操作的业务校验。P0可对小容器复制，批量数组逐步按变更块优化。
+- 一个SQLite事务写入模型/关系、新Revision、内容状态、历史及游标、可信来源、幂等结果，以及关联任务的提交结果。
+- COMMIT之后只做无需新大额分配的根状态发布；发布前后由串行协调器保证一致性，不让查询混读旧模型与新历史。
+- 返回成功表示达到声明的持久化边界。若数据库提交结果不确定，先停止该文档继续写入并核对事务事实，禁止直接重执行。
+- 通知和显示缓存失败不撤销已经完成的模型事务；缓存可以失效重建。
+
+| 崩溃窗口 | 恢复行为 |
+|---|---|
+| DB提交前 | 原状态有效，候选丢弃 |
+| DB已提交、RAM未发布 | 从工作库恢复新状态，操作实际已提交 |
+| RAM已发布、响应丢失 | 幂等查询返回原事务 |
+| 模型已提交、显示刷新失败 | 模型保持新状态，客户端重新查询/构建缓存 |
+
+Undo/redo经过同一提交链：历史游标改变，但Revision继续增加。新编辑剪掉redo分支时，不连带删除重试保证期内的幂等记录。P0保留有限的持久历史；超限策略和保留量需明确，不能悄然承诺无限历史。
+
+## 6. 保存、另存和放弃修改
+
+### 保存
+
+1. 在文档队列中选定一致内容状态，登记save_operation_id、目标、快照身份。
+2. 暂时排队新的模型写入，读取仍使用稳定RAM；用一致备份生成目标同文件系统的临时工程快照。
+3. 清除快照中的活动锁/连接句柄，写入快照身份，验证模型、schema和必要资源。
+4. 替换目标文件并按目标平台的持久化规则完成必要刷新。
+5. 更新工作库保存标记，解除写入排队，返回保存结果。
+
+原工程文件与工作库不是同一个原子事务。若替换成功但保存标记未更新，重启根据目标文件中的save_operation_id/ContentStateId判断事实，再修复工作库标记。失败不能简单宣称全部回滚。
+
+### 另存
+
+先取得新目标的写权限/锁。在save intent中预先固定新ProjectId、来源ProjectId、目标路径和选定ContentStateId；生成的目标快照直接使用这些值，不先写旧身份再事后改库。
+
+目标发布成功后，以一个工作库事务更新ProjectId/保存位置/已保存ContentStateId和save intent完成状态。纯路径及工程身份更新不增加模型Revision或ContentStateId，也不进入模型undo；发布ProjectMetadataChanged事件。断点恢复用intent与目标快照核对完成事实。
+
+EntityId、DocumentId及本次激活的DocumentEpoch保持不变。分析输入摘要不因纯保存路径变化而失效。正在运行的任务继续绑定冻结输入和其原运行目录。
+
+### 放弃修改
+
+按明确关闭/放弃操作关闭工作副本，或从已保存快照重新建立工作状态；后者按正常打开建立新的DocumentId/DocumentEpoch，旧预览失效。被用户明确放弃的恢复库不能下次再自动弹出为未保存工作。若还有未结束任务，先取消并收敛，或将原工作库标为retired并保留到任务终态；不能立即删除原库和运行目录。旧结果仅登记在原运行上下文，不自动附到新激活文档。不得靠逐条undo伪造恢复到工程文件。
+
+### 项目可携带性
+
+.qcae内保存必要模型数组、关系、分析上下文和结果数值摘要；源INCLUDE内容/组织以工程内记录管理。原始求解日志、大结果和图像可以在独立资源目录，工程保存其清单与hash。复制工程后若外部产物缺失，明确返回“摘要可用/原始产物缺失”，不能把路径记录视为文件已经携带。打包所有资源不属于P0默认新增能力。
+
+## 7. 求解与外部产物链
+
+```mermaid
+sequenceDiagram
+    participant C as 客户端
+    participant A as AnalysisService
+    participant J as JobService
+    participant S as Nastran适配器
+    participant P as 求解器进程
+    C->>A: 请求分析
+    A->>A: 固定模型快照、单位、输入摘要和检查
+    A->>J: 持久化唯一job及输入依据
+    J->>S: 生成独立运行目录与BDF
+    S->>P: 固定配置启动
+    P-->>S: 日志、退出状态、产物
+    S-->>J: 解析结果和产物清单
+    J->>J: 核对输入、完整性及状态后持久化
+    J-->>C: 任务完成 / 结果来源
+```
+
+所有任务输入和PreparedChange绑定(DocumentId, DocumentEpoch, Revision)。目标相关任务/预览另外冻结analysis_id、ProfileRef及能力摘要；提交时复查这些定义，不能因为文档修订没变就忽略profile升级。成功操作的幂等重试返回原事实，不重新按新版规则执行。会修改模型的任务提交时三者一起检查；旧任务不能仅凭相同数字修订写入重新打开的文档。求解旧输入允许完成，但只登记原AnalysisRun。
+
+任务状态为queued、running、cancel_requested、committing、succeeded、failed、cancelled、interrupted，以及必要的reconciling。客户端请求取消不等于已经取消；模型短提交区不可被任意打断。
+
+求解前持久化启动意图，启动后记录进程身份与开始时间；不能只靠PID判定。启动与记录之间崩溃时，进入核实/中断状态，不自动再次启动。P0不宣称外部进程恰好执行一次。
+
+每次任务有独立run_id目录。产物先临时生成，经检查后发布清单，再登记有效结果。结果包含输入快照、AnalysisFingerprint、ProfileRef与映射/导出规则版本、冻结ExportIdentityMap、实际求解器和RunConfiguration摘要、解析器版本、物理检查证据；ResultField记录单位、值形状、实体/积分位置、坐标基和工况/采样信息。退出码0不等于结果完整或检查通过。
+
+求解期间用户修改模型不污染旧任务输入。旧结果仍可查看，但标记适用的输入/版本。重用结果要求输入和求解配置均匹配；纯相机变化不使结果失效。
+
+导出BDF/多INCLUDE同样使用独立临时目标和完成清单；多文件逐个rename不构成原子发布。P0优先导出到新目录并在全部成功后发布完成标识。Undo只恢复模型，不删除已交付文件或撤销已完成求解。
+
+## 8. 无界面与显示
+
+本地engine无需加载VTK或创建图形上下文即可执行建模、查询、保存、校验与求解。GUI本地渲染从engine获取只读显示数据。engine侧render_data读取ReadView并生产定义于contracts的RenderPacket；GUI、VTK和离屏辅助进程只消费RenderPacket/ViewSpec，不链接render_data或domain。
+
+需要精确可见性选择/截图时，由ViewService通过端口调用单独的图形辅助能力；它可以复用VTK适配，在专用进程运行。返回图像/可见ID附带模型、视图、相机和映射版本。没有图形能力时返回明确错误，基本数值业务继续可用。
+
+几何显示映射可一对多，例如一个梁单元被截面可视化为多个三角形；拾取必须合并回真实FE实体。生成的三角形不得进入物理模型、检查计数或Nastran导出。
+
+## 9. 必须验证的运行时场景
+
+GUI先启动、AI先启动、同时启动、多个AI客户端；同一工程重复打开；GUI关闭而任务继续；重连丢事件；engine在事务不同窗口崩溃；另存中断；旧epoch请求；undo后请求重试；不依赖显示设备的完整悬臂梁流程。详细验收及规划见 [决策与验证](decisions-and-verification.md)。
+
+
+## 10. 能力包与分析目标
+
+AnalysisDefinition持有TargetBinding，UI切换编辑上下文不修改文档。实际变更绑定/profile升级必须显式预览与事务；扩展字段和其引用参加同一工作库提交/历史。旧任务继续使用冻结profile及输入，配置升级不能暗改既有运行。编号查询必须区分来源模型/namespace和目标导出映射，不能按单值SolverId读取其他目标结果。具体规则见[求解器能力包](solver-profiles.md)。
+--- docs/implementation/m0.md (6260 UTF-8 bytes) ---
+# M0 实现与运行说明
+
+本文记录 M0 交付时范围与测试结果；当前扩展能力见 [M1说明](m1.md)。
+
+M0已经形成第一条真实运行链：CLI → 本地engine → 内存文档 → 材料参数预览/提交 → undo/redo → 查询。
+
+**这是材料对象的内存切片，不是完整P0。** 不支持工程保存/恢复、BDF、Nastran求解、GUI或真实AI客户端；engine退出后数据丢失。接口和握手都返回`durable=false`。后续按既定M1—M6补齐能力。
+
+## 已实现范围
+
+| 任务 | 实现证据 | 限制 |
+|---|---|---|
+| M0-01 | C++20 CMake核心目标、严格警告、CTest入口 | 核心仅依赖标准库/线程；Python只用于构建生成与测试 |
+| M0-02 | 从27项设计操作目录生成C++描述；强ID、Quantity、ProfileRef、TargetBinding、IProfileProvider元数据接口 | 生产Nastran profile尚未配置；描述目录不代表27项都实现 |
+| M0-03 | 创建一份文档、材料创建/弹性模量修改、规范化单位、预览、原子提交、幂等、线性历史与快照 | 文档只含最小材料对象；有限数量配额；历史只在内存 |
+| M0-04 | QtCore/Network engine与CLI；端点锁、握手、两个客户端共享状态、自动启动 | 单实例以同一本地端点为范围；尚无工程文件写锁 |
+| M0-05 | 断开重连、版本拒绝、重复请求、并发启动、协议异常回归 | 重连指engine仍存活；不是进程崩溃后的模型恢复 |
+
+当前可调用：capabilities.list、project.create/status、model.summary、changes.preview/commit、history.list/undo/redo、operations.get的文档变更结果查询。其余操作明确返回UNSUPPORTED_CAPABILITY。
+
+支持的领域命令仅为material.create与material.set_young_modulus。Young模量支持Pa/kPa/MPa/GPa并归一到MPa；必须为有限正数，溢出/下溢为无效输入。文档/材料名称最多1024字节。资源上限通过Limits提供；当前按数量限额，不是总RAM硬上限。
+
+## 环境证据
+
+本轮实际验证：macOS arm64、Apple clang 21.0.0、CMake 4.3.0、Ninja 1.13.2、Qt6 Core/Network 6.11.1。构建找到Python3 3.14.7，设计检查也可使用Python 3.10+。
+
+Qt使用已有Homebrew安装，无新增依赖安装。Catch2未在已检查路径发现；M0采用小型C++检查程序与CTest，Release也保留断言行为。后续可按需要引入已规划的Catch2，不伪装本次使用了它。
+
+## 纯核心构建
+
+```sh
+cmake -S . -B build-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DQCAE_BUILD_IPC=OFF
+cmake --build build-core
+ctest --test-dir build-core --output-on-failure
+```
+
+关闭IPC时不会查找或链接Qt、VTK、SQLite、MCP。生成的operations.hpp位于构建目录，源头为docs/contracts/operations.json，禁止手改生成文件。
+
+## 本地engine与CLI
+
+本轮macOS/Homebrew实际使用的Qt前缀如下；其他机器按安装位置调整：
+
+```sh
+cmake -S . -B build-local -G Ninja -DCMAKE_BUILD_TYPE=Debug -DQCAE_BUILD_IPC=ON -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt
+cmake --build build-local
+ctest --test-dir build-local --output-on-failure
+```
+
+真实IPC测试需要操作系统允许本地套接字监听。Codex沙箱曾返回`QLocalServer::listen: Unknown error 1`；在获得本机测试执行权限后通过，不能据此把沙箱失败当作协议通过或绕过成模拟测试。
+
+测试脚本当前支持Unix本地域套接字，因此CMake只在UNIX上注册IPC测试。本轮没有Windows构建/命名管道验收。
+
+在仓库根目录建立私有的运行目录并以前台方式启动：
+
+```sh
+mkdir -p runtime/m0
+chmod 700 runtime/m0
+./build-local/qcae-engine --socket "$PWD/runtime/m0/engine.sock"
+```
+
+另一个终端查询能力：
+
+```sh
+printf '%s\n' '{"api_version":"1.1","request_id":"demo-1","operation":"capabilities.list","parameters":{}}' | ./build-local/qcae-cli --socket "$PWD/runtime/m0/engine.sock" --no-start
+```
+
+省略`--no-start`时CLI可按需启动同目录下的engine，或用`--engine`明确可执行文件。自动启动的engine在CLI结束后继续驻留；当前没有空闲退出策略，需明确结束engine，且会丢失其内存数据。
+
+## 业务流程示例
+
+每条JSON发送给CLI，返回的document_id/document_epoch/preview_id需要用于后续请求。请求ID每次不同；同一逻辑修改重试保留幂等键和原参数。
+
+```json
+{"api_version":"1.1","request_id":"create","operation":"project.create","idempotency_key":"create-demo","parameters":{"name":"Beam"}}
+```
+
+创建材料的预览参数：
+
+```json
+{"command":"material.create","name":"Steel","young_modulus":{"value":210,"unit":"GPa"}}
+```
+
+调用changes.preview需再携带文档身份与expected_revision。用返回的preview_id调用changes.commit，随后model.summary能读取归一化后的210000 MPa；history.undo/redo可以恢复/重新应用。完整可运行例子在tests/ipc_tests.py中。
+
+`runtime.handshake`属于本地传输协议，不是业务操作目录。CLI自动握手并核对API版本和响应request_id。控制消息为UTF-8 JSON行；请求正文上限1MiB、响应整帧上限1MiB，超限明确报错或关闭连接；request_id最多128 UTF-8字节。
+
+## 当前验证
+
+- 纯核心Release：5/5 CTest通过。
+- AddressSanitizer＋UndefinedBehaviorSanitizer核心构建：5/5通过。
+- Qt本地Debug：6项CTest，包括真实IPC、双客户端共享、重连、并发自动启动、普通文件保护和错误响应ID拒绝。
+- 发布前分配失败注入：commit/undo/redo在失败位置保持模型、历史及幂等一致；发布后不再复制可分配DTO。
+- 操作目录生成一致性与设计检查通过。
+
+不存在真实磁盘持久化、求解结果、AI模型调用或性能达标证据。协议当前是单个本地OS用户的开发运行入口，JSON不能声明调用者权限；不宣称实现多用户授权系统。
+
+## 后续接续
+
+下一阶段进入M1的实体/组织/引用及Nastran受控格式。MemoryApplication的有限材料快照只是纵向验证载体，不应直接扩成整个最终领域模型；保持契约、单提交者和测试语义，逐步拆到已规划模块。M2再替换持久化适配并完成数据库恢复，不能把当前内存幂等保证扩展解释为跨重启保证。

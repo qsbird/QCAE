@@ -1,0 +1,78 @@
+tests/model_operation_tests.cpp:194:    for (const auto& quantity :
+tests/model_operation_tests.cpp:196:        check(good(material_features::prepare_create_material({"Steel", quantity, std::nullopt}),
+tests/model_operation_tests.cpp:264:    for (const auto& quantity :
+tests/model_operation_tests.cpp:281:        const auto compatible = legacy.preview(
+tests/model_operation_tests.cpp:282:            caller, {initial.document, initial.revision}, CreateMaterial{"Steel", quantity});
+tests/model_operation_tests.cpp:283:        Fixture typed;
+tests/model_operation_tests.cpp:284:        const auto result = typed.registry.invoke(
+tests/model_operation_tests.cpp:286:            typed.context("typed-create"),
+tests/model_operation_tests.cpp:287:            InputTraits<MaterialCreateInput>::to_value({"Steel", quantity, std::nullopt}));
+tests/model_operation_tests.cpp:289:              "legacy and typed entry must agree on numeric bounds");
+tests/model_operation_tests.cpp:293:                  "legacy and typed entry must agree on quantity rejection");
+tests/model_operation_tests.cpp:295:                      typed.snapshot().info.revision == 0,
+tests/model_operation_tests.cpp:304:        const auto id = only_id<records::Material>(typed.snapshot().records);
+tests/model_operation_tests.cpp:305:        const auto canonical = typed.snapshot().records.find<records::Material>(id);
+tests/model_operation_tests.cpp:375:         "redo typed record create");
+tests/model_operation_tests.cpp:473:          "node move updates typed record");
+tests/geometry_mesh_tests.cpp:79:            check(good(service.cancel(caller, task.id)).accepted,
+tests/geometry_mesh_tests.cpp:80:                  "mesh cancellation accepted before publication");
+tests/geometry_mesh_tests.cpp:105:            check(!good(service.cancel(caller, task.id)).accepted,
+tests/geometry_mesh_tests.cpp:106:                  "post-commit cancellation returns committed fact");
+tests/geometry_mesh_tests.cpp:108:                  "post-commit cancellation adds no transaction");
+tests/geometry_mesh_tests.cpp:137:            check(result.state == (mode == 1 ? TaskState::cancelled : TaskState::conflicted),
+tests/geometry_mesh_tests.cpp:138:                  "cancelled/stale task terminal state");
+tests/geometry_mesh_tests.cpp:141:                  "cancelled/stale candidate does not publish any mesh records");
+tests/geometry_mesh_tests.cpp:177:                  : mode == 1 ? "cancel_before_commit"
+tests/geometry_mesh_tests.cpp:320:        std::cout << "PASS: 10 success + 10 cancellation + 10 stale real mesh tasks\n";
+CMakeLists.txt:91:  add_executable(qcae_quantity_entry_consistency_tests tests/quantity_entry_consistency_tests.cpp)
+CMakeLists.txt:92:  target_link_libraries(qcae_quantity_entry_consistency_tests PRIVATE qcae_legacy_api qcae_parameters)
+CMakeLists.txt:93:  qcae_warnings(qcae_quantity_entry_consistency_tests)
+CMakeLists.txt:94:  add_test(NAME quantity_entry_consistency COMMAND qcae_quantity_entry_consistency_tests)
+tools/generate_operation_contracts.py:2:"""Generate deterministic typed wire adapters/metadata from explicit operation schemas.
+tools/generate_operation_contracts.py:19:    'quantity': 'Quantity',
+tools/generate_operation_contracts.py:20:    'vector3_mm': 'std::array<double, 3>',
+tools/generate_operation_contracts.py:23:    'entity_id_array': 'std::vector<EntityId>',
+tools/generate_operation_contracts.py:27:EFFECTS = {'read_only', 'document_write', 'preview', 'background_task', 'auxiliary_write'}
+tools/generate_operation_contracts.py:90:                if 'allow_empty' in field and (type(field['allow_empty']) is not bool or field['type'] != 'entity_id_array'):
+tools/generate_operation_contracts.py:97:                if field['type'] == 'quantity' and not units:
+tools/generate_operation_contracts.py:98:                    raise ValueError(f'{file}: quantity requires explicit allowed units')
+tools/generate_operation_contracts.py:99:                if field['type'] == 'vector3_mm' and units != ['mm']:
+tools/generate_operation_contracts.py:101:                if field['type'] not in {'quantity', 'vector3_mm', 'finite_number'} and units:
+tools/generate_operation_contracts.py:102:                    raise ValueError(f'{file}: units attached to nonquantity field')
+tools/generate_operation_contracts.py:161:            if field['type'] == 'quantity':
+tools/generate_operation_contracts.py:165:            decoder = {'string': 'string_value', 'vector3_mm': 'vector3'}.get(field['type'], field['type'])
+tools/generate_operation_contracts.py:167:            if field['type'] == 'entity_id_array' and field.get('allow_empty', False):
+tools/generate_operation_contracts.py:191:            elif kind in {'quantity', 'vector3_mm', 'entity_id_array'}:
+adapters/engine_api/src/ipc_api.cpp:6:#include "qcae/typed_host.hpp"
+adapters/engine_api/src/ipc_api.cpp:85:Quantity quantity(const QJsonObject& params) {
+adapters/engine_api/src/ipc_api.cpp:157:           name == "entity.references" || name == "model.export_preview" ||
+adapters/engine_api/src/ipc_api.cpp:159:           name == "changes.preview" || name == "changes.commit" || name == "history.list" ||
+adapters/engine_api/src/ipc_api.cpp:181:                     TypedHost* typed,
+adapters/engine_api/src/ipc_api.cpp:205:        if (op == "model.export_preview" && (!codec || !profile))
+adapters/engine_api/src/ipc_api.cpp:207:        if ((!find_operation(op) || !supported(op)) && !(typed && typed->supports(op)))
+adapters/engine_api/src/ipc_api.cpp:214:        if (typed && typed->supports(op))
+adapters/engine_api/src/ipc_api.cpp:215:            return typed->dispatch(request, caller);
+adapters/engine_api/src/ipc_api.cpp:217:            throw InvalidRequest("requested_version/expected_profile require a typed operation");
+adapters/engine_api/src/ipc_api.cpp:230:                if (typed && typed->supports(descriptor.name))
+adapters/engine_api/src/ipc_api.cpp:233:                                 (descriptor.name != "model.export_preview" || (codec && profile));
+adapters/engine_api/src/ipc_api.cpp:256:                if (descriptor.name == "changes.preview") {
+adapters/engine_api/src/ipc_api.cpp:274:            if (typed) {
+adapters/engine_api/src/ipc_api.cpp:275:                for (const auto& descriptor : typed->capabilities())
+adapters/engine_api/src/ipc_api.cpp:378:        } else if (op == "changes.preview") {
+adapters/engine_api/src/ipc_api.cpp:384:                    CreateMaterial{string_field(params, "name").toStdString(), quantity(params)};
+adapters/engine_api/src/ipc_api.cpp:388:                    EntityId{string_field(params, "entity_id").toStdString()}, quantity(params)};
+adapters/engine_api/src/ipc_api.cpp:393:                app.preview(caller, context(request), material_command),
+adapters/engine_api/src/ipc_api.cpp:394:                [](const ChangePreview& preview) {
+adapters/engine_api/src/ipc_api.cpp:396:                        {"preview_id", qs(preview.id.value)},
+adapters/engine_api/src/ipc_api.cpp:397:                        {"affected_entity_id", qs(preview.affected_entity.value)},
+adapters/engine_api/src/ipc_api.cpp:398:                        {"normalized_young_modulus_mpa", preview.normalized_modulus_mpa},
+adapters/engine_api/src/ipc_api.cpp:399:                        {"creates_entity", preview.creates_entity},
+adapters/engine_api/src/ipc_api.cpp:400:                        {"revision", number(preview.context.expected_revision)}};
+adapters/engine_api/src/ipc_api.cpp:403:            fields(params, {"preview_id"});
+adapters/engine_api/src/ipc_api.cpp:408:                                       PreviewId{string_field(params, "preview_id").toStdString()},
+adapters/engine_api/src/ipc_api.cpp:485:        if (typed && response.value("status").toString() == "success" &&
+adapters/engine_api/src/ipc_api.cpp:487:            const auto reconciled = typed->reconcile();
+tests/public_api_consumers/CMakeLists.txt:49:# Generated typed input and legacy catalog headers must also compose in one translation unit.
+tests/public_api_consumers/CMakeLists.txt:50:set(typed_source "${CMAKE_CURRENT_BINARY_DIR}/consumer_operation_contracts.cpp")
+tests/public_api_consumers/CMakeLists.txt:51:file(WRITE "${typed_source}" "#include \"qcae/operations.hpp\"\n#include \"qcae/operation_inputs.hpp\"\nint main() { return qcae::operation_catalog.empty() ? 1 : 0; }\n")
+tests/public_api_consumers/CMakeLists.txt:52:add_executable(consumer_operation_contracts EXCLUDE_FROM_ALL "${typed_source}")

@@ -1,0 +1,18 @@
+[0/2] Re-checking globbed directories...
+[1/60] Building CXX object CMakeFiles/qcae_quantity_entry_consistency_tests.dir/tests/quantity_entry_consistency_tests.cpp.o
+[2/60] Building CXX object CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o
+FAILED: [code=1] CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o 
+/usr/bin/c++  -I/private/tmp/qcae-c4-ext03-41/features/mesh_editing/include -I/private/tmp/qcae-c4-ext03-41/modules/application/include -I/private/tmp/qcae-c4-ext03-41/modules/document/include -I/private/tmp/qcae-c4-ext03-41/modules/foundation/include -I/private/tmp/qcae-c4-ext03-41/modules/contracts/include -I/private/tmp/qcae-c4-ext03-41/build-ext03-core/generated -I/private/tmp/qcae-c4-ext03-41/modules/operations/include -I/private/tmp/qcae-c4-ext03-41/modules/parameters/include -I/private/tmp/qcae-c4-ext03-41/modules/query/include -I/private/tmp/qcae-c4-ext03-41/profiles/nastran/include -I/private/tmp/qcae-c4-ext03-41/features/analysis/include -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -Werror -MD -MT CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o -MF CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o.d -o CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o -c /private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:140:17: error: no member named 'version' in 'std::string'
+  140 |         encoded.version = 2;
+      |         ~~~~~~~ ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:167:30: error: loop variable 'key' creates a copy from type 'const RecordKey' [-Werror,-Wrange-loop-construct]
+  167 |         for (const RecordKey key : {RecordKey{RecordTraits<records::Node>::type_id, "a"},
+      |                              ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:167:14: note: use reference type 'const RecordKey &' to prevent copying
+  167 |         for (const RecordKey key : {RecordKey{RecordTraits<records::Node>::type_id, "a"},
+      |              ^~~~~~~~~~~~~~~~~~~~~
+      |                              &
+2 errors generated.
+[3/60] Building CXX object CMakeFiles/qcae_record_query_tests.dir/tests/record_query_tests.cpp.o
+ninja: build stopped: subcommand failed.

@@ -1,0 +1,271 @@
+    std::shared_ptr<const OwnedRowImage> after; // Null deletes an existing row.
+};
+struct OwnedRowHandler {
+    StoreSpace space;
+    std::string owner;
+    std::function<void(const OwnedRowImage&)> validate;
+    // Invoked during explicit recovery/open, never during read-only decoding.
+    std::function<std::shared_ptr<const OwnedRowImage>(const OwnedRowImage&)> recover;
+    std::function<bool(const OwnedRowImage&)> blocks_close;
+};
+using CommitOwnedRows = std::function<std::vector<OwnedRowUpdate>(const ChangeReceipt&)>;
+struct RecordStateImage {
+    explicit RecordStateImage(std::shared_ptr<const RecordRegistry> registry)
+        : records(std::move(registry)) {}
+    DocumentView records;
+    std::string application_nonce;
+    std::uint64_t next_id{1};
+    std::optional<DocumentInfo> document;
+    std::string initial_content_state;
+    std::vector<std::shared_ptr<const RecordHistoryImage>> history;
+    std::size_t cursor{};
+    ImmutableFactMap<RecordOperationImage> operations;
+    ImmutableFactMap<RecordHostImage> host_operations;
+    std::shared_ptr<const RecordSaveImage> save_intent;
+    bool recoverable{};
+    std::shared_ptr<const OwnedRowTable> owned_rows = std::make_shared<const OwnedRowTable>();
+};
+struct RecordProjectImage {
+    DocumentView records;
+    std::string project_id, name, content_state;
+    std::shared_ptr<const OwnedRowTable> owned_rows = std::make_shared<const OwnedRowTable>();
+};
+struct RecordApplicationOptions {
+    std::shared_ptr<const RecordRegistry> registry;
+    std::shared_ptr<IRecordStore> records;
+    std::shared_ptr<IWorkspaceStore> projects;
+    Limits limits;
+    std::function<std::size_t(const DocumentView&)> material_count;
+    std::function<std::optional<Diagnostic>(const DocumentView&, const Limits&)> validate;
+    std::function<bool(const DocumentView&)> profiles_supported;
+    std::function<RecordProjectImage(std::string_view)> decode_legacy_project;
+    std::vector<OwnedRowHandler> owned_row_handlers;
+    std::size_t max_owned_rows{4096};
+    std::size_t max_owned_row_bytes{65536};
+    std::size_t max_change_journal_entries{128};
+};
+std::vector<StoredRow> encode_record_state_image(const RecordStateImage&);
+RecordStateImage decode_record_state_image(std::span<const StoredRow>,
+                                           std::shared_ptr<const RecordRegistry>,
+tests/persistence_tests.cpp:20:    std::map<std::string, StoredProject> projects;
+tests/persistence_tests.cpp:44:    void release_projects_except(const std::string&) noexcept override {}
+tests/persistence_tests.cpp:46:        const auto found = projects.find(path);
+tests/persistence_tests.cpp:47:        if (found == projects.end())
+tests/persistence_tests.cpp:56:        projects[path] = project;
+tests/persistence_tests.cpp:108:            good(other.save_document(user, at(other_info), "/foreign.qcae", false, "other-save"));
+tests/persistence_tests.cpp:110:        store->projects["/foreign.qcae"] = other_store->projects.at("/foreign.qcae");
+tests/persistence_tests.cpp:111:        auto foreign = app.save_document(user, at(redone), "/foreign.qcae", false, "foreign");
+tests/persistence_tests.cpp:119:        auto incomplete = app.save_document(user, at(redone), "/beam.qcae", false, "save");
+tests/persistence_tests.cpp:126:        auto finished = good(app.save_document(user, at(redone), "/beam.qcae", false, "save"));
+tests/persistence_tests.cpp:128:        check(good(app.host_operation(user, "save_document", "save")).project_id ==
+tests/persistence_tests.cpp:132:        auto as = good(app.save_document(user, at(finished), "/copy.qcae", true, "save-as"));
+tests/persistence_tests.cpp:144:        auto opened = good(app.open_document(user, "/copy.qcae", "open"));
+tests/persistence_tests.cpp:173:        auto failed = app.save_document(user, at(recovered), "/a.qcae", false, "save");
+tests/persistence_tests.cpp:182:        check(good(app.host_operation(user, "save_document", "save")).saved_path == "/a.qcae",
+tests/persistence_tests.cpp:212:    store->projects["/profile.qcae"] = StoredProject{"token", writer.take()};
+tests/persistence_tests.cpp:215:    auto rejected = app.open_document(Caller{"tester"}, "/profile.qcae", "open");
+tests/persistence_tests.cpp:229:        auto failed = app.save_document(user, at(created), "/alias", false, "save");
+tests/persistence_tests.cpp:232:        auto retargeted = app.save_document(user, at(created), "/alias", false, "save");
+tests/persistence_tests.cpp:234:                  !store->projects.contains("/other"),
+tests/persistence_tests.cpp:237:        auto saved = good(app.save_document(user, at(created), "/alias", false, "save"));
+tests/persistence_tests.cpp:245:        auto failed = app.save_document(user, at(created), "/target", false, "save");
+tests/persistence_tests.cpp:248:    other->projects["/target"] = store->projects.at("/original");
+tests/persistence_tests.cpp:254:            good(app.save_document(user, at(recovered), "/elsewhere", false, "new-save"));
+tests/analysis_check_ipc_tests.py:14:class Client:
+tests/analysis_check_ipc_tests.py:19:    def call(self, operation, parameters=None, context=None, key=None, expected="success", profile=None):
+tests/result_fixture_ipc_tests.py:27:def create_m(client, profile):
+#!/usr/bin/env python3
+"""BP-11/14: explicit M load case and versioned checks through real CLI/IPC."""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import socket
+import subprocess
+import tempfile
+import time
+
+
+class Client:
+    def __init__(self, engine, cli, endpoint, mode):
+        self.engine, self.cli, self.endpoint, self.mode = engine, cli, endpoint, mode
+        self.sequence, self.transcript = 0, []
+
+    def call(self, operation, parameters=None, context=None, key=None, expected="success", profile=None):
+        self.sequence += 1
+        request = {"api_version": "1.1", "request_id": f"analysis-{self.sequence}",
+                   "operation": operation, "parameters": parameters or {}}
+        if context:
+            request.update(document_id=context["document_id"], document_epoch=context["document_epoch"],
+                           expected_revision=context["revision"])
+        if key:
+            request["idempotency_key"] = key
+        if profile:
+            request["expected_profile"] = profile
+        if self.mode == "cli":
+            completed = subprocess.run([self.cli, "--socket", self.endpoint, "--no-start"],
+                                       input=json.dumps(request), capture_output=True, text=True, timeout=15)
+            assert completed.stdout, completed.stderr
+            response = json.loads(completed.stdout)
+            assert completed.returncode == (0 if response.get("status") == "success" else 2), response
+        else:
+            with socket.socket(socket.AF_UNIX) as connection:
+                connection.settimeout(15)
+                connection.connect(self.endpoint)
+                with connection.makefile("rwb") as stream:
+                    handshake = {"api_version": "1.1", "request_id": "handshake", "operation": "runtime.handshake"}
+                    stream.write(json.dumps(handshake).encode() + b"\n")
+                    stream.flush()
+                    assert json.loads(stream.readline())["status"] == "success"
+                    stream.write(json.dumps(request).encode() + b"\n")
+                    stream.flush()
+                    response = json.loads(stream.readline())
+        self.transcript.append({"request": request, "response": response})
+        assert response.get("request_id") == request["request_id"] and response.get("status") == expected, response
+        return response["data"] if expected == "success" else response
+
+    def current(self):
+        return self.call("project.current")
+
+    def fields(self, entity):
+        return self.call("entity.fields", {"entity_id": entity}, self.current())["fields"]
+
+    def entities(self, kind):
+        return self.call("entity.query", {"kind": kind}, self.current())["entities"]
+
+    def edit(self, command, parameters, key):
+        context = self.current()
+        preview = self.call("changes.preview", {"command": command, **parameters}, context)
+        return self.call("changes.commit", {"preview_id": preview["preview_id"]}, context, key)
+
+
+def run_once(engine, cli, mode, evidence):
+    with tempfile.TemporaryDirectory(prefix="qcae-analysis-", dir=Path("/tmp").resolve()) as folder:
+        root = Path(folder)
+        endpoint, workspace = str(root / "engine.sock"), str(root / "work.sqlite")
+        client = Client(engine, cli, endpoint, mode)
+        process = None
+        with (root / "engine.log").open("w+") as log:
+            def start():
+                nonlocal process
+                process = subprocess.Popen([engine, "--socket", endpoint, "--workspace", workspace],
+                                           stdout=log, stderr=log)
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        log.seek(0)
+                        raise AssertionError(log.read())
+                    try:
+                        return client.call("capabilities.list")
+                    except (OSError, AssertionError, json.JSONDecodeError):
+                        time.sleep(.05)
+                raise AssertionError("Engine startup timed out")
+
+            try:
+                capabilities = start()
+                assert capabilities["durable"] and capabilities["storage_mode"] == "sqlite"
+                operations = {item["name"]: item for item in capabilities["operations"]}
+                for name in ("force.create", "constraint.create", "load_case.create", "load_case.set_references",
+                             "analysis.create", "analysis.check", "analysis.get_issues"):
+                    assert operations[name]["available"], (name, operations[name])
+                assert operations["analysis.check"]["effect"] == "auxiliary_write"
+                assert operations["analysis.check"]["requires_revision"]
+                profile = capabilities["declared_solver_profiles"][0]["profile_ref"]
+                document = client.call("project.create", {"name": "M analysis"}, key="create")
+                line = client.call("geometry.create_line", {"start_mm": [0, 0, 0], "end_mm": [1000, 0, 0]},
+                                   document, "line")
+                task = client.call("mesh.generate_line", {"geometry_id": line["entity_id"], "segments": 10},
+                                   client.current(), "mesh")
+                deadline = time.monotonic() + 15
+                while task["state"] not in {"succeeded", "failed", "cancelled", "conflicted"}:
+                    assert time.monotonic() < deadline
+                    time.sleep(.01)
+                    task = client.call("task.status", {"task_id": task["task_id"]}, client.current())
+                assert task["state"] == "succeeded", task
+                nodes = sorted((item["entity_id"] for item in client.entities("node")),
+                               key=lambda identity: client.fields(identity)["position"][0])
+                beams = [item["entity_id"] for item in client.entities("beam")]
+                assert len(nodes) == 11 and len(beams) == 10
+                for index, node in enumerate(nodes):
+                    assert client.fields(node)["position"] == [index * 100, 0, 0]
+                material = client.call("material.create", {"name": "Steel", "young_modulus": {"value": 210, "unit": "GPa"},
+                                                            "poisson_ratio": .3}, client.current(), "material")["entity_id"]
+                section = client.call("section.create", {"name": "M section", "material_id": material, "area_mm2": 100,
+                                                           "i1_mm4": 833.333, "i2_mm4": 833.333, "torsion_mm4": 1400},
+                                      client.current(), "section")["entity_id"]
+                client.call("beam.assign_section", {"beam_ids": beams, "section_id": section}, client.current(), "assign")
+                part = client.edit("part.upsert", {"name": "Beam", "members": beams}, "part")["entity_id"]
+                client.edit("assembly.upsert", {"name": "Assembly", "children": [part]}, "assembly")
+                client.edit("set.upsert", {"name": "Fixed", "members": [nodes[0]]}, "fixed-set")
+                client.edit("set.upsert", {"name": "Loaded", "members": [nodes[10]]}, "loaded-set")
+    nodes = sorted((item["entity_id"] for item in client.entities("node")),
+                   key=lambda identity: client.fields(identity)["position"][0])
+    beams = [item["entity_id"] for item in client.entities("beam")]
+    assert len(nodes) == 11 and len(beams) == 10
+    material = client.call("material.create", {"name": "Steel", "young_modulus": {"value": 210, "unit": "GPa"},
+                                                "poisson_ratio": .3}, client.current(), "material")["entity_id"]
+    section = client.call("section.create", {"name": "M section", "material_id": material, "area_mm2": 100,
+                                               "i1_mm4": 833.333, "i2_mm4": 833.333, "torsion_mm4": 1400},
+                          client.current(), "section")["entity_id"]
+    client.call("beam.assign_section", {"beam_ids": beams, "section_id": section}, client.current(), "assign")
+    part = client.edit("part.upsert", {"name": "Beam", "members": beams}, "part")["entity_id"]
+    client.edit("assembly.upsert", {"name": "Assembly", "children": [part]}, "assembly")
+    client.edit("set.upsert", {"name": "Fixed", "members": [nodes[0]]}, "fixed-set")
+    client.edit("set.upsert", {"name": "Loaded", "members": [nodes[10]]}, "loaded-set")
+    force = client.call("force.create", {"node_id": nodes[10], "x": {"value": 0, "unit": "N"},
+                                           "y": {"value": -1, "unit": "N"}, "z": {"value": 0, "unit": "N"}},
+                        client.current(), "force")["entity_id"]
+    constraint = client.call("constraint.create", {"node_ids": [nodes[0]], "dofs": "123456"},
+                             client.current(), "constraint")["entity_id"]
+    case = client.call("load_case.create", {"name": "LC1", "force_ids": [force], "constraint_ids": [constraint]},
+                       client.current(), "case")["entity_id"]
+    analysis = client.call("analysis.create", {"name": "M static", "load_case_ids": [case]},
+                           client.current(), "analysis", profile=profile)["entity_id"]
+    assert client.call("analysis.check", {"analysis_id": analysis}, client.current(), "check")["issues"] == []
+    return nodes, beams, material, part, analysis
+
+
+def bind_r(artifact, manifest, nodes):
+    # Runtime IDs and export numbers are frozen by the actual publisher. The R
+    # template retains only the specified synthetic values and required metadata.
+    fixture = json.loads((Path(__file__).parent / "fixtures/results/R-displacement-v1.json").read_text())
+    fixture["input_fingerprint"] = artifact["physical_signature_hex"]
+    fixture["identities"] = manifest["export_id_map"]
+    numbers = {item["entity_id"]: item["number"] for item in fixture["identities"] if item["namespace"] == "GRID"}
+    fixture["values"][0]["solver_number"] = numbers[nodes[0]]
+    fixture["values"][1]["solver_number"] = numbers[nodes[10]]
+    signature = bytes.fromhex(fixture["input_fingerprint"])
+    assert hashlib.sha256(signature).hexdigest() == manifest["input_sha256"] == artifact["input_sha256"]
+    return fixture
+
+
+def run_once(engine, cli, mode, evidence):
+    with tempfile.TemporaryDirectory(prefix="qcae-result-", dir=Path("/tmp").resolve()) as folder:
+        root = Path(folder)
+        endpoint, workspace = str(root / "engine.sock"), str(root / "work.sqlite")
+        client = Client(engine, cli, endpoint, mode)
+        process = None
+        fixture, manifest = None, None
+        with (root / "engine.log").open("w+") as log:
+            def start():
+                nonlocal process
+                process = subprocess.Popen([engine, "--socket", endpoint, "--workspace", workspace],
+                                           stdout=log, stderr=log)
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        log.seek(0)
+                        raise AssertionError(log.read())
+                    try:
+                        return client.call("capabilities.list")
+                    except (OSError, AssertionError, json.JSONDecodeError):
+                        time.sleep(.05)
+                raise AssertionError("Engine startup timed out")
+
+            try:
+                capabilities = start()
+                assert capabilities["durable"] and capabilities["storage_mode"] == "sqlite"
+                operations = {item["name"]: item for item in capabilities["operations"]}
+                assert operations["results.read_fixture"]["available"]
+                assert operations["results.read_fixture"]["effect"] == "auxiliary_write"

@@ -1,0 +1,116 @@
+def create_m(client, profile):
+    document = client.call("project.create", {"name": "M result fixture"}, key="create")
+    line = client.call("geometry.create_line", {"start_mm": [0, 0, 0], "end_mm": [1000, 0, 0]},
+                       document, "line")
+    wait_task(client, client.call("mesh.generate_line", {"geometry_id": line["entity_id"], "segments": 10},
+                                  client.current(), "mesh"))
+    nodes = sorted((item["entity_id"] for item in client.entities("node")),
+                   key=lambda identity: client.fields(identity)["position"][0])
+    beams = [item["entity_id"] for item in client.entities("beam")]
+    assert len(nodes) == 11 and len(beams) == 10
+    material = client.call("material.create", {"name": "Steel", "young_modulus": {"value": 210, "unit": "GPa"},
+                                                "poisson_ratio": .3}, client.current(), "material")["entity_id"]
+    section = client.call("section.create", {"name": "M section", "material_id": material, "area_mm2": 100,
+                                               "i1_mm4": 833.333, "i2_mm4": 833.333, "torsion_mm4": 1400},
+                          client.current(), "section")["entity_id"]
+    client.call("beam.assign_section", {"beam_ids": beams, "section_id": section}, client.current(), "assign")
+    part = client.edit("part.upsert", {"name": "Beam", "members": beams}, "part")["entity_id"]
+    client.edit("assembly.upsert", {"name": "Assembly", "children": [part]}, "assembly")
+    client.edit("set.upsert", {"name": "Fixed", "members": [nodes[0]]}, "fixed-set")
+    client.edit("set.upsert", {"name": "Loaded", "members": [nodes[10]]}, "loaded-set")
+    force = client.call("force.create", {"node_id": nodes[10], "x": {"value": 0, "unit": "N"},
+                                           "y": {"value": -1, "unit": "N"}, "z": {"value": 0, "unit": "N"}},
+                        client.current(), "force")["entity_id"]
+    constraint = client.call("constraint.create", {"node_ids": [nodes[0]], "dofs": "123456"},
+                             client.current(), "constraint")["entity_id"]
+    case = client.call("load_case.create", {"name": "LC1", "force_ids": [force], "constraint_ids": [constraint]},
+                       client.current(), "case")["entity_id"]
+    analysis = client.call("analysis.create", {"name": "M static", "load_case_ids": [case]},
+                           client.current(), "analysis", profile=profile)["entity_id"]
+    assert client.call("analysis.check", {"analysis_id": analysis}, client.current(), "check")["issues"] == []
+    return nodes, beams, material, part, analysis
+
+
+def bind_r(artifact, manifest, nodes):
+    # Runtime IDs and export numbers are frozen by the actual publisher. The R
+    # template retains only the specified synthetic values and required metadata.
+    fixture = json.loads((Path(__file__).parent / "fixtures/results/R-displacement-v1.json").read_text())
+    fixture["input_fingerprint"] = artifact["physical_signature_hex"]
+    fixture["identities"] = manifest["export_id_map"]
+    numbers = {item["entity_id"]: item["number"] for item in fixture["identities"] if item["namespace"] == "GRID"}
+    fixture["values"][0]["solver_number"] = numbers[nodes[0]]
+    fixture["values"][1]["solver_number"] = numbers[nodes[10]]
+    signature = bytes.fromhex(fixture["input_fingerprint"])
+    assert hashlib.sha256(signature).hexdigest() == manifest["input_sha256"] == artifact["input_sha256"]
+    return fixture
+
+
+def run_once(engine, cli, mode, evidence):
+    with tempfile.TemporaryDirectory(prefix="qcae-result-", dir=Path("/tmp").resolve()) as folder:
+        root = Path(folder)
+        endpoint, workspace = str(root / "engine.sock"), str(root / "work.sqlite")
+        client = Client(engine, cli, endpoint, mode)
+        process = None
+        fixture, manifest = None, None
+        with (root / "engine.log").open("w+") as log:
+            def start():
+                nonlocal process
+                process = subprocess.Popen([engine, "--socket", endpoint, "--workspace", workspace],
+                                           stdout=log, stderr=log)
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        log.seek(0)
+                        raise AssertionError(log.read())
+                    try:
+                        return client.call("capabilities.list")
+tests/c3_display_ipc_tests.py:78:    page = client.call("selection.get", {"selection_handle": selection["selection_handle"]},
+    target_link_libraries(qcae_skeleton_representative_tests PRIVATE qcae_nastran qcae_query qcae_parameters qcae_geometry_features qcae_mesh_generation qcae_sqlite)
+    qcae_warnings(qcae_skeleton_representative_tests)
+    add_test(NAME skeleton_representatives COMMAND qcae_skeleton_representative_tests "${CMAKE_CURRENT_BINARY_DIR}/c3-evidence/representatives")
+  endif()
+endif()
+
+if(QCAE_BUILD_IPC)
+  find_package(Qt6 6.10 REQUIRED COMPONENTS Core Network)
+  if(BUILD_TESTING AND QCAE_BUILD_STORAGE)
+    add_executable(qcae_legacy_migration_tests tests/legacy_migration_tests.cpp)
+    target_link_libraries(qcae_legacy_migration_tests PRIVATE qcae_legacy_api qcae_sqlite Qt6::Core)
+    qcae_warnings(qcae_legacy_migration_tests)
+    add_test(NAME legacy_migration COMMAND qcae_legacy_migration_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/legacy")
+  endif()
+  add_subdirectory(adapters/transport_local)
+  if(QCAE_C3_QT_SHA256_CONFIG)
+    if(NOT QCAE_C3_SQLITE_OBSERVED_OBJECT OR NOT EXISTS "${QCAE_C3_QT_SHA256_CONFIG}")
+      message(FATAL_ERROR "Qt SHA byte auditing requires the observed measurement build and installed configuration")
+    endif()
+    file(READ "${QCAE_C3_QT_SHA256_CONFIG}" QCAE_C3_QT_CRYPTO_TEXT)
+    if(NOT QCAE_C3_QT_CRYPTO_TEXT MATCHES "#define QT_FEATURE_openssl_hash -1")
+      message(FATAL_ERROR "This SHA byte observer audits Qt's bundled RFC6234 backend only")
+    endif()
+    target_compile_definitions(qcae_transport_local INTERFACE QCAE_C3_QT_RFC6234_SHA256=1)
+  endif()
+  add_subdirectory(adapters/engine_api)
+  if(BUILD_TESTING)
+    add_executable(qcae_json_ledger_tests tests/json_ledger_tests.cpp)
+    target_link_libraries(qcae_json_ledger_tests PRIVATE qcae_transport_local)
+      add_test(NAME c2_workflow COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/c2_workflow_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/c2-evidence/workflow")
+      set_tests_properties(c2_workflow PROPERTIES TIMEOUT 180)
+    endif()
+  endif()
+endif()
+
+if(QCAE_BUILD_DESKTOP)
+  if(NOT QCAE_BUILD_IPC OR NOT QCAE_BUILD_STORAGE)
+    message(FATAL_ERROR "Desktop requires QCAE_BUILD_IPC=ON and QCAE_BUILD_STORAGE=ON")
+  endif()
+  find_package(Qt6 6.10 REQUIRED COMPONENTS Widgets OpenGLWidgets Test)
+  find_package(VTK REQUIRED COMPONENTS CommonCore CommonDataModel FiltersSources RenderingCore
+    RenderingOpenGL2 InteractionStyle GUISupportQt)
+  add_subdirectory(adapters/rendering_vtk)
+  add_subdirectory(ui/desktop)
+  add_subdirectory(apps/desktop)
+  if(BUILD_TESTING)
+    find_package(Qt6 6.10 REQUIRED COMPONENTS GuiPrivate)

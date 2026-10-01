@@ -1,0 +1,162 @@
+    for (const auto& identity : identities) {
+        const auto record = snapshot.records.find_identity(identity);
+        if (!record || record->descriptor().query_kind.empty())
+            return incomplete();
+    }
+    EntityFilter filter;
+    filter.ids.emplace();
+    filter.ids->reserve(identities.size());
+    for (const auto& identity : identities) {
+        filter.ids->emplace_back(identity);
+        // EntityId owns its string argument and moves it once into its value.
+        const auto move = identity.size() <= std::string{}.capacity() ? identity.size() : 0;
+        ledger::add(
+            ledger::Stage::socket_send, ledger::Metric::model_copy_bytes, identity.size() + move);
+    }
+    const auto page = query_page(snapshot.records, filter, 0, row_limit);
+    if (!page.ok())
+        return {page.status, {}, page.error};
+    if (page.value->total != identities.size() || page.value->entities.size() != identities.size())
+        return incomplete();
+    auto rows = page_rows_json(*page.value, snapshot.records);
+    auto remaining = static_cast<std::uint64_t>(encoded_byte_limit);
+    if (!bounded_json(rows, remaining))
+        return incomplete();
+    return {
+        Status::success, EntityRowsJson{std::move(rows), true, encoded_byte_limit - remaining}, {}};
+}
+QJsonObject profile_json(const ProfileDefinition& p) {
+    return {{"profile_ref", profile_ref_json(p.reference)},
+            {"solver_family", qs(p.solver_family)},
+            {"analysis_kind", qs(p.analysis_kind)},
+            {"configured", p.configured},
+            {"validated", p.validated},
+            {"implementation_fingerprint", qs(p.implementation_fingerprint)},
+            {"codec_available", true},
+            {"unit_system", "mm-N-MPa"},
+            {"codec_scope", "strict free-field SOL 101 beam subset; no solver binary validation"},
+            {"cards", QJsonArray{"GRID", "CBAR", "PBAR", "MAT1", "FORCE", "SPC1", "INCLUDE"}}};
+}
+
+std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
+                                          const QJsonObject& r,
+                                          const Caller& caller,
+                                          const IModelCodec* codec,
+                                          const ProfileDefinition* profile) {
+    const auto id = r.value("request_id").toString();
+    const auto op = r.value("operation").toString();
+    const auto p = r.value("parameters").toObject();
+    const auto command = p.value("command").toString();
+    const bool edit =
+        op == "changes.preview" &&
+        (command == "model.import" || command == "part.upsert" || command == "assembly.upsert" ||
+         command == "set.upsert" || command == "node.move" || command == "entity.delete");
+    if (!edit && op != "entity.query" && op != "entity.references" && op != "model.export_preview")
+        return std::nullopt;
+    try {
+        if (op == "entity.query" || op == "entity.references") {
+            const auto snapshot = app.record_application().snapshot(ref(r));
+            if (!snapshot.ok())
+                return error(id, snapshot);
+            return op == "entity.query" ? entity_query(id, p, *snapshot.value)
+                                        : entity_references(id, p, *snapshot.value);
+        }
+        const auto snap = app.snapshot(ref(r));
+        if (!snap.ok())
+            return error(id, snap);
+        const auto& m = *snap.value;
+        if (edit || op == "model.export_preview") {
+            if (ctx(r).expected_revision != m.info.revision)
+                return failure(
+                    id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
+        }
+        if (edit && command == "model.import") {
+            fields(p,
+                   {"command", "root_resource", "resources", "source_profile_ref", "unit_system"});
+            if (!codec || !profile)
+                return failure(id, "UNSUPPORTED_CAPABILITY", "No model codec registered");
+            ImportRequest input;
+            input.root_resource = str(p, "root_resource");
+            input.source_profile = profile_ref(p, "source_profile_ref");
+            input.unit_system = str(p, "unit_system");
+            input.source_model_id =
+                QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
+            if (!p.value("resources").isArray())
+                throw BadInput("resources must be an array");
+            for (const auto& resource : p.value("resources").toArray()) {
+                if (!resource.isObject())
+                    throw BadInput("Invalid resource");
+                const auto item = resource.toObject();
+                fields(item, {"path", "text"});
+                input.resources.push_back({str(item, "path"), str(item, "text", true)});
+460:        op == "changes.preview" &&
+462:         command == "set.upsert" || command == "node.move" || command == "entity.delete");
+539:            if (command == "node.move") {
+features/legacy_api/src/legacy_migration.cpp
+features/legacy_api/src/legacy_state.cpp
+features/legacy_api/src/legacy_state.hpp
+features/legacy_api/src/core.cpp
+features/legacy_api/README.md
+features/legacy_api/include/qcae/core.hpp
+features/legacy_api/include/qcae/legacy_migration.hpp
+features/legacy_api/CMakeLists.txt
+cmake_minimum_required(VERSION 3.24)
+project(QCAE VERSION 0.0.1 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+option(QCAE_BUILD_IPC "Build the optional Qt local engine and CLI" OFF)
+option(QCAE_BUILD_STORAGE "Build the optional SQLite persistence adapter" OFF)
+option(QCAE_BUILD_DESKTOP "Build the Qt/VTK desktop client" OFF)
+option(QCAE_BUILD_SOLVER_LOCAL "Build the local POSIX solver process adapter" ${UNIX})
+option(QCAE_ENABLE_NASTRAN_PACKAGE "Enable static Nastran engine contributions" ON)
+option(QCAE_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
+set(QCAE_C3_SQLITE_OBSERVED_OBJECT "" CACHE FILEPATH "Test-only audited SQLite 3.51.0 byte observer object")
+set(QCAE_C3_QT_SHA256_CONFIG "" CACHE FILEPATH "Test-only audited QtCore private crypto configuration")
+set(QCAE_C3_QT_SDK_MANIFEST "" CACHE FILEPATH "Test-only exact-source Qt SDK observer manifest")
+set(QCAE_C3_HARFBUZZ_SDK_MANIFEST "" CACHE FILEPATH "Test-only exact-source HarfBuzz SDK observer manifest")
+set(QCAE_C3_HARFBUZZ_LIBRARY "" CACHE FILEPATH "Test-only isolated observed HarfBuzz library")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+include(CTest)
+find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter)
+find_package(Threads REQUIRED)
+
+function(qcae_warnings target)
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /W4 /WX)
+  else()
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    if(QCAE_ENABLE_SANITIZERS)
+      target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+      target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+    endif()
+  endif()
+endfunction()
+
+set(QCAE_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+add_subdirectory(modules/foundation)
+add_subdirectory(modules/contracts)
+add_subdirectory(modules/document)
+add_subdirectory(modules/application)
+add_subdirectory(features/legacy_api)
+add_subdirectory(modules/parameters)
+add_subdirectory(modules/operations)
+add_subdirectory(modules/runtime)
+add_subdirectory(features/geometry)
+add_subdirectory(features/mesh_generation)
+add_subdirectory(features/materials)
+add_subdirectory(features/mesh_editing)
+add_subdirectory(features/analysis)
+add_subdirectory(features/results)
+add_subdirectory(modules/query)
+add_subdirectory(profiles/nastran)
+add_subdirectory(adapters/artifacts_local)
+if(QCAE_BUILD_SOLVER_LOCAL)
+  if(NOT UNIX)
+    message(FATAL_ERROR "The local solver adapter currently requires POSIX process facilities")
+  endif()
+  add_subdirectory(adapters/solver_local)
+endif()
+
+# Compatibility for existing core consumers; production modules use explicit boundaries.

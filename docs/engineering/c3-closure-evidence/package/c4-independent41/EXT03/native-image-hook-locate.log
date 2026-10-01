@@ -1,0 +1,135 @@
+#include "qcae/desktop_client.hpp"
+#include "qcae/vtk_view.hpp"
+
+#include <QFile>
+#include <QApplication>
+#include <QCryptographicHash>
+#include <QDir>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QPointer>
+#include <QSignalSpy>
+#include <QTemporaryDir>
+#include <QTest>
+#include <QSurfaceFormat>
+#include <QVTKOpenGLNativeWidget.h>
+#include <set>
+#include <map>
+#include <limits>
+#include <vtkActor.h>
+#include <vtkActorCollection.h>
+#include <vtkCamera.h>
+#include <vtkDataArray.h>
+#include <vtkMapper.h>
+#include <vtkMatrix4x4.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRendererCollection.h>
+
+namespace {
+QPoint viewportPosition(QVTKOpenGLNativeWidget* widget, const std::array<double, 3>& position) {
+    auto* renderer = widget->renderWindow()->GetRenderers()->GetFirstRenderer();
+    renderer->SetWorldPoint(position[0], position[1], position[2], 1.0);
+    renderer->WorldToDisplay();
+    const auto* display = renderer->GetDisplayPoint();
+    const auto scale = widget->devicePixelRatioF();
+    return {qRound(display[0] / scale), qRound(widget->height() - display[1] / scale)};
+}
+
+void dragBox(QVTKOpenGLNativeWidget* widget, QPoint first, QPoint last) {
+    QTest::mousePress(widget, Qt::LeftButton, Qt::ShiftModifier, first);
+    QTest::mouseMove(widget, last);
+    QTest::mouseRelease(widget, Qt::LeftButton, Qt::ShiftModifier, last);
+}
+
+template <class Predicate> int coloredPixels(const QImage& image, Predicate matches) {
+    int count = 0;
+    for (int y = 0; y < image.height(); ++y)
+        for (int x = 0; x < image.width(); ++x)
+            if (matches(image.pixelColor(x, y)))
+                ++count;
+    return count;
+}
+
+int highlightedPixels(QVTKOpenGLNativeWidget* widget) {
+    return coloredPixels(widget->grab().toImage(), [](const QColor& color) {
+        return color.red() > 170 && color.green() > 80 && color.blue() < 100;
+    });
+}
+
+int previewPixels(QVTKOpenGLNativeWidget* widget) {
+    return coloredPixels(widget->grab().toImage(), [](const QColor& color) {
+        return color.red() > 150 && color.green() < 150 && color.blue() > 180;
+    });
+}
+
+bool saveEvidence(QVTKOpenGLNativeWidget* widget, const QString& name) {
+        camera->SetClippingRange(clipping[0].toDouble(), clipping[1].toDouble());
+        const auto matrix = camera_fixture.value("view_matrix").toArray();
+        for (int row = 0; row < 4; ++row)
+            for (int column = 0; column < 4; ++column)
+                QCOMPARE(camera->GetViewTransformMatrix()->GetElement(row, column),
+                         matrix[row * 4 + column].toDouble());
+        widget->renderWindow()->Render();
+        if (fixture.contains("device_pixel_ratio")) {
+            QCOMPARE(widget->devicePixelRatioF(), fixture.value("device_pixel_ratio").toDouble());
+            const auto pixels = fixture.value("framebuffer_pixels").toArray();
+            QCOMPARE(widget->renderWindow()->GetSize()[0], pixels[0].toInt());
+            QCOMPARE(widget->renderWindow()->GetSize()[1], pixels[1].toInt());
+            const auto projection = camera_fixture.value("projection_matrix").toArray();
+            auto* actual_projection = camera->GetProjectionTransformMatrix(
+                static_cast<double>(widget->width()) / widget->height(), -1, 1);
+            for (int row = 0; row < 4; ++row)
+                for (int column = 0; column < 4; ++column)
+                    QVERIFY(std::abs(actual_projection->GetElement(row, column) -
+                                     projection[row * 4 + column].toDouble()) < 1e-12);
+        }
+        view.setThroughSelection(pick_case.value("through").toBool());
+        view.setBoxMode(pick_case.value("box_mode") == "contained"
+                            ? qcae::VtkView::BoxMode::contained
+                            : qcae::VtkView::BoxMode::intersecting);
+        const auto box = pick_case.value("box").toArray();
+        QSignalSpy picked(&view, &qcae::VtkView::picked);
+        dragBox(widget, {box[0].toInt(), box[1].toInt()}, {box[2].toInt(), box[3].toInt()});
+        QCOMPARE(picked.size(), 1);
+        const auto reply = picked.takeFirst();
+        QCOMPARE(reply[1].toBool(), pick_case.value("through").toBool());
+        auto actual = reply[0].toStringList();
+        QStringList expected;
+        for (const auto& id : pick_case.value("golden").toArray())
+            expected.append(id.toString());
+        actual.sort();
+        expected.sort();
+        QCOMPARE(actual, expected);
+        if (pick_case.value("topology") == "tri3") {
+            auto stale = deltaFor(packet);
+            stale.base_revision = 0;
+            stale.visibility = {{qcae::RenderPrimitive::cell, 0, packet.cells[0].entity, false}};
+            QVERIFY(!view.applyDelta(stale));
+            stale = deltaFor(packet);
+            stale.base_view_revision = 0;
+            QVERIFY(!view.applyDelta(stale));
+            stale = deltaFor(packet);
+            stale.document.epoch = qcae::DocumentEpoch("expired");
+            QVERIFY(!view.applyDelta(stale));
+            QCOMPARE(view.installedVersion()->revision, packet.revision);
+            QCOMPARE(view.installedVersion()->view_revision, packet.view_revision);
+        }
+        qInfo().noquote() << pick_case.value("id").toString()
+                          << "device_pixel_ratio=" << widget->devicePixelRatioF()
+                          << "missed=0 extra=0";
+    }
+
+    void asynchronousRepliesRemainCorrelated() {
+        QTemporaryDir temp("/private/tmp/qcae-ipc-XXXXXX");
+        QVERIFY(temp.isValid());
+        const auto endpoint = temp.filePath("engine.sock");
+        QLocalServer server;
+        QVERIFY(server.listen(endpoint));
+        qcae::DesktopClient client({endpoint, temp.path(), {}, false, 300});
+        QLocalSocket* peer = nullptr;
+        QByteArray requests;

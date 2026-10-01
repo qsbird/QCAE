@@ -1,0 +1,132 @@
+adapters/engine_api/src/ipc_model.cpp:460:        op == "changes.preview" &&
+adapters/engine_api/src/ipc_api.cpp:159:           name == "changes.preview" || name == "changes.commit" || name == "history.list" ||
+adapters/engine_api/src/ipc_api.cpp:256:                if (descriptor.name == "changes.preview") {
+adapters/engine_api/src/ipc_api.cpp:378:        } else if (op == "changes.preview") {
+  public:
+    explicit RecordApplication(RecordApplicationOptions);
+    ~RecordApplication();
+    RecordApplication(const RecordApplication&) = delete;
+    RecordApplication& operator=(const RecordApplication&) = delete;
+    bool durable() const noexcept;
+    bool recovery_available() const;
+    Result<DocumentInfo> create_document(const Caller&, const std::string&, const std::string&);
+    Result<DocumentInfo> current_document() const;
+    Result<DocumentInfo> open_document(const Caller&, const std::string&, const std::string&);
+    Result<DocumentInfo> open_migrated_document(const Caller&,
+                                                const std::string& source_path,
+                                                const std::string& idempotency_key,
+                                                const ProjectRecordMigration&);
+    Result<DocumentInfo> recover_document(const Caller&, const std::string&);
+    Result<DocumentInfo>
+    save_document(const Caller&, const WriteContext&, const std::string&, bool, const std::string&);
+    Result<DocumentInfo>
+    close_document(const Caller&, const WriteContext&, ClosePolicy, const std::string&);
+    Result<DocumentInfo>
+    host_operation(const Caller&, const std::string&, const std::string&) const;
+    Result<RecordSnapshot> snapshot(const DocumentRef&) const;
+    Result<RecordChangeBatch> changes_since(const DocumentRef&, Revision) const;
+    ChangeJournalStats change_journal_stats() const;
+    Result<ChangePreview> preview(const Caller&, const WriteContext&, const RecordPrepare&);
+    Result<ChangeReceipt>
+    commit(const Caller&, const WriteContext&, const PreviewId&, const std::string&);
+    Result<ChangeReceipt> commit_with_rows(const Caller&,
+                                           const WriteContext&,
+                                           const PreviewId&,
+                                           const std::string&,
+                                           const CommitOwnedRows&);
+    Result<ChangeReceipt> execute(const Caller&,
+                                  const WriteContext&,
+                                  const std::string& operation_name,
+                                  const std::string& normalized_signature,
+                                  const RecordPrepare&,
+                                  const std::string& idempotency_key,
+                                  const CommitOwnedRows& = {});
+    Result<ChangeReceipt> action_outcome(const Caller&,
+                                         const DocumentRef&,
+                                         const std::string& operation_name,
+                                         const std::string& idempotency_key) const;
+    Result<bool>
+    update_owned_rows(const Caller&, const DocumentRef&, std::span<const OwnedRowUpdate>);
+    // User-initiated auxiliary writes must admit the revision and CAS together.
+    Result<bool>
+    update_owned_rows(const Caller&, const WriteContext&, std::span<const OwnedRowUpdate>);
+    Result<std::vector<std::shared_ptr<const OwnedRowImage>>>
+    owned_rows(const DocumentRef&, StoreSpace, std::string_view owner) const;
+    // Reads only the indexed identity-prefix range. A bounded page borrows the
+    // immutable row payloads; callers still validate ownership and row schemas.
+    Result<OwnedRowPage> owned_rows_with_prefix(const DocumentRef&,
+                                                StoreSpace,
+                                                std::string_view identity_prefix,
+                                                std::size_t limit) const;
+    Result<ChangeReceipt> undo(const Caller&, const WriteContext&, const std::string&);
+    Result<ChangeReceipt> redo(const Caller&, const WriteContext&, const std::string&);
+    Result<HistorySnapshot> history(const DocumentRef&) const;
+    Result<ChangeReceipt>
+    operation(const Caller&, const DocumentRef&, const std::string&, const std::string&) const;
+    RecordStats stats() const;
+
+  private:
+#include "qcae/quantities.hpp"
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <numbers>
+#include <string>
+#include <utility>
+
+namespace qcae::parameters {
+namespace {
+constexpr std::array units{
+    UnitDescriptor{"mm", Dimension::length, "mm", 1.0},
+    UnitDescriptor{"m", Dimension::length, "mm", 1000.0},
+    UnitDescriptor{"N", Dimension::force, "N", 1.0},
+    UnitDescriptor{"kN", Dimension::force, "N", 1000.0},
+    UnitDescriptor{"Pa", Dimension::pressure, "MPa", 1e-6},
+    UnitDescriptor{"kPa", Dimension::pressure, "MPa", 1e-3},
+    UnitDescriptor{"MPa", Dimension::pressure, "MPa", 1.0},
+    UnitDescriptor{"GPa", Dimension::pressure, "MPa", 1000.0},
+    UnitDescriptor{"mm2", Dimension::area, "mm2", 1.0},
+    UnitDescriptor{"m2", Dimension::area, "mm2", 1e6},
+    UnitDescriptor{"mm4", Dimension::inertia, "mm4", 1.0},
+    UnitDescriptor{"m4", Dimension::inertia, "mm4", 1e12},
+    UnitDescriptor{"rad", Dimension::angle, "rad", 1.0},
+    UnitDescriptor{"deg", Dimension::angle, "rad", std::numbers::pi / 180.0},
+};
+
+template <class T>
+Result<T>
+failure(ErrorCode code, std::string message, std::string field, Status status = Status::failed) {
+    return {status, std::nullopt, Diagnostic{code, std::move(message), std::move(field)}};
+}
+
+template <class T> Result<T> success(T value) {
+    return {Status::success, std::move(value), std::nullopt};
+}
+
+const UnitDescriptor* find_unit(std::string_view symbol) {
+    const auto found = std::find_if(
+        units.begin(), units.end(), [symbol](const auto& unit) { return unit.symbol == symbol; });
+    return found == units.end() ? nullptr : &*found;
+}
+
+Result<double> checked_value(long double value, std::string field) {
+    if (!std::isfinite(value) || std::abs(value) > std::numeric_limits<double>::max()) {
+        return failure<double>(ErrorCode::invalid_input,
+                               "Numeric result is nonfinite or exceeds the double range.",
+                               std::move(field));
+    }
+    // Keep the supported numeric range explicit, rather than silently flushing denormals to zero.
+    if (value != 0.0L && std::abs(value) < std::numeric_limits<double>::min()) {
+        return failure<double>(ErrorCode::invalid_input,
+                               "Numeric result underflows the supported normal double range.",
+                               std::move(field));
+    }
+7:option(QCAE_BUILD_IPC "Build the optional Qt local engine and CLI" OFF)
+9:option(QCAE_BUILD_DESKTOP "Build the Qt/VTK desktop client" OFF)
+146:    if(NOT BUILD_TESTING OR NOT QCAE_BUILD_DESKTOP OR NOT EXISTS "${QCAE_C3_SQLITE_OBSERVED_OBJECT}")
+189:if(QCAE_BUILD_IPC)
+330:if(QCAE_BUILD_DESKTOP)
+331:  if(NOT QCAE_BUILD_IPC OR NOT QCAE_BUILD_STORAGE)
+332:    message(FATAL_ERROR "Desktop requires QCAE_BUILD_IPC=ON and QCAE_BUILD_STORAGE=ON")
+454:  if(QCAE_BUILD_IPC)
+479:  if(QCAE_BUILD_DESKTOP AND UNIX)

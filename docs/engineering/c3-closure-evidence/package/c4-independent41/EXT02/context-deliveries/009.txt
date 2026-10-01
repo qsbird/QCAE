@@ -1,0 +1,124 @@
+rg: tests/c3_workflow_ipc_tests.py: No such file or directory (os error 2)
+rg: tests/typed_ipc_tests.py: No such file or directory (os error 2)
+rg: tests/geometry_mesh_ipc_tests.py: No such file or directory (os error 2)
+rg: features/geometry_line/src/geometry_line_operations.cpp: No such file or directory (os error 2)
+15:// Notifications and render deltas borrow immutable records from committed history.
+109:    std::vector<std::shared_ptr<const RecordHistoryImage>> history;
+144:class RecordApplication {
+153:    Result<DocumentInfo> current_document() const;
+169:    Result<ChangePreview> preview(const Caller&, const WriteContext&, const RecordPrepare&);
+203:    Result<HistorySnapshot> history(const DocumentRef&) const;
+tests/prepare_c3_qt_freetype_hash_tranche.py
+tests/c3_locality_bench.cpp
+tests/skeleton_representative_ipc_tests.py
+tests/c3_ledger_contribution.hpp
+tests/c3_host_frame_ledger_tests.py
+tests/c3_end_to_end_bench.cpp
+tests/entity_query_ipc_tests.py
+tests/fixtures/legacy/saved-organization.ipc.json
+tests/fixtures/legacy/saved-beam.ipc.json
+tests/fixtures/legacy/all-supported-entities.ipc.json
+tests/fixtures/legacy/redo-workspace.ipc.json
+tests/fixtures/legacy/saved-empty.ipc.json
+tests/fixtures/legacy/unsaved-workspace.ipc.json
+tests/fixtures/c3-tool-lifecycle-v1.json
+tests/c3_sqlite_copy_bridge.cpp
+tests/c3_qt_source_bridge.hpp
+tests/ipc_tests.py
+tests/force_vector_ipc_tests.py
+tests/engine_contributions_ipc_tests.py
+tests/c3_display_ipc_tests.py
+tests/nastran_disabled_ipc_tests.py
+tests/prepare_c3_harfbuzz_typed_tranche.py
+tests/skeleton_workflow_ipc_tests.py
+tests/result_fixture_ipc_tests.py
+tests/prepare_c3_vtk_qt_sdk.py
+tests/c3_qt_source_bridge_tests.cpp
+tests/c3_graphics_bench.cpp
+tests/m1_ipc_tests.py
+tests/prepare_c3_harfbuzz_alias_tranche.py
+tests/c3_desktop_workflow_tests.cpp
+tests/public_api_consumers/README.md
+tests/public_api_consumers/CMakeLists.txt
+tests/prepare_c3_qt_sdk_ledger.py
+tests/c3_tool_lifecycle_tests.cpp
+tests/m23_ipc_tests.py
+tests/prepare_c3_qt_glyph_tranche.py
+tests/c3_sqlite_copy_bridge.h
+tests/nastran_artifact_ipc_tests.py
+tests/prepare_c3_qt_freetype_metrics_tranche.py
+tests/skeleton_fault_ipc_tests.py
+tests/c3_task_ack_bench.py
+tests/c3_sqlite_copy_bridge_tests.cpp
+tests/prepare_c3_harfbuzz_sdk_ledger.py
+tests/prepare_c3_qt_text_tranche.py
+tests/c3_sync_ipc_tests.py
+tests/c3_ledger_engine_main.cpp
+tests/prepare_c3_qt_freetype_store_tranche.py
+tests/prepare_c3_sqlite_ledger.py
+tests/solver_run_ipc_tests.py
+tests/analysis_check_ipc_tests.py
+add_library(qcae_mesh_editing STATIC src/mesh_editing_operations.cpp include/qcae/mesh_editing_operations.hpp)
+target_include_directories(qcae_mesh_editing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_mesh_editing PUBLIC cxx_std_20)
+target_link_libraries(qcae_mesh_editing PUBLIC qcae_application qcae_operations qcae_parameters)
+qcae_warnings(qcae_mesh_editing)
+cmake_minimum_required(VERSION 3.24)
+project(QCAEPublicConsumers LANGUAGES CXX)
+if(NOT QCAE_SOURCE_ROOT)
+  get_filename_component(QCAE_SOURCE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+endif()
+# This is an external consumer: never add product include paths here. Every
+# header must compile using only the linked target's public usage requirements.
+set(BUILD_TESTING OFF CACHE BOOL "Disable nested product tests" FORCE)
+add_subdirectory("${QCAE_SOURCE_ROOT}" qcae)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${QCAE_SOURCE_ROOT}/modules/targets.json")
+file(READ "${QCAE_SOURCE_ROOT}/modules/targets.json" manifest)
+string(JSON count LENGTH "${manifest}" targets)
+math(EXPR last "${count} - 1")
+set(consumers)
+set(header_count 0)
+foreach(index RANGE ${last})
+  string(JSON target GET "${manifest}" targets ${index} target)
+  if(NOT TARGET ${target})
+    continue()
+  endif()
+  string(JSON headers LENGTH "${manifest}" targets ${index} public_headers)
+  if(headers EQUAL 0)
+    continue()
+  endif()
+  math(EXPR last_header "${headers} - 1")
+  foreach(header_index RANGE ${last_header})
+    string(JSON path GET "${manifest}" targets ${index} public_headers ${header_index})
+    string(REGEX REPLACE ".*/include/" "" include "${path}")
+    string(MAKE_C_IDENTIFIER "consumer_${target}_${include}" consumer)
+    set(source "${CMAKE_CURRENT_BINARY_DIR}/${consumer}.cpp")
+    file(WRITE "${source}" "#include \"${include}\"\nint main() { return 0; }\n")
+    add_executable(${consumer} EXCLUDE_FROM_ALL "${source}")
+    target_link_libraries(${consumer} PRIVATE ${target})
+    target_compile_features(${consumer} PRIVATE cxx_std_20)
+    qcae_warnings(${consumer})
+    list(APPEND consumers ${consumer})
+    math(EXPR header_count "${header_count} + 1")
+  endforeach()
+endforeach()
+# The operation catalog is generated into the build tree, so it is not a
+# handwritten public_headers entry in the source ownership manifest.
+set(catalog_source "${CMAKE_CURRENT_BINARY_DIR}/consumer_generated_operations.cpp")
+file(WRITE "${catalog_source}" "#include \"qcae/operations.hpp\"\nint main() { return qcae::operation_catalog.empty() ? 1 : 0; }\n")
+add_executable(consumer_generated_operations EXCLUDE_FROM_ALL "${catalog_source}")
+target_link_libraries(consumer_generated_operations PRIVATE qcae_contracts)
+qcae_warnings(consumer_generated_operations)
+list(APPEND consumers consumer_generated_operations)
+math(EXPR header_count "${header_count} + 1")
+# Generated typed input and legacy catalog headers must also compose in one translation unit.
+set(typed_source "${CMAKE_CURRENT_BINARY_DIR}/consumer_operation_contracts.cpp")
+file(WRITE "${typed_source}" "#include \"qcae/operations.hpp\"\n#include \"qcae/operation_inputs.hpp\"\nint main() { return qcae::operation_catalog.empty() ? 1 : 0; }\n")
+add_executable(consumer_operation_contracts EXCLUDE_FROM_ALL "${typed_source}")
+target_link_libraries(consumer_operation_contracts PRIVATE qcae_operations)
+qcae_warnings(consumer_operation_contracts)
+list(APPEND consumers consumer_operation_contracts)
+math(EXPR header_count "${header_count} + 1")
+add_custom_target(qcae_public_consumers ALL DEPENDS ${consumers})
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/public-consumer-count.txt" "${header_count}\n")
+message(STATUS "Public API gate: ${header_count} independently compiled header consumers")

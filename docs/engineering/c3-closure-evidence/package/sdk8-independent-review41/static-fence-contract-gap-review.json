@@ -1,0 +1,99 @@
+{
+  "schema": "qcae.sdk8-static-fence-contract-gap-review/1",
+  "priority": "P2",
+  "scope": "Common optional collector generic adoption; actual frozen manifest/image are valid and finite actual behavior evidence is unchanged.",
+  "collector": "/private/tmp/qcae-sdk8-adoption41/collector-optional-status.hpp",
+  "collector_sha256": "6eb4cdf25885111a93a2de356bd95af4e11964b0f40befe7bc1de5c6caa010e4",
+  "checked_guard_fields": [
+    "version",
+    "failure_is_unknown",
+    "callback_abi_unchanged",
+    "sticky_status_symbol",
+    "collector_loss_symbol",
+    "depth_symbol"
+  ],
+  "unchecked_semantic_fields": [
+    "noexcept_callback_boundary",
+    "original_C_declarations_and_scope_layout_unchanged",
+    "balanced_admission_stack_capacity"
+  ],
+  "current_actual_fence_values": {
+    "noexcept_callback_boundary": true,
+    "original_C_declarations_and_scope_layout_unchanged": true,
+    "balanced_admission_stack_capacity": 1024
+  },
+  "static_counterexamples": [
+    {
+      "name": "boundary_false",
+      "changed_fields": {
+        "noexcept_callback_boundary": false
+      },
+      "current_checked_conditions_statically_satisfied": true,
+      "postbinding_failure_fence_v1_expected": true,
+      "snapshot_if_status_0_depth_0_and_not_exhausted_expected_exception_boundary_complete": true,
+      "actual_fixture_compile_executed": false,
+      "actual_fixture_runtime_executed": false
+    },
+    {
+      "name": "legacy_C_scope_false",
+      "changed_fields": {
+        "original_C_declarations_and_scope_layout_unchanged": false
+      },
+      "current_checked_conditions_statically_satisfied": true,
+      "postbinding_failure_fence_v1_expected": true,
+      "snapshot_if_status_0_depth_0_and_not_exhausted_expected_exception_boundary_complete": true,
+      "actual_fixture_compile_executed": false,
+      "actual_fixture_runtime_executed": false
+    },
+    {
+      "name": "capacity_zero",
+      "changed_fields": {
+        "balanced_admission_stack_capacity": 0
+      },
+      "current_checked_conditions_statically_satisfied": true,
+      "postbinding_failure_fence_v1_expected": true,
+      "snapshot_if_status_0_depth_0_and_not_exhausted_expected_exception_boundary_complete": true,
+      "actual_fixture_compile_executed": false,
+      "actual_fixture_runtime_executed": false
+    },
+    {
+      "name": "capacity_negative",
+      "changed_fields": {
+        "balanced_admission_stack_capacity": -1
+      },
+      "current_checked_conditions_statically_satisfied": true,
+      "postbinding_failure_fence_v1_expected": true,
+      "snapshot_if_status_0_depth_0_and_not_exhausted_expected_exception_boundary_complete": true,
+      "actual_fixture_compile_executed": false,
+      "actual_fixture_runtime_executed": false
+    },
+    {
+      "name": "capacity_noninteger",
+      "changed_fields": {
+        "balanced_admission_stack_capacity": 1024.5
+      },
+      "current_checked_conditions_statically_satisfied": true,
+      "postbinding_failure_fence_v1_expected": true,
+      "snapshot_if_status_0_depth_0_and_not_exhausted_expected_exception_boundary_complete": true,
+      "actual_fixture_compile_executed": false,
+      "actual_fixture_runtime_executed": false
+    },
+    {
+      "name": "capacity_string",
+      "changed_fields": {
+        "balanced_admission_stack_capacity": "1024"
+      },
+      "current_checked_conditions_statically_satisfied": true,
+      "postbinding_failure_fence_v1_expected": true,
+      "snapshot_if_status_0_depth_0_and_not_exhausted_expected_exception_boundary_complete": true,
+      "actual_fixture_compile_executed": false,
+      "actual_fixture_runtime_executed": false
+    }
+  ],
+  "binding_precondition": "Counterexamples assume exactly matching embedded and external manifest plus valid sidecar/image digest and same-image install/status/loss/depth. Sidecar/marker rejection must not mask the contradictory fence test.",
+  "recommendation": "Require both semantic booleans true and current v1 numeric capacity 1024; add explicit exact-marker ABI negative fixtures for false/missing semantics and malformed capacity.",
+  "proof_kind": "Static source branch and snapshot expression reasoning only; not actual Qt behavior or executed negative fixture evidence.",
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "complete_c3_passed": false,
+  "complete_sk12_passed": false
+}

@@ -1,0 +1,147 @@
+{
+  "schema": "qcae.ext03.delivery.v1",
+  "status": "completed-independent-extension",
+  "executor": "/root/c4_ext03_frozen41",
+  "baseline_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "extension_commit": "ee71f1ec76e6ce070b7f2351e3a274af02ee8994",
+  "worktree": "/private/tmp/qcae-c4-ext03-41",
+  "branch": "codex/c4-ext03-baseline41",
+  "diff_file": "extension-baseline.diff",
+  "diff_sha256": "d512aa81b321d0aa8c2c57fbc8a17706e0b5cef8f1a50e2f4329f93e9c645eb6",
+  "diff_bytes": 52709,
+  "handwritten_product_files": 10,
+  "protected_file_touches": 0,
+  "generator_touches": 0,
+  "added_dependencies": 0,
+  "source_inventory": "source-inventory.json",
+  "frozen_hash_receipts": "frozen-boundaries.json",
+  "readability_review": "readability-review.md",
+  "context_accounting": "context-accounting.json",
+  "context_measurement_complete": false,
+  "actual_total_context_utf8_bytes": null,
+  "tokens": null,
+  "checks": [
+    {
+      "command_log": "core-final-tests.log",
+      "passed": 40,
+      "failed": 0
+    },
+    {
+      "command_log": "native-targeted-tests-final.log",
+      "passed": 14,
+      "failed": 0
+    },
+    {
+      "command_log": "native-contract-tests.log",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "command_log": "consumer-build1.log",
+      "public_headers": 69,
+      "exit_code": 0
+    },
+    {
+      "command_log": "final-static-gates.log",
+      "design": "passed",
+      "clang_format_21": "passed",
+      "diff_check": "passed"
+    },
+    {
+      "command_log": "generated-reproducibility.log",
+      "entity_permutations": 10,
+      "operation_generation_and_cmp": "passed"
+    },
+    {
+      "command_log": "native-desktop-regressions.log",
+      "passed": 5,
+      "failed": 0,
+      "full_subtest_stdout": "native-desktop-subtests-raw.log"
+    },
+    {
+      "command_log": "exact-frozen-final-gates.log",
+      "python": "3.14.0",
+      "design": "passed",
+      "clang_format_21": "passed",
+      "diff_check": "passed"
+    }
+  ],
+  "ipc_raw_evidence": "ipc-passed-transcript/transcript.json",
+  "tri3_pick": {
+    "required_cases": 4,
+    "combined_old_and_new_cases": 12,
+    "executed": true,
+    "missed": 0,
+    "extra": 0,
+    "receipt": "pick-matrix-receipt.json",
+    "log": "native-pick-12.log",
+    "images": "pick-matrix-images",
+    "platform": "cocoa",
+    "backend": "vtkGenericOpenGLRenderWindow",
+    "dpr": 2,
+    "framebuffer_pixels": [
+      1280,
+      840
+    ]
+  },
+  "failures_and_repairs": {
+    "compile_failures": 3,
+    "compile_repairs": "New test source used implicit EntityId initialization, wrong RecordInput decode access, and a copying range loop; corrected before final builds.",
+    "compile_failure_logs": [
+      "core-build1.log",
+      "core-build2.log",
+      "core-build3.log"
+    ],
+    "format_failures": 1,
+    "format_repairs": "Applied frozen clang-format 21 to new handwritten C++.",
+    "format_failure_log": "format-version.log",
+    "ipc_assertion_failures": 1,
+    "ipc_repairs": "Test expected reference role tri3.nodes; the generic production query contract emits tri3.node. Corrected assertion after inspecting actual reply.",
+    "ipc_failure_log": "native-targeted-tests1.log",
+    "ipc_failed_transcript": "ipc-failed1-transcript.json",
+    "ctest_metadata_timeouts": 2,
+    "ctest_timeout_logs": [
+      "core-tests-beforeformat-rebuild.log",
+      "core-freeze-contract-retry.log"
+    ],
+    "ctest_timeout_resolution": "Kept frozen 90s timeout. Reconfigured final exact Python 3.14.0 and reran after concurrent builds ended; c4_freeze_contract passed in 47.71s.",
+    "auxiliary_nonzero_commands": [
+      "operations-test-read",
+      "test-support",
+      "process-state",
+      "ctest-progress",
+      "build-progress",
+      "native-regression-progress"
+    ],
+    "native_help_probe": "qcae_desktop_tests -help initialized Qt and printed sandbox macOS service errors; no test case or window executed and it is not graphical validation. Native execution then stayed stopped pending the GUI slot."
+  },
+  "scope_limits": [
+    "Tri3 topology and display only. Shell analysis/check/input freezing and controlled Nastran export/legacy export preview explicitly return unsupported capability.",
+    "No real solver execution, real AI acceptance, large-model performance, full SK/C3/C4 or complete P0 acceptance claimed.",
+    "Independent extension logs do not replace final common Release integration tests.",
+    "Early outer truncation ranges and two pre-runner command returns were not persisted. Exact cumulative context cost remains unknown; repeated packets and upper bounds are disclosed."
+  ],
+  "qg_02": {
+    "reviewer": "/root",
+    "passed": true,
+    "raw_review_message": "coordination-009.txt",
+    "reviewed_paths": [
+      "adapters/engine_api/src/ipc_model.cpp",
+      "features/analysis/src/analysis_checks.cpp",
+      "features/analysis/src/analysis_input.cpp",
+      "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
+      "features/mesh_editing/src/mesh_editing_operations.cpp",
+      "modules/document/src/records_rules.cpp",
+      "modules/query/src/render_projector.cpp",
+      "profiles/nastran/src/nastran_package.cpp",
+      "schemas/entities/entities.json",
+      "schemas/operations/basic.json"
+    ]
+  },
+  "gui_slot": "Released immediately after native tests ended; no further native launches",
+  "baseline_manifest": {
+    "path": "c4-common40-baseline-manifest.json",
+    "sha256": "f8b27da88576d8cc2f6cddb4a8d7c4cc63d7a3d68c9e54ffc1f0c39864a04e6a",
+    "untracked_checkout_copy_preserved": true
+  }
+}

@@ -1,0 +1,33 @@
+9:import subprocess
+16:SPEC = importlib.util.spec_from_file_location("c4_freeze", ROOT / "tools/freeze_c4_baseline.py")
+24:        self.directory = tempfile.TemporaryDirectory(prefix="qc4-freeze-", dir="/private/tmp")
+43:        definition.write_text(json.dumps(self.definition, indent=2) + "\n")
+54:        return subprocess.check_output(["git", *arguments], cwd=self.root, stderr=subprocess.DEVNULL).decode().strip()
+58:        self.git("commit", "--quiet", "-m", "Create isolated freeze-tool fixture\n\nConstraint: Not QCAE acceptance\nTested: Metadata integrity only")
+85:        process = subprocess.run(command, capture_output=True, check=True)
+95:            "schema": "qcae.c4-freeze-execution/1", "source_commit": self.source,
+97:            "environment_manifest_sha256": FREEZE.sha((json.dumps(self.environment, indent=2) + "\n").encode()),
+108:        (self.root / "environment.json").write_text(json.dumps(self.environment, indent=2) + "\n")
+109:        (self.root / "execution.json").write_text(json.dumps(self.execution, indent=2) + "\n")
+112:        command = [sys.executable, str(ROOT / "tools/freeze_c4_baseline.py"), "--root", str(self.root),
+119:        process = subprocess.run(command, capture_output=True, text=True)
+149:            data = subprocess.check_output(["git", "show", self.source + ":" + row["path"]], cwd=self.root)
+159:        (self.root / FREEZE.PROTECTED).write_text(json.dumps(self.definition, indent=2) + "\n")
+182:        self.assertNotIn("Unknown working user instructions", json.dumps(report))
+270:        (self.root / FREEZE.PROTECTED).write_text(json.dumps(self.definition))
+279:        path.write_text(json.dumps(targets))
+291:        self.assertIn("outside the freeze reader scope", report["blocked_reason"])
+298:                    (json.dumps(self.environment, indent=2) + "\n").encode())
+310:            (json.dumps(self.environment, indent=2) + "\n").encode())
+Output:
+----------------------------------------------------------
+PASS: 49 local process checks; all children test-only, no Nastran/numerical acceptance
+<end of output>
+Test time =   5.46 sec
+----------------------------------------------------------
+Test Passed.
+"solver_local" end time: Oct 01 11:01 CST
+"solver_local" time elapsed: 00:00:05
+----------------------------------------------------------
+
+End testing: Oct 01 11:01 CST

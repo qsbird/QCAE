@@ -1,0 +1,616 @@
+{
+  "schema": "qcae.ext04.same-core-adapter-contract/1",
+  "baseline_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+  "same_test_translation_unit": true,
+  "same_authority": "RecordApplication + EditSession + record_task_publisher",
+  "adapter_switch": "FixtureStore IRecordStore construction selected by QCAE_TEST_SQLITE=1",
+  "product_core_modified_for_this_collection": false,
+  "observed_task_contract_parity": true,
+  "internal_full_record_goldens_checked_by_both_binaries": true,
+  "source_files": [
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/tests/geometry_mesh_tests.cpp",
+      "sha256": "f29d40166828c1d761ef46f6331f27c6349f9cd5b0ca9ff94ed49cc1e60c72fd",
+      "byte_length": 17220
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/tests/runtime_test_support.hpp",
+      "sha256": "990664a42e5a335d8377ab6429d688843b916e0359442871c0a03694499288c6",
+      "byte_length": 6118
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/modules/application/src/core.cpp",
+      "sha256": "0247daf8e4b63822b9ed6e88f9fa84ccb2fc1a0f9d5878de5d7cb8f00525568c",
+      "byte_length": 72000
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/modules/contracts/include/qcae/record_store.hpp",
+      "sha256": "c5d462b9ec480a751d49792e5447e03ac54ea6d14207bbdd09635c3877bea16e",
+      "byte_length": 1379
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/adapters/storage_sqlite/src/sqlite_store.cpp",
+      "sha256": "cb8ab1514f1cbcdf9d05c641a2ffc053b85b191fd039a5dd18eb17794fd2fadd",
+      "byte_length": 45959
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/CMakeLists.txt",
+      "sha256": "3b10cc31560d76d9a554674e36e48a1aa312725b14985f2afe7efb30ccccdfcb",
+      "byte_length": 31551
+    }
+  ],
+  "actual_parent_execution_records": [
+    {
+      "name": "sqlite_headless-configure",
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c3-vtk-sqlite-release",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=OFF",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=OFF",
+          "-DQCAE_ENABLE_SANITIZERS=OFF",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.22829470899887383,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-configure.log",
+          "sha256": "408146df3a40701cc4aa41ff31a196e97d79253368197de4188988ea71e93d12"
+        }
+      ]
+    },
+    {
+      "name": "sqlite_headless-build",
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "build-c3-vtk-sqlite-release",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.024584125028923154,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+        }
+      ]
+    },
+    {
+      "name": "sqlite_headless-tests",
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "build-c3-vtk-sqlite-release",
+          "--output-on-failure",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 36.10028470796533,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-tests.log",
+          "sha256": "b4e7e966835793ae2704b82e9f197b89099098984490867d9e515281f7c2039a"
+        }
+      ]
+    }
+  ],
+  "original_full_ctest_log": {
+    "path": "/private/tmp/qcae-ext04-common41/sqlite-headless-LastTest.original.log",
+    "sha256": "83312ff9b2f5c0a8543ad5259681afc565d0fbdd01a3c82d285cbfb986247762",
+    "byte_length": 4336003
+  },
+  "contracts": [
+    {
+      "backend": "memory",
+      "test": "geometry_mesh",
+      "actual_child_command": [
+        "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/qcae_geometry_mesh_tests"
+      ],
+      "actual_compile_command": {
+        "directory": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release",
+        "command": "/usr/bin/c++ -I/Users/qs/Documents/ChatGPT/QCAE/features/geometry/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/application/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/document/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/foundation/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/contracts/include -I/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/generated -I/Users/qs/Documents/ChatGPT/QCAE/features/mesh_generation/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/runtime/record_application/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/runtime/include -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -o features/mesh_generation/CMakeFiles/qcae_geometry_mesh_tests.dir/__/__/tests/geometry_mesh_tests.cpp.o -c /Users/qs/Documents/ChatGPT/QCAE/tests/geometry_mesh_tests.cpp",
+        "file": "/Users/qs/Documents/ChatGPT/QCAE/tests/geometry_mesh_tests.cpp",
+        "output": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/features/mesh_generation/CMakeFiles/qcae_geometry_mesh_tests.dir/__/__/tests/geometry_mesh_tests.cpp.o"
+      },
+      "binary": {
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/qcae_geometry_mesh_tests",
+        "sha256": "6a278b2ee13059a5616968deedac8ef733962b885f31fd08dd3f384c53186b26",
+        "byte_length": 1466776
+      },
+      "extracted_original_output": {
+        "path": "/private/tmp/qcae-ext04-common41/memory-contract.original.log",
+        "sha256": "12d112e1f468cd735d0e5c762701feba07cbae43bc71c922cdd579f847d88091",
+        "byte_length": 4416
+      },
+      "observed_task_rows": [
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-0",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-1",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-2",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-3",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-4",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-5",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-6",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-7",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-8",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "memory-mesh-0-9",
+          "backend": "memory",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-0",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-1",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-2",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-3",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-4",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-5",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-6",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-7",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-8",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "memory-mesh-1-9",
+          "backend": "memory",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-0",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-1",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-2",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-3",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-4",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-5",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-6",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-7",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-8",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "memory-mesh-2-9",
+          "backend": "memory",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        }
+      ],
+      "history_rounds": 100,
+      "history_revision_delta": 201
+    },
+    {
+      "backend": "sqlite",
+      "test": "geometry_mesh_sqlite",
+      "actual_child_command": [
+        "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/qcae_geometry_mesh_sqlite_tests"
+      ],
+      "actual_compile_command": {
+        "directory": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release",
+        "command": "/usr/bin/c++ -DQCAE_TEST_SQLITE=1 -I/Users/qs/Documents/ChatGPT/QCAE/features/geometry/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/application/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/document/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/foundation/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/contracts/include -I/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/generated -I/Users/qs/Documents/ChatGPT/QCAE/features/mesh_generation/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/runtime/record_application/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/runtime/include -I/Users/qs/Documents/ChatGPT/QCAE/adapters/storage_sqlite/include -O3 -DNDEBUG -std=c++20 -arch arm64 -Wall -Wextra -Wpedantic -Werror -o CMakeFiles/qcae_geometry_mesh_sqlite_tests.dir/tests/geometry_mesh_tests.cpp.o -c /Users/qs/Documents/ChatGPT/QCAE/tests/geometry_mesh_tests.cpp",
+        "file": "/Users/qs/Documents/ChatGPT/QCAE/tests/geometry_mesh_tests.cpp",
+        "output": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/CMakeFiles/qcae_geometry_mesh_sqlite_tests.dir/tests/geometry_mesh_tests.cpp.o"
+      },
+      "binary": {
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-vtk-sqlite-release/qcae_geometry_mesh_sqlite_tests",
+        "sha256": "7753b7a9fcdda2996cb3e61ce22786d419d8db686c726d3d67504a4354f2d82b",
+        "byte_length": 1539072
+      },
+      "extracted_original_output": {
+        "path": "/private/tmp/qcae-ext04-common41/sqlite-contract.original.log",
+        "sha256": "89fc4d490b4ac096ab9bfad03b5198e0f9f56238448df978b9d4837956609c81",
+        "byte_length": 4433
+      },
+      "observed_task_rows": [
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-0",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-1",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-2",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-3",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-4",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-5",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-6",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-7",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-8",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "success",
+          "run_id": "sqlite-mesh-0-9",
+          "backend": "sqlite",
+          "final_state": "succeeded",
+          "task_model_commits": 1
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-0",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-1",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-2",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-3",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-4",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-5",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-6",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-7",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-8",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "cancel_before_commit",
+          "run_id": "sqlite-mesh-1-9",
+          "backend": "sqlite",
+          "final_state": "cancelled",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-0",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-1",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-2",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-3",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-4",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-5",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-6",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-7",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-8",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        },
+        {
+          "case": "stale_candidate",
+          "run_id": "sqlite-mesh-2-9",
+          "backend": "sqlite",
+          "final_state": "conflicted",
+          "task_model_commits": 0
+        }
+      ],
+      "history_rounds": 100,
+      "history_revision_delta": 201
+    }
+  ],
+  "scope_limit": "Memory store retains heap state while reconstructing the application; only SQLite closes and reopens a persistent store. This is not cross-process memory durability, full M physics coverage, complete SK or P0 acceptance.",
+  "extension_commit": null,
+  "final_integrated_release_retest_pending": true
+}

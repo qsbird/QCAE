@@ -1,0 +1,30 @@
+ CMakeLists.txt                                     | 14 ++++
+ features/analysis/src/analysis_checks.cpp          |  4 +
+ features/analysis/src/analysis_input.cpp           |  4 +
+ .../include/qcae/mesh_editing_operations.hpp       |  1 +
+ .../mesh_editing/src/mesh_editing_operations.cpp   | 42 +++++++++-
+ modules/document/include/qcae/records.hpp          | 96 +++++++++++++++++++++-
+ modules/document/src/records_rules.cpp             | 22 +++++
+ modules/query/src/render_projector.cpp             |  7 ++
+ profiles/nastran/src/nastran_package.cpp           |  4 +
+ schemas/entities/entities.json                     | 32 ++++++++
+ schemas/operations/basic.json                      | 25 ++++++
+ tests/desktop_tests.cpp                            | 48 ++++++++++-
+ 12 files changed, 296 insertions(+), 3 deletions(-)
+ M CMakeLists.txt
+ M features/analysis/src/analysis_checks.cpp
+ M features/analysis/src/analysis_input.cpp
+ M features/mesh_editing/include/qcae/mesh_editing_operations.hpp
+ M features/mesh_editing/src/mesh_editing_operations.cpp
+ M modules/document/include/qcae/records.hpp
+ M modules/document/src/records_rules.cpp
+ M modules/query/src/render_projector.cpp
+ M profiles/nastran/src/nastran_package.cpp
+ M schemas/entities/entities.json
+ M schemas/operations/basic.json
+ M tests/desktop_tests.cpp
+?? docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json
+?? tests/fixtures/vtk-tri3-pick-matrix-v1.json
+?? tests/tri3_ipc_tests.py
+?? tests/tri3_tests.cpp
+PASS: typed entity generation; ten registration permutations identical

@@ -1,0 +1,48 @@
+{
+  "schema": "qcae.actual-macos-peak-rss-calibration/1",
+  "observation": {
+    "allocation_bytes": 33554432,
+    "raw_before": 1359872,
+    "raw_after": 34947072,
+    "helper_after_bytes": 34947072,
+    "pid": 13368
+  },
+  "actual_commands": [
+    {
+      "argv": [
+        "xcrun",
+        "clang++",
+        "-std=c++20",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror",
+        "-I/private/tmp/qcae-c4-integrated41/tests",
+        "/private/tmp/qcae-edit-rss-proof42/probe.cpp",
+        "-o",
+        "/private/tmp/qcae-edit-rss-proof42/probe"
+      ],
+      "cwd": "/private/tmp/qcae-edit-rss-proof42",
+      "exit": 0,
+      "elapsed_s": 0.5240297908894718,
+      "log": "/private/tmp/qcae-edit-rss-proof42/compile.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "/private/tmp/qcae-edit-rss-proof42/probe"
+      ],
+      "cwd": "/private/tmp/qcae-edit-rss-proof42",
+      "exit": 0,
+      "elapsed_s": 0.5975987908896059,
+      "log": "/private/tmp/qcae-edit-rss-proof42/observe.log",
+      "log_sha256": "cad617dbbf9b3dbbe9d151673e848d7fa9924deb2b1620bb55b996592a464f99"
+    }
+  ],
+  "scope": "Actual macOS getrusage ru_maxrss byte unit and self PID; no Linux run or product acceptance",
+  "files": {
+    "/private/tmp/qcae-edit-rss-proof42/probe.cpp": "1d70a83d4a61788902b0fbae0132b3e59ad3b642334c3bcb2e786c95e0eb9070",
+    "/private/tmp/qcae-c4-integrated41/tests/c3_process_observation.hpp": "e117c4f4f9200a15de83d87cfdc6fb9d5e998e97094039c7bee27d7b332f0b45"
+  }
+}

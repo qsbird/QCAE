@@ -1,0 +1,271 @@
+diff --git a/adapters/engine_api/src/ipc_model.cpp b/adapters/engine_api/src/ipc_model.cpp
+index 5e1b34f..7dfc643 100644
+--- a/adapters/engine_api/src/ipc_model.cpp
++++ b/adapters/engine_api/src/ipc_model.cpp
+@@ -470,6 +470,17 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
+             return op == "entity.query" ? entity_query(id, p, *snapshot.value)
+                                         : entity_references(id, p, *snapshot.value);
+         }
++        if (op == "model.export_preview") {
++            const auto records = app.record_application().snapshot(ref(r));
++            if (!records.ok())
++                return error(id, records);
++            if (ctx(r).expected_revision != records.value->info.revision)
++                return failure(
++                    id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
++            if (records.value->records.count(RecordTraits<records::Tri3>::type_id))
++                return failure(
++                    id, "UNSUPPORTED_CAPABILITY", "Tri3 shell export is not implemented");
++        }
+         const auto snap = app.snapshot(ref(r));
+         if (!snap.ok())
+             return error(id, snap);
+diff --git a/features/analysis/src/analysis_checks.cpp b/features/analysis/src/analysis_checks.cpp
+index 552022a..2b1c721 100644
+--- a/features/analysis/src/analysis_checks.cpp
++++ b/features/analysis/src/analysis_checks.cpp
+@@ -81,6 +81,10 @@ std::span<const RuleDefinition> RuleCatalog::definitions() const noexcept {
+     return detail::cantilever_rules();
+ }
+ Result<CheckReport> RuleCatalog::check(const DocumentView& view, const EntityId& identity) const {
++    if (view.count(RecordTraits<records::Tri3>::type_id))
++        return failed<CheckReport>(ErrorCode::unsupported_capability,
++                                   "Tri3 shell analysis checks are not implemented",
++                                   "tri3");
+     const auto record = view.find<records::AnalysisDefinition>(identity);
+     if (!record)
+         return failed<CheckReport>(
+diff --git a/features/analysis/src/analysis_input.cpp b/features/analysis/src/analysis_input.cpp
+index 3fe2402..fccbef2 100644
+--- a/features/analysis/src/analysis_input.cpp
++++ b/features/analysis/src/analysis_input.cpp
+@@ -54,6 +54,10 @@ Result<FrozenAnalysisInput> freeze_analysis_input(const DocumentView& view,
+                                                   const ProfileRef& profile,
+                                                   std::span<const ExportIdentifier> mapping) {
+     try {
++        if (view.count(RecordTraits<records::Tri3>::type_id))
++            invalid(ErrorCode::unsupported_capability,
++                    "Tri3 shell analysis is not implemented",
++                    "tri3");
+         const auto record = view.find<records::AnalysisDefinition>(identity);
+         if (!record)
+             invalid(
+diff --git a/features/mesh_editing/include/qcae/mesh_editing_operations.hpp b/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
+index 7155869..7d44eb6 100644
+--- a/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
++++ b/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
+@@ -10,5 +10,6 @@ struct OperationPlan {
+ [[nodiscard]] Result<OperationPlan> prepare_move_node(const operations::NodeMoveInput&);
+ [[nodiscard]] Result<OperationPlan>
+ prepare_assign_section(const operations::BeamAssignSectionInput&);
++[[nodiscard]] Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input&);
+ [[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
+ } // namespace qcae::features::mesh_editing
+diff --git a/features/mesh_editing/src/mesh_editing_operations.cpp b/features/mesh_editing/src/mesh_editing_operations.cpp
+index 3e1ea24..e3635ac 100644
+--- a/features/mesh_editing/src/mesh_editing_operations.cpp
++++ b/features/mesh_editing/src/mesh_editing_operations.cpp
+@@ -102,6 +102,39 @@ Result<OperationPlan> prepare_assign_section(const operations::BeamAssignSection
+     return success(OperationPlan{*signature.value, std::move(prepare)});
+ }
+ 
++Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input& input) {
++    const auto nodes = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
++    const auto mesh = wire::entity_id(Value(input.mesh_id.value), "mesh_id");
++    if (!nodes.ok())
++        return {nodes.status, std::nullopt, nodes.error};
++    if (!mesh.ok())
++        return {mesh.status, std::nullopt, mesh.error};
++    if (input.node_ids.size() != 3)
++        return {
++            Status::failed,
++            std::nullopt,
++            Diagnostic{ErrorCode::invalid_input, "Tri3 requires exactly three nodes", "node_ids"}};
++    // Node order is topology: preserve its winding in both storage and retry signatures.
++    const auto signature = canonical_value(InputTraits<MeshCreateTri3Input>::to_value(input));
++    if (!signature.ok())
++        return {signature.status, std::nullopt, signature.error};
++    RecordPrepare prepare = [input, signature = *signature.value](
++                                const DocumentView& view, const RecordIdentityAllocator& allocate) {
++        try {
++            const auto id = allocate();
++            EditSession edit(view);
++            edit.put(records::Tri3{id,
++                                   {input.node_ids[0], input.node_ids[1], input.node_ids[2]},
++                                   records::MeshId(input.mesh_id.value)});
++            return success(RecordPreparedOperation{
++                edit.prepare(), "Create Tri3 topology", id, signature, 0, true});
++        } catch (const RecordError& error) {
++            return failed<RecordPreparedOperation>(error);
++        }
++    };
++    return success(OperationPlan{*signature.value, std::move(prepare)});
++}
++
+ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
+     const auto registered = registry.register_typed<NodeMoveInput>(
+         InputTraits<NodeMoveInput>::definition(),
+@@ -110,10 +143,17 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
+         });
+     if (!registered.ok())
+         return registered;
+-    return registry.register_typed<BeamAssignSectionInput>(
++    const auto section = registry.register_typed<BeamAssignSectionInput>(
+         InputTraits<BeamAssignSectionInput>::definition(),
+         [&app](const OperationContext& context, const BeamAssignSectionInput& input) {
+             return execute(app, context, input, prepare_assign_section);
+         });
++    if (!section.ok())
++        return section;
++    return registry.register_typed<MeshCreateTri3Input>(
++        InputTraits<MeshCreateTri3Input>::definition(),
++        [&app](const OperationContext& context, const MeshCreateTri3Input& input) {
++            return execute(app, context, input, prepare_create_tri3);
++        });
+ }
+ } // namespace qcae::features::mesh_editing
+diff --git a/modules/document/src/records_rules.cpp b/modules/document/src/records_rules.cpp
+index 3478c9e..eec9e9d 100644
+--- a/modules/document/src/records_rules.cpp
++++ b/modules/document/src/records_rules.cpp
+@@ -66,6 +66,28 @@ void validate_record(const Beam& value, const DocumentView& view) {
+     if (left.mesh != right.mesh || value.mesh != left.mesh)
+         invalid("Beam and its nodes must belong to the same mesh", value.id.value);
+ }
++void validate_record(const Tri3& value, const DocumentView& view) {
++    std::array<std::array<double, 3>, 3> points{};
++    for (std::size_t index = 0; index < value.nodes.size(); ++index) {
++        const auto record = view.find<Node>(value.nodes[index]);
++        if (!record)
++            invalid("Tri3 node is missing", value.id.value);
++        const auto& node = record->get<Node>();
++        if (!node.mesh || *node.mesh != value.mesh)
++            invalid("Tri3 and its nodes must belong to the same mesh", value.id.value);
++        points[index] = node.position;
++    }
++    // Compute area from the ordered connectivity; both windings have positive magnitude.
++    std::array<long double, 3> a{}, b{};
++    for (std::size_t index = 0; index < 3; ++index) {
++        a[index] = static_cast<long double>(points[1][index]) - points[0][index];
++        b[index] = static_cast<long double>(points[2][index]) - points[0][index];
++    }
++    const auto doubled_area =
++        std::hypot(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]);
++    if (!std::isfinite(doubled_area) || doubled_area <= 0)
++        invalid("Tri3 requires positive finite area", value.id.value);
++}
+ void validate_record(const Constraint& value, const DocumentView&) {
+     if (value.dofs.find_first_not_of("123456") != std::string::npos ||
+         std::set<char>(value.dofs.begin(), value.dofs.end()).size() != value.dofs.size())
+diff --git a/modules/query/src/render_projector.cpp b/modules/query/src/render_projector.cpp
+index 4439660..84edb22 100644
+--- a/modules/query/src/render_projector.cpp
++++ b/modules/query/src/render_projector.cpp
+@@ -92,6 +92,13 @@ RenderContributions default_render_contributions() {
+              return RenderCellSource{
+                  beam.id, RenderCellKind::polyline, {beam.nodes.begin(), beam.nodes.end()}};
+          }});
++    result.add(
++        {RecordTraits<records::Tri3>::type_id, "tri3", [](const Record& record) -> RenderItem {
++             const auto& triangle = record->get<records::Tri3>();
++             return RenderCellSource{triangle.id,
++                                     RenderCellKind::polygon,
++                                     {triangle.nodes.begin(), triangle.nodes.end()}};
++         }});
+     result.add({RecordTraits<records::GeometryLine>::type_id,
+                 "geometry_line",
+                 [](const Record& record) -> RenderItem {
+diff --git a/profiles/nastran/src/nastran_package.cpp b/profiles/nastran/src/nastran_package.cpp
+index ad8e0f3..748c6d3 100644
+--- a/profiles/nastran/src/nastran_package.cpp
++++ b/profiles/nastran/src/nastran_package.cpp
+@@ -61,6 +61,10 @@ void register_nastran_core_rules(RecordRegistry& registry, const ProfileRef& ins
+ Result<ArtifactPlan> validate_nastran_export(const DocumentView& view,
+                                              const EntityId& analysis,
+                                              const NastranCodec& codec) {
++    if (view.count(RecordTraits<records::Tri3>::type_id))
++        return bad<ArtifactPlan>(
++            ErrorCode::unsupported_capability,
++            "Tri3 shell export is not implemented in the controlled Nastran profile");
+     const auto exported =
+         codec.encode(model_from_records(view), analysis, codec.definition().reference);
+     if (!exported.report.complete || !exported.artifact) {
+diff --git a/schemas/entities/entities.json b/schemas/entities/entities.json
+index 90a3e0f..8febd9e 100644
+--- a/schemas/entities/entities.json
++++ b/schemas/entities/entities.json
+@@ -581,6 +581,38 @@
+       ],
+       "query_kind": "load_case",
+       "display_field": "name"
++    },
++    {
++      "id": 4112,
++      "name": "Tri3",
++      "version": 1,
++      "fields": [
++        {
++          "id": 2,
++          "name": "nodes",
++          "kind": "references",
++          "targets": [
++            "Node"
++          ],
++          "count": 3
++        },
++        {
++          "id": 3,
++          "name": "mesh",
++          "kind": "reference",
++          "targets": [
++            "Mesh"
++          ],
++          "id_type": "MeshId"
++        }
++      ],
++      "maximum_encoded_bytes": 4096,
++      "custom_rule": true,
++      "reserved_field_ids": [
++        1
++      ],
++      "rule_version": 1,
++      "query_kind": "tri3"
+     }
+   ],
+   "relation_rules_version": 1
+diff --git a/schemas/operations/basic.json b/schemas/operations/basic.json
+index 8f715dc..105bd8b 100644
+--- a/schemas/operations/basic.json
++++ b/schemas/operations/basic.json
+@@ -324,6 +324,31 @@
+           ]
+         }
+       ]
++    },
++    {
++      "operation_id": "mesh.create_tri3",
++      "version": 1,
++      "schema_id": "qcae.operation.mesh.create_tri3.v1",
++      "type_name": "MeshCreateTri3Input",
++      "effect": "document_write",
++      "context": {
++        "document": true,
++        "epoch": true,
++        "expected_revision": true,
++        "idempotency_key": true
++      },
++      "fields": [
++        {
++          "field_id": 1,
++          "name": "node_ids",
++          "type": "entity_id_array"
++        },
++        {
++          "field_id": 2,
++          "name": "mesh_id",
++          "type": "entity_id"
++        }
++      ]
+     }
+   ]
+ }

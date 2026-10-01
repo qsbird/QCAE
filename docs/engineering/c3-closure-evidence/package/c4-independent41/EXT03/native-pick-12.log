@@ -1,0 +1,40 @@
+********* Start testing of DesktopTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+INFO   : DesktopTests::initTestCase() entering
+PASS   : DesktopTests::initTestCase()
+INFO   : DesktopTests::frozenPointAndLinePickingMatrix() entering
+INFO   : DesktopTests::frozenPointAndLinePickingMatrix() testdata fixtures/vtk-pick-matrix-v1.json was located at /private/tmp/qcae-c4-ext03-41/tests/fixtures/vtk-pick-matrix-v1.json
+   Loc: [/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp(223)]
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix() PICK fixture SHA-256: 82568cc06c30dbdec9ec418ef86eee1e6afaf349bee4b4173e130b8af84f7400
+INFO   : DesktopTests::frozenPointAndLinePickingMatrix() testdata fixtures/vtk-tri3-pick-matrix-v1.json was located at /private/tmp/qcae-c4-ext03-41/tests/fixtures/vtk-tri3-pick-matrix-v1.json
+   Loc: [/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp(237)]
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix() Tri3 PICK fixture SHA-256: 3cf184545acdf140d28718f5b1cc8fd525c93a136a7137105cc3032695d27ac3
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(point-contained) point-contained device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= point-behind,point-front missed=0 extra=0
+2026-10-01 11:25:43.418 qcae_desktop_tests[1521:42824595] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(point-contained)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(point-intersecting) point-intersecting device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= point-behind,point-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(point-intersecting)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(point-occluded-visible) point-occluded-visible device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= point-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(point-occluded-visible)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(point-occluded-through) point-occluded-through device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= point-behind,point-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(point-occluded-through)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(line-contained) line-contained device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= line-behind,line-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(line-contained)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(line-intersecting) line-intersecting device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= line-behind,line-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(line-intersecting)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(line-occluded-visible) line-occluded-visible device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= line-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(line-occluded-visible)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(line-occluded-through) line-occluded-through device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= line-behind,line-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(line-occluded-through)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(tri3-contained) tri3-contained device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= tri3-behind,tri3-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(tri3-contained)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(tri3-intersecting) tri3-intersecting device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= tri3-behind,tri3-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(tri3-intersecting)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(tri3-occluded-visible) tri3-occluded-visible device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= tri3-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(tri3-occluded-visible)
+QINFO  : DesktopTests::frozenPointAndLinePickingMatrix(tri3-occluded-through) tri3-occluded-through device_pixel_ratio= 2 qt_platform= cocoa vtk_window= vtkGenericOpenGLRenderWindow actual_ids= tri3-behind,tri3-front missed=0 extra=0
+PASS   : DesktopTests::frozenPointAndLinePickingMatrix(tri3-occluded-through)
+INFO   : DesktopTests::cleanupTestCase() entering
+PASS   : DesktopTests::cleanupTestCase()
+Totals: 14 passed, 0 failed, 0 skipped, 0 blacklisted, 4385ms
+********* Finished testing of DesktopTests *********

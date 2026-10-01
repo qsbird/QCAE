@@ -1,0 +1,105 @@
+                if (blank(c->name))
+                    return failure<RecordPreparedOperation>(Status::needs_input,
+                                                            ErrorCode::missing_input,
+                                                            "Material name is required",
+                                                            "name");
+                if (c->name.size() > state_->limits.max_name_bytes)
+                    return failure<RecordPreparedOperation>(Status::failed,
+                                                            ErrorCode::resource_limit,
+                                                            "Material name exceeds byte limit",
+                                                            "name");
+                if (view.count(RecordTraits<records::Material>::type_id) >=
+                    state_->limits.max_materials)
+                    return failure<RecordPreparedOperation>(
+                        Status::failed, ErrorCode::resource_limit, "Material limit reached");
+                value = normalize(c->young_modulus);
+                material.name = c->name;
+                create = true;
+            } else {
+                const auto& change = std::get<SetYoungModulus>(command);
+                auto record = view.find<records::Material>(change.id);
+                if (!record)
+                    return failure<RecordPreparedOperation>(Status::failed,
+                                                            ErrorCode::entity_not_found,
+                                                            "Material does not exist",
+                                                            "id");
+                material = record->get<records::Material>();
+                value = normalize(change.young_modulus);
+            }
+            if (!value.ok())
+                return {value.status, {}, value.error};
+            if (create)
+                material.id = allocate();
+            material.young_modulus_mpa = *value.value;
+            edit.put(material);
+            return success(RecordPreparedOperation{edit.prepare(),
+                                                   create ? "Create material" : "Set Young modulus",
+                                                   material.id,
+                                                   material.name,
+                                                   *value.value,
+                                                   create});
+        });
+}
+Result<ChangePreview> MemoryApplication::preview_import(const Caller& caller,
+                                                        const WriteContext& context,
+                                                        const Model& model) {
+    return state_->app.preview(
+        caller,
+        context,
+        [&](const DocumentView& view,
+            const RecordIdentityAllocator&) -> Result<RecordPreparedOperation> {
+            if (view.size())
+                return failure<RecordPreparedOperation>(
+                    Status::conflict, ErrorCode::invalid_input, "Import requires an empty model");
+            if (auto error = legacy_detail::validate_candidate(model, state_->limits))
+                return {Status::failed, {}, error};
+            RecordStats stats;
+            auto imported = records_from_model(model, view.registry(), view.version(), &stats);
+            auto changes = diff_record_views(view, imported);
+            return success(RecordPreparedOperation{
+                {view.version(), std::move(imported), std::move(changes), stats},
+                "Import model",
+                EntityId{},
+                "",
+                0,
+                false});
+        });
+}
+Result<ChangePreview> MemoryApplication::preview_edit(const Caller& caller,
+                                                      const WriteContext& context,
+                                                      const ModelEdit& command) {
+    return state_->app.preview(
+        caller,
+        context,
+        [&](const DocumentView& view,
+            const RecordIdentityAllocator& allocate) -> Result<RecordPreparedOperation> {
+            EditSession edit(view);
+            EntityId affected;
+            std::string label;
+            bool create = false, valid = true;
+            auto upsert = [&]<class T>(T value) {
+                if (value.id.value.empty()) {
+#include "qcae/ipc_model.hpp"
+#include "qcae/json_ledger.hpp"
+#include "qcae/query.hpp"
+#include "qcae/records.hpp"
+#include <QJsonArray>
+#include <QUuid>
+#include <algorithm>
+#include <charconv>
+#include <cmath>
+#include <limits>
+#include <set>
+#include <stdexcept>
+
+namespace qcae::ipc {
+namespace {
+QString qs(const std::string& s) {
+    return transport::json_ledger::from_utf8(s);
+}
+struct BadInput : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+void fields(const QJsonObject& o, std::initializer_list<const char*> allowed) {
+    for (auto i = o.begin(); i != o.end(); ++i) {
+        if (std::none_of(allowed.begin(), allowed.end(), [&](const char* s) {

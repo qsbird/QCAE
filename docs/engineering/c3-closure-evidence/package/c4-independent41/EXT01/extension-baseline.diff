@@ -1,0 +1,686 @@
+diff --git a/adapters/engine_api/src/ipc_model.cpp b/adapters/engine_api/src/ipc_model.cpp
+index 5e1b34f..ab07990 100644
+--- a/adapters/engine_api/src/ipc_model.cpp
++++ b/adapters/engine_api/src/ipc_model.cpp
+@@ -193,6 +193,12 @@ QJsonObject record_entity_json(const EntitySummary& entity, const DocumentView&
+             if (descriptor.kind == RecordFieldKind::target)
+                 result.insert("profile_ref",
+                               profile_ref_json(record_wire::read_target(field->payload).profile));
++        } else if (descriptor.optional && descriptor.introduced_version > 1) {
++            // Newly introduced optional fields expose their null default on old records too.
++            const auto key = entity_field_name(descriptor);
++            const QJsonValue value;
++            result.insert(key, value);
++            copies.insert(key, value, true, false);
+         } else if (entity.kind == "beam" && descriptor.name == "section")
+             result.insert("section_id", QJsonValue());
+     }
+diff --git a/docs/implementation/ext01-material-description.md b/docs/implementation/ext01-material-description.md
+new file mode 100644
+index 0000000..30dcde8
+--- /dev/null
++++ b/docs/implementation/ext01-material-description.md
+@@ -0,0 +1,17 @@
++# EXT-01 Material 可选说明
++
++本扩展独立基于 `b740b374c934f3b4624a21247b9a5deeb2ca6bf4` 实现。Material 的持久 schema 升为 v2，字段 5 为可选 `description`；未提供字段的 v1 记录读为 `std::nullopt`。说明只保存文本，不修改名称、稳定 ID、弹性模量或泊松比。
++
++公开 `MaterialSetDescriptionInput` 与 `prepare_set_description` 使用既有材料功能注册入口。`material.set_description` 携带 document、epoch、expected_revision 和 idempotency_key；提供非空字符串设置值，省略 description 清空。显式 JSON null、空字符串、错误类型、控制字符和超过既有 1024 字节文本限制的值拒绝，且不提交。真实 `entity.query` 返回字符串或显式 null；`entity.fields` 保持既有可选字段省略惯例。
++
++入口依次为生成的 InputTraits 校验、材料 typed handler、prepare 中的 EditSession、唯一 RecordApplication.execute、持久提交与历史。prepare 复制当前 Material，只替换 description；所有其他记录继续使用原不可变记录。IPC 查询通过现有 RecordDescriptor 识别后续版本引入的可选字段及其 null 默认值，没有 Material 专用 wire 分支。旧 revision、旧 epoch、同键异参失败，已提交键重试仍返回原事务，undo 后重试不会重新应用。
++
++旧输入 `tests/fixtures/ext01-material-v1.record` 在修改 schema 前由共同基线的编码器生成，109 字节，SHA256 为 `ae21094749106dfe32cdce3ce20e0a0a728c14de2894524c820f01cb341422ed`。它包含真实 v1 Material 编码，不含字段 5；保留原字节。测试同时检查旧物性、null 默认、当前编码往返和未来版本拒绝。生产 IPC 测试使用实际 engine/CLI 与显式 SQLite 工作库，覆盖字符串/null 查询、单事务、类型错误、幂等、undo/redo、保存正常打开和两次进程终止后的 recovery。
++
++手写产品文件共 6 个：两个 schema、材料功能公开头/实现/CMake 和 engine_api 的查询映射。records.hpp 由原哈希生成器生成；没有第三方依赖变更，39 个保护文件触碰为 0。
++
++验证原始命令与日志交付在独立执行证据目录中。冻结环境核心 CTest 45/45、原生 Qt/VTK 桌面回归 7/7、独立公共头消费者 48 个通过。初始基线 record_document/model_operations 2/2 与修改后相同两项均通过，格式、design 和 diff 检查通过。首轮工具环境误选 Homebrew Python，冻结工具测试出现 ps 权限错误/90 秒超时；改用已冻结的 `/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14` 后原阈值下通过，旧失败日志保留。实现中字段差量断言、空字符串策略、不支持 null 的临时 getter 和未重建生成契约造成的失败也保留并登记。
++
++QG-02：root 已只读审查六个手写产品路径，通过且无需产品补丁。权威状态、事务副作用和适配路径如上；材料功能负责编辑，adapter 只负责查询 JSON 表达，生成器负责字段校验与编码。审查核对了 introduced_version > 1 的 optional 字段映射与原生成器只允许 null 默认值的一致性。QG-03：基线与最终相关测试、生成检查、核心/IPC/桌面回归及消费者构建随原始日志交付。
++
++读取账本保留重复读取、搜索和构建诊断，真实 token 统计为 null。第二轮八份初始文件完整交付，内容合计 42078 字节、含工具 heading 合计 42601 字节；第一轮和若干早期读取存在截断或未插桩，完整实际上下文成本未证实，不能把初始包大小当作全部成本。本扩展独立验证不替代共同最终 Release 集成，也不宣称完整 C3/C4、SK 或 P0、真实 AI 或求解器验收完成。
+diff --git a/features/materials/CMakeLists.txt b/features/materials/CMakeLists.txt
+index 16252e6..9c8c205 100644
+--- a/features/materials/CMakeLists.txt
++++ b/features/materials/CMakeLists.txt
+@@ -3,3 +3,10 @@ target_include_directories(qcae_material_features PUBLIC "${CMAKE_CURRENT_SOURCE
+ target_compile_features(qcae_material_features PUBLIC cxx_std_20)
+ target_link_libraries(qcae_material_features PUBLIC qcae_application qcae_operations qcae_parameters)
+ qcae_warnings(qcae_material_features)
++if(BUILD_TESTING AND QCAE_BUILD_IPC AND QCAE_BUILD_STORAGE AND UNIX)
++  add_test(NAME material_description_ipc COMMAND Python3::Interpreter
++    "${PROJECT_SOURCE_DIR}/tests/material_description_ipc_tests.py"
++    --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
++    --evidence-dir "${CMAKE_BINARY_DIR}/ext01-ipc-evidence")
++  set_tests_properties(material_description_ipc PROPERTIES TIMEOUT 120)
++endif()
+diff --git a/features/materials/include/qcae/material_operations.hpp b/features/materials/include/qcae/material_operations.hpp
+index 99026cf..f995d57 100644
+--- a/features/materials/include/qcae/material_operations.hpp
++++ b/features/materials/include/qcae/material_operations.hpp
+@@ -10,6 +10,9 @@ struct OperationPlan {
+ [[nodiscard]] Result<OperationPlan> prepare_create_material(const operations::MaterialCreateInput&);
+ [[nodiscard]] Result<OperationPlan>
+ prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput&);
++// An absent description clears the optional field; supplied text must be nonempty.
++[[nodiscard]] Result<OperationPlan>
++prepare_set_description(const operations::MaterialSetDescriptionInput&);
+ [[nodiscard]] Result<OperationPlan> prepare_create_section(const operations::SectionCreateInput&);
+ [[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
+ } // namespace qcae::features::materials
+diff --git a/features/materials/src/material_operations.cpp b/features/materials/src/material_operations.cpp
+index 6984472..c7dcee2 100644
+--- a/features/materials/src/material_operations.cpp
++++ b/features/materials/src/material_operations.cpp
+@@ -9,7 +9,8 @@ using namespace operations;
+ void observe_record_temporary(const records::Material& value) noexcept {
+     ledger::add(ledger::Stage::application,
+                 ledger::Metric::model_copy_bytes,
+-                sizeof(value) + value.id.value.size() + value.name.size());
++                sizeof(value) + value.id.value.size() + value.name.size() +
++                    (value.description ? value.description->size() : 0));
+ }
+ void observe_record_temporary(const records::BeamSection& value) noexcept {
+     ledger::add(ledger::Stage::application,
+@@ -39,6 +40,12 @@ void observe_capture_move(const MaterialSetYoungModulusInput& input) noexcept {
+                 2 * (sizeof(input.young_modulus.value) + moved_string_bytes(input.entity_id.value) +
+                      moved_string_bytes(input.young_modulus.unit)));
+ }
++void observe_capture_move(const MaterialSetDescriptionInput& input) noexcept {
++    ledger::add(ledger::Stage::application,
++                ledger::Metric::model_copy_bytes,
++                2 * (sizeof(input.description) + moved_string_bytes(input.entity_id.value) +
++                     (input.description ? moved_string_bytes(*input.description) : 0)));
++}
+ void observe_capture_move(const SectionCreateInput& input) noexcept {
+     ledger::add(ledger::Stage::application,
+                 ledger::Metric::model_copy_bytes,
+@@ -209,6 +216,43 @@ prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput& input)
+     return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
+ }
+ 
++Result<OperationPlan>
++prepare_set_description(const operations::MaterialSetDescriptionInput& input) {
++    auto signature = canonical_value(InputTraits<MaterialSetDescriptionInput>::to_value(input));
++    if (!signature.ok()) {
++        return {signature.status, std::nullopt, signature.error};
++    }
++    auto canonical = input;
++    wire::observe_input_copy(canonical, canonical.entity_id, canonical.description);
++    observe_capture_move(canonical);
++    observe_signature_capture(*signature.value);
++    RecordPrepare prepare = [canonical = std::move(canonical), signature = *signature.value](
++                                const DocumentView& view, const RecordIdentityAllocator&) {
++        try {
++            EditSession edit(view);
++            edit.update<records::Material>(canonical.entity_id, [&](auto& material) {
++                material.description = canonical.description;
++                ledger::add(ledger::Stage::application,
++                            ledger::Metric::model_copy_bytes,
++                            sizeof(material.description) +
++                                (material.description ? material.description->size() : 0));
++            });
++            return prepared(edit.prepare(),
++                            "Set material description",
++                            canonical.entity_id,
++                            signature,
++                            0,
++                            false);
++        } catch (const RecordError& error) {
++            return failed<RecordPreparedOperation>(error);
++        }
++    };
++    ledger::add(ledger::Stage::application,
++                ledger::Metric::metadata_copy_bytes,
++                moved_string_bytes(*signature.value));
++    return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
++}
++
+ Result<OperationPlan> prepare_create_section(const operations::SectionCreateInput& input) {
+     auto canonical = input;
+     wire::observe_input_copy(canonical, canonical.name, canonical.material_id);
+@@ -288,6 +332,13 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
+         });
+     if (!registered.ok())
+         return registered;
++    registered = registry.register_typed<MaterialSetDescriptionInput>(
++        InputTraits<MaterialSetDescriptionInput>::definition(),
++        [&app](const OperationContext& context, const MaterialSetDescriptionInput& input) {
++            return execute(app, context, input, prepare_set_description);
++        });
++    if (!registered.ok())
++        return registered;
+     return registry.register_typed<SectionCreateInput>(
+         InputTraits<SectionCreateInput>::definition(),
+         [&app](const OperationContext& context, const SectionCreateInput& input) {
+diff --git a/modules/document/include/qcae/records.hpp b/modules/document/include/qcae/records.hpp
+index 15c09bb..a94f4f7 100644
+--- a/modules/document/include/qcae/records.hpp
++++ b/modules/document/include/qcae/records.hpp
+@@ -1,5 +1,5 @@
+ // Generated by tools/generate_entities.py; do not edit.
+-// Semantic schema SHA-256: f7c767ece357330c8aee791f5c4be41e4c18d7721b420dbfa562a15712dd4155
++// Semantic schema SHA-256: a4c15536cd6de91369dad1a2bb008770b90f0df71b8988f27b7cb3ce927b16e6
+ #pragma once
+ #include "qcae/document_view.hpp"
+ #include <algorithm>
+@@ -17,6 +17,7 @@ struct Material {
+     std::string name{};
+     double young_modulus_mpa{};
+     std::optional<double> poisson_ratio{};
++    std::optional<std::string> description{};
+     bool operator==(const Material&) const = default;
+ };
+ struct Node {
+@@ -232,6 +233,9 @@ template <> struct RecordTraits<records::Material> {
+             if (*value.poisson_ratio >= 0.5)
+                 records_detail::invalid("Field is outside its allowed range", "poisson_ratio");
+         }
++        if (value.description) {
++            records_detail::check_text(*value.description, true, "description");
++        }
+     }
+     static RecordDescriptor descriptor() {
+         RecordDescriptor result;
+@@ -241,18 +245,19 @@ template <> struct RecordTraits<records::Material> {
+         result.display_name = [](const void* object) -> std::string_view {
+             return static_cast<const Value*>(object)->name;
+         };
+-        result.current_version = 1;
++        result.current_version = 2;
+         result.cpp_type_token = token();
+         result.maximum_encoded_bytes = 4096;
+         result.fields = {
+             {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+             {RecordFieldId{3}, "young_modulus_mpa", RecordFieldKind::real, false, "MPa", {}, 1},
+             {RecordFieldId{4}, "poisson_ratio", RecordFieldKind::real, true, "1", {}, 1},
++            {RecordFieldId{5}, "description", RecordFieldKind::text, true, "", {}, 2},
+         };
+         result.encode = [](const void* object) {
+             const auto& value = *static_cast<const Value*>(object);
+             validate_fields(value);
+-            RecordInput input{{type_id, value.id.value}, 1, {}};
++            RecordInput input{{type_id, value.id.value}, 2, {}};
+             input.fields.push_back(
+                 {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+             input.fields.push_back({RecordFieldId{3},
+@@ -265,6 +270,12 @@ template <> struct RecordTraits<records::Material> {
+                                         "1",
+                                         record_wire::real(*value.poisson_ratio)});
+             }
++            if (value.description) {
++                input.fields.push_back({RecordFieldId{5},
++                                        RecordFieldKind::text,
++                                        "",
++                                        record_wire::text(*value.description)});
++            }
+             return input;
+         };
+         result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+@@ -277,6 +288,9 @@ template <> struct RecordTraits<records::Material> {
+             if (const auto* field = record_wire::find(input, RecordFieldId{4})) {
+                 value.poisson_ratio = record_wire::read_real(field->payload);
+             }
++            if (const auto* field = record_wire::find(input, RecordFieldId{5})) {
++                value.description = record_wire::read_text(field->payload);
++            }
+             validate_fields(value);
+             return std::make_shared<const Value>(std::move(value));
+         };
+@@ -285,7 +299,8 @@ template <> struct RecordTraits<records::Material> {
+             return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                    records_detail::dynamic_bytes(value.name) +
+                    records_detail::dynamic_bytes(value.young_modulus_mpa) +
+-                   records_detail::dynamic_bytes(value.poisson_ratio);
++                   records_detail::dynamic_bytes(value.poisson_ratio) +
++                   records_detail::dynamic_bytes(value.description);
+         };
+         result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+             (void)object;
+diff --git a/schemas/entities/entities.json b/schemas/entities/entities.json
+index 90a3e0f..59219e3 100644
+--- a/schemas/entities/entities.json
++++ b/schemas/entities/entities.json
+@@ -6,7 +6,7 @@
+     {
+       "id": 4097,
+       "name": "Material",
+-      "version": 1,
++      "version": 2,
+       "fields": [
+         {
+           "id": 2,
+@@ -29,6 +29,15 @@
+           "optional": true,
+           "exclusive_min": -1,
+           "exclusive_max": 0.5
++        },
++        {
++          "id": 5,
++          "name": "description",
++          "kind": "text",
++          "nonempty": true,
++          "optional": true,
++          "introduced_version": 2,
++          "default": null
+         }
+       ],
+       "legacy": "materials",
+diff --git a/schemas/operations/basic.json b/schemas/operations/basic.json
+index 8f715dc..3d900cd 100644
+--- a/schemas/operations/basic.json
++++ b/schemas/operations/basic.json
+@@ -73,6 +73,32 @@
+         }
+       ]
+     },
++    {
++      "operation_id": "material.set_description",
++      "version": 1,
++      "schema_id": "qcae.operation.material.set_description.v1",
++      "type_name": "MaterialSetDescriptionInput",
++      "effect": "document_write",
++      "context": {
++        "document": true,
++        "epoch": true,
++        "expected_revision": true,
++        "idempotency_key": true
++      },
++      "fields": [
++        {
++          "field_id": 1,
++          "name": "entity_id",
++          "type": "entity_id"
++        },
++        {
++          "field_id": 2,
++          "name": "description",
++          "type": "string",
++          "optional": true
++        }
++      ]
++    },
+     {
+       "operation_id": "node.move",
+       "version": 1,
+diff --git a/tests/fixtures/ext01-material-v1.provenance.json b/tests/fixtures/ext01-material-v1.provenance.json
+new file mode 100644
+index 0000000..87b999b
+--- /dev/null
++++ b/tests/fixtures/ext01-material-v1.provenance.json
+@@ -0,0 +1,14 @@
++{
++  "baseline_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
++  "fixture": "ext01-material-v1.record",
++  "bytes": 109,
++  "sha256": "ae21094749106dfe32cdce3ce20e0a0a728c14de2894524c820f01cb341422ed",
++  "producer": "baseline RecordRegistry Material encoder, compiled and executed before schema modification",
++  "baseline_binary_sha256": "b12e3f8e138261464f8e33462440a322af59630b052d1c34b051e0623ece5263",
++  "material": {
++    "id": "c4-legacy-material",
++    "name": "Legacy Steel",
++    "young_modulus_mpa": 210000,
++    "poisson_ratio": 0.3
++  }
++}
+diff --git a/tests/fixtures/ext01-material-v1.record b/tests/fixtures/ext01-material-v1.record
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e12e218538370f873e7f3e7d98d6186cb583bad
+GIT binary patch
+literal 109
+zcmWG^4l-mEU|?WmU|<je;$#!uoYeHh<VxM##FEsa%)}gKpePd%gH$l^0I?5PULm+7
+jH5DQWQsEnr$N^FS1PzNg9a(@h6G(?4NYoe%F53eD`b80Q
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/material_description_ipc_tests.py b/tests/material_description_ipc_tests.py
+new file mode 100644
+index 0000000..852fb95
+--- /dev/null
++++ b/tests/material_description_ipc_tests.py
+@@ -0,0 +1,155 @@
++#!/usr/bin/env python3
++"""EXT-01 production IPC, SQLite recovery and normal-open contract."""
++import argparse
++import json
++from pathlib import Path
++import subprocess
++import tempfile
++import time
++
++from c2_workflow_tests import Client
++
++
++def run(engine, cli, evidence):
++    evidence.mkdir(parents=True, exist_ok=True)
++    with tempfile.TemporaryDirectory(prefix="qe1-", dir="/private/tmp") as folder:
++        root = Path(folder)
++        endpoint = str(root / "engine.sock")
++        workspace = str(root / "workspace.sqlite")
++        client = Client("script", cli, endpoint)
++        process = None
++        with (root / "engine.log").open("w+") as log:
++            def start():
++                nonlocal process
++                process = subprocess.Popen([engine, "--socket", endpoint, "--workspace", workspace],
++                                           stdout=log, stderr=log)
++                deadline = time.monotonic() + 15
++                while time.monotonic() < deadline:
++                    if process.poll() is not None:
++                        log.seek(0)
++                        raise AssertionError(log.read())
++                    try:
++                        return client.call("capabilities.list")
++                    except (OSError, RuntimeError):
++                        time.sleep(.02)
++                raise AssertionError("EXT-01 engine startup timed out")
++
++            def description():
++                queried = next(row for row in client.entities("material")
++                               if row["entity_id"] == material)["description"]
++                assert queried == client.fields(material).get("description")
++                return queried
++
++            def history():
++                return client.call("history.list", context=client.current())
++
++            def engineering():
++                fields = client.fields(material)
++                return {key: value for key, value in fields.items() if key != "description"}
++
++            def reject(parameters, key, code, context=None):
++                before, previous_history = client.current(), history()
++                response = client.call("material.set_description", parameters,
++                                       context or before, key,
++                                       expected="conflict" if code in {
++                                           "REVISION_CONFLICT", "DOCUMENT_EPOCH_EXPIRED",
++                                           "IDEMPOTENCY_KEY_CONFLICT"} else "failed")
++                assert response["error"]["code"] == code, response
++                assert client.current() == before and history() == previous_history
++
++            try:
++                assert start()["durable"]
++                client.call("project.create", {"name": "Material description"}, key="create")
++                material = client.call("material.create", {
++                    "name": "Steel", "young_modulus": {"value": 210, "unit": "GPa"},
++                    "poisson_ratio": .3}, client.current(), "material")["entity_id"]
++                other = client.call("material.create", {
++                    "name": "Aluminium", "young_modulus": {"value": 70, "unit": "GPa"}},
++                    client.current(), "other")["entity_id"]
++                other_fields = client.fields(other)
++                assert description() is None
++                old_engineering = engineering()
++                before, prior_history = client.current(), history()
++                parameters = {"entity_id": material, "description": "悬臂梁用钢材"}
++                receipt = client.call("material.set_description", parameters, before, "set")
++                assert description() == parameters["description"]
++                assert engineering() == old_engineering and client.fields(other) == other_fields
++                assert int(client.current()["revision"]) == int(before["revision"]) + 1
++                assert len(history()["items"]) == len(prior_history["items"]) + 1
++                queried = next(row for row in client.entities("material")
++                               if row["entity_id"] == material)
++                assert queried["description"] == parameters["description"]
++                replay = client.call("material.set_description", parameters, before, "set")
++                assert replay["replayed"] and replay["transaction_id"] == receipt["transaction_id"]
++                reject({**parameters, "description": "different"}, "set", "IDEMPOTENCY_KEY_CONFLICT")
++                for index, invalid in enumerate((True, 7, None, [], {}, "", "bad\ncontrol", "x" * 1025)):
++                    reject({**parameters, "description": invalid}, f"bad-type-{index}", "INVALID_INPUT")
++                reject({"entity_id": "missing", "description": "text"}, "missing", "ENTITY_NOT_FOUND")
++                reject(parameters, "stale", "REVISION_CONFLICT", before)
++                expired = {**client.current(), "document_epoch": "expired"}
++                reject(parameters, "epoch", "DOCUMENT_EPOCH_EXPIRED", expired)
++                client.call("history.undo", context=client.current(), key="undo")
++                assert description() is None
++                replay = client.call("material.set_description", parameters, before, "set")
++                assert replay["transaction_id"] == receipt["transaction_id"] and description() is None
++                client.call("history.redo", context=client.current(), key="redo")
++                assert description() == parameters["description"]
++                client.call("material.set_description", {"entity_id": material},
++                            client.current(), "clear")
++                assert description() is None and engineering() == old_engineering
++                client.call("history.undo", context=client.current(), key="undo-clear")
++                assert description() == parameters["description"]
++                client.call("history.redo", context=client.current(), key="redo-clear")
++                assert description() is None
++                client.call("material.set_description", parameters, client.current(), "set-again")
++                project = str(root / "material.qcae")
++                client.call("project.save", {"path": project}, client.current(), "save")
++                client.call("project.close", {"policy": "discard"}, client.current(), "close")
++                client.call("project.open", {"mode": "normal", "path": project}, key="open")
++                assert description() == parameters["description"]
++                assert engineering() == old_engineering and client.fields(other) == other_fields
++                client.call("material.set_description", {"entity_id": material},
++                            client.current(), "unsaved-clear")
++                before_crash = client.current()
++                process.kill()
++                process.wait(timeout=10)
++                assert start()["recovery_available"]
++                recovered = client.call("project.open", {"mode": "recover"}, key="recover")
++                assert recovered["revision"] == before_crash["revision"]
++                assert recovered["document_epoch"] != before_crash["document_epoch"]
++                assert description() is None
++                reject(parameters, "old-epoch", "DOCUMENT_EPOCH_EXPIRED", before_crash)
++                client.call("history.undo", context=client.current(), key="recovery-undo")
++                assert description() == parameters["description"]
++                client.call("history.redo", context=client.current(), key="recovery-redo")
++                assert description() is None
++                client.call("material.set_description", {**parameters, "description": "Recovered text"},
++                            client.current(), "recover-text")
++                current = client.current()
++                process.kill()
++                process.wait(timeout=10)
++                assert start()["recovery_available"]
++                client.call("project.open", {"mode": "recover"}, key="recover-again")
++                assert client.current()["revision"] == current["revision"]
++                assert description() == "Recovered text"
++                assert engineering() == old_engineering and client.fields(other) == other_fields
++                print(f"PASS: EXT-01 production IPC, null/string, single transaction, rejects, "
++                      f"retry, history, normal open and SQLite recovery ({len(client.transcript)} requests)")
++            finally:
++                if process and process.poll() is None:
++                    process.terminate()
++                    process.wait(timeout=10)
++                (evidence / "ipc-transcript.json").write_text(
++                    json.dumps(client.transcript, indent=2, ensure_ascii=False) + "\n")
++                log.flush()
++                log.seek(0)
++                (evidence / "ipc-engine.log").write_text(log.read())
++
++
++if __name__ == "__main__":
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--engine", required=True)
++    parser.add_argument("--cli", required=True)
++    parser.add_argument("--evidence-dir", type=Path, required=True)
++    args = parser.parse_args()
++    run(str(Path(args.engine).resolve()), str(Path(args.cli).resolve()), args.evidence_dir)
+diff --git a/tests/model_operation_tests.cpp b/tests/model_operation_tests.cpp
+index 2baf846..d9dcb46 100644
+--- a/tests/model_operation_tests.cpp
++++ b/tests/model_operation_tests.cpp
+@@ -376,6 +376,122 @@ void direct_retry_and_history() {
+     check(fixture.snapshot().records.find<records::Material>(material) != nullptr,
+           "redo restores original identity");
+ }
++void material_description_edits() {
++    Fixture fixture;
++    fixture.invoke("material.create",
++                   fixture.context("first-material"),
++                   InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, .3}));
++    const auto material = only_id<records::Material>(fixture.snapshot().records);
++    fixture.invoke("material.create",
++                   fixture.context("second-material"),
++                   InputTraits<MaterialCreateInput>::to_value({"Aluminium", {70, "GPa"}, .33}));
++    const auto before = fixture.snapshot();
++    const auto prior = before.records.find<records::Material>(material)->get<records::Material>();
++    const auto history_before = good(fixture.app.history(before.info.document), "history before");
++    const auto generation = fixture.rows->generation;
++    const auto context = fixture.context("description");
++    const auto input = InputTraits<MaterialSetDescriptionInput>::to_value(
++        {material, std::string("Steel used by the cantilever")});
++    const auto edited = fixture.invoke("material.set_description", context, input);
++    const auto after = fixture.snapshot();
++    const auto& current = after.records.find<records::Material>(material)->get<records::Material>();
++    check(current.description == "Steel used by the cantilever" && current.id == prior.id &&
++              current.name == prior.name && current.young_modulus_mpa == prior.young_modulus_mpa &&
++              current.poisson_ratio == prior.poisson_ratio,
++          "description update preserves Material engineering properties");
++    const auto changes = diff_record_views(before.records, after.records);
++    check(changes.records.size() == 1 && changes.records.front().key.identity == material.value,
++          "description edit changes one Material");
++    const auto committed =
++        good(fixture.app.changes_since(before.info.document, before.info.revision),
++             "committed description changes");
++    check(committed.changes.size() == 1 &&
++              committed.changes.front().changes->records.front().fields ==
++                  std::vector<RecordFieldId>{{5}},
++          "committed transaction identifies only the description field");
++    before.records.visit([&](const Record& record) {
++        if (record->key().identity != material.value)
++            check(after.records.find(record->key()) == record,
++                  "all other records retain their exact immutable allocation");
++    });
++    check(after.info.revision == before.info.revision + 1 &&
++              fixture.rows->generation == generation + 1 &&
++              good(fixture.app.history(after.info.document), "history after").items.size() ==
++                  history_before.items.size() + 1,
++          "successful description edit commits exactly one transaction");
++    const auto replay = fixture.invoke("material.set_description", context, input);
++    check(replayed(replay) && transaction(replay) == transaction(edited) &&
++              fixture.rows->generation == generation + 1,
++          "description retry returns original transaction with no extra commit");
++    auto expect_unchanged = [&](const Result<Value>& result, ErrorCode code, const char* label) {
++        bad(result, code, label);
++        check(fixture.snapshot().info.revision == after.info.revision &&
++                  fixture.rows->generation == generation + 1,
++              "invalid description request has no partial persistent transaction");
++    };
++    expect_unchanged(fixture.registry.invoke("material.set_description",
++                                             context,
++                                             InputTraits<MaterialSetDescriptionInput>::to_value(
++                                                 {material, std::string("Different")})),
++                     ErrorCode::idempotency_key_conflict,
++                     "same description key rejects different input");
++    for (const auto& invalid : {Value(true), Value(1), Value(), Value(Value::Array{})}) {
++        auto wrong = object(input);
++        wrong["description"] = invalid;
++        expect_unchanged(fixture.registry.invoke("material.set_description",
++                                                 fixture.context("invalid-type"),
++                                                 Value(wrong)),
++                         ErrorCode::invalid_input,
++                         "description rejects non-string type");
++    }
++    expect_unchanged(fixture.registry.invoke("material.set_description",
++                                             fixture.context("invalid-text"),
++                                             InputTraits<MaterialSetDescriptionInput>::to_value(
++                                                 {material, std::string("Invalid\ncontrol")})),
++                     ErrorCode::invalid_input,
++                     "generated text validation rejects controls");
++    auto stale = fixture.context("stale-description");
++    --*stale.expected_revision;
++    expect_unchanged(fixture.registry.invoke("material.set_description", stale, input),
++                     ErrorCode::revision_conflict,
++                     "stale description revision rejected");
++    auto expired = fixture.context("expired-description");
++    expired.document->epoch = DocumentEpoch("old-epoch");
++    expect_unchanged(fixture.registry.invoke("material.set_description", expired, input),
++                     ErrorCode::document_epoch_expired,
++                     "old description epoch rejected");
++    expect_unchanged(fixture.registry.invoke("material.set_description",
++                                             fixture.context("empty-description"),
++                                             InputTraits<MaterialSetDescriptionInput>::to_value(
++                                                 {material, std::string()})),
++                     ErrorCode::invalid_input,
++                     "empty description is cleared through omission");
++    good(fixture.app.undo(fixture.caller, {after.info.document, after.info.revision}, "undo"),
++         "undo description");
++    check(!fixture.snapshot()
++               .records.find<records::Material>(material)
++               ->get<records::Material>()
++               .description,
++          "undo restores null description");
++    fixture.invoke("material.set_description", context, input);
++    check(!fixture.snapshot()
++               .records.find<records::Material>(material)
++               ->get<records::Material>()
++               .description,
++          "retry after undo does not reapply description");
++    const auto undone = fixture.snapshot().info;
++    good(fixture.app.redo(fixture.caller, {undone.document, undone.revision}, "redo"),
++         "redo description");
++    fixture.invoke("material.set_description",
++                   fixture.context("clear-description"),
++                   InputTraits<MaterialSetDescriptionInput>::to_value({material, std::nullopt}));
++    check(!fixture.snapshot()
++               .records.find<records::Material>(material)
++               ->get<records::Material>()
++               .description,
++          "omitted optional description clears the value");
++}
++
+ void retained_create_identity() {
+     const auto rows = std::make_shared<MemoryRows>();
+     const Caller caller{"recover-feature-test"};
+@@ -559,6 +675,7 @@ int main() {
+         normalizers_and_optional_fields();
+         material_entry_boundary_consistency();
+         direct_retry_and_history();
++        material_description_edits();
+         retained_create_identity();
+         edits_sections_and_reference_failures();
+         std::cout << "PASS: reusable record feature operations, normalization, references and "
+diff --git a/tests/record_document_tests.cpp b/tests/record_document_tests.cpp
+index 5821046..dd31265 100644
+--- a/tests/record_document_tests.cpp
++++ b/tests/record_document_tests.cpp
+@@ -4,6 +4,8 @@
+ #include "qcae/operation_ledger.hpp"
+ 
+ #include <algorithm>
++#include <filesystem>
++#include <fstream>
+ #include <iostream>
+ #include <numeric>
+ #include <random>
+@@ -236,6 +238,33 @@ void schemas_and_registration() {
+         "node record limit includes its encoded identity and header");
+ }
+ 
++void frozen_material_v1() {
++    const auto path =
++        std::filesystem::path(__FILE__).parent_path() / "fixtures/ext01-material-v1.record";
++    std::ifstream source(path, std::ios::binary);
++    check(source.is_open(), "frozen baseline Material input exists");
++    const std::string bytes{std::istreambuf_iterator<char>(source),
++                            std::istreambuf_iterator<char>()};
++    const auto input = record_wire::decode(bytes);
++    check(input.version == 1 && !record_wire::find(input, RecordFieldId{5}),
++          "original baseline bytes contain v1 Material without description");
++    const auto registry = make_record_registry();
++    const auto record = registry->decode(bytes);
++    const auto& material = record->get<r::Material>();
++    check(material.id == id("c4-legacy-material") && material.name == "Legacy Steel" &&
++              material.young_modulus_mpa == 210000 && material.poisson_ratio == .3 &&
++              !material.description,
++          "old Material codec defaults new optional field to null and preserves old values");
++    check(registry->decode(record->encoded())->get<r::Material>() == material,
++          "old Material can be re-encoded with the supported current schema");
++    auto future = input;
++    future.version = registry->find(RecordTraits<r::Material>::type_id)->current_version + 1;
++    rejects(
++        ErrorCode::schema_unsupported,
++        [&] { registry->decode(record_wire::encode(future)); },
++        "future Material version is unsupported");
++}
++
+ void stable_changes_and_bridges() {
+     const auto registry = make_record_registry();
+     const auto original = legacy_model();
+@@ -401,6 +430,7 @@ void locality() {
+ int main() {
+     try {
+         schemas_and_registration();
++        frozen_material_v1();
+         stable_changes_and_bridges();
+         geometry_and_ownership();
+         version_copy_ledger();

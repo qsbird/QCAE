@@ -1,0 +1,29 @@
+profiles/nastran/src/nastran_package.cpp:40:void register_nastran_core_rules(RecordRegistry& registry, const ProfileRef& installed) {
+profiles/nastran/src/nastran_package.cpp:61:Result<ArtifactPlan> validate_nastran_export(const DocumentView& view,
+profiles/nastran/include/qcae/nastran_package.hpp:12:void register_nastran_core_rules(RecordRegistry&, const ProfileRef& installed);
+profiles/nastran/include/qcae/nastran_package.hpp:14:validate_nastran_export(const DocumentView&, const EntityId&, const NastranCodec&);
+features/analysis/src/analysis_checks.cpp:52:        throw RecordError(ErrorCode::schema_unsupported, "Unsupported analysis check row");
+features/analysis/src/analysis_checks.cpp:56:        throw RecordError(ErrorCode::schema_unsupported, "Check report identity mismatch");
+features/analysis/src/analysis_checks.cpp:91:            ErrorCode::unsupported_capability,
+features/analysis/src/cantilever_checks.cpp:103:bool same_properties(const records::BeamSection& left,
+features/analysis/src/cantilever_checks.cpp:105:                     const records::BeamSection& right,
+features/analysis/src/cantilever_checks.cpp:161:        view_.visit(RecordTraits<records::Beam>::type_id,
+features/analysis/src/cantilever_checks.cpp:162:                    [&](const Record& record) { beams_.push_back(&record->get<records::Beam>()); });
+features/analysis/src/cantilever_checks.cpp:292:        const records::BeamSection* baseline = nullptr;
+features/analysis/src/cantilever_checks.cpp:297:                beam->section ? view_.find<records::BeamSection>(*beam->section) : Record{};
+features/analysis/src/cantilever_checks.cpp:301:                const auto& value = section->get<records::BeamSection>();
+features/analysis/src/cantilever_checks.cpp:413:    std::vector<const records::Beam*> beams_;
+8:option(QCAE_BUILD_STORAGE "Build the optional SQLite persistence adapter" OFF)
+138:if(QCAE_BUILD_STORAGE)
+169:    add_executable(qcae_geometry_mesh_sqlite_tests tests/geometry_mesh_tests.cpp)
+170:    target_link_libraries(qcae_geometry_mesh_sqlite_tests PRIVATE qcae_geometry_features qcae_mesh_generation qcae_sqlite)
+171:    target_compile_definitions(qcae_geometry_mesh_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
+172:    qcae_warnings(qcae_geometry_mesh_sqlite_tests)
+173:    add_test(NAME geometry_mesh_sqlite COMMAND qcae_geometry_mesh_sqlite_tests)
+191:  if(BUILD_TESTING AND QCAE_BUILD_STORAGE)
+245:    if(QCAE_BUILD_STORAGE)
+252:    if(QCAE_BUILD_STORAGE)
+331:  if(NOT QCAE_BUILD_IPC OR NOT QCAE_BUILD_STORAGE)
+332:    message(FATAL_ERROR "Desktop requires QCAE_BUILD_IPC=ON and QCAE_BUILD_STORAGE=ON")
+465:    if(QCAE_BUILD_STORAGE)
+commands evidence absent in isolated checkout

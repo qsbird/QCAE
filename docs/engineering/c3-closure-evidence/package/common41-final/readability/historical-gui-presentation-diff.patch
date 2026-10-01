@@ -1,0 +1,92 @@
+--- /private/tmp/qcae-ai-units-gui/desktop-matrix-sha-reconstructed.cpp
++++ /Users/qs/Documents/ChatGPT/QCAE/ui/desktop/src/desktop.cpp
+@@ -2380,47 +2380,48 @@
+         const auto generation = property_preview_generation_;
+         const auto doc = document_id_, epoch = epoch_, rev = revision_;
+         const auto selected_id = selected_ids_.front();
+-        call("entity.query",
+-             {{"ids", QJsonArray{selected_id}}},
+-             context(),
+-             [this, doc, epoch, rev, selected_id, generation](const QJsonObject& response) {
+-                 if (propertyRepliesBlocked() || generation != property_preview_generation_ ||
+-                     doc != document_id_ || epoch != epoch_ || rev != revision_ ||
+-                     selected_ids_.size() != 1 || selected_ids_.front() != selected_id ||
+-                     !propertyReplyMatches(response, doc, epoch, rev))
+-                     return;
+-                 const auto rows = response.value("data").toObject().value("entities").toArray();
+-                 if (rows.size() != 1 || entityId(rows.at(0).toObject()) != selected_id)
+-                     return;
+-                 selected_property_ = rows.at(0).toObject();
+-                 const auto kind = selected_property_.value("kind").toString();
+-                 property_kind_->setText(kind);
+-                 property_details_->setText(selectedPhysicalDetails(selected_property_));
+-                 // Preserve the wrapped reference identity as well as the value
+-                 // when QFormLayout computes its compact row height.
+-                 property_details_->setMinimumHeight(
+-                     property_details_->heightForWidth(std::max(1, property_details_->width())));
+-                 setPropertyCoordinateUnits(kind == "force");
+-                 if (kind == "geometry")
+-                     modeling_->setSelectedGeometry(selected_id, entityLabel(selected_property_));
+-                 const auto vector =
+-                     selected_property_.value(kind == "force" ? "force_n" : "position_mm");
+-                 const auto xyz = vector.toArray();
+-                 const bool coordinates_valid = finiteVector(vector);
+-                 if (coordinates_valid) {
+-                     property_x_->setText(QString::number(xyz[0].toDouble(), 'g', 17));
+-                     property_y_->setText(QString::number(xyz[1].toDouble(), 'g', 17));
+-                     property_z_->setText(QString::number(xyz[2].toDouble(), 'g', 17));
+-                 }
+-                 const auto modulus = selected_property_.value("young_modulus_mpa");
+-                 const bool modulus_valid = modulus.isDouble() && std::isfinite(modulus.toDouble());
+-                 if (modulus_valid)
+-                     property_e_->setText(QString::number(
+-                         selected_property_.value("young_modulus_mpa").toDouble(), 'g', 17));
+-                 for (auto* field : {property_x_, property_y_, property_z_})
+-                     field->setEnabled((kind == "node" || kind == "force") && coordinates_valid);
+-                 property_e_->setEnabled(kind == "material" && modulus_valid);
+-             });
++        call(
++            "entity.query",
++            {{"ids", QJsonArray{selected_id}}},
++            context(),
++            [this, doc, epoch, rev, selected_id, generation](const QJsonObject& response) {
++                if (propertyRepliesBlocked() || generation != property_preview_generation_ ||
++                    doc != document_id_ || epoch != epoch_ || rev != revision_ ||
++                    selected_ids_.size() != 1 || selected_ids_.front() != selected_id ||
++                    !propertyReplyMatches(response, doc, epoch, rev))
++                    return;
++                const auto rows = response.value("data").toObject().value("entities").toArray();
++                if (rows.size() != 1 || entityId(rows.at(0).toObject()) != selected_id)
++                    return;
++                selected_property_ = rows.at(0).toObject();
++                const auto kind = selected_property_.value("kind").toString();
++                property_kind_->setText(kind);
++                property_details_->setText(selectedPhysicalDetails(selected_property_));
++                // Preserve the wrapped reference identity as well as the value
++                // when QFormLayout computes its compact row height.
++                property_details_->setMinimumHeight(std::max(
++                    0, property_details_->heightForWidth(std::max(1, property_details_->width()))));
++                setPropertyCoordinateUnits(kind == "force");
++                if (kind == "geometry")
++                    modeling_->setSelectedGeometry(selected_id, entityLabel(selected_property_));
++                const auto vector =
++                    selected_property_.value(kind == "force" ? "force_n" : "position_mm");
++                const auto xyz = vector.toArray();
++                const bool coordinates_valid = finiteVector(vector);
++                if (coordinates_valid) {
++                    property_x_->setText(QString::number(xyz[0].toDouble(), 'g', 17));
++                    property_y_->setText(QString::number(xyz[1].toDouble(), 'g', 17));
++                    property_z_->setText(QString::number(xyz[2].toDouble(), 'g', 17));
++                }
++                const auto modulus = selected_property_.value("young_modulus_mpa");
++                const bool modulus_valid = modulus.isDouble() && std::isfinite(modulus.toDouble());
++                if (modulus_valid)
++                    property_e_->setText(QString::number(
++                        selected_property_.value("young_modulus_mpa").toDouble(), 'g', 17));
++                for (auto* field : {property_x_, property_y_, property_z_})
++                    field->setEnabled((kind == "node" || kind == "force") && coordinates_valid);
++                property_e_->setEnabled(kind == "material" && modulus_valid);
++            });
+     }
+     QJsonObject propertyCommand() const {
+         if (selected_ids_.size() != 1 || propertyRepliesBlocked())

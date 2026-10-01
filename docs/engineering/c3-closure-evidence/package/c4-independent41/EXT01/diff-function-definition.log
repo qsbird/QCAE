@@ -1,0 +1,36 @@
+402:RecordChangeSet diff_record_views(const DocumentView& before, const DocumentView& after) {
+403-    if (before.registry() != after.registry())
+404-        throw RecordError(ErrorCode::invalid_input, "Cannot diff different record registries");
+405-    RecordChangeSet result;
+406-    before.visit([&](const Record& old) {
+407-        const auto current = after.find(old->key());
+408-        if (!images_equal(old, current))
+409-            result.records.push_back(
+410-                {old->key(), old, current ? std::optional<Record>(current) : std::nullopt, {}});
+411-    });
+412-    after.visit([&](const Record& current) {
+413-        if (!before.find(current->key()))
+414-            result.records.push_back({current->key(), std::nullopt, current, {}});
+415-    });
+416-    return result;
+417-}
+418-std::string encode_record_changes(const RecordChangeSet& changes, RecordStats* stats) {
+419-    std::vector<std::string> values;
+420-    std::set<RecordKey> seen;
+421-    values.reserve(1 + changes.records.size() * 5);
+422-    values.emplace_back("QCAE-RECORD-CHANGES-1");
+423-    for (const auto& change : changes.records) {
+424-        check_change_shape(change);
+425-        if (!seen.insert(change.key).second)
+426-            throw RecordError(ErrorCode::invalid_input, "Duplicate history record key");
+427-        values.push_back(record_wire::number(change.key.type.value));
+428-        values.push_back(change.key.identity);
+429-        values.push_back(change.before ? (*change.before)->encoded() : std::string());
+430-        values.push_back(change.after ? (*change.after)->encoded() : std::string());
+431-        std::string fields;
+432-        for (const auto field : change.fields)
+433-            fields += record_wire::number(field.value);
+434-        values.push_back(std::move(fields));
+435-        if (stats) {
+436-            const auto bytes = (change.before ? (*change.before)->encoded().size() : 0) +
+437-                               (change.after ? (*change.after)->encoded().size() : 0);

@@ -1,0 +1,22 @@
+Add persistent Tri3 through shared transactions and rendering
+
+Tri3 stores ordered Node references and typed Mesh ownership. Register its
+production creation operation through the existing EditSession and
+RecordApplication path, and enforce connectivity, mesh ownership and positive
+finite area across dependent edits and deletions. Add the polygon contribution
+and explicitly reject unsupported shell analysis and Nastran export paths.
+
+Extend the frozen native point/line picking matrix with four Tri3 cases and
+retain exact stable-ID comparisons, camera/pixel fixtures and actual images.
+Verify history, real engine IPC, SQLite save/open/recovery and public headers.
+
+Constraint: Exactly 10 handwritten product files; zero protected-file or generator changes; no new dependencies
+Directive: Implement EXT-03 independently from baseline b740b374c934f3b4624a21247b9a5deeb2ca6bf4
+Rejected: Silently projecting Tri3 out of an apparently complete shell export
+Tested: Pure core CTest 40/40; affected core/SQLite/IPC 14/14; host/render/storage contracts 6/6
+Tested: Native Cocoa Qt/VTK 12 PICK cases with missed=0 extra=0; five desktop regressions 5/5
+Tested: 69 public-header consumers; design, clang-format21, diff checks and unchanged-generator reproducibility
+Confidence: Native and durable production paths pass; root read-only QG-02 review passed
+Scope-risk: Tri3 topology/display only; shell analysis and controlled Nastran shell export remain unsupported
+Context-cost: Early outer truncation ranges are unknown; repeated reads retained and total context/tokens remain null
+Not-tested: Final combined common Release; real solver or real AI integration; full P0 acceptance

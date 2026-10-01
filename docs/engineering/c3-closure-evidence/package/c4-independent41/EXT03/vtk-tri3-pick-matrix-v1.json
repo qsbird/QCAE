@@ -1,0 +1,27 @@
+{
+  "schema": "qcae.vtk-tri3-pick-matrix.v1",
+  "viewport_logical_pixels": [640, 420],
+  "framebuffer_pixels": [1280, 840],
+  "device_pixel_ratio": 2,
+  "camera": {
+    "position": [0, -500, 0],
+    "focal_point": [0, 0, 0],
+    "view_up": [0, 0, 1],
+    "parallel_scale": 100,
+    "clipping_range": [1, 1000],
+    "view_matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, -500, 0, 0, 0, 1],
+    "projection_matrix": [0.0065625, 0, 0, 0, 0, 0.01, 0, 0, 0, 0, -0.002002002002002002, -1.002002002002002, 0, 0, 0, 1]
+  },
+  "triangles": [
+    {"id": "tri3-behind", "positions": [[-60, 20, -30], [60, 20, -30], [0, 20, 30]], "visible": true},
+    {"id": "tri3-front", "positions": [[-60, -20, -30], [60, -20, -30], [0, -20, 30]], "visible": true},
+    {"id": "tri3-outside", "positions": [[70, 0, 50], [90, 0, 50], [80, 0, 70]], "visible": true},
+    {"id": "tri3-hidden", "positions": [[-60, -40, -30], [60, -40, -30], [0, -40, 30]], "visible": false}
+  ],
+  "cases": [
+    {"id": "tri3-contained", "topology": "tri3", "box_mode": "contained", "through": true, "box": [180, 130, 460, 285], "golden": ["tri3-behind", "tri3-front"]},
+    {"id": "tri3-intersecting", "topology": "tri3", "box_mode": "intersecting", "through": true, "box": [300, 200, 340, 230], "golden": ["tri3-behind", "tri3-front"]},
+    {"id": "tri3-occluded-visible", "topology": "tri3", "box_mode": "intersecting", "through": false, "box": [300, 200, 340, 230], "golden": ["tri3-front"]},
+    {"id": "tri3-occluded-through", "topology": "tri3", "box_mode": "intersecting", "through": true, "box": [300, 200, 340, 230], "golden": ["tri3-behind", "tri3-front"]}
+  ]
+}

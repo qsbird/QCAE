@@ -1,0 +1,48 @@
+#pragma once
+#include "qcae/immutable_fact_map.hpp"
+#include "qcae/application_types.hpp"
+#include "qcae/edit_session.hpp"
+#include "qcae/record_store.hpp"
+#include <functional>
+#include <map>
+#include <memory>
+
+namespace qcae {
+struct RecordSnapshot {
+    DocumentView records;
+    DocumentInfo info;
+};
+// Notifications and render deltas borrow immutable records from committed history.
+// A reverse entry applies its changes' after->before images without copying records.
+struct CommittedRecordChange {
+    DocumentRef document;
+    Revision base_revision{}, revision{};
+    TransactionId transaction;
+    std::shared_ptr<const RecordChangeSet> changes;
+    RecordDirection direction{RecordDirection::forward};
+};
+struct RecordChangeBatch {
+    DocumentRef document;
+    Revision base_revision{}, current_revision{};
+    bool resync_required{};
+    std::vector<CommittedRecordChange> changes;
+};
+struct ChangeJournalStats {
+    std::uint64_t metadata_bytes_copied{}, entries_published{}, records_referenced{};
+};
+struct RecordPreparedOperation {
+    PreparedRecordChange change;
+    std::string label;
+    EntityId affected_entity;
+    std::string signature;
+    double normalized_value{};
+    bool creates_entity{};
+};
+using RecordIdentityAllocator = std::function<EntityId()>;
+// Runs inside the single-writer critical section. The callback edits only its
+// supplied immutable view and must not re-enter this application.
+using RecordPrepare = std::function<Result<RecordPreparedOperation>(
+    const DocumentView&, const RecordIdentityAllocator&)>;
+struct ProjectRecordMigration {
+    // Identifies the explicit source/target semantics for host-operation replay.
+    std::string signature;

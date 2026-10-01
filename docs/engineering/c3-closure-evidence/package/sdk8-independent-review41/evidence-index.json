@@ -1,0 +1,429 @@
+{
+  "schema": "qcae.sdk8-independent-review-delivery/1",
+  "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "read_only_repository_and_SDK_review": true,
+  "reviewer_compile_count": 2,
+  "reviewer_native_GUI_process_count": 0,
+  "blocking_generic_adoption_finding": {
+    "priority": "P2",
+    "file": "/private/tmp/qcae-sdk8-adoption41/collector-optional-status.hpp",
+    "guard_line": 121,
+    "result_line": 294,
+    "description": "Manifest semantic flags for noexcept callback boundary / unchanged original C declaration and Scope layout, and v1 admission capacity, are not validated; contradictory exact-marker/provider metadata can reach exception_boundary_complete=true. Current exact candidate metadata is valid.",
+    "evidence": "/private/tmp/qcae-sdk8-independent-review41/static-fence-contract-gap-review.json",
+    "proof_kind": "static; new contradictions not runtime tested"
+  },
+  "actual_headless_original_hash": {
+    "compiler_exit_code": 0,
+    "runtime_exit_code": 0,
+    "actual_site_count": 33,
+    "full_parsed_equal_all_three_old_reports": true,
+    "complete_report": "/private/tmp/qcae-sdk8-independent-review41/original-hash-report.json",
+    "comparison": "/private/tmp/qcae-sdk8-independent-review41/full-behavior-compare.json"
+  },
+  "actual_finite_replays": {
+    "real_Qt_headless": 15,
+    "real_binding_negatives": 7,
+    "synthetic_ABI_contract_negatives": 5,
+    "total": 27,
+    "all_exit_codes": 0,
+    "all_output_bytes_equal_original": true,
+    "recorded_sha_checks_matched": 103,
+    "audit": "/private/tmp/qcae-sdk8-independent-review41/independent-evidence-audit.json"
+  },
+  "root_actual_native64": {
+    "case_count": 64,
+    "root_exit_code": 0,
+    "raw_original_order_equal": false,
+    "complete_correlated_bundle_permutations_only": true,
+    "all_remaining_case_and_nonprovenance_top_fields_equal": true,
+    "sdk7_changed_case_count": 25,
+    "sdk8b_changed_case_count": 29,
+    "reviewer_runtime_executed": false,
+    "audit": "/private/tmp/qcae-sdk8-independent-review41/independent-native64-review.json"
+  },
+  "root_actual_mixed_Qt_negative": {
+    "unique_actual_old_QtGui_copy_loaded_and_rejected": true,
+    "first_preparation_RED_retained_and_not_claimed_pass": true,
+    "reviewer_runtime_replayed": false,
+    "audit": "/private/tmp/qcae-sdk8-independent-review41/independent-mixed-prefix-review.json"
+  },
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "complete_c3_passed": false,
+  "complete_sk12_passed": false,
+  "same_run_full_ledger_execution": "Root later serial execution; not claimed by this review",
+  "reviewed_inputs": [
+    {
+      "path": "/private/tmp/qcae-sdk8-adoption41/collector-optional-status.hpp",
+      "bytes": 14533,
+      "sha256": "6eb4cdf25885111a93a2de356bd95af4e11964b0f40befe7bc1de5c6caa010e4"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-adoption41/collector-optional-status.patch",
+      "bytes": 11223,
+      "sha256": "94cc4b9a96eadec1e9f572dc8d0b736b8c71b05640239695d6205d394ddd77b9"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-adoption41/collector_negotiation_probe.cpp",
+      "bytes": 5170,
+      "sha256": "16cc7b320c5c96804f7f1032adaa8a81c019044acb11b5b96b483eec56d4d2a3"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-adoption41/sdk8_exception_probe.cpp",
+      "bytes": 13121,
+      "sha256": "e3409f16fe925e20ee8bff8d9180c2c8ba02778534a7649423cb696c18f94e90"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-reviewed41/qcae-sdk-observer.hpp",
+      "bytes": 1178,
+      "sha256": "1d606bedf376f0f0b9d602f45d99ed41d36daa12300b4f611b4ae1c5930cab76"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-reviewed41/qcae-ft-hash-observer.hpp",
+      "bytes": 3701,
+      "sha256": "200443e3bf1625dc75dca716f9b323c4e73f4da989d84d523440c9afa90ae4f2"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-reviewed41/qt-ft-hash-sources/src/corelib/global/qglobal.cpp",
+      "bytes": 123112,
+      "sha256": "cf4297ba8555a155e0214a496fc406f068ae8adeb3ba36234a4bcad44883c409"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/tests/c3_qt_source_bridge.hpp",
+      "bytes": 8370,
+      "sha256": "2f238217fb371c22e3e2fd049f825cea3566d87ef1c78bb4fdadb165df6a2829"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/tests/qt_freetype_hash_probe.cpp",
+      "bytes": 9443,
+      "sha256": "c3e2edbaca4e5ab708df8124b1e7c41089b025d9d831bcd1da1ea304ed3ac42a"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/tests/qt_font_backend_behavior_probe.cpp",
+      "bytes": 25382,
+      "sha256": "e594d7a03a21cadbf0fe5bc7eead7eed389f1c82a30ece7262b6b7393f28ad3c"
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/audit-records.py",
+      "bytes": 6295,
+      "sha256": "796dba37939fd44a11ffe9b79c013447772b5359cf362294a8ac4300352d598f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/baseline-sdk7.json",
+      "bytes": 9497,
+      "sha256": "8ed1c4c929ca1d17b11ffc642c1ed10fd1eba7d5f23c6275c915ec4d907dd33f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/baseline-sdk8b_actual.json",
+      "bytes": 9497,
+      "sha256": "8ed1c4c929ca1d17b11ffc642c1ed10fd1eba7d5f23c6275c915ec4d907dd33f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/baseline-sdk8b_archive.json",
+      "bytes": 9497,
+      "sha256": "8ed1c4c929ca1d17b11ffc642c1ed10fd1eba7d5f23c6275c915ec4d907dd33f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/compile-command.json",
+      "bytes": 2145,
+      "sha256": "240e241aaeb794c96f6cfb4fda251443f7832f6dc9719fc888e11e49782a12ef"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/compile-result.json",
+      "bytes": 146,
+      "sha256": "b1bd82b1abd8c274f2473c5821a8568cbee59f8b03f6b1d039449ef589f7daf5"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/full-behavior-compare.json",
+      "bytes": 5491,
+      "sha256": "1c28212336dfa259715b4c73428accee1c34469890554da812147a2489fc7980"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/independent-evidence-audit.json",
+      "bytes": 116232,
+      "sha256": "c5949c0780e3f744fff41cd7692e61f3bd1b0c4467e634acd30aa8945c09fffc"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/independent-mixed-prefix-review.json",
+      "bytes": 1292,
+      "sha256": "325b3e49b62e1a82290fecddf4b02b51e754d3beed418bf9b343f9f0e3d39799"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/independent-native64-review.json",
+      "bytes": 31382,
+      "sha256": "14b271f79aaacc400fdce76f5c86b2576ca4266162d6eb0bc8664444d15afd54"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/actual-native64.json",
+      "bytes": 1211545,
+      "sha256": "d290894be85d65e80969afbedf9aac714eb6d67b6753d322f8c6a8bac7a0855b"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/baseline-sdk7-64.json",
+      "bytes": 1211719,
+      "sha256": "488822b5fd4e08522a3cb151a09a7564679128c28fbe93b5b674ec9b0814a5cc"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/baseline-sdk8b-64.json",
+      "bytes": 1211773,
+      "sha256": "e123c8b9284b3d88d92b103adc896f8fbcc6d7d75e4614b7164646a36b107f5c"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/comparator-readonly-self-check.json",
+      "bytes": 556,
+      "sha256": "83c21b6ee132ba0f9e6c61a35075f9fa94163473ab1e7b5e488ac365f5b417f0"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/compare-native64.py",
+      "bytes": 8413,
+      "sha256": "e484d2a42ed47869992a1aa8b10141cb4eb854cdfc98a3a44fcb1eaaaf92dea4"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/compile-command.json",
+      "bytes": 3924,
+      "sha256": "0cd8f539525c8c8de070cfdb49b403a6676384f04cf3d6125605d8f8f8e1f008"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/compile-result.json",
+      "bytes": 146,
+      "sha256": "b7cdb72f71851aeea2bbf502a2fb8f96dd6318d98660ccfe206c22535a10e005"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/original-native64-probe",
+      "bytes": 160888,
+      "sha256": "96f3d9fb0e40d8826ffa894cfdef58d5d21d79bd83c35c6ab1c9075a44c8be80"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/preparation-binding.json",
+      "bytes": 11561,
+      "sha256": "b0eb58c311d14acb5a0bfba85aeaea3d67df3b319ca8e90086d76f5f467ec7e1"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/qt.conf",
+      "bytes": 59,
+      "sha256": "d0067fb9e64ea9b6b1a1a708882b1333157ef9741c7854484e2d6f78e7e2ac74"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/root-actual-native64.log",
+      "bytes": 157290,
+      "sha256": "dc19b4623d0f8a63246f32b04d87c3b2388db52e62371a0b88f9b40c053d26c5"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/root-execution-record.json",
+      "bytes": 1261,
+      "sha256": "1d18cebf66a0286fb7d2442107cc3983bea10c7d5e515d45123e0a60ade20b83"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/root-full-comparison.json",
+      "bytes": 1221738,
+      "sha256": "344da52e67a51f83912b75d8a95f98108bd229fc271d9304ac27c5b3afd3889f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/native64-prepared/root-run-plan.json",
+      "bytes": 1039,
+      "sha256": "0deab71af77ef4efc2c17c143dfb0dec9562c08c758e9327519be09d54ce2459"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/original-hash-probe",
+      "bytes": 95472,
+      "sha256": "9eca878ea1ec5b4e5ae83e7745a6931c4bedfbd369f734defa2d70e78a67d364"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/original-hash-report.json",
+      "bytes": 9497,
+      "sha256": "8ed1c4c929ca1d17b11ffc642c1ed10fd1eba7d5f23c6275c915ec4d907dd33f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/prepare-native64.py",
+      "bytes": 5912,
+      "sha256": "afab1c1db8c7904bab10d12b54c554ae02c3f77b55d7ac2051482d010fef750d"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-binding-negatives-different_embedded_manifest.log",
+      "bytes": 78,
+      "sha256": "1cb0d6426b2f3198616dd8ed71808868de3f0cef71ebef5bec332860b1bc925b"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-binding-negatives-future_binding_schema.log",
+      "bytes": 67,
+      "sha256": "b11661fff660b54990ecd5db485f49f644b332a77b34f67e1c690a29115e2be8"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-binding-negatives-missing_binding_file.log",
+      "bytes": 64,
+      "sha256": "e3adaca6fc541189106a4e29e8ca18ca37bf6b3b730ca12a1a309942ba7cf6a9"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-binding-negatives-missing_binding_macro.log",
+      "bytes": 74,
+      "sha256": "1ae6c832873d0462ba86de4ec31bc0ec5f6f23bb0d2633901fa52e634bf7824d"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-binding-negatives-wrong_image_path.log",
+      "bytes": 67,
+      "sha256": "b11661fff660b54990ecd5db485f49f644b332a77b34f67e1c690a29115e2be8"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-binding-negatives-wrong_image_sha.log",
+      "bytes": 67,
+      "sha256": "b11661fff660b54990ecd5db485f49f644b332a77b34f67e1c690a29115e2be8"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-binding-negatives-wrong_manifest_sha.log",
+      "bytes": 67,
+      "sha256": "b11661fff660b54990ecd5db485f49f644b332a77b34f67e1c690a29115e2be8"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-contract-negatives-advertised_symbol_missing.log",
+      "bytes": 77,
+      "sha256": "6a667962b9e81ba1f29dd5e6737aabdf910553e6883543430ec3e1558d27b7ad"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-contract-negatives-cross_image_symbols.log",
+      "bytes": 79,
+      "sha256": "6e44cadcabedf9f4a5089148318f18579f1a1f293331f1bc9b2e5a49a92aaa7c"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-contract-negatives-future_version.log",
+      "bytes": 67,
+      "sha256": "1b18ea4b1dfa9e491ec9a185f4706b44073d86aebd607c08f161fce495e44948"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-contract-negatives-malformed_fence.log",
+      "bytes": 65,
+      "sha256": "e078db45d56d72e5d246930cf9b7bfa02eb1f298f6028d184879e564f2cf547b"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-contract-negatives-unadvertised_partial_symbols.log",
+      "bytes": 73,
+      "sha256": "3c9cfe377184e5c8ebaf1f6dfc96a83dc56e9bcf7dd61e3bea1a8143f18f648a"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-actual_collector_allocation_loss.log",
+      "bytes": 100989,
+      "sha256": "b9336a6b8690c1ed9e811a379b7009ab4833efab3d56149a62f71a6887eb352f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-admission_bad_alloc.log",
+      "bytes": 219,
+      "sha256": "c866ed47d90dde1e0ca3605b9c3f60787dab7a27a8d041d2449676f92fd71869"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-admission_capacity.log",
+      "bytes": 221,
+      "sha256": "cb89f05f6d493d0d8b6071fd3bb4dc083e6afa1115c41201be6b94aa987b7323"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-emit_bad_alloc.log",
+      "bytes": 214,
+      "sha256": "110eddae4640d2eff5a670f8c9d7d617ad65cfc7835c1641349ee91b44f72fad"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-hash_noexcept_callback_bad_alloc.log",
+      "bytes": 233,
+      "sha256": "dfac4438dfa8b965dcbbc66a4820bccffe6a920d99b5e433c7916df9a245eb30"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-legacy_normal.log",
+      "bytes": 100385,
+      "sha256": "9559de35348e5e6cc520d4dd98465ff0c63b36ab62ed19937d833f43f4aa3cd5"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-legacy_scope_bad_alloc.log",
+      "bytes": 222,
+      "sha256": "ff2969ec79987148015c6657ee6fe27c5a152dd9806679ee2da7fe2ddc2f1cd4"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-observer_destruction.log",
+      "bytes": 220,
+      "sha256": "3ece3f9ba9c1fbdcf6b4793608eae4f10bb5764aba8a76ee914e75a3a5d1ed02"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-original_qt_bad_alloc.log",
+      "bytes": 221,
+      "sha256": "2acba3a917697c0cb9d12610c73885ded48e1c98ada4f837b99dee13265edebf"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-reentry.log",
+      "bytes": 208,
+      "sha256": "37dd6c3e115d73aa2b3d28a3049c0dba29bd8779e74d6efbfc2d969347d0df7e"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-scope_destructor_bad_alloc.log",
+      "bytes": 227,
+      "sha256": "4e205a1e98497cd4f6d533343aaf692d9226b73705ceba0df87d9c8592057fb8"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-thread_exception.log",
+      "bytes": 227,
+      "sha256": "955f47c108fcf0f48ff2e24b6ac30676113c4f6718098f00db3da966cbc47790"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-threads.log",
+      "bytes": 216,
+      "sha256": "7626df0c3175f5eb9037162133cb5e5881b960d1c07eb93aa0606d318775dbc9"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-v1_normal.log",
+      "bytes": 100801,
+      "sha256": "097275d2a290b2e3acc432b0c40a17a26052c7caec0a99bb830a75808e08e3a3"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/replay-headless-v1_sticky_loss.log",
+      "bytes": 100808,
+      "sha256": "5521b1be20dd3f92146564deb5ebf63f0889b8368ce85e22352e596c363db09f"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/review-root-native-and-mixed.py",
+      "bytes": 8094,
+      "sha256": "469d8baa644dd80bea93eb36aa0fd7b49d277f43b1ffe21b05add77fc3cbcb87"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/review.md",
+      "bytes": 6859,
+      "sha256": "36dca6036c9c5721c6c1f54278431a693120be0d974bc37c8bac77d08c2af86b"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/run-command.json",
+      "bytes": 706,
+      "sha256": "312373ccdb411c98f99475184ee945fe0a579e9d588bd4f6a1994aa082a95743"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/run-original-hash.py",
+      "bytes": 6227,
+      "sha256": "fcfd2fdb1fd0b9e55f17086d755dd2dac9966d42adeaef013f459de069d5ee64"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/run-result.json",
+      "bytes": 323,
+      "sha256": "ca3efaa66c11deae5c00fddc977433bb7ef04cafefff00be7151ed5428d8a8da"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/runtime.stderr.log",
+      "bytes": 86517,
+      "sha256": "649fb026224ce2043a87fc2bb3cb33459d091d87cc0b1191836e890084061232"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/runtime.stdout.log",
+      "bytes": 66,
+      "sha256": "5f8d08189965bbcb12d5e1126c82c4d07c21d6addbd17b36eca071a173313d45"
+    },
+    {
+      "path": "/private/tmp/qcae-sdk8-independent-review41/static-fence-contract-gap-review.json",
+      "bytes": 4338,
+      "sha256": "9353302141a1b5a785b4a8ae4c27a9073c8931b938dfadeed5d35acec7ed0019"
+    }
+  ]
+}

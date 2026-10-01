@@ -1,0 +1,741 @@
+{
+  "test_argv": [
+    "build-ext03-desktop/qcae_desktop_tests",
+    "frozenPointAndLinePickingMatrix",
+    "-v1"
+  ],
+  "cwd": "/private/tmp/qcae-c4-ext03-41",
+  "env": {
+    "QT_QPA_PLATFORM": "cocoa",
+    "QCAE_VTK_EVIDENCE_DIR": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images"
+  },
+  "exit_code": 0,
+  "qt_totals": "14 passed (12 data rows plus init/cleanup), 0 failed",
+  "raw_log_sha256": "954bc5d483342178b3fa19665aea3b93c1de2fc1dcecaeb0cbe7f0c57dd76763",
+  "fixtures": [
+    {
+      "path": "/private/tmp/qcae-c4-ext03-41/tests/fixtures/vtk-pick-matrix-v1.json",
+      "sha256": "82568cc06c30dbdec9ec418ef86eee1e6afaf349bee4b4173e130b8af84f7400",
+      "fixture": {
+        "schema": "qcae.vtk-pick-matrix.v1",
+        "viewport_logical_pixels": [
+          640,
+          420
+        ],
+        "camera": {
+          "position": [
+            0,
+            -500,
+            0
+          ],
+          "focal_point": [
+            0,
+            0,
+            0
+          ],
+          "view_up": [
+            0,
+            0,
+            1
+          ],
+          "parallel_scale": 100,
+          "clipping_range": [
+            1,
+            1000
+          ],
+          "view_matrix": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            -1,
+            0,
+            -500,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "points": [
+          {
+            "id": "point-behind",
+            "position": [
+              0,
+              20,
+              0
+            ],
+            "visible": true
+          },
+          {
+            "id": "point-front",
+            "position": [
+              0,
+              -20,
+              0
+            ],
+            "visible": true
+          },
+          {
+            "id": "point-outside",
+            "position": [
+              70,
+              0,
+              50
+            ],
+            "visible": true
+          },
+          {
+            "id": "point-hidden",
+            "position": [
+              0,
+              -40,
+              0
+            ],
+            "visible": false
+          }
+        ],
+        "lines": [
+          {
+            "id": "line-behind",
+            "start": [
+              -60,
+              20,
+              0
+            ],
+            "end": [
+              60,
+              20,
+              0
+            ],
+            "visible": true
+          },
+          {
+            "id": "line-front",
+            "start": [
+              -60,
+              -20,
+              0
+            ],
+            "end": [
+              60,
+              -20,
+              0
+            ],
+            "visible": true
+          },
+          {
+            "id": "line-outside",
+            "start": [
+              -60,
+              0,
+              50
+            ],
+            "end": [
+              60,
+              0,
+              50
+            ],
+            "visible": true
+          },
+          {
+            "id": "line-hidden",
+            "start": [
+              -60,
+              -40,
+              0
+            ],
+            "end": [
+              60,
+              -40,
+              0
+            ],
+            "visible": false
+          }
+        ],
+        "cases": [
+          {
+            "id": "point-contained",
+            "topology": "point",
+            "box_mode": "contained",
+            "through": true,
+            "box": [
+              300,
+              190,
+              340,
+              230
+            ],
+            "golden": [
+              "point-behind",
+              "point-front"
+            ]
+          },
+          {
+            "id": "point-intersecting",
+            "topology": "point",
+            "box_mode": "intersecting",
+            "through": true,
+            "box": [
+              300,
+              190,
+              340,
+              230
+            ],
+            "golden": [
+              "point-behind",
+              "point-front"
+            ]
+          },
+          {
+            "id": "point-occluded-visible",
+            "topology": "point",
+            "box_mode": "intersecting",
+            "through": false,
+            "box": [
+              300,
+              190,
+              340,
+              230
+            ],
+            "golden": [
+              "point-front"
+            ]
+          },
+          {
+            "id": "point-occluded-through",
+            "topology": "point",
+            "box_mode": "intersecting",
+            "through": true,
+            "box": [
+              300,
+              190,
+              340,
+              230
+            ],
+            "golden": [
+              "point-behind",
+              "point-front"
+            ]
+          },
+          {
+            "id": "line-contained",
+            "topology": "line",
+            "box_mode": "contained",
+            "through": true,
+            "box": [
+              180,
+              190,
+              460,
+              230
+            ],
+            "golden": [
+              "line-behind",
+              "line-front"
+            ]
+          },
+          {
+            "id": "line-intersecting",
+            "topology": "line",
+            "box_mode": "intersecting",
+            "through": true,
+            "box": [
+              300,
+              190,
+              340,
+              230
+            ],
+            "golden": [
+              "line-behind",
+              "line-front"
+            ]
+          },
+          {
+            "id": "line-occluded-visible",
+            "topology": "line",
+            "box_mode": "intersecting",
+            "through": false,
+            "box": [
+              300,
+              190,
+              340,
+              230
+            ],
+            "golden": [
+              "line-front"
+            ]
+          },
+          {
+            "id": "line-occluded-through",
+            "topology": "line",
+            "box_mode": "intersecting",
+            "through": true,
+            "box": [
+              300,
+              190,
+              340,
+              230
+            ],
+            "golden": [
+              "line-behind",
+              "line-front"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "path": "/private/tmp/qcae-c4-ext03-41/tests/fixtures/vtk-tri3-pick-matrix-v1.json",
+      "sha256": "3cf184545acdf140d28718f5b1cc8fd525c93a136a7137105cc3032695d27ac3",
+      "fixture": {
+        "schema": "qcae.vtk-tri3-pick-matrix.v1",
+        "viewport_logical_pixels": [
+          640,
+          420
+        ],
+        "framebuffer_pixels": [
+          1280,
+          840
+        ],
+        "device_pixel_ratio": 2,
+        "camera": {
+          "position": [
+            0,
+            -500,
+            0
+          ],
+          "focal_point": [
+            0,
+            0,
+            0
+          ],
+          "view_up": [
+            0,
+            0,
+            1
+          ],
+          "parallel_scale": 100,
+          "clipping_range": [
+            1,
+            1000
+          ],
+          "view_matrix": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            -1,
+            0,
+            -500,
+            0,
+            0,
+            0,
+            1
+          ],
+          "projection_matrix": [
+            0.0065625,
+            0,
+            0,
+            0,
+            0,
+            0.01,
+            0,
+            0,
+            0,
+            0,
+            -0.002002002002002002,
+            -1.002002002002002,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "triangles": [
+          {
+            "id": "tri3-behind",
+            "positions": [
+              [
+                -60,
+                20,
+                -30
+              ],
+              [
+                60,
+                20,
+                -30
+              ],
+              [
+                0,
+                20,
+                30
+              ]
+            ],
+            "visible": true
+          },
+          {
+            "id": "tri3-front",
+            "positions": [
+              [
+                -60,
+                -20,
+                -30
+              ],
+              [
+                60,
+                -20,
+                -30
+              ],
+              [
+                0,
+                -20,
+                30
+              ]
+            ],
+            "visible": true
+          },
+          {
+            "id": "tri3-outside",
+            "positions": [
+              [
+                70,
+                0,
+                50
+              ],
+              [
+                90,
+                0,
+                50
+              ],
+              [
+                80,
+                0,
+                70
+              ]
+            ],
+            "visible": true
+          },
+          {
+            "id": "tri3-hidden",
+            "positions": [
+              [
+                -60,
+                -40,
+                -30
+              ],
+              [
+                60,
+                -40,
+                -30
+              ],
+              [
+                0,
+                -40,
+                30
+              ]
+            ],
+            "visible": false
+          }
+        ],
+        "cases": [
+          {
+            "id": "tri3-contained",
+            "topology": "tri3",
+            "box_mode": "contained",
+            "through": true,
+            "box": [
+              180,
+              130,
+              460,
+              285
+            ],
+            "golden": [
+              "tri3-behind",
+              "tri3-front"
+            ]
+          },
+          {
+            "id": "tri3-intersecting",
+            "topology": "tri3",
+            "box_mode": "intersecting",
+            "through": true,
+            "box": [
+              300,
+              200,
+              340,
+              230
+            ],
+            "golden": [
+              "tri3-behind",
+              "tri3-front"
+            ]
+          },
+          {
+            "id": "tri3-occluded-visible",
+            "topology": "tri3",
+            "box_mode": "intersecting",
+            "through": false,
+            "box": [
+              300,
+              200,
+              340,
+              230
+            ],
+            "golden": [
+              "tri3-front"
+            ]
+          },
+          {
+            "id": "tri3-occluded-through",
+            "topology": "tri3",
+            "box_mode": "intersecting",
+            "through": true,
+            "box": [
+              300,
+              200,
+              340,
+              230
+            ],
+            "golden": [
+              "tri3-behind",
+              "tri3-front"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "point-contained",
+      "expected": [
+        "point-behind",
+        "point-front"
+      ],
+      "actual": [
+        "point-behind",
+        "point-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/point-contained.png",
+      "png_sha256": "a6a94a01caf6a47344d2321d8cc87a0ad70b283f5f5015b29bcb264647c7792f",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "point-intersecting",
+      "expected": [
+        "point-behind",
+        "point-front"
+      ],
+      "actual": [
+        "point-behind",
+        "point-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/point-intersecting.png",
+      "png_sha256": "a6a94a01caf6a47344d2321d8cc87a0ad70b283f5f5015b29bcb264647c7792f",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "point-occluded-visible",
+      "expected": [
+        "point-front"
+      ],
+      "actual": [
+        "point-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/point-occluded-visible.png",
+      "png_sha256": "a6a94a01caf6a47344d2321d8cc87a0ad70b283f5f5015b29bcb264647c7792f",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "point-occluded-through",
+      "expected": [
+        "point-behind",
+        "point-front"
+      ],
+      "actual": [
+        "point-behind",
+        "point-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/point-occluded-through.png",
+      "png_sha256": "a6a94a01caf6a47344d2321d8cc87a0ad70b283f5f5015b29bcb264647c7792f",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "line-contained",
+      "expected": [
+        "line-behind",
+        "line-front"
+      ],
+      "actual": [
+        "line-behind",
+        "line-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/line-contained.png",
+      "png_sha256": "3cd0568a59f9c1b87bdd6259e7fbcdd0196293bcfac5d0bcc51e5d82c0c4e16e",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "line-intersecting",
+      "expected": [
+        "line-behind",
+        "line-front"
+      ],
+      "actual": [
+        "line-behind",
+        "line-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/line-intersecting.png",
+      "png_sha256": "3cd0568a59f9c1b87bdd6259e7fbcdd0196293bcfac5d0bcc51e5d82c0c4e16e",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "line-occluded-visible",
+      "expected": [
+        "line-front"
+      ],
+      "actual": [
+        "line-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/line-occluded-visible.png",
+      "png_sha256": "3cd0568a59f9c1b87bdd6259e7fbcdd0196293bcfac5d0bcc51e5d82c0c4e16e",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "line-occluded-through",
+      "expected": [
+        "line-behind",
+        "line-front"
+      ],
+      "actual": [
+        "line-behind",
+        "line-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/line-occluded-through.png",
+      "png_sha256": "3cd0568a59f9c1b87bdd6259e7fbcdd0196293bcfac5d0bcc51e5d82c0c4e16e",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "tri3-contained",
+      "expected": [
+        "tri3-behind",
+        "tri3-front"
+      ],
+      "actual": [
+        "tri3-behind",
+        "tri3-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/tri3-contained.png",
+      "png_sha256": "32594adb4f662f1085d277c3bb73192f45b25244953f84c6ebc8e4297e91b7c2",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "tri3-intersecting",
+      "expected": [
+        "tri3-behind",
+        "tri3-front"
+      ],
+      "actual": [
+        "tri3-behind",
+        "tri3-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/tri3-intersecting.png",
+      "png_sha256": "32594adb4f662f1085d277c3bb73192f45b25244953f84c6ebc8e4297e91b7c2",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "tri3-occluded-visible",
+      "expected": [
+        "tri3-front"
+      ],
+      "actual": [
+        "tri3-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/tri3-occluded-visible.png",
+      "png_sha256": "32594adb4f662f1085d277c3bb73192f45b25244953f84c6ebc8e4297e91b7c2",
+      "pixels": [
+        1280,
+        840
+      ]
+    },
+    {
+      "id": "tri3-occluded-through",
+      "expected": [
+        "tri3-behind",
+        "tri3-front"
+      ],
+      "actual": [
+        "tri3-behind",
+        "tri3-front"
+      ],
+      "missed": 0,
+      "extra": 0,
+      "png": "/private/tmp/qcae-ext03-41-evidence/pick-matrix-images/tri3-occluded-through.png",
+      "png_sha256": "32594adb4f662f1085d277c3bb73192f45b25244953f84c6ebc8e4297e91b7c2",
+      "pixels": [
+        1280,
+        840
+      ]
+    }
+  ]
+}

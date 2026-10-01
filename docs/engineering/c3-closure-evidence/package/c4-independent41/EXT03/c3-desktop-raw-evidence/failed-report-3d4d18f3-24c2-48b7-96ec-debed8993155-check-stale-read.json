@@ -1,0 +1,82 @@
+{
+    "data": {
+        "analysis_id": "entity-966b26dda999ad89747284d99842a838-23",
+        "analysis_kind": "linear_static",
+        "catalog_version": "qcae.analysis.rules.v2",
+        "check_execution": "completed",
+        "check_id": "qcae:analysis-check:QCV1:o3:s6:callers10:local-users8:documents38:doc-966b26dda999ad89747284d99842a838-1s3:keys36:607f3c23-d7c2-4db0-8625-3025eb09a3bf",
+        "current_version": {
+            "document_epoch": "epoch-966b26dda999ad89747284d99842a838-2",
+            "document_id": "doc-966b26dda999ad89747284d99842a838-1",
+            "revision": "7"
+        },
+        "input_version": {
+            "document_epoch": "epoch-966b26dda999ad89747284d99842a838-2",
+            "document_id": "doc-966b26dda999ad89747284d99842a838-1",
+            "revision": "6"
+        },
+        "issues": [
+            {
+                "actual": "2",
+                "entity_id": "entity-966b26dda999ad89747284d99842a838-23",
+                "entity_type": "4107",
+                "expected": "1",
+                "field": "load_cases.forces",
+                "input_version": {
+                    "document_epoch": "epoch-966b26dda999ad89747284d99842a838-2",
+                    "document_id": "doc-966b26dda999ad89747284d99842a838-1",
+                    "revision": "6"
+                },
+                "message": "Cantilever analysis requires exactly one referenced nodal force",
+                "rule_id": "cantilever-single-load",
+                "rule_version": "1",
+                "severity": "error",
+                "state": "stale"
+            },
+            {
+                "actual": "0",
+                "entity_id": "entity-966b26dda999ad89747284d99842a838-23",
+                "entity_type": "4107",
+                "expected": ">=1",
+                "field": "load_cases.constraints",
+                "input_version": {
+                    "document_epoch": "epoch-966b26dda999ad89747284d99842a838-2",
+                    "document_id": "doc-966b26dda999ad89747284d99842a838-1",
+                    "revision": "6"
+                },
+                "message": "Linear static analysis requires a referenced constraint",
+                "rule_id": "missing-constraint",
+                "rule_version": "1",
+                "severity": "error",
+                "state": "stale"
+            },
+            {
+                "actual": "absent",
+                "entity_id": "line-task-5e4dfdf458509a68-1-0",
+                "entity_type": "4100",
+                "expected": "resolved complete section",
+                "field": "section",
+                "input_version": {
+                    "document_epoch": "epoch-966b26dda999ad89747284d99842a838-2",
+                    "document_id": "doc-966b26dda999ad89747284d99842a838-1",
+                    "revision": "6"
+                },
+                "message": "Each cantilever beam requires a complete beam section",
+                "rule_id": "missing-section",
+                "rule_version": "1",
+                "severity": "error",
+                "state": "stale"
+            }
+        ],
+        "outcome": "failed",
+        "profile": {
+            "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+            "profile_id": "qcae.nastran.linear-static",
+            "profile_version": "0.2.0"
+        },
+        "scope": "cantilever-linear-static-necessary-conditions",
+        "state": "stale"
+    },
+    "request_id": "fb00f286-bc06-45f7-9250-59003742a4cb",
+    "status": "success"
+}

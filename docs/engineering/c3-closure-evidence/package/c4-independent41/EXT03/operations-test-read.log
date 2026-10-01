@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/private/tmp/qcae-c4-ext03-41/tools/c4_context_read.py", line 46, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/qcae-c4-ext03-41/tools/c4_context_read.py", line 22, in main
+    path = (root / name).resolve(strict=True)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 943, in resolve
+    return self.with_segments(os.path.realpath(self, strict=strict))
+                              ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen posixpath>", line 460, in realpath
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/qcae-c4-ext03-41/tests/geometry_mesh_sqlite_tests.cpp'

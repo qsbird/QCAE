@@ -1,0 +1,45 @@
+31:bool same_record_version(const RecordVersion&, const RecordVersion&) noexcept;
+47:    std::uint64_t model_bytes_encoded{};
+84:    std::uint32_t introduced_version{1};
+97:    std::uint32_t version{1};
+111:    std::uint32_t current_version{1};
+114:    std::size_t maximum_encoded_bytes{16u * 1024u * 1024u};
+117:    std::function<RecordInput(const void*)> encode;
+118:    std::function<std::shared_ptr<const void>(const RecordInput&)> decode;
+129:    std::uint32_t version() const noexcept;
+130:    const std::string& encoded() const noexcept;
+143:    std::uint32_t version_{};
+146:    std::string encoded_;
+167:    Record decode(std::string_view, RecordStats* stats = nullptr) const;
+168:    Record from_input(const RecordInput&, RecordStats* stats = nullptr) const;
+180:std::string encode(const RecordInput&, RecordStats* = nullptr);
+181:RecordInput decode(std::string_view);
+164:    check(registry->decode(material->encoded())->get<r::Material>() == material->get<r::Material>(),
+181:    auto prior = record_wire::decode(material->encoded());
+198:    auto missing = record_wire::decode(material->encoded());
+201:    auto wrong_type = record_wire::decode(node->encoded());
+204:    auto missing_unit = record_wire::decode(node->encoded());
+207:    auto unknown_unit = record_wire::decode(node->encoded());
+210:    auto bounds = record_wire::decode(material->encoded());
+225:    auto future = record_wire::decode(material->encoded());
+231:        [&] { registry->decode(node->encoded() + "trailing"); },
+    // User-initiated auxiliary writes must admit the revision and CAS together.
+    Result<bool>
+    update_owned_rows(const Caller&, const WriteContext&, std::span<const OwnedRowUpdate>);
+    Result<std::vector<std::shared_ptr<const OwnedRowImage>>>
+    owned_rows(const DocumentRef&, StoreSpace, std::string_view owner) const;
+    // Reads only the indexed identity-prefix range. A bounded page borrows the
+    // immutable row payloads; callers still validate ownership and row schemas.
+    Result<OwnedRowPage> owned_rows_with_prefix(const DocumentRef&,
+                                                StoreSpace,
+                                                std::string_view identity_prefix,
+                                                std::size_t limit) const;
+    Result<ChangeReceipt> undo(const Caller&, const WriteContext&, const std::string&);
+    Result<ChangeReceipt> redo(const Caller&, const WriteContext&, const std::string&);
+    Result<HistorySnapshot> history(const DocumentRef&) const;
+    Result<ChangeReceipt>
+    operation(const Caller&, const DocumentRef&, const std::string&, const std::string&) const;
+    RecordStats stats() const;
+
+  private:
+    Result<bool> update_owned_rows_checked(const Caller&,

@@ -1,0 +1,65 @@
+{
+    "data": {
+        "analysis_id": "entity-66d7e089b0a3263203d5604b9b41ff10-44",
+        "analysis_kind": "linear_static",
+        "catalog_version": "qcae.analysis.rules.v2",
+        "check_execution": "completed",
+        "check_id": "qcae:analysis-check:QCV1:o3:s6:callers10:local-users8:documents38:doc-66d7e089b0a3263203d5604b9b41ff10-1s3:keys36:abe223b6-cfa9-4279-a1f0-8d52d40c64c1",
+        "current_version": {
+            "document_epoch": "epoch-66d7e089b0a3263203d5604b9b41ff10-2",
+            "document_id": "doc-66d7e089b0a3263203d5604b9b41ff10-1",
+            "revision": "11"
+        },
+        "input_version": {
+            "document_epoch": "epoch-66d7e089b0a3263203d5604b9b41ff10-2",
+            "document_id": "doc-66d7e089b0a3263203d5604b9b41ff10-1",
+            "revision": "11"
+        },
+        "issues": [
+            {
+                "actual": "0",
+                "entity_id": "entity-66d7e089b0a3263203d5604b9b41ff10-44",
+                "entity_type": "4107",
+                "expected": ">=1",
+                "field": "load_cases.forces",
+                "input_version": {
+                    "document_epoch": "epoch-66d7e089b0a3263203d5604b9b41ff10-2",
+                    "document_id": "doc-66d7e089b0a3263203d5604b9b41ff10-1",
+                    "revision": "11"
+                },
+                "message": "Linear static analysis requires a referenced nodal force",
+                "rule_id": "missing-load",
+                "rule_version": "1",
+                "severity": "error",
+                "state": "current"
+            },
+            {
+                "actual": "0",
+                "entity_id": "entity-66d7e089b0a3263203d5604b9b41ff10-44",
+                "entity_type": "4107",
+                "expected": ">=1",
+                "field": "load_cases.constraints",
+                "input_version": {
+                    "document_epoch": "epoch-66d7e089b0a3263203d5604b9b41ff10-2",
+                    "document_id": "doc-66d7e089b0a3263203d5604b9b41ff10-1",
+                    "revision": "11"
+                },
+                "message": "Linear static analysis requires a referenced constraint",
+                "rule_id": "missing-constraint",
+                "rule_version": "1",
+                "severity": "error",
+                "state": "current"
+            }
+        ],
+        "outcome": "needs_input",
+        "profile": {
+            "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+            "profile_id": "qcae.nastran.linear-static",
+            "profile_version": "0.2.0"
+        },
+        "scope": "cantilever-linear-static-necessary-conditions",
+        "state": "current"
+    },
+    "request_id": "dc0676c5-d9de-4bfb-bcdd-802ebfaebf4a",
+    "status": "success"
+}

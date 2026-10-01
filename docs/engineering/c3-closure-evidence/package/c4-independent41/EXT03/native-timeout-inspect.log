@@ -1,0 +1,175 @@
+build-ext03-desktop/adapters/rendering_vtk/CTestTestfile.cmake:3:# Build directory: /private/tmp/qcae-c4-ext03-41/build-ext03-desktop/adapters/rendering_vtk
+build-ext03-desktop/ui/desktop/CTestTestfile.cmake:2:# Source directory: /private/tmp/qcae-c4-ext03-41/ui/desktop
+build-ext03-desktop/ui/desktop/CTestTestfile.cmake:3:# Build directory: /private/tmp/qcae-c4-ext03-41/build-ext03-desktop/ui/desktop
+497:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+517:        QTRY_COMPARE_WITH_TIMEOUT(
+545:        QVERIFY(QTest::qWaitForWindowExposed(window.get()));
+550:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 15000);
+572:            QTRY_COMPARE_WITH_TIMEOUT(editors[1]->text(), QString("-1"), 10000);
+582:            QTRY_VERIFY_WITH_TIMEOUT(!window->property("propertyPreviewId").toString().isEmpty(),
+585:            QTRY_COMPARE_WITH_TIMEOUT(proxy.held_property.size(), 1, 10000);
+617:            QTRY_VERIFY_WITH_TIMEOUT(!proxy.held_current.isEmpty(), 10000);
+622:        QTest::qWait(100);
+723:        QVERIFY(QTest::qWaitForWindowExposed(window.get()));
+726:        QTRY_VERIFY_WITH_TIMEOUT(client->ready(), 10000);
+729:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+738:        QTRY_VERIFY_WITH_TIMEOUT(viewport->hasPacket(), 15000);
+739:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 15000);
+832:        QTRY_VERIFY_WITH_TIMEOUT(selected->text().contains(tip), 10000);
+835:        QTRY_COMPARE_WITH_TIMEOUT(editors[0]->text(), QString("1000"), 10000);
+840:        QTRY_VERIFY_WITH_TIMEOUT(selected->text().contains(material.value("entity_id").toString()),
+842:        QTRY_COMPARE_WITH_TIMEOUT(editors[3]->text(), QString("210000"), 10000);
+845:        QTRY_VERIFY_WITH_TIMEOUT(selected->text().contains(section.value("entity_id").toString()),
+849:        QTRY_VERIFY_WITH_TIMEOUT(details->text().contains("100 mm²"), 10000);
+855:        QTRY_VERIFY_WITH_TIMEOUT(selected->text().contains(force.value("entity_id").toString()),
+857:        QTRY_VERIFY_WITH_TIMEOUT(details->text().contains("(0, -1, 0) N"), 10000);
+860:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 10000);
+874:            QTest::qWait(16);
+877:        QTRY_VERIFY_WITH_TIMEOUT(viewport->cameraFingerprint() != fingerprint_before, 10000);
+878:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 15000);
+933:        QVERIFY(QTest::qWaitForWindowExposed(window.get()));
+936:        QTRY_VERIFY_WITH_TIMEOUT(client->ready(), 10000);
+939:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+948:        QTRY_VERIFY_WITH_TIMEOUT(viewport->hasPacket(), 15000);
+949:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 15000);
+977:        QTRY_COMPARE_WITH_TIMEOUT(editors[1]->text(), QString("-1"), 10000);
+995:        QTRY_VERIFY_WITH_TIMEOUT(!window->property("propertyPreviewId").toString().isEmpty(),
+1008:        QTRY_VERIFY_WITH_TIMEOUT(!window->property("propertyPreviewId").toString().isEmpty(),
+1012:        QTRY_COMPARE_WITH_TIMEOUT(current(observer).value("expected_revision").toString(),
+1015:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 15000);
+1045:        QTRY_VERIFY_WITH_TIMEOUT(
+1061:        QTRY_VERIFY_WITH_TIMEOUT(selected_label->text().contains(force_id), 10000);
+1062:        QTRY_COMPARE_WITH_TIMEOUT(editors[1]->text(), QString("-2"), 10000);
+1067:        QTRY_VERIFY_WITH_TIMEOUT(details->text().contains("(0, -2, 0) N"), 10000);
+1069:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 10000);
+1076:        QTRY_COMPARE_WITH_TIMEOUT(current(observer).value("expected_revision").toString(),
+1079:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 15000);
+1093:        QTRY_VERIFY_WITH_TIMEOUT(!client->ready(), 10000);
+1096:        QTRY_VERIFY_WITH_TIMEOUT(client->ready(), 10000);
+1097:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+1101:        QTRY_VERIFY_WITH_TIMEOUT(
+1106:        QTRY_COMPARE_WITH_TIMEOUT(window->property("treeRevision").toString(),
+1109:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 15000);
+1154:        QTRY_VERIFY(client.ready());
+1167:        QTRY_COMPARE(engine.request.value("operation").toString(), QString("analysis.check"));
+1170:        QTRY_COMPARE(tools.property("checkId").toString(), QString("check-1"));
+1186:        QTRY_COMPARE(engine.request.value("operation").toString(), QString("analysis.get_issues"));
+1190:        QTRY_VERIFY(refresh->isEnabled());
+1230:        QTRY_VERIFY(client.ready());
+1242:        QTRY_COMPARE(engine.request.value("operation").toString(), QString("analysis.check"));
+1246:            QTRY_COMPARE(tools.property("checkId").toString(), QString("check-1"));
+1248:            QTRY_COMPARE(engine.request.value("operation").toString(),
+1302:        QTRY_VERIFY(
+1323:        QTRY_VERIFY(client.ready());
+1336:        QTRY_COMPARE(engine.request.value("operation").toString(), QString("analysis.check"));
+1340:            QTRY_COMPARE(tools->property("checkId").toString(), QString("check-1"));
+1342:            QTRY_COMPARE(engine.request.value("operation").toString(),
+1354:        QTRY_COMPARE(client.pendingRequests(), 0);
+1375:        QTRY_VERIFY_WITH_TIMEOUT(client.ready(), 10000);
+1394:        QTRY_COMPARE_WITH_TIMEOUT(data(call(client,
+1453:        QTRY_VERIFY_WITH_TIMEOUT(!actual_check.isEmpty(), 10000);
+1469:        QTRY_VERIFY(refresh->isEnabled());
+1484:        QTRY_VERIFY(refresh->isEnabled());
+1529:        QVERIFY(QTest::qWaitForWindowExposed(window.get()));
+1532:        QTRY_VERIFY_WITH_TIMEOUT(client->ready(), 10000);
+1537:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+1549:        QTRY_VERIFY_WITH_TIMEOUT(line_preview->isEnabled(), 10000);
+1552:        QTRY_VERIFY(line_apply->isEnabled());
+1556:        QTRY_VERIFY(line_apply->isEnabled());
+1558:        QTRY_VERIFY_WITH_TIMEOUT(geometryItem(tree), 10000);
+1560:        QTRY_COMPARE_WITH_TIMEOUT(
+1562:        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*window), 10000);
+1564:        QTRY_VERIFY_WITH_TIMEOUT(!window->findChild<QLabel*>("meshGeometry")
+1570:        QTRY_VERIFY_WITH_TIMEOUT(line_apply->isEnabled(), 10000);
+1572:        QTRY_COMPARE_WITH_TIMEOUT(entities(observer, "beam").size(), 10, 10000);
+1573:        QTRY_VERIFY_WITH_TIMEOUT(
+1596:            QTRY_VERIFY_WITH_TIMEOUT(refresh->isEnabled(), 10000);
+1601:            QTRY_VERIFY_WITH_TIMEOUT(apply->isEnabled(), 10000);
+1603:            QTRY_COMPARE_WITH_TIMEOUT(
+1606:            QTRY_COMPARE_WITH_TIMEOUT(window->property("treeRevision").toString(), expected, 10000);
+1607:            QTRY_VERIFY_WITH_TIMEOUT(refresh->isEnabled(), 10000);
+1659:            QTRY_COMPARE_WITH_TIMEOUT(window->property("treeRevision").toString(), expected, 10000);
+1687:        QTRY_VERIFY(apply->isEnabled());
+1693:        QTRY_VERIFY(apply->isEnabled());
+1698:        QTRY_VERIFY(apply->isEnabled());
+1706:            QTRY_VERIFY(apply->isEnabled());
+1721:        QTRY_VERIFY(check->isEnabled());
+1724:        QTRY_VERIFY2(!tools->property("checkId").toString().isEmpty(),
+1726:        QTRY_COMPARE(issues->topLevelItemCount(), 2);
+1744:        QTRY_VERIFY(refresh_issues->isEnabled());
+1757:        QTRY_VERIFY_WITH_TIMEOUT(
+1778:            QTRY_COMPARE_WITH_TIMEOUT(window->property("treeRevision").toString(), expected, 10000);
+1783:        QTRY_VERIFY(refresh_issues->isEnabled());
+1804:        QTRY_VERIFY(refresh->isEnabled());
+1812:        QTRY_VERIFY_WITH_TIMEOUT(modelImage(observer) != repaired, 10000);
+1814:        QTRY_COMPARE_WITH_TIMEOUT(modelImage(observer), repaired, 10000);
+1816:        QTRY_COMPARE_WITH_TIMEOUT(
+1818:        QTRY_VERIFY(refresh->isEnabled());
+1820:        QTRY_VERIFY(check->isEnabled());
+1822:        QTRY_COMPARE(issues->topLevelItemCount(), 0);
+1823:        QTRY_COMPARE_WITH_TIMEOUT(
+1831:        QTRY_VERIFY_WITH_TIMEOUT(
+1838:        QTRY_VERIFY_WITH_TIMEOUT(node_fields[1]->isEnabled(), 10000);
+1841:        QTRY_VERIFY_WITH_TIMEOUT(!window->property("propertyPreviewId").toString().isEmpty(),
+1849:        QTRY_VERIFY_WITH_TIMEOUT(!window->property("propertyPreviewId").toString().isEmpty(),
+1852:        QTRY_COMPARE_WITH_TIMEOUT(modelImage(observer)
+1864:        QTRY_COMPARE_WITH_TIMEOUT(modelImage(observer), repaired, 10000);
+1867:        QTRY_COMPARE_WITH_TIMEOUT(modelImage(observer), selected_image, 10000);
+1869:        QTRY_COMPARE_WITH_TIMEOUT(modelImage(observer), repaired, 10000);
+1872:        QTRY_COMPARE_WITH_TIMEOUT(
+1875:        QTRY_VERIFY(check->isEnabled());
+1877:        QTRY_COMPARE(issues->topLevelItemCount(), 0);
+1878:        QTRY_COMPARE_WITH_TIMEOUT(
+1885:        QTRY_VERIFY_WITH_TIMEOUT(QFile::exists(save_path), 10000);
+1889:        QTRY_VERIFY_WITH_TIMEOUT(QFile::exists(save_as), 10000);
+1899:        QTRY_COMPARE(tree->topLevelItemCount(), 0);
+1903:        QTRY_COMPARE_WITH_TIMEOUT(modelImage(observer), repaired, 10000);
+1908:        QTRY_VERIFY_WITH_TIMEOUT(!client->ready(), 10000);
+1911:        QTRY_VERIFY_WITH_TIMEOUT(client->ready(), 10000);
+1912:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+1914:        QTRY_COMPARE_WITH_TIMEOUT(modelImage(observer), repaired, 10000);
+1916:        QTRY_COMPARE_WITH_TIMEOUT(
+1921:        QTRY_VERIFY(window->findChild<QDialog*>("nastranExportForm"));
+1926:        QTRY_VERIFY_WITH_TIMEOUT(!export_form->property("manifestPath").toString().isEmpty(),
+1957:        QTRY_COMPARE_WITH_TIMEOUT(
+1972:        QTRY_VERIFY_WITH_TIMEOUT(
+1979:        QTRY_VERIFY_WITH_TIMEOUT(property_fields.back()->isEnabled(), 10000);
+1982:        QTRY_VERIFY_WITH_TIMEOUT(
+1986:        QTRY_COMPARE_WITH_TIMEOUT(
+2025:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+2072:        QVERIFY(QTest::qWaitForWindowExposed(window.get()));
+2074:        QTRY_COMPARE(window->property("treeRevision").toString(),
+2079:        QTRY_VERIFY(window->findChild<QDialog*>("nastranExportForm"));
+2089:        QTRY_COMPARE(dialog->property("taskState").toString(), QString("succeeded"));
+2090:        QTRY_VERIFY(!dialog->property("manifestPath").toString().isEmpty());
+2122:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+2146:        QVERIFY(QTest::qWaitForWindowExposed(window.get()));
+2171:        QTest::qWait(1100);
+2178:        QTest::qWait(1100);
+2200:        QTest::qWait(50);
+2204:        QTRY_VERIFY_WITH_TIMEOUT(views->width() >= 276 && views->width() <= 284, 5000);
+2205:        QTRY_VERIFY_WITH_TIMEOUT(selection->width() >= 356 && selection->width() <= 364, 5000);
+2206:        QTRY_VERIFY_WITH_TIMEOUT(history->height() >= 166 && history->height() <= 174, 5000);
+2214:        QTest::qWait(50);
+2239:        QVERIFY(QTest::qWaitForWindowExposed(restored.get()));
+2258:        QTRY_VERIFY_WITH_TIMEOUT(restored_views->width() >= 276 && restored_views->width() <= 284,
+2260:        QTRY_VERIFY_WITH_TIMEOUT(
+2262:        QTRY_VERIFY_WITH_TIMEOUT(
+2269:        QTest::qWait(50);
+2312:        QTRY_VERIFY_WITH_TIMEOUT(observer.ready(), 10000);
+2321:        QVERIFY(QTest::qWaitForWindowExposed(window.get()));
+2330:        QTRY_VERIFY(preview->isEnabled());
+2341:        QTest::qWait(150);
+2345:        QTRY_COMPARE_WITH_TIMEOUT(entities(observer, "geometry").size(), 1, 10000);
+2352:        QTRY_VERIFY(geometryItem(tree));
+2356:        QTRY_VERIFY(apply->isEnabled());
+2358:        QTRY_COMPARE_WITH_TIMEOUT(entities(observer, "beam").size(), 10, 10000);
+2361:        QTRY_VERIFY_WITH_TIMEOUT(status->text().startsWith("Mesh created"), 10000);
+2362:        QTest::qWait(700);
+2369:        QTRY_COMPARE(entities(observer, "beam").size(), 0);
+2372:        QTest::qWait(600);
+2374:        QTRY_COMPARE(entities(observer, "beam"), beams);
+2383:        QTRY_COMPARE(tree->topLevelItemCount(), 0);
+2392:        QTRY_VERIFY(geometryItem(tree));
+2394:        QTest::qWait(700);
+2419:    return QTest::qExec(&tests, test_arguments);

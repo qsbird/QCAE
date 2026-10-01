@@ -1,0 +1,14 @@
+任务 ID：EXT-01
+工作目录：/private/tmp/qcae-c4-ext01-41
+Baseline commit：b740b374c934f3b4624a21247b9a5deeb2ca6bf4
+任务包：/private/tmp/qcae-c4-ext01-41/docs/engineering/c4-executor-task.md
+
+执行资源协调：root 正在使用唯一 native GUI 槽。可继续独立实现、核心/IPC 验证；如需 native Qt/VTK 测试，先向 root 申请执行槽。编译并行度最多 2，禁止修改主工作区/其他执行者源码或共有构建。此消息属于执行期额外上下文，请计入读取账本；不含产品实现建议。
+
+收到 native 槽请求。root 的三次真实 GUI–AI 验收仍在运行，当前尚未释放该槽；先继续核心/IPC、旧格式、格式、保护摘要及公开消费者等独立验证。native 权限由 root 后续明确发放，请暂不启动窗口。对沙箱 ps 拒绝按现有授权做范围明确的本机重跑，保留原失败；不得据此改保护源码或跳过契约。此协调消息计入额外上下文。
+
+native GUI 槽现已释放给 EXT-01，其他执行者尚未获准。请在你独立工作树串行执行所需 native 回归，结束或失败后立即报告原始命令/exit与执行槽释放；不运行 root 的 AI 或其他测试。当前 root 私有 AI 批次已停止并保留失败，root 仅进行 headless 工作。此协调消息计入额外上下文。
+
+执行环境核对：root 只读查看你的 build-ext01-core/CMakeCache.txt，当前 _Python3_EXECUTABLE 为 /opt/homebrew/Frameworks/Python.framework/Versions/3.14/bin/python3.14；冻结环境的实际 Python 镜像为 /Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14（3.14.0）。为保持同一冻结工具环境，请用已冻结的实际配置选择该路径后重跑受影响工具测试，保留旧环境/timeout结果，不改阈值。root 已见其余两树缓存选择冻结路径。此环境协调消息计入额外上下文；无产品实现提示。
+
+已完成六个手写产品路径的只读 QG-02 审查，结论通过，无需产品补丁。核对 typed prepare→EditSession→RecordApplication.execute 唯一提交链；遗漏 description 清空、generated field nonempty/type 规则及幂等上下文保持既有路径。ipc_model 新分支仅适用于 introduced_version>1 的 optional field，原 generate_entities.py 当前仅允许 null 默认值，因此映射一致且无 Material 硬编码。审查边界：产品可读性通过不关闭实际读取成本缺口；请保留修正/原始失败/原字节夹具，按 Lore 提交最终扩展并交付 extension commit、完整 baseline diff 和 SHA、清单及实际日志，不更改冻结 manifest。

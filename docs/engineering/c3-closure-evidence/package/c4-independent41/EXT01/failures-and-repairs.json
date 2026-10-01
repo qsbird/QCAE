@@ -1,0 +1,88 @@
+{
+  "recorded_failed_command_count": 14,
+  "recorded_failed_commands": [
+    {
+      "name": "lookup-editing2",
+      "exit_code": 2,
+      "log": "docs/engineering/c4-ext01-evidence/lookup-editing2.log"
+    },
+    {
+      "name": "tests-and-build-locations",
+      "exit_code": 2,
+      "log": "docs/engineering/c4-ext01-evidence/tests-and-build-locations.log"
+    },
+    {
+      "name": "material-codepath",
+      "exit_code": 2,
+      "log": "docs/engineering/c4-ext01-evidence/material-codepath.log"
+    },
+    {
+      "name": "sqlite-test-setup",
+      "exit_code": 1,
+      "log": "docs/engineering/c4-ext01-evidence/sqlite-test-setup.log"
+    },
+    {
+      "name": "query-field-implementation",
+      "exit_code": 1,
+      "log": "docs/engineering/c4-ext01-evidence/query-field-implementation.log"
+    },
+    {
+      "name": "schema-query-dispatch",
+      "exit_code": 1,
+      "log": "docs/engineering/c4-ext01-evidence/schema-query-dispatch.log"
+    },
+    {
+      "name": "core-tests",
+      "exit_code": 8,
+      "log": "docs/engineering/c4-ext01-evidence/core-tests.log"
+    },
+    {
+      "name": "core-relevant-retest",
+      "exit_code": 8,
+      "log": "docs/engineering/c4-ext01-evidence/core-relevant-retest.log"
+    },
+    {
+      "name": "local-rebuild",
+      "exit_code": 1,
+      "log": "docs/engineering/c4-ext01-evidence/local-rebuild.log"
+    },
+    {
+      "name": "core-final-build",
+      "exit_code": 1,
+      "log": "docs/engineering/c4-ext01-evidence/core-final-build.log"
+    },
+    {
+      "name": "core-repair3-retest",
+      "exit_code": 8,
+      "log": "docs/engineering/c4-ext01-evidence/core-repair3-retest.log"
+    },
+    {
+      "name": "freeze-contract-native-retest",
+      "exit_code": 8,
+      "log": "docs/engineering/c4-ext01-evidence/freeze-contract-native-retest.log"
+    },
+    {
+      "name": "native-progress",
+      "exit_code": 1,
+      "log": "docs/engineering/c4-ext01-evidence/native-progress.log"
+    },
+    {
+      "name": "accounting-log-summary",
+      "exit_code": 1,
+      "log": "docs/engineering/c4-ext01-evidence/accounting-log-summary.log"
+    }
+  ],
+  "complete_failure_count": null,
+  "implementation_repair_count": 4,
+  "implementation_repairs": [
+    "Inspect committed transaction fields instead of diff_record_views field list, which does not populate field IDs.",
+    "Align optional description with frozen nonempty string contract; omission clears, empty string fails.",
+    "Remove attempted getter returning null because frozen core Value has no null variant; descriptor-driven entity.query supplies null through Qt adapter.",
+    "Rebuild generated operation contracts after removing getter before rerunning generation check."
+  ],
+  "environment_repairs": [
+    "Retry freeze contract on authorized host after sandbox ps denial; preserve 90-second timeout.",
+    "Select frozen Library Python 3.14.0 in all three CMake configurations; rerun affected tools without threshold changes."
+  ],
+  "other_failures": "Searches used missing paths, a transient native progress log was missing, and an evidence summary script was repaired for legacy log field names. Uninstrumented early failures are not counted as an exact total."
+}

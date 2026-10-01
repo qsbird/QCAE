@@ -1,0 +1,100 @@
+{
+  "schema": "qcae.c4-environment/1",
+  "frozen": true,
+  "os": "macOS 26.6.2 (25G83); arm64",
+  "cpu": "Apple M5; Mac17,3",
+  "memory_bytes": 17179869184,
+  "gpu": "Apple M5; 8 GPU cores; Metal 4",
+  "graphics_backend": "VTK OpenGL2 / QVTKOpenGLNativeWidget; OpenGL 4.1 Metal - 90.5; Cocoa",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+  "cmake": "cmake version 4.3.0",
+  "clang_format": "21; Apple clang-format version 21.0.0 (clang-2100.1.1.101)",
+  "python": "Python 3.14.0",
+  "qt": "6.11.1",
+  "vtk": "9.7.0",
+  "sqlite": "3.53.4",
+  "build_type": "Release",
+  "threads": 2,
+  "device_pixel_ratio": 2,
+  "framebuffer_pixels": [
+    1280,
+    720
+  ],
+  "font_backend": "CoreText; actual Qt QFontEngine Mac type 3; Cocoa default",
+  "tool_images": [
+    {
+      "id": "compiler",
+      "path": "/Library/Developer/CommandLineTools/usr/bin/clang",
+      "sha256": "f30550eab15fdf5ab8c0dc54c52679711241e5d4b636b027e18c09fef531775d"
+    },
+    {
+      "id": "cmake",
+      "path": "/opt/homebrew/Cellar/cmake/4.3.0/bin/cmake",
+      "sha256": "766f9f2af9532c0faa17f3ee904e77c3edc501bd51ba8b10e6fd38c7666b9972"
+    },
+    {
+      "id": "clang_format",
+      "path": "/Library/Developer/CommandLineTools/usr/bin/clang-format",
+      "sha256": "6444c11612a0df0d81516f38b390429d533828fc9f1cb4b55438979e1dd04129"
+    },
+    {
+      "id": "python",
+      "path": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "sha256": "50298e5fa54e018a9950794d4625a82ba7f2b04a6ef272dc4d26f89a2176072b"
+    },
+    {
+      "id": "qt",
+      "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtCore.framework/Versions/A/QtCore",
+      "sha256": "79af90e17b1ebefb279d2d6ec3fa5054da1c86827ee6c78fd6fa2562b604aa31"
+    },
+    {
+      "id": "vtk",
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkRenderingOpenGL2-9.7.9.7.dylib",
+      "sha256": "854f59cfca828b1dfa3d442da95f41ddb346608596e12c486c0ebc5546d72a48"
+    },
+    {
+      "id": "sqlite",
+      "path": "/opt/homebrew/Cellar/sqlite/3.53.4/lib/libsqlite3.3.53.4.dylib",
+      "sha256": "6b8bb64feced74cd0766990ad5e089566be6fec655a6c96d4cc1358325afb35a"
+    },
+    {
+      "id": "qt_gui",
+      "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtGui.framework/Versions/A/QtGui",
+      "sha256": "19d5426d52d42c3d92c06fcef89adf07dd1a58394c5fff34566fbbb89d2cb7b0"
+    },
+    {
+      "id": "qt_cocoa_plugin",
+      "path": "/opt/homebrew/Cellar/qtbase/6.11.1/share/qt/plugins/platforms/libqcocoa.dylib",
+      "sha256": "dd5019779a8de766e4c604637f0f4d1d8c53c2401c3af87119bc7be5d572b703"
+    },
+    {
+      "id": "vtk_commoncore",
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkCommonCore-9.7.9.7.dylib",
+      "sha256": "f03b4b0a4dbac1ce77e0c98b49c6b2d36fdbc3ff884f3ab973a4b614c61178e5"
+    },
+    {
+      "id": "sqlite_header",
+      "path": "/opt/homebrew/Cellar/sqlite/3.53.4/include/sqlite3.h",
+      "sha256": "919e7f2e8ed1d8f56ac17b412b8971c76aa5d1a879752cc6058f75e7d5910e1d"
+    }
+  ],
+  "probe_evidence": [
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-common40-environment-sampling.log",
+      "sha256": "811461c37901f2224be06e5d5ebe2b2d5efeb8ce7898f170ccc4fffde7b374fc"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/graphics-environment-probe.json",
+      "sha256": "88041240a2f931aa628d8da57dea1f27c594a0e251fdec30c240f053356d8d22"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/graphics-environment-probe.log",
+      "sha256": "a9150e529d637cf28176271e8e6a284bdb7df3664568fc5c95947976e159bd49"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/font-backend-mac-build36.json",
+      "sha256": "ab6075e99ef7cd4f25edf7cab55a28d6daa54878d81989e6781f1cf237aba21c"
+    }
+  ]
+}
+{'core': {'passed': True, 'command_count': 3, 'exit_codes': [0, 0, 0], 'commands_sha256': '0efb5d1da8401177bbb66c3e14a2563e5614c54efea26e1897e7787c61ef7673', 'execution_provenance': 'provided execution record, verified hashes; tool does not rerun commands', 'configuration': {'build_type': 'Release', 'qt_enabled': False, 'vtk_enabled': False, 'sqlite_enabled': False, 'asan_enabled': False, 'ubsan_enabled': False}}, 'sqlite_headless': {'passed': True, 'command_count': 3, 'exit_codes': [0, 0, 0], 'commands_sha256': 'ee1dc5022f4afcb87df37a2f9e26a5599a381df6156b71fb2efa4ad3aeaae195', 'execution_provenance': 'provided execution record, verified hashes; tool does not rerun commands', 'configuration': {'build_type': 'Release', 'qt_enabled': False, 'vtk_enabled': False, 'sqlite_enabled': True, 'asan_enabled': False, 'ubsan_enabled': False}}, 'desktop': {'passed': True, 'command_count': 3, 'exit_codes': [0, 0, 0], 'commands_sha256': 'dba2d64ea488e4323025f4a75c27145ac5f2786dce9ecbb110fba4d777a7cc8a', 'execution_provenance': 'provided execution record, verified hashes; tool does not rerun commands', 'configuration': {'build_type': 'Release', 'qt_enabled': True, 'vtk_enabled': True, 'sqlite_enabled': True, 'asan_enabled': False, 'ubsan_enabled': False}}, 'asan_ubsan': {'passed': True, 'command_count': 3, 'exit_codes': [0, 0, 0], 'commands_sha256': '70b39d9f1504127dc33f6970d6c131ccd72161a98b4eeedbe35c70b7fdfaa5fd', 'execution_provenance': 'provided execution record, verified hashes; tool does not rerun commands', 'configuration': {'build_type': 'Debug', 'qt_enabled': False, 'vtk_enabled': False, 'sqlite_enabled': True, 'asan_enabled': True, 'ubsan_enabled': True}}}

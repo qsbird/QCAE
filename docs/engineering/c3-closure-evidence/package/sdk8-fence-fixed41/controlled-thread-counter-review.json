@@ -1,0 +1,66 @@
+{
+  "schema": "qcae.sdk8-fixed-fence-controlled-thread-counter-review/1",
+  "original_15_raw_thread_attempts_changed": {
+    "old": 2052,
+    "fixed": 2122,
+    "inherited_QT_HASH_SEED": null
+  },
+  "all_original_thread_assertions_passed": true,
+  "original_entry_completion_node_counts_each": 200,
+  "original_unknown_and_sticky_status_each": 0,
+  "original_scope_active_null": true,
+  "one_old_fixed_seed0_control_pair_raw_output_bytes_equal": true,
+  "controlled_pair": [
+    {
+      "label": "controlled-seed0-threads-old",
+      "phase": "controlled-thread-diagnostic",
+      "argv": [
+        "/private/tmp/qcae-sdk8-reviewed41-probes/sdk8_exception_probe",
+        "threads"
+      ],
+      "cwd": "/private/tmp/qcae-sdk8-fence-fixed41",
+      "environment": {
+        "DYLD_FRAMEWORK_PATH": "/private/tmp/qcae-sdk8-reviewed41/qt-prefix/lib",
+        "DYLD_LIBRARY_PATH": "/private/tmp/qcae-sdk8-reviewed41/qt-prefix/lib",
+        "QT_PLUGIN_PATH": "/private/tmp/qcae-sdk8-reviewed41/qt-prefix/plugins",
+        "QT_HASH_SEED": "0"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.03769195801578462,
+      "log": "/private/tmp/qcae-sdk8-fence-fixed41/threads-controlled-seed0-old.log",
+      "log_sha256": "7626df0c3175f5eb9037162133cb5e5881b960d1c07eb93aa0606d318775dbc9",
+      "binary_sha256": "e79cfd12dace3cccd6072dc81957b3d89bc337d1e7c0c9ec0c96dcbd88f33a5b",
+      "collector_variant": "old",
+      "scope": "One necessary control for the retained unfixed-seed raw attempts difference; no GUI and no replacement of original 15 runs."
+    },
+    {
+      "label": "controlled-seed0-threads-fixed",
+      "phase": "controlled-thread-diagnostic",
+      "argv": [
+        "/private/tmp/qcae-sdk8-fence-fixed41/actual-sdk8/sdk8_exception_probe",
+        "threads"
+      ],
+      "cwd": "/private/tmp/qcae-sdk8-fence-fixed41",
+      "environment": {
+        "DYLD_FRAMEWORK_PATH": "/private/tmp/qcae-sdk8-reviewed41/qt-prefix/lib",
+        "DYLD_LIBRARY_PATH": "/private/tmp/qcae-sdk8-reviewed41/qt-prefix/lib",
+        "QT_PLUGIN_PATH": "/private/tmp/qcae-sdk8-reviewed41/qt-prefix/plugins",
+        "QT_HASH_SEED": "0"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.01887624990195036,
+      "log": "/private/tmp/qcae-sdk8-fence-fixed41/threads-controlled-seed0-fixed.log",
+      "log_sha256": "7626df0c3175f5eb9037162133cb5e5881b960d1c07eb93aa0606d318775dbc9",
+      "binary_sha256": "1ca4b93f89775ad4c07ad7991617e4e845d76676c22cdf8ce5e4d32f5786670b",
+      "collector_variant": "fixed",
+      "scope": "One necessary control for the retained unfixed-seed raw attempts difference; no GUI and no replacement of original 15 runs."
+    }
+  ],
+  "controlled_raw_output": "actual_SDK_image=/private/tmp/qcae-sdk8-reviewed41/qt-prefix/lib/QtCore.framework/Versions/A/QtCore\nmode=threads GREEN attempts=2052 entries=200 completion=200 node=200 unknown=0 sticky_status=0 actual_active_null=1\n",
+  "interpretation": "The raw attempts change disappears with a shared fixed QHash seed. This supports hash-seed-sensitive internal callback count variation; the original unfixed-seed logs remain unequal and are preserved. The collector guard patch does not modify QHash producer code or this direct callback mode.",
+  "original_15_logs_replaced": false,
+  "native_GUI_used": false,
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "complete_c3_passed": false,
+  "complete_sk12_passed": false
+}

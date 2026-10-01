@@ -1,0 +1,19 @@
+[0/2] Re-checking globbed directories...
+[1/58] Building CXX object CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o
+FAILED: [code=1] CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o 
+/usr/bin/c++  -I/private/tmp/qcae-c4-ext03-41/features/mesh_editing/include -I/private/tmp/qcae-c4-ext03-41/modules/application/include -I/private/tmp/qcae-c4-ext03-41/modules/document/include -I/private/tmp/qcae-c4-ext03-41/modules/foundation/include -I/private/tmp/qcae-c4-ext03-41/modules/contracts/include -I/private/tmp/qcae-c4-ext03-41/build-ext03-core/generated -I/private/tmp/qcae-c4-ext03-41/modules/operations/include -I/private/tmp/qcae-c4-ext03-41/modules/parameters/include -I/private/tmp/qcae-c4-ext03-41/modules/query/include -I/private/tmp/qcae-c4-ext03-41/profiles/nastran/include -I/private/tmp/qcae-c4-ext03-41/features/analysis/include -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -Werror -MD -MT CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o -MF CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o.d -o CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o -c /private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:142:38: error: no viable conversion from 'qcae::RecordInput' to 'std::string_view' (aka 'basic_string_view<char>')
+  142 |             options.registry->decode(encoded);
+      |                                      ^~~~~~~
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:316:25: note: candidate constructor not viable: no known conversion from 'qcae::RecordInput' to 'const string_view &' for 1st argument
+  316 |   _LIBCPP_HIDE_FROM_ABI basic_string_view(const basic_string_view&) _NOEXCEPT = default;
+      |                         ^                 ~~~~~~~~~~~~~~~~~~~~~~~~
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view:355:43: note: candidate constructor not viable: no known conversion from 'qcae::RecordInput' to 'const char *' for 1st argument
+  355 |   _LIBCPP_CONSTEXPR _LIBCPP_HIDE_FROM_ABI basic_string_view(const _CharT* __s)
+      |                                           ^                 ~~~~~~~~~~~~~~~~~
+/private/tmp/qcae-c4-ext03-41/modules/document/include/qcae/record_registry.hpp:167:35: note: passing argument to parameter here
+  167 |     Record decode(std::string_view, RecordStats* stats = nullptr) const;
+      |                                   ^
+1 error generated.
+[2/58] Building CXX object CMakeFiles/qcae_model_tests.dir/tests/model_tests.cpp.o
+ninja: build stopped: subcommand failed.

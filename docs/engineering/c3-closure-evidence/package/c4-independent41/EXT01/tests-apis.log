@@ -1,0 +1,38 @@
+modules/contracts/include/qcae/application_types.hpp-35-    std::string label;
+modules/contracts/include/qcae/application_types.hpp-36-    bool applied{};
+modules/contracts/include/qcae/application_types.hpp-37-};
+modules/contracts/include/qcae/application_types.hpp:38:struct HistorySnapshot {
+modules/contracts/include/qcae/application_types.hpp-39-    std::vector<HistoryItem> items;
+modules/contracts/include/qcae/application_types.hpp-40-    std::size_t cursor{};
+modules/contracts/include/qcae/application_types.hpp-41-    Revision revision{};
+modules/contracts/include/qcae/application_types.hpp-42-};
+modules/contracts/include/qcae/application_types.hpp-43-struct Limits {
+modules/contracts/include/qcae/application_types.hpp-44-    std::size_t max_materials{10000};
+modules/contracts/include/qcae/application_types.hpp-45-    std::size_t max_history_entries{128};
+modules/contracts/include/qcae/application_types.hpp-46-    std::size_t max_previews{128};
+--
+tests/typed_host_tests.cpp-262-        const auto rejected = invoke();
+tests/typed_host_tests.cpp-263-        require(rejected.value("error").toObject().value("code") == "SCHEMA_UNSUPPORTED" &&
+tests/typed_host_tests.cpp-264-                    rejected.value("error").toObject().value("field") == "expected_profile",
+tests/typed_host_tests.cpp:265:                "all immutable profile identity fields are checked");
+tests/typed_host_tests.cpp-266-        unchanged();
+tests/typed_host_tests.cpp-267-    }
+tests/typed_host_tests.cpp-268-    auto extra = expected;
+tests/typed_host_tests.cpp-269-    extra.insert("unexpected", 1);
+tests/typed_host_tests.cpp-270-    request.insert("expected_profile", extra);
+tests/typed_host_tests.cpp-271-    require(invoke().value("error").toObject().value("code") == "INVALID_INPUT",
+tests/typed_host_tests.cpp-272-            "unknown profile member rejected");
+tests/typed_host_tests.cpp-273-    unchanged();
+--
+tests/typed_host_tests.cpp-402-                    .value("code") == "STORAGE_UNCERTAIN",
+tests/typed_host_tests.cpp-403-            "task reconcile must never bypass application recovery");
+tests/typed_host_tests.cpp-404-    fixture.set_context(
+tests/typed_host_tests.cpp:405:        runtime_test::good(fixture.app.recover_document(fixture.caller, "recover")));
+tests/typed_host_tests.cpp-406-    require(fixture.invoke("task.reconcile", {}, "after-recovery").value("status") == "success",
+tests/typed_host_tests.cpp-407-            "recovered service initializes");
+tests/typed_host_tests.cpp-408-    const auto started = fixture.start("recovered-start");
+tests/typed_host_tests.cpp-409-    require(started.value("status") == "success", "admit after application recovery");
+tests/typed_host_tests.cpp-410-    fixture.wait(started.value("data").toObject().value("task_id"), "succeeded");
+tests/typed_host_tests.cpp-411-}
+tests/typed_host_tests.cpp-412-} // namespace
+tests/typed_host_tests.cpp-413-

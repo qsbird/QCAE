@@ -1,0 +1,60 @@
+12-    DocumentView records;
+13-    DocumentInfo info;
+14-};
+15:// Notifications and render deltas borrow immutable records from committed history.
+16-// A reverse entry applies its changes' after->before images without copying records.
+17-struct CommittedRecordChange {
+18-    DocumentRef document;
+19-    Revision base_revision{}, revision{};
+20-    TransactionId transaction;
+21-    std::shared_ptr<const RecordChangeSet> changes;
+--
+70-};
+71-struct RecordSaveImage {
+72-    std::string host_key, signature, path, token, project_id, snapshot;
+73:    bool save_as{};
+74-};
+75-struct OwnedRowImage {
+76-    StoreKey key;
+77-    std::string owner;
+78-    std::uint32_t schema_version{1};
+79-    SharedStoreBytes payload;
+--
+106-    std::uint64_t next_id{1};
+107-    std::optional<DocumentInfo> document;
+108-    std::string initial_content_state;
+109:    std::vector<std::shared_ptr<const RecordHistoryImage>> history;
+110-    std::size_t cursor{};
+111-    ImmutableFactMap<RecordOperationImage> operations;
+112-    ImmutableFactMap<RecordHostImage> host_operations;
+113:    std::shared_ptr<const RecordSaveImage> save_intent;
+114-    bool recoverable{};
+115-    std::shared_ptr<const OwnedRowTable> owned_rows = std::make_shared<const OwnedRowTable>();
+116-};
+117-struct RecordProjectImage {
+118-    DocumentView records;
+119-    std::string project_id, name, content_state;
+--
+156-                                                const std::string& source_path,
+157-                                                const std::string& idempotency_key,
+158-                                                const ProjectRecordMigration&);
+159:    Result<DocumentInfo> recover_document(const Caller&, const std::string&);
+160-    Result<DocumentInfo>
+161:    save_document(const Caller&, const WriteContext&, const std::string&, bool, const std::string&);
+162-    Result<DocumentInfo>
+163-    close_document(const Caller&, const WriteContext&, ClosePolicy, const std::string&);
+164-    Result<DocumentInfo>
+165-    host_operation(const Caller&, const std::string&, const std::string&) const;
+166-    Result<RecordSnapshot> snapshot(const DocumentRef&) const;
+167-    Result<RecordChangeBatch> changes_since(const DocumentRef&, Revision) const;
+--
+200-                                                std::size_t limit) const;
+201-    Result<ChangeReceipt> undo(const Caller&, const WriteContext&, const std::string&);
+202-    Result<ChangeReceipt> redo(const Caller&, const WriteContext&, const std::string&);
+203:    Result<HistorySnapshot> history(const DocumentRef&) const;
+204-    Result<ChangeReceipt>
+205-    operation(const Caller&, const DocumentRef&, const std::string&, const std::string&) const;
+206-    RecordStats stats() const;
+207-
+208-  private:
+209-    Result<bool> update_owned_rows_checked(const Caller&,

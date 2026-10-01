@@ -1,0 +1,68 @@
+    case RecordFieldKind::profile:
+        return profile_ref_json(record_wire::read_profile(field.payload));
+    case RecordFieldKind::target: {
+        const auto value = record_wire::read_target(field.payload);
+        return QJsonObject{{"profile", profile_ref_json(value.profile)},
+                           {"analysis_kind", qs(value.analysis_kind)}};
+    }
+    }
+    throw BadInput("Unsupported record field type");
+}
+QString entity_field_name(const RecordFieldDescriptor& field) {
+    // Preserve the established entity.query wire names; entity.fields uses schema names.
+    if (field.kind == RecordFieldKind::reference)
+        return qs(field.name + "_id");
+    if (field.kind == RecordFieldKind::vector3 && field.unit == "mm")
+        return qs(field.name + "_mm");
+    return qs(field.name);
+}
+} // namespace
+QJsonObject record_entity_json(const EntitySummary& entity, const DocumentView& view) {
+    QJsonObject result{
+        {"entity_id", qs(entity.id.value)}, {"kind", qs(entity.kind)}, {"name", qs(entity.name)}};
+    transport::json_ledger::ObjectCopies copies;
+    copies.insert(QLatin1StringView("entity_id"), result.value("entity_id"));
+    copies.insert(QLatin1StringView("kind"), result.value("kind"));
+    copies.insert(QLatin1StringView("name"), result.value("name"));
+    const auto record = view.find_identity(entity.id.value);
+    const auto input = record_wire::decode(record->encoded());
+    for (const auto& descriptor : record->descriptor().fields) {
+        const auto* field = record_wire::find(input, descriptor.id);
+        if (field) {
+            const auto key = entity_field_name(descriptor);
+            const auto value = field_json(*field);
+            result.insert(key, value);
+            copies.insert(key, value, true, false);
+            if (descriptor.kind == RecordFieldKind::target)
+                result.insert("profile_ref",
+                              profile_ref_json(record_wire::read_target(field->payload).profile));
+        } else if (entity.kind == "beam" && descriptor.name == "section")
+            result.insert("section_id", QJsonValue());
+    }
+    QJsonArray sources;
+    ledger::add(ledger::Stage::socket_send,
+                ledger::Metric::scanned_records,
+                view.count(RecordTraits<records::SourceIdentifier>::type_id));
+    view.visit(RecordTraits<records::SourceIdentifier>::type_id, [&](const Record& item) {
+        const auto& source = item->get<records::SourceIdentifier>();
+        if (source.entity == entity.id)
+            sources.append(QJsonObject{{"source_model_id", qs(source.source_model_id)},
+                                       {"namespace", qs(source.name_space)},
+                                       {"number", QString::number(source.number)},
+                                       {"include_id", qs(source.include.value)}});
+    });
+    result.insert("sources", sources);
+    copies.insert(QLatin1StringView("sources"), sources);
+    return result;
+}
+namespace {
+Result<EntityPage> query_page(const DocumentView& view,
+                              const EntityFilter& filter,
+                              std::size_t offset,
+                              std::size_t limit) {
+    RecordStats stats;
+    auto page = query_entities(view, filter, offset, limit, &stats);
+    ledger::add(
+        ledger::Stage::socket_send, ledger::Metric::model_copy_bytes, stats.model_bytes_copied);
+    if (!page.ok() || !ledger::current())
+        return page;

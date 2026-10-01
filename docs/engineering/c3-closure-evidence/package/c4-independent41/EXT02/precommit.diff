@@ -1,0 +1,637 @@
+diff --git a/docs/engineering/c4-ext02-validation.md b/docs/engineering/c4-ext02-validation.md
+new file mode 100644
+index 0000000..c57fdac
+--- /dev/null
++++ b/docs/engineering/c4-ext02-validation.md
+@@ -0,0 +1,31 @@
++# EXT-02 批量节点平移
++
++扩展独立从 `b740b374c934f3b4624a21247b9a5deeb2ca6bf4` 开始，执行者为 Codex native subagent `/root/c4_ext02_frozen41`。本记录只覆盖该扩展；共同 Release 集成、完整 C4/SK/P0 验收仍由主执行者完成。
++
++## 公开契约与权威路径
++
++新增 `NodeTranslateBatchInput`、`prepare_translate_nodes` 和生产 typed 操作 `node.translate_batch`。参数为非空、不重复的 `node_ids` 集合以及三个显式长度 Quantity `x`、`y`、`z`，允许 `mm`、`m`，表示平移向量而非目标位置。所有写入仍使用 document、epoch、expected_revision 和 idempotency_key。
++
++生产装配原有 mesh_editing contribution 自动注册新增操作。registry 的生成 typed decoder → mesh_editing 单位归一化/排序 → `RecordApplication.execute` → 一个 `EditSession` → 原有原子提交/历史/存储；没有第二份可写模型。节点身份集合排序、三轴归一到 mm 后生成签名，使重排集合及等价单位重试返回原事务。错误类型、未知节点、重复节点、无单位、非有限值、坐标溢出和旧上下文均拒绝整批修改。
++
++`node.translate_batch_preview` 使用同一准备函数和既有 `RecordApplication.preview`，返回可用于 `changes.commit` 的 preview_id。取消沿用既有 CLI 意图处置语义：调用者放弃 preview_id，不发送 changes.commit；不声称新增服务端取消 API。预览和放弃均不产生模型修订或历史。
++
++示例参数（请求上下文另按既有契约携带）：
++
++```json
++{"node_ids":["node4","node5"],"x":{"value":0,"unit":"mm"},"y":{"value":1,"unit":"mm"},"z":{"value":0,"unit":"mm"}}
++```
++
++## 验证与可读性审查
++
++`tests/model_operation_tests.cpp` 经真实 feature registry 验证 NaN/Infinity、后一个未知节点与后一个坐标溢出无部分发布；正常操作只有一次持久提交，重排/等价单位重试、undo 后重试和 redo 维持原事务语义。
++
++`tests/batch_translation_ipc_tests.py` 已登记为本地 SQLite/IPC CTest。它复用生产几何建线和后台离散任务构造完整 M：11 Node、10 Line2 及原有材料、截面、组织、载荷和 Analysis。真实 CLI 和 Unix socket 脚本各执行一次；完整 entity.query 记录全等比较只允许节点 4、5 的 y 增加 1 mm，单次 undo 恢复完整 M，redo 恢复平移结果。每条路径还验证预览/取消、10 个错误分支、同键异参拒绝和已有 node.move。
++
++独立公共消费者新增 `consumer_batch_translation`，通过目标公开 usage requirements 编译 typed input 和准备函数并运行，无私有 include 路径。自动格式为冻结 clang-format 21，生成器不改，产物经生成器 --check 验证。手写产品文件为 mesh_editing 的 CMake、公开头、实现及独立操作 schema 共 4 个；保护文件触碰 0。
++
++执行者可读性自查：单位/集合校验在准备入口完成；回调只更新目标 Node 的 position，保留 mesh、连接和其他记录；错误在私有 EditSession 内退出，副作用只由唯一应用协调者提交。预览与直接写入共用该准备函数。旧 node.move、beam.assign_section 处理器保持原实现；新增注册逐项传播失败。此自查不替代共同集成的独立审查。
++
++实际命令、失败诊断、M 原始/平移记录及 IPC transcript 保留在执行者的独立证据目录，由交付 manifest 绑定 SHA256。初始八文件为 42078 内容字节、42601 含 heading/换行交付字节；重复读取、后续文件、搜索和构建诊断另计，真实 token 统计为 null。首个外层工具显示发生截断，修改前已完整重新交付；不能把初始包长度当作总上下文成本。
++
++验证状态以独立交付 manifest 和原始日志为准。完整核心回归初次为 38/39，既有 c4_freeze_contract 在默认 90 秒门槛超时；提升执行权限后仍超时，阈值和保护工具未改。停止本扩展编译负载后，同一 CTest 在 50.65 秒通过；最终完整核心 Release 回归 39/39 通过，该测试耗时 35.97 秒。两个超时与通过原始日志均保留。受影响的本地核心/SQLite/IPC 回归 13/13 通过，公共消费者 48/48 编译通过且新增消费者运行成功；最终新增 IPC CTest 包含实际预览应用/撤销验证并通过。产品/测试实现曾有一次测试专用 EntityId 显式构造编译错误，修复后核心和桌面 Release 构建通过；错误与修复日志均保留。
+diff --git a/features/mesh_editing/CMakeLists.txt b/features/mesh_editing/CMakeLists.txt
+index a0794ea..816a358 100644
+--- a/features/mesh_editing/CMakeLists.txt
++++ b/features/mesh_editing/CMakeLists.txt
+@@ -3,3 +3,10 @@ target_include_directories(qcae_mesh_editing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}
+ target_compile_features(qcae_mesh_editing PUBLIC cxx_std_20)
+ target_link_libraries(qcae_mesh_editing PUBLIC qcae_application qcae_operations qcae_parameters)
+ qcae_warnings(qcae_mesh_editing)
++if(BUILD_TESTING AND QCAE_BUILD_IPC AND QCAE_BUILD_STORAGE AND UNIX)
++  add_test(NAME batch_translation_ipc COMMAND Python3::Interpreter
++    "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/batch_translation_ipc_tests.py"
++    --engine "$<TARGET_FILE:qcae-engine>" --cli "$<TARGET_FILE:qcae-cli>"
++    --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/batch-translation-evidence")
++  set_tests_properties(batch_translation_ipc PROPERTIES TIMEOUT 90)
++endif()
+diff --git a/features/mesh_editing/include/qcae/mesh_editing_operations.hpp b/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
+index 7155869..8c3325b 100644
+--- a/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
++++ b/features/mesh_editing/include/qcae/mesh_editing_operations.hpp
+@@ -9,6 +9,8 @@ struct OperationPlan {
+ };
+ [[nodiscard]] Result<OperationPlan> prepare_move_node(const operations::NodeMoveInput&);
+ [[nodiscard]] Result<OperationPlan>
++prepare_translate_nodes(const operations::NodeTranslateBatchInput&);
++[[nodiscard]] Result<OperationPlan>
+ prepare_assign_section(const operations::BeamAssignSectionInput&);
+ [[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
+ } // namespace qcae::features::mesh_editing
+diff --git a/features/mesh_editing/src/mesh_editing_operations.cpp b/features/mesh_editing/src/mesh_editing_operations.cpp
+index 3e1ea24..1e750e7 100644
+--- a/features/mesh_editing/src/mesh_editing_operations.cpp
++++ b/features/mesh_editing/src/mesh_editing_operations.cpp
+@@ -102,6 +102,59 @@ Result<OperationPlan> prepare_assign_section(const operations::BeamAssignSection
+     return success(OperationPlan{*signature.value, std::move(prepare)});
+ }
+ 
++Result<OperationPlan> prepare_translate_nodes(const operations::NodeTranslateBatchInput& input) {
++    const auto identities = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
++    if (!identities.ok())
++        return {identities.status, std::nullopt, identities.error};
++    auto canonical = input;
++    const std::array components{&canonical.x, &canonical.y, &canonical.z};
++    constexpr std::array names{"x", "y", "z"};
++    for (std::size_t axis = 0; axis < components.size(); ++axis) {
++        auto component =
++            parameters::canonical_quantity(*components[axis], parameters::Dimension::length);
++        if (!component.ok()) {
++            component.error->field = names[axis];
++            return {component.status, std::nullopt, component.error};
++        }
++        *components[axis] = std::move(*component.value);
++    }
++    std::sort(canonical.node_ids.begin(), canonical.node_ids.end());
++    const auto signature =
++        canonical_value(InputTraits<NodeTranslateBatchInput>::to_value(canonical));
++    if (!signature.ok())
++        return {signature.status, std::nullopt, signature.error};
++    RecordPrepare prepare = [canonical, signature = *signature.value](
++                                const DocumentView& view, const RecordIdentityAllocator&) {
++        try {
++            EditSession edit(view);
++            const std::array offset{canonical.x.value, canonical.y.value, canonical.z.value};
++            for (const auto& identity : canonical.node_ids) {
++                edit.update<records::Node>(identity, [&](auto& node) {
++                    for (std::size_t axis = 0; axis < offset.size(); ++axis) {
++                        const auto coordinate = parameters::canonical_quantity(
++                            {node.position[axis] + offset[axis], "mm"},
++                            parameters::Dimension::length);
++                        if (!coordinate.ok())
++                            throw RecordError(coordinate.error->code,
++                                              coordinate.error->message,
++                                              "position[" + std::to_string(axis) + "]");
++                        node.position[axis] = coordinate.value->value;
++                    }
++                });
++            }
++            return success(RecordPreparedOperation{edit.prepare(),
++                                                   "Translate nodes",
++                                                   canonical.node_ids.front(),
++                                                   signature,
++                                                   0,
++                                                   false});
++        } catch (const RecordError& error) {
++            return failed<RecordPreparedOperation>(error);
++        }
++    };
++    return success(OperationPlan{*signature.value, std::move(prepare)});
++}
++
+ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
+     const auto registered = registry.register_typed<NodeMoveInput>(
+         InputTraits<NodeMoveInput>::definition(),
+@@ -110,10 +163,36 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
+         });
+     if (!registered.ok())
+         return registered;
+-    return registry.register_typed<BeamAssignSectionInput>(
++    const auto section = registry.register_typed<BeamAssignSectionInput>(
+         InputTraits<BeamAssignSectionInput>::definition(),
+         [&app](const OperationContext& context, const BeamAssignSectionInput& input) {
+             return execute(app, context, input, prepare_assign_section);
+         });
++    if (!section.ok())
++        return section;
++    const auto translate = registry.register_typed<NodeTranslateBatchInput>(
++        InputTraits<NodeTranslateBatchInput>::definition(),
++        [&app](const OperationContext& context, const NodeTranslateBatchInput& input) {
++            return execute(app, context, input, prepare_translate_nodes);
++        });
++    if (!translate.ok())
++        return translate;
++    return registry.register_typed<NodeTranslateBatchPreviewInput>(
++        InputTraits<NodeTranslateBatchPreviewInput>::definition(),
++        [&app](const OperationContext& context,
++               const NodeTranslateBatchPreviewInput& input) -> Result<Value> {
++            const auto plan = prepare_translate_nodes({input.node_ids, input.x, input.y, input.z});
++            if (!plan.ok())
++                return {plan.status, std::nullopt, plan.error};
++            const auto preview = app.preview(context.caller,
++                                             {*context.document, *context.expected_revision},
++                                             plan.value->prepare);
++            if (!preview.ok())
++                return {preview.status, std::nullopt, preview.error};
++            return success(Value(Value::Object{
++                {"preview_id", Value(preview.value->id.value)},
++                {"affected_entity_id", Value(preview.value->affected_entity.value)},
++                {"revision", Value(std::to_string(preview.value->context.expected_revision))}}));
++        });
+ }
+ } // namespace qcae::features::mesh_editing
+diff --git a/schemas/operations/mesh_editing.json b/schemas/operations/mesh_editing.json
+new file mode 100644
+index 0000000..461c68c
+--- /dev/null
++++ b/schemas/operations/mesh_editing.json
+@@ -0,0 +1,100 @@
++{
++  "schema_version": 1,
++  "status": "implemented_typed_feature_operations",
++  "operations": [
++    {
++      "operation_id": "node.translate_batch",
++      "version": 1,
++      "schema_id": "qcae.operation.node.translate_batch.v1",
++      "type_name": "NodeTranslateBatchInput",
++      "effect": "document_write",
++      "context": {
++        "document": true,
++        "epoch": true,
++        "expected_revision": true,
++        "idempotency_key": true
++      },
++      "fields": [
++        {
++          "field_id": 1,
++          "name": "node_ids",
++          "type": "entity_id_array"
++        },
++        {
++          "field_id": 2,
++          "name": "x",
++          "type": "quantity",
++          "units": [
++            "mm",
++            "m"
++          ]
++        },
++        {
++          "field_id": 3,
++          "name": "y",
++          "type": "quantity",
++          "units": [
++            "mm",
++            "m"
++          ]
++        },
++        {
++          "field_id": 4,
++          "name": "z",
++          "type": "quantity",
++          "units": [
++            "mm",
++            "m"
++          ]
++        }
++      ]
++    },
++    {
++      "operation_id": "node.translate_batch_preview",
++      "version": 1,
++      "schema_id": "qcae.operation.node.translate_batch_preview.v1",
++      "type_name": "NodeTranslateBatchPreviewInput",
++      "effect": "preview",
++      "context": {
++        "document": true,
++        "epoch": true,
++        "expected_revision": true,
++        "idempotency_key": false
++      },
++      "fields": [
++        {
++          "field_id": 1,
++          "name": "node_ids",
++          "type": "entity_id_array"
++        },
++        {
++          "field_id": 2,
++          "name": "x",
++          "type": "quantity",
++          "units": [
++            "mm",
++            "m"
++          ]
++        },
++        {
++          "field_id": 3,
++          "name": "y",
++          "type": "quantity",
++          "units": [
++            "mm",
++            "m"
++          ]
++        },
++        {
++          "field_id": 4,
++          "name": "z",
++          "type": "quantity",
++          "units": [
++            "mm",
++            "m"
++          ]
++        }
++      ]
++    }
++  ]
++}
+diff --git a/tests/batch_translation_ipc_tests.py b/tests/batch_translation_ipc_tests.py
+new file mode 100644
+index 0000000..be09489
+--- /dev/null
++++ b/tests/batch_translation_ipc_tests.py
+@@ -0,0 +1,187 @@
++#!/usr/bin/env python3
++"""EXT-02: production typed batch translation on the real geometry-derived M."""
++from __future__ import annotations
++
++import argparse
++import copy
++import json
++from pathlib import Path
++import subprocess
++import tempfile
++import time
++
++from analysis_check_ipc_tests import Client
++from result_fixture_ipc_tests import create_m
++
++
++def run(engine, cli, mode, evidence):
++    evidence.mkdir(parents=True, exist_ok=True)
++    with tempfile.TemporaryDirectory(prefix="qcae-ext02-", dir=Path("/tmp").resolve()) as folder:
++        root = Path(folder)
++        client = Client(engine, cli, str(root / "engine.sock"), mode)
++        with (evidence / f"{mode}-engine.log").open("w+") as log:
++            process = subprocess.Popen([engine, "--socket", client.endpoint,
++                                        "--workspace", str(root / "work.sqlite")], stdout=log, stderr=log)
++            try:
++                deadline = time.monotonic() + 15
++                while True:
++                    assert process.poll() is None, "engine terminated during startup"
++                    try:
++                        capabilities = client.call("capabilities.list")
++                        break
++                    except (OSError, AssertionError, json.JSONDecodeError):
++                        assert time.monotonic() < deadline, "engine startup timed out"
++                        time.sleep(.05)
++                operations = {item["name"]: item for item in capabilities["operations"]}
++                for name in ("node.translate_batch", "node.translate_batch_preview", "node.move"):
++                    assert operations[name]["available"], operations[name]
++                assert operations["node.translate_batch"]["effect"] == "document_write"
++                assert operations["node.translate_batch_preview"]["effect"] == "preview"
++                profile = capabilities["declared_solver_profiles"][0]["profile_ref"]
++                nodes, beams, material, _, _ = create_m(client, profile)
++                assert len(nodes) == 11 and len(beams) == 10
++                assert len(client.entities("geometry")) == len(client.entities("mesh")) == 1
++                for index, identity in enumerate(nodes):
++                    assert client.fields(identity)["position"] == [index * 100, 0, 0]
++
++                def rows():
++                    return sorted(client.call("entity.query", context=client.current())["entities"],
++                                  key=lambda row: row["entity_id"])
++
++                def state():
++                    current = client.current()
++                    return current, client.call("history.list", context=current), rows()
++
++                before = state()
++                original = before[2]
++                selected = {nodes[4], nodes[5]}
++                parameters = {"node_ids": [nodes[4], nodes[5]],
++                              "x": {"value": 0, "unit": "mm"},
++                              "y": {"value": 1, "unit": "mm"},
++                              "z": {"value": 0, "unit": "mm"}}
++                cancelled = client.call("node.translate_batch_preview", parameters, before[0])
++                assert cancelled["revision"] == before[0]["revision"]
++                # Cancel disposes the intent: no changes.commit is sent for this token.
++                assert state() == before, "preview/cancel changed model, revision or history"
++                (evidence / f"{mode}-cancel.json").write_text(json.dumps({
++                    "preview_id": cancelled["preview_id"], "intent_disposed": True,
++                    "commit_sent": False, "model_history_revision_unchanged": True}, indent=2) + "\n")
++
++                negatives = []
++                missing_unit = copy.deepcopy(parameters)
++                del missing_unit["y"]["unit"]
++                negatives.append(("missing-unit", missing_unit, "needs_input", "MISSING_INPUT"))
++                unknown = copy.deepcopy(parameters)
++                unknown["node_ids"] = [nodes[4], "zzzz-missing-node"]
++                negatives.append(("unknown-id", unknown, "failed", "ENTITY_NOT_FOUND"))
++                wrong_entity = copy.deepcopy(parameters)
++                wrong_entity["node_ids"] = [nodes[4], material]
++                negatives.append(("wrong-entity-type", wrong_entity, "failed", "ENTITY_NOT_FOUND"))
++                wrong_value = copy.deepcopy(parameters)
++                wrong_value["y"]["value"] = True
++                negatives.append(("wrong-value-type", wrong_value, "failed", "INVALID_INPUT"))
++                wrong_ids = copy.deepcopy(parameters)
++                wrong_ids["node_ids"] = nodes[4]
++                negatives.append(("wrong-array-type", wrong_ids, "failed", "INVALID_INPUT"))
++                duplicate = copy.deepcopy(parameters)
++                duplicate["node_ids"] = [nodes[4], nodes[4]]
++                negatives.append(("duplicate-id", duplicate, "failed", "INVALID_INPUT"))
++                wrong_unit = copy.deepcopy(parameters)
++                wrong_unit["y"]["unit"] = "N"
++                negatives.append(("wrong-dimension", wrong_unit, "failed", "INVALID_UNIT"))
++                for key, negative, status, code in negatives:
++                    response = client.call("node.translate_batch", negative, before[0], key, expected=status)
++                    assert response["error"]["code"] == code, response
++                    assert state() == before, key
++                # A finite JSON value whose conversion to mm overflows is also atomic.
++                huge = copy.deepcopy(parameters)
++                huge["y"] = {"value": 1.7976931348623157e308, "unit": "m"}
++                client.call("node.translate_batch", huge, before[0], "overflow", expected="failed")
++                assert state() == before
++
++                changed_context = dict(before[0], revision=str(int(before[0]["revision"]) - 1))
++                stale = client.call("node.translate_batch", parameters, changed_context, "stale", expected="conflict")
++                assert stale["error"]["code"] == "REVISION_CONFLICT"
++                expired = dict(before[0], document_epoch="expired-epoch")
++                stale_epoch = client.call("node.translate_batch", parameters, expired, "expired", expected="conflict")
++                assert stale_epoch["error"]["code"] == "DOCUMENT_EPOCH_EXPIRED"
++                assert state() == before
++
++                receipt = client.call("node.translate_batch", parameters, before[0], "batch")
++                after = state()
++                assert int(after[0]["revision"]) == int(before[0]["revision"]) + 1
++                assert len(after[1]["items"]) == len(before[1]["items"]) + 1
++                expected_rows = copy.deepcopy(original)
++                for row in expected_rows:
++                    if row["entity_id"] in selected:
++                        assert row["kind"] == "node"
++                        row["position_mm"][1] += 1
++                assert after[2] == expected_rows, "batch changed records outside selected Nodes"
++                translated = after[2]
++                equivalent = copy.deepcopy(parameters)
++                equivalent["node_ids"].reverse()
++                equivalent["y"] = {"value": .001, "unit": "m"}
++                retry = client.call("node.translate_batch", equivalent, before[0], "batch")
++                assert retry["replayed"] and retry["transaction_id"] == receipt["transaction_id"]
++                assert state() == after
++                conflict = copy.deepcopy(parameters)
++                conflict["y"]["value"] = 2
++                rejection = client.call("node.translate_batch", conflict, before[0], "batch", expected="conflict")
++                assert rejection["error"]["code"] == "IDEMPOTENCY_KEY_CONFLICT"
++                assert state() == after
++                client.call("history.undo", context=after[0], key="undo-batch")
++                undone = state()
++                assert undone[2] == original, "one undo did not restore every M record"
++                retry = client.call("node.translate_batch", parameters, before[0], "batch")
++                assert retry["replayed"] and retry["transaction_id"] == receipt["transaction_id"]
++                assert state() == undone, "retry reapplied an undone batch"
++                client.call("history.redo", context=undone[0], key="redo-batch")
++                assert rows() == translated
++                preview_context = client.current()
++                applicable = client.call("node.translate_batch_preview", parameters, preview_context)
++                client.call("changes.commit", {"preview_id": applicable["preview_id"]},
++                            preview_context, "apply-batch-preview")
++                twice = copy.deepcopy(translated)
++                for row in twice:
++                    if row["entity_id"] in selected:
++                        row["position_mm"][1] += 1
++                assert rows() == twice, "typed preview did not commit through existing changes.commit"
++                client.call("history.undo", context=client.current(), key="undo-batch-preview")
++                assert rows() == translated
++                client.call("node.move", {"entity_id": nodes[4], "position_mm": [400, 2, 0]},
++                            client.current(), "old-node-move")
++                assert client.fields(nodes[4])["position"] == [400, 2, 0]
++                client.call("history.undo", context=client.current(), key="undo-old-move")
++                assert rows() == translated
++                report = {"mode": mode, "passed": True, "nodes": len(nodes), "line2": len(beams),
++                          "changed_ids": sorted(selected), "transactions_for_batch": 1,
++                          "negative_rejections": len(negatives) + 3,
++                          "preview_cancel_unchanged": True, "single_undo_redo_verified": True,
++                          "preview_apply_verified": True,
++                          "retry_after_undo_verified": True, "legacy_node_move_verified": True}
++                (evidence / f"{mode}-M-original.json").write_text(json.dumps(original, indent=2) + "\n")
++                (evidence / f"{mode}-M-translated.json").write_text(json.dumps(translated, indent=2) + "\n")
++                (evidence / f"{mode}-report.json").write_text(json.dumps(report, indent=2) + "\n")
++                print(json.dumps(report), flush=True)
++                return report
++            finally:
++                if process.poll() is None:
++                    process.terminate()
++                    process.wait(timeout=10)
++                (evidence / f"{mode}-transcript.json").write_text(json.dumps(client.transcript, indent=2) + "\n")
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--engine", required=True)
++    parser.add_argument("--cli", required=True)
++    parser.add_argument("--evidence-dir", required=True, type=Path)
++    args = parser.parse_args()
++    reports = [run(str(Path(args.engine).resolve()), str(Path(args.cli).resolve()), mode, args.evidence_dir)
++               for mode in ("cli", "script")]
++    (args.evidence_dir / "report.json").write_text(json.dumps({"passed": 2, "total": 2, "runs": reports}, indent=2) + "\n")
++    print("PASS: EXT-02 production registry/CLI/IPC batch translation 2/2")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tests/model_operation_tests.cpp b/tests/model_operation_tests.cpp
+index 2baf846..22a578f 100644
+--- a/tests/model_operation_tests.cpp
++++ b/tests/model_operation_tests.cpp
+@@ -2,6 +2,7 @@
+ #include "qcae/mesh_editing_operations.hpp"
+ #include "qcae/records.hpp"
+ #include "qcae/core.hpp"
++#include <algorithm>
+ #include <iostream>
+ #include <limits>
+ #include <stdexcept>
+@@ -551,6 +552,116 @@ void edits_sections_and_reference_failures() {
+         ErrorCode::revision_conflict,
+         "actual expected revision is checked by application");
+ }
++
++void batch_translation_contract() {
++    Fixture fixture;
++    const auto context = fixture.context("seed-batch");
++    good(fixture.app.execute(
++             fixture.caller,
++             {*context.document, *context.expected_revision},
++             "test.seed",
++             "batch-nodes",
++             [](const DocumentView& view,
++                const RecordIdentityAllocator&) -> Result<RecordPreparedOperation> {
++                 EditSession edit(view);
++                 edit.put(records::Node{EntityId("n0"), {0, 0, 0}, {}});
++                 edit.put(records::Node{EntityId("n1"), {1, 0, 0}, {}});
++                 edit.put(
++                     records::Node{EntityId("n2"), {std::numeric_limits<double>::max(), 0, 0}, {}});
++                 return {Status::success,
++                         RecordPreparedOperation{edit.prepare(),
++                                                 "Seed batch nodes",
++                                                 EntityId("n0"),
++                                                 "batch-nodes",
++                                                 0,
++                                                 false},
++                         {}};
++             },
++             "seed-batch"),
++         "seed batch nodes");
++    const auto original = fixture.snapshot();
++    const auto generation = fixture.rows->generation;
++    const NodeTranslateBatchInput input{
++        {EntityId("n0"), EntityId("n1")}, {0, "mm"}, {1, "mm"}, {0, "mm"}};
++    for (const auto invalid :
++         {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()}) {
++        auto nonfinite = input;
++        nonfinite.y.value = invalid;
++        bad(fixture.registry.invoke("node.translate_batch",
++                                    fixture.context("nonfinite"),
++                                    InputTraits<NodeTranslateBatchInput>::to_value(nonfinite)),
++            ErrorCode::invalid_input,
++            "nonfinite translation is rejected through registry");
++    }
++    auto missing = input;
++    missing.node_ids.back() = EntityId("zz-missing");
++    bad(fixture.registry.invoke("node.translate_batch",
++                                fixture.context("missing"),
++                                InputTraits<NodeTranslateBatchInput>::to_value(missing)),
++        ErrorCode::entity_not_found,
++        "missing second node rejects the staged first update");
++    auto overflow = input;
++    overflow.node_ids.back() = EntityId("n2");
++    overflow.x.value = std::numeric_limits<double>::max();
++    bad(fixture.registry.invoke("node.translate_batch",
++                                fixture.context("overflow"),
++                                InputTraits<NodeTranslateBatchInput>::to_value(overflow)),
++        ErrorCode::invalid_input,
++        "finite input that overflows a later coordinate is atomic");
++    check(fixture.rows->generation == generation &&
++              fixture.snapshot().info.revision == original.info.revision &&
++              fixture.snapshot().records.find<records::Node>(EntityId("n0")) ==
++                  original.records.find<records::Node>(EntityId("n0")),
++          "rejected batches do not publish any records or persistent rows");
++    const auto batch_context = fixture.context("translate-batch");
++    const auto translated = fixture.invoke("node.translate_batch",
++                                           batch_context,
++                                           InputTraits<NodeTranslateBatchInput>::to_value(input));
++    check(fixture.rows->generation == generation + 1 &&
++              fixture.snapshot().info.revision == original.info.revision + 1,
++          "batch uses exactly one application transaction");
++    for (const auto id : {"n0", "n1"})
++        check(fixture.snapshot()
++                      .records.find<records::Node>(EntityId(id))
++                      ->get<records::Node>()
++                      .position[1] == 1,
++              "one batch translates both selected nodes");
++    auto equivalent = input;
++    std::reverse(equivalent.node_ids.begin(), equivalent.node_ids.end());
++    equivalent.y = {.001, "m"};
++    const auto retry = fixture.invoke("node.translate_batch",
++                                      batch_context,
++                                      InputTraits<NodeTranslateBatchInput>::to_value(equivalent));
++    check(replayed(retry) && transaction(retry) == transaction(translated) &&
++              fixture.rows->generation == generation + 1,
++          "reordered selection and equivalent units replay the original transaction");
++    auto current = fixture.snapshot().info;
++    good(fixture.app.undo(fixture.caller, {current.document, current.revision}, "undo-batch"),
++         "undo batch");
++    const auto undone = fixture.snapshot();
++    for (const auto id : {"n0", "n1", "n2"})
++        check(undone.records.find<records::Node>(EntityId(id))->get<records::Node>().position ==
++                  original.records.find<records::Node>(EntityId(id))->get<records::Node>().position,
++              "one undo restores all coordinates");
++    const auto undone_generation = fixture.rows->generation;
++    fixture.invoke("node.translate_batch",
++                   batch_context,
++                   InputTraits<NodeTranslateBatchInput>::to_value(input));
++    check(fixture.rows->generation == undone_generation &&
++              fixture.snapshot()
++                      .records.find<records::Node>(EntityId("n0"))
++                      ->get<records::Node>()
++                      .position[1] == 0,
++          "retry after undo returns the old fact without applying again");
++    current = fixture.snapshot().info;
++    good(fixture.app.redo(fixture.caller, {current.document, current.revision}, "redo-batch"),
++         "redo batch");
++    check(fixture.snapshot()
++                  .records.find<records::Node>(EntityId("n1"))
++                  ->get<records::Node>()
++                  .position == std::array<double, 3>{1, 1, 0},
++          "redo restores the entire translation");
++}
+ } // namespace
+ int main() {
+     try {
+@@ -561,6 +672,7 @@ int main() {
+         direct_retry_and_history();
+         retained_create_identity();
+         edits_sections_and_reference_failures();
++        batch_translation_contract();
+         std::cout << "PASS: reusable record feature operations, normalization, references and "
+                      "direct retries\n";
+     } catch (const std::exception& error) {
+diff --git a/tests/public_api_consumers/CMakeLists.txt b/tests/public_api_consumers/CMakeLists.txt
+index 50e049b..8a0799c 100644
+--- a/tests/public_api_consumers/CMakeLists.txt
++++ b/tests/public_api_consumers/CMakeLists.txt
+@@ -54,6 +54,11 @@ target_link_libraries(consumer_operation_contracts PRIVATE qcae_operations)
+ qcae_warnings(consumer_operation_contracts)
+ list(APPEND consumers consumer_operation_contracts)
+ math(EXPR header_count "${header_count} + 1")
++add_executable(consumer_batch_translation EXCLUDE_FROM_ALL batch_translation.cpp)
++target_link_libraries(consumer_batch_translation PRIVATE qcae_mesh_editing)
++qcae_warnings(consumer_batch_translation)
++list(APPEND consumers consumer_batch_translation)
++math(EXPR header_count "${header_count} + 1")
+ add_custom_target(qcae_public_consumers ALL DEPENDS ${consumers})
+ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/public-consumer-count.txt" "${header_count}\n")
+ message(STATUS "Public API gate: ${header_count} independently compiled header consumers")
+diff --git a/tests/public_api_consumers/batch_translation.cpp b/tests/public_api_consumers/batch_translation.cpp
+new file mode 100644
+index 0000000..e835ff2
+--- /dev/null
++++ b/tests/public_api_consumers/batch_translation.cpp
+@@ -0,0 +1,12 @@
++#include "qcae/mesh_editing_operations.hpp"
++
++int main() {
++    const qcae::operations::NodeTranslateBatchInput input{
++        {qcae::EntityId("node4"), qcae::EntityId("node5")}, {0, "mm"}, {1, "mm"}, {0, "mm"}};
++    const auto plan = qcae::features::mesh_editing::prepare_translate_nodes(input);
++    const auto decoded =
++        qcae::operations::InputTraits<qcae::operations::NodeTranslateBatchInput>::from_value(
++            qcae::operations::InputTraits<qcae::operations::NodeTranslateBatchInput>::to_value(
++                input));
++    return plan.ok() && decoded.ok() ? 0 : 1;
++}

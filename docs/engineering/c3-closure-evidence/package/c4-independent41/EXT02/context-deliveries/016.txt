@@ -1,0 +1,1340 @@
+--- AGENTS.md (4101 UTF-8 bytes) ---
+<!-- AUTONOMY DIRECTIVE — DO NOT REMOVE -->
+YOU ARE AN AUTONOMOUS CODING AGENT. EXECUTE TASKS TO COMPLETION WITHOUT ASKING FOR PERMISSION.
+DO NOT STOP TO ASK "SHOULD I PROCEED?" — PROCEED. DO NOT WAIT FOR CONFIRMATION ON OBVIOUS NEXT STEPS.
+IF BLOCKED, TRY AN ALTERNATIVE APPROACH. ONLY ASK WHEN TRULY AMBIGUOUS OR DESTRUCTIVE.
+USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES THROUGHPUT. THIS IS COMPLEMENTARY TO OMX TEAM MODE.
+<!-- END AUTONOMY DIRECTIVE -->
+
+# QCAE workspace conventions
+
+## Source of truth
+
+Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Root-level versioned `docs/*-v0.*.md` are historical research. `.omx/` is local runtime context, not canonical project documentation and not committed.
+
+The platform skeleton is delivered through C1/C2 on top of the M0/M1 and M2/M3 slices; see docs/implementation/c2-handoff.md and docs/engineering/c2-validation.md for current runtime and evidence. The Qt/VTK desktop retains the M2/M3 tools; C2 geometry and mesh tools are CLI/IPC only. NEXT-01/02/03 entry consistency is implemented; see docs/engineering/next-validation.md for its separate evidence. Follow-up priorities are recorded in docs/baseline/development-plan.md; planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
+
+## Binding architecture
+
+- Local small/medium-model P0; Nastran controlled subset and one cantilever workflow.
+- C++20 domain/application core; Qt desktop, VTK rendering, SQLite persistence via adapters.
+- One local engine owns each active document. GUI, CLI and external AI use the same application services, transactions and history.
+- No Qt, VTK, SQLite or MCP SDK types in core public interfaces.
+- Stable entity IDs, solver numbers, storage positions and render IDs remain separate.
+- Writes use document/epoch/revision checks, atomic commits and bounded persistent history. Never bypass this path for scripts or AI.
+- Normal open, fault recovery, save, save-as and discard have distinct documented behavior.
+- External solver results retain input provenance; successful process exit alone is not engineering validation.
+- Respect dependency rules in `docs/architecture/module-dependencies.json`; logical modules need not each become a library.
+- Do not prebuild remote servers, billion-scale infrastructure, plugins or unlisted functionality.
+
+## Working style
+
+Use `rg` for repository lookup. Keep diffs focused, reuse components, and verify claims with relevant tests. Delegate independent bounded work when beneficial, with explicit ownership; do not overwrite other agents' changes. Reference repositories outside this workspace are read-only unless the user authorizes changes.
+
+For cleanup/refactoring, write a short plan and protect existing behavior before changes. Do not add dependencies without authorization. Do not create empty architecture shells as a substitute for a working vertical slice.
+
+## Checks and commits
+
+Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. The engine is durable only with an explicit SQLite workspace. Project snapshots/recovery and a small-model Qt/VTK GUI exist; Nastran export is still an in-memory preview. Do not claim solver execution, real AI integration, headless graphical selection, large-model performance or complete P0 acceptance.
+
+New branches default to `codex/`. Every commit uses the Lore protocol: intent-first subject, context, and useful Git trailers such as `Constraint`, `Rejected`, `Confidence`, `Scope-risk`, `Directive`, `Tested`, and `Not-tested`. Never fabricate validation evidence.
+
+Do not commit credentials, `.omx/`, generated build directories, runtime databases or solver runs. Keep actual integration environment configuration local. Preserve unknown user changes.
+--- docs/engineering/c4-executor-task.md (6730 UTF-8 bytes) ---
+# C4 扩展执行任务包
+
+本任务包只有在共同基线 manifest 登记实际 commit、保护文件及生成器 SHA256、环境和输入后才生效；缺少该 manifest 时保持草案，不可开始正式实验。共同 manifest 位于 `docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json`，其实际 baseline commit 必须与执行者 checkout 一致。三个扩展均独立从该 commit 开始；不要把另一项扩展作为前置补丁。执行者自行实现、测试和修复。骨架作者不得代写执行中的产品补丁。
+
+## 初始上下文及读取记录
+
+初始上下文固定为以下八份 UTF-8 文件；manifest 记录每份长度和 SHA256，合计不得超过 65536 字节。任务消息只提供任务 ID、工作目录、baseline commit 和这份任务包位置，不附加产品实现建议或其他源码。
+
+1. `AGENTS.md`。
+2. 本文件。
+3. `schemas/entities/entities.json`。
+4. `schemas/operations/basic.json`。
+5. `features/mesh_editing/src/mesh_editing_operations.cpp`。
+6. `modules/document/include/qcae/edit_session.hpp`。
+7. `modules/contracts/include/qcae/render_packet.hpp`。
+8. `modules/query/include/qcae/render_projector.hpp`。
+
+后续需要的源码可自行查阅，记录路径、工具实际返回的 UTF-8 字节数和读取次数。搜索输出和构建诊断也登记读取字节；不能将初始包长度称作全部上下文成本。无法取得真实 token 统计时登记 null。禁止读其他执行者的工作树或未完成补丁。公共约束见初始包的 AGENTS.md 和 baseline manifest；后续读取也计入记录。
+
+初始八文件可由 `tools/c4_context_read.py --root <工作目录> --log <本次读取记录> --phase initial <八个路径>` 一次交付；保留完整工具输出，并核对其 heading、换行与 manifest 的交付字节。首次定位本任务包的读取若与该次交付重复，应另记实际读取，不能忽略重复成本。后续文件读取使用 `--phase subsequent`；搜索及构建诊断另记实际工具返回文本的 UTF-8 字节、命令和读取次数，区分未交付的磁盘原始日志。工具截断时记录真实交付范围，不将完整磁盘长度写成完整交付。
+
+## 所有扩展的公共行为
+
+保持纯 C++20 核心、既有依赖边及唯一权威 RecordApplication。所有写操作带 document/epoch/expected_revision/idempotency_key，走 RecordApplication.execute 和 EditSession，不增加另一份可写业务模型。错误输入、旧修订、旧 epoch 和同键异参不能产生部分提交。相同键重试返回原事务，undo 后重试不能重新应用。
+
+只能在实体或功能、包、投影和具体适配目录内扩展。基线 manifest 的保护文件不得修改、增删或改名，也不得搬出旧实现后改写。手写产品文件包括 schema、操作、注册和编入产品的源代码；测试与说明不计入此上限。生成器保持原哈希，生成产物必须可重复生成，不允许手改生成产物。不得新增第三方依赖。
+
+通用渲染载体已支持 variable-arity polyline/polygon，Line2 为现有真实消费者；wire 和连接管理受保护。扩展须提供其实际贡献，不能修改 wire 加入实体特例。未实现的求解或导出不得宣称可用。
+
+## EXT-01：现有实体可选字段
+
+为现有 Material 增加可选说明字段，null 为旧记录默认值。提供公开 typed 编辑操作或既有通用字段编辑入口，字段可被真实 IPC 查询。新增值、清空值、undo/redo、保存/正常打开及 SQLite recovery 保持一致；重构前 Material 编码夹具缺字段时读出 null，未来不支持版本拒绝。新增说明不得影响材料的工程物性。手写产品文件改动最多 6，保护区触碰 0。
+
+测试必须证明旧物性和其他记录不变、成功编辑只有一个事务、错误字段类型不提交。保留旧 schema 夹具的原字节和摘要，不用新编码器生成缺字段记录冒充旧输入。
+
+## EXT-02：批量节点平移
+
+新增 typed 批量平移操作，至少提供公开接口。M 的节点 4、5 同时平移 (0,1,0)mm，只修改这两个 Node，提交一次，undo 一次恢复全部坐标；redo 恢复平移结果。采用明确长度单位；缺单位、未知 ID、错误类型、重复 ID、非有限数值和旧上下文原子拒绝。预览/取消不改变模型修订或历史，相同键重试不产生额外提交。手写产品文件改动最多 6，保护区触碰 0。
+
+测试须经实际生产 registry/IPC 调用，而不是只运行独立函数。M 仍为真实 11 节点、10 Line2 的几何离散结果。已有 node.move 等入口继续可用。
+
+## EXT-03：Tri3 拓扑
+
+增加独立持久 Tri3 拓扑及真实生产创建/查询、连接/网格归属校验、历史、保存恢复和显示贡献。三节点连接必须不同且有效、面积为正；错误连接和悬空引用原子拒绝。具体引用类型由实体定义声明；删除仍被 Tri3 引用的节点不能留下悬空引用。手写产品文件改动最多 10，保护区触碰 0。
+
+用实际 Qt/VTK 后端执行四项 Tri3 PICK：完全包含框、相交框、遮挡条件 visible、同视图 through。冻结相机矩阵、像素框、坐标、显隐及期望稳定 ID 集合，每项集合全等比较，漏选/多选为 0。与既有点/线八项共同执行得到 12 项；不能用无图形后端或模拟命中替代。旧选择和错误版本 delta 继续拒绝。
+
+此实验验证网格拓扑扩展。Tri3 壳分析和 Nastran 壳导出未实现时必须明确拒绝；不得静默丢弃 Tri3 并宣称完整导出。
+
+## 构建与交付
+
+从已冻结的环境/命令重用现有工具链，不安装依赖。至少执行受影响的核心/IPC/桌面测试、`python3 tools/check_design.py`、`python3 tools/check_cpp_format.py`、`git diff --check`；新增公开契约需参加独立消费者构建。格式工具使用 clang-format21。
+
+交付实际 extension commit、相对于共同 baseline 的完整 diff、diff SHA256、产品文件/保护触碰计数、生成器未改证据、执行者身份、初始八文件字节和后续读取记录、实际测试原始日志，以及失败/修复次数。提交遵循 AGENTS.md 的 Lore 格式。不得写合成测试结果，不得修改验收阈值。共同最终 Release 集成后再次运行 BP 和原回归；独立实验日志不能代替最终 Release 测试。
+
+EXT-04 由主代理用同一核心合同分别运行内存和 SQLite 适配；EXT-05 重跑冻结的三档各 20 次节点/材料局部负载及完整复制/编码/提交/实际网络账本。两者提供独立原始证据，不借此放宽三项扩展成本。
+--- schemas/entities/entities.json (11727 UTF-8 bytes) ---
+{
+  "schema_version": 1,
+  "namespace": "qcae::records",
+  "reserved_type_ids": [],
+  "entities": [
+    {
+      "id": 4097,
+      "name": "Material",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "young_modulus_mpa",
+          "kind": "real",
+          "unit": "MPa",
+          "exclusive_min": 0
+        },
+        {
+          "id": 4,
+          "name": "poisson_ratio",
+          "kind": "real",
+          "unit": "1",
+          "optional": true,
+          "exclusive_min": -1,
+          "exclusive_max": 0.5
+        }
+      ],
+      "legacy": "materials",
+      "maximum_encoded_bytes": 4096,
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "material",
+      "display_field": "name"
+    },
+    {
+      "id": 4098,
+      "name": "Node",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "position",
+          "kind": "vector3",
+          "unit": "mm"
+        },
+        {
+          "id": 3,
+          "name": "mesh",
+          "kind": "reference",
+          "targets": [
+            "Mesh"
+          ],
+          "id_type": "MeshId",
+          "optional": true
+        }
+      ],
+      "legacy": "nodes",
+      "maximum_encoded_bytes": 256,
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "node"
+    },
+    {
+      "id": 4099,
+      "name": "BeamSection",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "material",
+          "kind": "reference",
+          "targets": [
+            "Material"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "area_mm2",
+          "kind": "real",
+          "unit": "mm2",
+          "exclusive_min": 0
+        },
+        {
+          "id": 5,
+          "name": "i1_mm4",
+          "kind": "real",
+          "unit": "mm4",
+          "exclusive_min": 0
+        },
+        {
+          "id": 6,
+          "name": "i2_mm4",
+          "kind": "real",
+          "unit": "mm4",
+          "exclusive_min": 0
+        },
+        {
+          "id": 7,
+          "name": "torsion_mm4",
+          "kind": "real",
+          "unit": "mm4",
+          "exclusive_min": 0
+        }
+      ],
+      "legacy": "sections",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "section",
+      "display_field": "name"
+    },
+    {
+      "id": 4100,
+      "name": "Beam",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "section",
+          "kind": "reference",
+          "targets": [
+            "BeamSection"
+          ],
+          "optional": true
+        },
+        {
+          "id": 3,
+          "name": "nodes",
+          "kind": "references",
+          "targets": [
+            "Node"
+          ],
+          "count": 2
+        },
+        {
+          "id": 4,
+          "name": "orientation",
+          "kind": "vector3",
+          "unit": "1"
+        },
+        {
+          "id": 5,
+          "name": "mesh",
+          "kind": "reference",
+          "targets": [
+            "Mesh"
+          ],
+          "id_type": "MeshId",
+          "optional": true
+        }
+      ],
+      "legacy": "beams",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "beam"
+    },
+    {
+      "id": 4101,
+      "name": "Part",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "members",
+          "kind": "references",
+          "targets": [
+            "Node",
+            "Beam"
+          ]
+        }
+      ],
+      "legacy": "parts",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "part",
+      "display_field": "name"
+    },
+    {
+      "id": 4102,
+      "name": "Assembly",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "children",
+          "kind": "references",
+          "targets": [
+            "Part",
+            "Assembly"
+          ]
+        }
+      ],
+      "legacy": "assemblies",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "assembly",
+      "display_field": "name"
+    },
+    {
+      "id": 4103,
+      "name": "EntitySet",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "members",
+          "kind": "references",
+          "targets": [
+            "Node",
+            "Beam"
+          ]
+        }
+      ],
+      "legacy": "sets",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "set",
+      "display_field": "name"
+    },
+    {
+      "id": 4104,
+      "name": "IncludeDocument",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "path",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "parent",
+          "kind": "reference",
+          "targets": [
+            "IncludeDocument"
+          ],
+          "optional": true
+        },
+        {
+          "id": 4,
+          "name": "members",
+          "kind": "references",
+          "targets": [
+            "Material",
+            "Node",
+            "BeamSection",
+            "Beam",
+            "Part",
+            "Assembly",
+            "EntitySet",
+            "NodalForce",
+            "Constraint",
+            "AnalysisDefinition",
+            "LoadCase"
+          ]
+        }
+      ],
+      "legacy": "includes",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "include",
+      "display_field": "path"
+    },
+    {
+      "id": 4105,
+      "name": "NodalForce",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "node",
+          "kind": "reference",
+          "targets": [
+            "Node"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "force_n",
+          "kind": "vector3",
+          "unit": "N"
+        }
+      ],
+      "legacy": "forces",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "force"
+    },
+    {
+      "id": 4106,
+      "name": "Constraint",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "nodes",
+          "kind": "references",
+          "targets": [
+            "Node"
+          ],
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "dofs",
+          "kind": "text",
+          "nonempty": true
+        }
+      ],
+      "legacy": "constraints",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "constraint"
+    },
+    {
+      "id": 4107,
+      "name": "AnalysisDefinition",
+      "version": 2,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "target",
+          "kind": "target"
+        },
+        {
+          "id": 4,
+          "name": "forces",
+          "kind": "references",
+          "targets": [
+            "NodalForce"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "constraints",
+          "kind": "references",
+          "targets": [
+            "Constraint"
+          ]
+        },
+        {
+          "id": 6,
+          "name": "load_cases",
+          "kind": "references",
+          "targets": [
+            "LoadCase"
+          ],
+          "optional": true,
+          "introduced_version": 2
+        }
+      ],
+      "legacy": "analyses",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "analysis",
+      "display_field": "name",
+      "custom_rule": true,
+      "rule_version": 1
+    },
+    {
+      "id": 4108,
+      "name": "SourceIdentifier",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "entity",
+          "kind": "reference",
+          "targets": [
+            "Material",
+            "Node",
+            "BeamSection",
+            "Beam",
+            "Part",
+            "Assembly",
+            "EntitySet",
+            "NodalForce",
+            "Constraint",
+            "AnalysisDefinition",
+            "LoadCase"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "source_model_id",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 4,
+          "name": "include",
+          "kind": "reference",
+          "targets": [
+            "IncludeDocument"
+          ]
+        },
+        {
+          "id": 5,
+          "name": "profile",
+          "kind": "profile"
+        },
+        {
+          "id": 6,
+          "name": "name_space",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 7,
+          "name": "number",
+          "kind": "unsigned_integer",
+          "minimum": 1
+        }
+      ],
+      "legacy": "sources",
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": ""
+    },
+    {
+      "id": 4109,
+      "name": "GeometryLine",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "start",
+          "kind": "vector3",
+          "unit": "mm"
+        },
+        {
+          "id": 3,
+          "name": "end",
+          "kind": "vector3",
+          "unit": "mm"
+        },
+        {
+          "id": 4,
+          "name": "geometry_revision",
+          "kind": "unsigned_integer",
+          "minimum": 1
+        }
+      ],
+      "identity_type": "GeometryId",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "geometry"
+    },
+    {
+      "id": 4110,
+      "name": "Mesh",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text"
+        },
+        {
+          "id": 3,
+          "name": "origin",
+          "kind": "text",
+          "choices": [
+            "imported",
+            "manual",
+            "geometry"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "geometry",
+          "kind": "reference",
+          "targets": [
+            "GeometryLine"
+          ],
+          "id_type": "GeometryId",
+          "optional": true
+        },
+        {
+          "id": 5,
+          "name": "geometry_revision",
+          "kind": "unsigned_integer"
+        },
+        {
+          "id": 6,
+          "name": "stale",
+          "kind": "boolean"
+        }
+      ],
+      "identity_type": "MeshId",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "mesh",
+      "display_field": "name"
+    },
+    {
+      "id": 4111,
+      "name": "LoadCase",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "forces",
+          "kind": "references",
+          "targets": [
+            "NodalForce"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "constraints",
+          "kind": "references",
+          "targets": [
+            "Constraint"
+          ]
+        }
+      ],
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "load_case",
+      "display_field": "name"
+    }
+  ],
+  "relation_rules_version": 1
+}
+--- schemas/operations/basic.json (7535 UTF-8 bytes) ---
+{
+  "schema_version": 1,
+  "status": "implemented_typed_adapter_contracts_not_engine_handlers",
+  "operations": [
+    {
+      "operation_id": "material.create",
+      "version": 1,
+      "schema_id": "qcae.operation.material.create.v1",
+      "type_name": "MaterialCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "young_modulus",
+          "type": "quantity",
+          "units": [
+            "Pa",
+            "kPa",
+            "MPa",
+            "GPa"
+          ]
+        },
+        {
+          "field_id": 3,
+          "name": "poisson_ratio",
+          "type": "finite_number",
+          "units": [
+            "1"
+          ],
+          "optional": true
+        }
+      ]
+    },
+    {
+      "operation_id": "material.set_young_modulus",
+      "version": 1,
+      "schema_id": "qcae.operation.material.set_young_modulus.v1",
+      "type_name": "MaterialSetYoungModulusInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "entity_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "young_modulus",
+          "type": "quantity",
+          "units": [
+            "Pa",
+            "kPa",
+            "MPa",
+            "GPa"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "node.move",
+      "version": 1,
+      "schema_id": "qcae.operation.node.move.v1",
+      "type_name": "NodeMoveInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "entity_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "position_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "geometry.create_line",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.create_line.v1",
+      "type_name": "GeometryCreateLineInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "start_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        },
+        {
+          "field_id": 2,
+          "name": "end_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "mesh.generate_line",
+      "version": 1,
+      "schema_id": "qcae.operation.mesh.generate_line.v1",
+      "type_name": "MeshGenerateLineInput",
+      "effect": "background_task",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "segments",
+          "type": "positive_uint32"
+        }
+      ]
+    },
+    {
+      "operation_id": "beam.assign_section",
+      "version": 1,
+      "schema_id": "qcae.operation.beam.assign_section.v1",
+      "type_name": "BeamAssignSectionInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "beam_ids",
+          "type": "entity_id_array"
+        },
+        {
+          "field_id": 2,
+          "name": "section_id",
+          "type": "entity_id"
+        }
+      ]
+    },
+    {
+      "operation_id": "section.create",
+      "version": 1,
+      "schema_id": "qcae.operation.section.create.v1",
+      "type_name": "SectionCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "material_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 3,
+          "name": "area_mm2",
+          "type": "finite_number",
+          "units": [
+            "mm2"
+          ]
+        },
+        {
+          "field_id": 4,
+          "name": "i1_mm4",
+          "type": "finite_number",
+          "units": [
+            "mm4"
+          ]
+        },
+        {
+          "field_id": 5,
+          "name": "i2_mm4",
+          "type": "finite_number",
+          "units": [
+            "mm4"
+          ]
+        },
+        {
+          "field_id": 6,
+          "name": "torsion_mm4",
+          "type": "finite_number",
+          "units": [
+            "mm4"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "geometry.move_endpoint",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.move_endpoint.v1",
+      "type_name": "GeometryMoveEndpointInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "end_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "mesh.regenerate_line",
+      "version": 1,
+      "schema_id": "qcae.operation.mesh.regenerate_line.v1",
+      "type_name": "MeshRegenerateLineInput",
+      "effect": "background_task",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "mesh_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "segments",
+          "type": "positive_uint32"
+        },
+        {
+          "field_id": 3,
+          "name": "replacement_policy",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "operation_id": "geometry.evaluate_line",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.evaluate_line.v1",
+      "type_name": "GeometryEvaluateLineInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "u",
+          "type": "finite_number",
+          "units": [
+            "1"
+          ]
+        }
+      ]
+    }
+  ]
+}
+--- features/mesh_editing/src/mesh_editing_operations.cpp (5475 UTF-8 bytes) ---
+#include "qcae/mesh_editing_operations.hpp"
+#include "qcae/quantities.hpp"
+#include "qcae/records.hpp"
+#include <algorithm>
+
+namespace qcae::features::mesh_editing {
+namespace {
+using namespace operations;
+template <class T> Result<T> success(T value) {
+    return {Status::success, std::move(value), std::nullopt};
+}
+template <class T> Result<T> failed(const RecordError& error) {
+    return {Status::failed, std::nullopt, Diagnostic{error.code(), error.what(), error.field()}};
+}
+
+template <class Input, class Factory>
+Result<Value> execute(RecordApplication& app,
+                      const OperationContext& context,
+                      const Input& input,
+                      Factory factory) {
+    const auto plan = factory(input);
+    if (!plan.ok()) {
+        return {plan.status, std::nullopt, plan.error};
+    }
+    const auto receipt = app.execute(context.caller,
+                                     WriteContext{*context.document, *context.expected_revision},
+                                     std::string(InputTraits<Input>::operation_id),
+                                     plan.value->signature,
+                                     plan.value->prepare,
+                                     context.idempotency_key);
+    if (!receipt.ok()) {
+        return {receipt.status, std::nullopt, receipt.error};
+    }
+    return success(change_receipt_value(*receipt.value));
+}
+} // namespace
+
+Result<OperationPlan> prepare_move_node(const operations::NodeMoveInput& input) {
+    auto canonical = input;
+    for (std::size_t axis = 0; axis < 3; ++axis) {
+        auto coordinate = parameters::canonical_quantity({input.position_mm[axis], "mm"},
+                                                         parameters::Dimension::length);
+        if (!coordinate.ok()) {
+            coordinate.error->field = "position_mm[" + std::to_string(axis) + "]";
+            return {coordinate.status, std::nullopt, coordinate.error};
+        }
+        canonical.position_mm[axis] = coordinate.value->value;
+    }
+    const auto signature = canonical_value(InputTraits<NodeMoveInput>::to_value(canonical));
+    if (!signature.ok()) {
+        return {signature.status, std::nullopt, signature.error};
+    }
+    RecordPrepare prepare = [canonical, signature = *signature.value](
+                                const DocumentView& view, const RecordIdentityAllocator&) {
+        try {
+            EditSession edit(view);
+            edit.update<records::Node>(canonical.entity_id,
+                                       [&](auto& node) { node.position = canonical.position_mm; });
+            return success(RecordPreparedOperation{
+                edit.prepare(), "Move node", canonical.entity_id, signature, 0, false});
+        } catch (const RecordError& error) {
+            return failed<RecordPreparedOperation>(error);
+        }
+    };
+    return success(OperationPlan{*signature.value, std::move(prepare)});
+}
+
+Result<OperationPlan> prepare_assign_section(const operations::BeamAssignSectionInput& input) {
+    const auto identities = wire::entity_id_array(wire::to_value(input.beam_ids), "beam_ids");
+    const auto section = wire::entity_id(Value(input.section_id.value), "section_id");
+    if (!identities.ok()) {
+        return {identities.status, std::nullopt, identities.error};
+    }
+    if (!section.ok()) {
+        return {section.status, std::nullopt, section.error};
+    }
+    auto canonical = input;
+    std::sort(canonical.beam_ids.begin(), canonical.beam_ids.end());
+    const auto signature =
+        canonical_value(InputTraits<BeamAssignSectionInput>::to_value(canonical));
+    if (!signature.ok()) {
+        return {signature.status, std::nullopt, signature.error};
+    }
+    RecordPrepare prepare = [canonical, signature = *signature.value](
+                                const DocumentView& view, const RecordIdentityAllocator&) {
+        try {
+            EditSession edit(view);
+            for (const auto& beam : canonical.beam_ids) {
+                edit.update<records::Beam>(
+                    beam, [&](auto& record) { record.section = canonical.section_id; });
+            }
+            return success(RecordPreparedOperation{edit.prepare(),
+                                                   "Assign beam section",
+                                                   canonical.beam_ids.front(),
+                                                   signature,
+                                                   0,
+                                                   false});
+        } catch (const RecordError& error) {
+            return failed<RecordPreparedOperation>(error);
+        }
+    };
+    return success(OperationPlan{*signature.value, std::move(prepare)});
+}
+
+Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
+    const auto registered = registry.register_typed<NodeMoveInput>(
+        InputTraits<NodeMoveInput>::definition(),
+        [&app](const OperationContext& context, const NodeMoveInput& input) {
+            return execute(app, context, input, prepare_move_node);
+        });
+    if (!registered.ok())
+        return registered;
+    return registry.register_typed<BeamAssignSectionInput>(
+        InputTraits<BeamAssignSectionInput>::definition(),
+        [&app](const OperationContext& context, const BeamAssignSectionInput& input) {
+            return execute(app, context, input, prepare_assign_section);
+        });
+}
+} // namespace qcae::features::mesh_editing
+--- modules/document/include/qcae/edit_session.hpp (1602 UTF-8 bytes) ---
+#pragma once
+
+#include "qcae/document_view.hpp"
+#include "qcae/operation_ledger.hpp"
+
+namespace qcae {
+struct PreparedRecordChange {
+    RecordVersion base;
+    DocumentView candidate;
+    RecordChangeSet changes;
+    RecordStats stats;
+};
+
+// A private overlay. Preparing does not publish or advance the document revision.
+class EditSession {
+  public:
+    explicit EditSession(DocumentView base, RecordLimits = {});
+
+    template <class T> void put(T value) {
+        auto record = base_.registry()->make(std::move(value), &stats_);
+        put(std::move(record));
+    }
+
+    template <class T, class IdType, class Function> void update(const IdType& id, Function edit) {
+        const auto record = find(RecordTraits<T>::type_id, id.value);
+        if (!record)
+            throw RecordError(ErrorCode::entity_not_found, "Record does not exist", id.value);
+        T value = record->template get<T>();
+        ledger::add(ledger::Stage::records,
+                    ledger::Metric::model_copy_bytes,
+                    record->descriptor().owned_bytes(record->object()));
+        edit(value);
+        if (RecordTraits<T>::identity(value) != id.value)
+            throw RecordError(ErrorCode::invalid_input, "Updating a record cannot change its ID");
+        put(std::move(value));
+    }
+
+    void put(Record);
+    void erase(const RecordKey&);
+    Record find(RecordTypeId, std::string_view) const;
+    PreparedRecordChange prepare() const;
+
+  private:
+    DocumentView base_;
+    RecordLimits limits_;
+    std::map<RecordKey, RecordChange> pending_;
+    RecordStats stats_;
+};
+} // namespace qcae
+--- modules/contracts/include/qcae/render_packet.hpp (2287 UTF-8 bytes) ---
+#pragma once
+#include "qcae/types.hpp"
+#include <array>
+#include <vector>
+
+namespace qcae {
+struct RenderPoint {
+    EntityId entity;
+    std::array<double, 3> position_mm{};
+    bool visible{true};
+};
+struct RenderBeam {
+    EntityId entity;
+    std::array<std::size_t, 2> points{};
+    bool visible{true};
+};
+struct RenderGeometryLine {
+    EntityId entity;
+    std::array<double, 3> start_mm{}, end_mm{};
+    bool visible{true};
+};
+enum class RenderCellKind : std::uint64_t { polyline, polygon };
+inline constexpr std::size_t render_cell_point_limit = 4096;
+// Topology describes a disposable display cell, independent of persistent types.
+struct RenderCell {
+    EntityId entity;
+    RenderCellKind kind{RenderCellKind::polyline};
+    std::vector<std::size_t> points;
+    bool visible{true};
+};
+// Disposable tool preview. Its display points and lines are not model entities.
+struct RenderPreview {
+    std::vector<std::array<double, 3>> points;
+    std::vector<std::array<std::size_t, 2>> lines;
+};
+// Read-only display contract. Consumers never receive a domain object or storage pointer.
+struct RenderPacket {
+    DocumentRef document;
+    Revision revision{};
+    std::string view_session_id;
+    std::uint64_t view_revision{};
+    std::vector<RenderPoint> points;
+    std::vector<RenderBeam> beams;
+    std::vector<RenderGeometryLine> geometry_lines;
+    std::vector<RenderCell> cells{};
+};
+struct RenderPointUpdate {
+    std::size_t index{};
+    RenderPoint point;
+};
+struct RenderGeometryUpdate {
+    std::size_t index{};
+    RenderGeometryLine line;
+};
+enum class RenderPrimitive { point, beam, geometry_line, cell };
+struct RenderVisibilityUpdate {
+    RenderPrimitive primitive;
+    std::size_t index{};
+    EntityId entity;
+    bool visible{true};
+};
+// Applies only to the named installed scene. Topology changes use a new packet;
+// hidden entities retain coordinates and stable indices for local visibility changes.
+struct RenderDelta {
+    DocumentRef document;
+    Revision base_revision{}, revision{};
+    std::string view_session_id;
+    std::uint64_t base_view_revision{}, view_revision{};
+    std::vector<RenderPointUpdate> points;
+    std::vector<RenderGeometryUpdate> geometry_lines;
+    std::vector<RenderVisibilityUpdate> visibility{};
+};
+} // namespace qcae
+--- modules/query/include/qcae/render_projector.hpp (2621 UTF-8 bytes) ---
+#pragma once
+#include "qcae/document_view.hpp"
+#include "qcae/render_packet.hpp"
+#include "qcae/view_session.hpp"
+#include <functional>
+#include <map>
+#include <optional>
+#include <span>
+#include <variant>
+
+namespace qcae {
+struct RenderLine2 {
+    EntityId entity;
+    std::array<EntityId, 2> nodes;
+};
+struct RenderCellSource {
+    EntityId entity;
+    RenderCellKind kind{RenderCellKind::polyline};
+    std::vector<EntityId> nodes;
+};
+using RenderItem = std::variant<RenderPoint, RenderLine2, RenderGeometryLine, RenderCellSource>;
+struct RenderContribution {
+    RecordTypeId record_type;
+    std::string topology;
+    std::function<RenderItem(const Record&)> project;
+};
+// Trusted static contributions; persistent types remain owned by RecordRegistry.
+class RenderContributions {
+  public:
+    void add(RenderContribution);
+    void freeze();
+    bool frozen() const noexcept;
+    const RenderContribution* find(RecordTypeId) const;
+    const std::map<RecordTypeId, RenderContribution>& entries() const;
+
+  private:
+    std::map<RecordTypeId, RenderContribution> entries_;
+    bool frozen_{};
+};
+RenderContributions default_render_contributions();
+
+struct DirectedRenderChange {
+    Revision base_revision{}, revision{};
+    const RecordChangeSet* changes{};
+    RecordDirection direction{RecordDirection::forward};
+};
+struct RenderProjectionStats {
+    std::uint64_t full_rebuilds{}, projected_records{}, model_bytes_copied{}, dirty_blocks{};
+};
+struct RenderUpdate {
+    std::optional<RenderPacket> full;
+    RenderDelta delta;
+    RenderProjectionStats work;
+    bool legacy_line2_compatible{true};
+};
+// A disposable display index. Ordinary updates inspect only committed changed records.
+class RenderProjector {
+  public:
+    explicit RenderProjector(RenderContributions = default_render_contributions(),
+                             std::size_t max_entities = 200000);
+    Result<RenderUpdate> update(const DocumentView&,
+                                const ViewSession&,
+                                std::span<const DirectedRenderChange> = {},
+                                bool force_full = false);
+    void clear();
+    std::optional<RecordVersion> version() const;
+    RenderProjectionStats stats() const noexcept;
+
+  private:
+    Result<RenderUpdate> rebuild(const DocumentView&, const ViewSession&);
+    RenderContributions contributions_;
+    std::size_t max_entities_;
+    std::optional<ViewSession> view_;
+    std::map<std::string, std::size_t> point_indices_, cell_indices_, geometry_indices_;
+    RenderProjectionStats stats_;
+    bool legacy_line2_compatible_{true};
+};
+} // namespace qcae

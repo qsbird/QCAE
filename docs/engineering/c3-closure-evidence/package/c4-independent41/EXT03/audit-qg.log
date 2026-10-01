@@ -1,0 +1,54 @@
+| M6 P0 发布 | 全部适用测试通过，全部 REQ 有证据；目标系统构建/部署、性能分档与联合回归完成，无未说明阻塞 |
+
+阶段可以并行准备数据和测试，但依赖行为必须已落实再判定下游通过。受控场景未实现的能力返回不支持，不能通过缩小测试范围掩盖原需求缺失。
+
+完成报告列出通过测试、配置、证据路径及已知限制；明确区分文档基线完成、代码完成和 P0 产品验收完成。研发 token 预算不作为任何测试通过判据。
+
+
+基线1.1在M0/M1验证TST-P01—P04的契约/映射，M2验证扩展历史恢复，M4验证真实运行结果依据，M5验证AI与GUI一致性。TST-P05仅为转换报告契约测试，不包含新转换器交付。
+
+## M1阶段证据边界
+
+[M1实现](../implementation/m1.md)覆盖TST-F02/F04/F05和TST-P01的部分底层条件：组织视角中的稳定身份、引用约束、全模型撤销、受控BDF资源包语义往返及明确报告。该记录不把这些P0验收项整体标为通过：工程保存、持久恢复、资源发布、真实目标版本及求解尚未完成。
+
+## 8. 代码可读性门禁
+
+本节是每个开发切片的工程质量退出条件，不把原有TST-F/A/I/P产品验收误记为已通过。
+
+| 门禁 | 必须提供的证据 | 失败处理 |
+|---|---|---|
+| QG-01 自动格式 | `python3 tools/check_cpp_format.py`通过；手写C++文件使用同一`.clang-format`，且`git diff --check`通过 | 格式差异、缺少指定版本工具或空白错误均阻止完成 |
+| QG-02 可理解的代码 | 审查记录说明本切片的入口→业务状态→外部适配路径、主要不变量、错误处理和测试；审查者能定位权威状态与副作用 | 命名含糊、职责混杂、重复规则、压缩表达或无依据的复杂性作为阻塞项修复；记录具体文件与结论 |
+| QG-03 行为保持 | 对格式/整理前后的同一相关测试集留存结果；编译警告、生成契约/能力摘要与核心/IPC回归均按受影响范围检查 | 回归失败时不能仅称为“格式改动”，需修复或回退；未执行的环境验证仍列为未完成 |
+
+自动格式不衡量架构质量，也不要求将每个逻辑模块拆成独立库。人工审查不以固定行数替代职责判断；有争议时给出具体调用链和维护成本。未来新增代码与现有代码适用同一格式规则，不设置存量豁免。
+
+## M2/M3阶段证据边界
+
+[M2/M3实现记录](../implementation/m2-m3.md)覆盖持久工作库、差量历史、工程保存/另存/明确恢复与放弃、宿主幂等、路径/inode锁、类型条件查询、选择句柄及真实Qt/VTK工作区。旧M0/M1回归继续执行。具体故障、协议和桌面测试以验证记录为准。
+
+TST-F06、TST-A04—06、TST-I04—05/I09已有确定性的核心/存储/真实引擎证据，但这些证据不包含真实AI会话。TST-F01/F03、TST-A07/A12已有受控小模型GUI与接口证据；完整事件订阅、布局恢复、批量数据通道、无界面遮挡选择和分档性能仍未完成，因此不把M3或完整P0的全部退出条件标为通过。该阶段尚无后台任务；后续C2已增加持久线网格任务，仍不能将其关闭/恢复证据扩展解释为在途外部求解进程的恢复。
+
+## 工程化骨架重构验收
+
+用户已同意平台骨架与Archer架构对齐方案。重构阶段采用[SK-01—14检查点](skeleton-acceptance.md)作为完成合同；原P0产品标准继续有效，不能用骨架验收代替真实求解、AI或全部产品验收。C1/C2已有阶段证据，完整SK检查点尚未逐项验收通过。
+
+## C1/C2当前证据边界
+
+import subprocess, pathlib, json, sys, hashlib
+
+root=pathlib.Path('/private/tmp/qcae-c4-ext03-41')
+evidence=pathlib.Path('/private/tmp/qcae-ext03-41-evidence')
+name=sys.argv[1]
+command=sys.argv[2]
+limit=int(sys.argv[3]) if len(sys.argv)>3 else 32000
+r=subprocess.run(command,shell=True,cwd=root,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+raw=r.stdout.decode('utf-8',errors='replace')
+(evidence/(name+'.log')).write_text(raw)
+delivered=raw.encode('utf-8')[:limit].decode('utf-8',errors='ignore')
+if len(delivered.encode('utf-8'))<len(raw.encode('utf-8')):
+    delivered+='\n[bounded delivery; full raw log retained]\n'
+with (evidence/'context-commands.jsonl').open('a') as f:
+    f.write(json.dumps({'command':command,'name':name,'utf8_bytes':len(delivered.encode('utf-8')),'raw_log_bytes':len(raw.encode('utf-8')),'complete':delivered==raw,'exit_code':r.returncode,'sha256':hashlib.sha256(delivered.encode('utf-8')).hexdigest(),'token_count':None})+'\n')
+sys.stdout.write(delivered)
+sys.exit(r.returncode)

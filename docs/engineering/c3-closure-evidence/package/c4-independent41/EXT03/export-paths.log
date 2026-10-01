@@ -1,0 +1,115 @@
+adapters/engine_api/src/ipc_api.cpp:157:           name == "entity.references" || name == "model.export_preview" ||
+adapters/engine_api/src/ipc_api.cpp:205:        if (op == "model.export_preview" && (!codec || !profile))
+adapters/engine_api/src/ipc_api.cpp:233:                                 (descriptor.name != "model.export_preview" || (codec && profile));
+features/legacy_api/src/core.cpp:246:    static_cast<Model&>(result) = model_from_records(value.value->records);
+diff --git a/features/mesh_editing/src/mesh_editing_operations.cpp b/features/mesh_editing/src/mesh_editing_operations.cpp
+index 3e1ea24..e3635ac 100644
+--- a/features/mesh_editing/src/mesh_editing_operations.cpp
++++ b/features/mesh_editing/src/mesh_editing_operations.cpp
+@@ -102,6 +102,39 @@ Result<OperationPlan> prepare_assign_section(const operations::BeamAssignSection
+     return success(OperationPlan{*signature.value, std::move(prepare)});
+ }
+ 
++Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input& input) {
++    const auto nodes = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
++    const auto mesh = wire::entity_id(Value(input.mesh_id.value), "mesh_id");
++    if (!nodes.ok())
++        return {nodes.status, std::nullopt, nodes.error};
++    if (!mesh.ok())
++        return {mesh.status, std::nullopt, mesh.error};
++    if (input.node_ids.size() != 3)
++        return {
++            Status::failed,
++            std::nullopt,
++            Diagnostic{ErrorCode::invalid_input, "Tri3 requires exactly three nodes", "node_ids"}};
++    // Node order is topology: preserve its winding in both storage and retry signatures.
++    const auto signature = canonical_value(InputTraits<MeshCreateTri3Input>::to_value(input));
++    if (!signature.ok())
++        return {signature.status, std::nullopt, signature.error};
++    RecordPrepare prepare = [input, signature = *signature.value](
++                                const DocumentView& view, const RecordIdentityAllocator& allocate) {
++        try {
++            const auto id = allocate();
++            EditSession edit(view);
++            edit.put(records::Tri3{id,
++                                   {input.node_ids[0], input.node_ids[1], input.node_ids[2]},
++                                   records::MeshId(input.mesh_id.value)});
++            return success(RecordPreparedOperation{
++                edit.prepare(), "Create Tri3 topology", id, signature, 0, true});
++        } catch (const RecordError& error) {
++            return failed<RecordPreparedOperation>(error);
++        }
++    };
++    return success(OperationPlan{*signature.value, std::move(prepare)});
++}
++
+ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
+     const auto registered = registry.register_typed<NodeMoveInput>(
+         InputTraits<NodeMoveInput>::definition(),
+@@ -110,10 +143,17 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
+         });
+     if (!registered.ok())
+         return registered;
+-    return registry.register_typed<BeamAssignSectionInput>(
++    const auto section = registry.register_typed<BeamAssignSectionInput>(
+         InputTraits<BeamAssignSectionInput>::definition(),
+         [&app](const OperationContext& context, const BeamAssignSectionInput& input) {
+             return execute(app, context, input, prepare_assign_section);
+         });
++    if (!section.ok())
++        return section;
++    return registry.register_typed<MeshCreateTri3Input>(
++        InputTraits<MeshCreateTri3Input>::definition(),
++        [&app](const OperationContext& context, const MeshCreateTri3Input& input) {
++            return execute(app, context, input, prepare_create_tri3);
++        });
+ }
+ } // namespace qcae::features::mesh_editing
+diff --git a/modules/document/src/records_rules.cpp b/modules/document/src/records_rules.cpp
+index 3478c9e..eec9e9d 100644
+--- a/modules/document/src/records_rules.cpp
++++ b/modules/document/src/records_rules.cpp
+@@ -66,6 +66,28 @@ void validate_record(const Beam& value, const DocumentView& view) {
+     if (left.mesh != right.mesh || value.mesh != left.mesh)
+         invalid("Beam and its nodes must belong to the same mesh", value.id.value);
+ }
++void validate_record(const Tri3& value, const DocumentView& view) {
++    std::array<std::array<double, 3>, 3> points{};
++    for (std::size_t index = 0; index < value.nodes.size(); ++index) {
++        const auto record = view.find<Node>(value.nodes[index]);
++        if (!record)
++            invalid("Tri3 node is missing", value.id.value);
++        const auto& node = record->get<Node>();
++        if (!node.mesh || *node.mesh != value.mesh)
++            invalid("Tri3 and its nodes must belong to the same mesh", value.id.value);
++        points[index] = node.position;
++    }
++    // Compute area from the ordered connectivity; both windings have positive magnitude.
++    std::array<long double, 3> a{}, b{};
++    for (std::size_t index = 0; index < 3; ++index) {
++        a[index] = static_cast<long double>(points[1][index]) - points[0][index];
++        b[index] = static_cast<long double>(points[2][index]) - points[0][index];
++    }
++    const auto doubled_area =
++        std::hypot(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]);
++    if (!std::isfinite(doubled_area) || doubled_area <= 0)
++        invalid("Tri3 requires positive finite area", value.id.value);
++}
+ void validate_record(const Constraint& value, const DocumentView&) {
+     if (value.dofs.find_first_not_of("123456") != std::string::npos ||
+         std::set<char>(value.dofs.begin(), value.dofs.end()).size() != value.dofs.size())
+diff --git a/profiles/nastran/src/nastran_package.cpp b/profiles/nastran/src/nastran_package.cpp
+index ad8e0f3..748c6d3 100644
+--- a/profiles/nastran/src/nastran_package.cpp
++++ b/profiles/nastran/src/nastran_package.cpp
+@@ -61,6 +61,10 @@ void register_nastran_core_rules(RecordRegistry& registry, const ProfileRef& ins
+ Result<ArtifactPlan> validate_nastran_export(const DocumentView& view,
+                                              const EntityId& analysis,
+                                              const NastranCodec& codec) {
++    if (view.count(RecordTraits<records::Tri3>::type_id))
++        return bad<ArtifactPlan>(
++            ErrorCode::unsupported_capability,
++            "Tri3 shell export is not implemented in the controlled Nastran profile");
+     const auto exported =
+         codec.encode(model_from_records(view), analysis, codec.definition().reference);
+     if (!exported.report.complete || !exported.artifact) {

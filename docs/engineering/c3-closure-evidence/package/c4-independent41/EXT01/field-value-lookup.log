@@ -1,0 +1,17 @@
+modules/query/src/entity_queries.cpp:11:std::string reference_role(const Record& record, RecordFieldId id) {
+modules/query/src/entity_queries.cpp:13:    auto field = std::find_if(descriptor.fields.begin(),
+modules/query/src/entity_queries.cpp:14:                              descriptor.fields.end(),
+modules/query/src/entity_queries.cpp:16:    if (field == descriptor.fields.end())
+modules/query/src/entity_queries.cpp:18:    std::string role = field->name;
+modules/query/src/entity_queries.cpp:173:Result<RecordInput> query_fields(const DocumentView& view, const EntityId& id, RecordStats* stats) {
+modules/query/src/entity_queries.cpp:219:            [&](RecordFieldId field, std::string_view target, std::span<const RecordTypeId>) {
+modules/query/src/entity_queries.cpp:221:                    record->key().identity, target, [&] { return reference_role(record, field); });
+modules/query/src/entity_queries.cpp:235:                [&](RecordFieldId, std::string_view target, std::span<const RecordTypeId>) {
+adapters/engine_api/src/engine_contributions.cpp:69:                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+adapters/engine_api/src/engine_contributions.cpp:106:                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+adapters/engine_api/src/engine_contributions.cpp:131:                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+features/legacy_api/src/core.cpp:16:Result<T> failure(Status status, ErrorCode code, const char* message, const char* field = "") {
+features/legacy_api/src/core.cpp:17:    return {status, {}, Diagnostic{code, message, field}};
+features/legacy_api/src/core.cpp:32:            normalized.error->field = "young_modulus." + normalized.error->field;
+features/legacy_api/src/core.cpp:95:            [&](RecordFieldId, std::string_view, std::span<const RecordTypeId>) { ++relations; });
+features/legacy_api/src/core.cpp:431:                                                            [&](RecordFieldId,

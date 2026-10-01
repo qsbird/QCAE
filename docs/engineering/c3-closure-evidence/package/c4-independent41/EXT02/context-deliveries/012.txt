@@ -1,0 +1,511 @@
+Warning: truncated output (original token count: 6635)
+Total output lines: 569
+
+--- adapters/engine_api/src/engine_contributions.cpp (13071 UTF-8 bytes) ---
+#include "qcae/engine_contributions.hpp"
+#include "qcae/analysis_features.hpp"
+#include "qcae/records.hpp"
+#include "qcae/geometry_features.hpp"
+#include "qcae/line_mesh_task.hpp"
+#include "qcae/material_operations.hpp"
+#include "qcae/mesh_editing_operations.hpp"
+#include "qcae/nastran_contribution.hpp"
+#ifdef QCAE_HAS_SOLVER_LOCAL
+#include "qcae/solver_contribution.hpp"
+#endif
+#include "typed_values.hpp"
+#include <iterator>
+#include <set>
+
+namespace qcae::ipc {
+using namespace operations;
+using namespace detail;
+TypedHost::OperationContributor TypedHost::default_operations() {
+    return [](OperationRegistry& registry,
+              RecordApplication& app,
+              std::function<TaskService&()> task_service) -> Result<bool> {
+        const auto materials = features::materials::register_handlers(registry, app);
+        if (!materials.ok())
+            return materials;
+        const auto mesh_editing = features::mesh_editing::register_handlers(registry, app);
+        if (!mesh_editing.ok())
+            return mesh_editing;
+        const auto analysis = features::analysis::register_handlers(registry, app);
+        if (!analysis.ok())
+            return analysis;
+        const auto geometry = registry.register_typed<GeometryCreateLineInput>(
+            InputTraits<GeometryCreateLineInput>::definition(),
+            [&app](const OperationContext& ctx, const GeometryCreateLineInput& input) {
+                const LineGeometryInput line{input.start_mm, input.end_mm};
+                return converted(app.execute(ctx.caller,
+                                             {*ctx.document, *ctx.expected_revision},
+                                             "geometry.create_line",
+                                             line_geometry_signature(line),
+                                             create_line_handler(line),
+                                             ctx.idempotency_key),
+                                 change_receipt_value);
+            });
+        if (!geometry.ok())
+            return geometry;
+        const auto evaluate = registry.register_typed<GeometryEvaluateLineInput>(
+            InputTraits<GeometryEvaluateLineInput>::definition(),
+            [&app](const OperationContext& ctx,
+                   const GeometryEvaluateLineInput& input) -> Result<Value> {
+                const auto snapshot = app.snapshot(*ctx.document);
+                if (!snapshot.ok())
+                    return {snapshot.status, {}, snapshot.error};
+                try {
+                    const auto position =
+                        evaluate_line(snapshot.value->records,
+                                      records::GeometryId(input.geometry_id.value),
+                                      input.u);
+                    return {
+                        Status::success,
+                        Value(Value::Object{
+                            {"geometry_id", Value(input.geometry_id.value)},
+                            {"position_mm",
+                             Value(Value::Array{
+                                 Value(position[0]), Value(position[1]), Value(position[2])})},
+                            {"revision", Value(std::to_string(snapshot.value->info.revision))}}),
+                        {}};
+                } catch (const RecordError& error) {
+                    return {
+                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+                }
+            });
+        if (!evaluate.ok())
+            return evaluate;
+        const auto endpoint = registry.register_typed<GeometryMoveEndpointInput>(
+            InputTraits<GeometryMoveEndpointInput>::definition(),
+            [&app](const OperationContext& ctx, const GeometryMoveEndpointInput& input) {
+                const records::GeometryId geometry(input.geometry_id.value);
+                return converted(app.execute(ctx.caller,
+                                             {*ctx.document, *ctx.expected_revision},
+                                             "geometry.move_endpoint",
+                                             line_endpoint_signature(geometry, input.end_mm),
+                                             move_line_endpoint_handler(geometry, input.end_mm),
+                                             ctx.idempotency_key),
+                                 change_receipt_value);
+            });
+        if (!endpoint.ok())
+            return endpoint;
+        const auto regenerate = registry.register_typed<MeshRegenerateLineInput>(
+            InputTraits<MeshRegenerateLineInput>::definition(),
+            [&app, task_service](const OperationContext& ctx,
+                                 const MeshRegenerateLineInput& input) {
+                const auto snapshot = app.snapshot(*ctx.document);
+                if (!snapshot.ok())
+                    return Result<Value>{snapshot.status, {}, snapshot.error};
+                try {
+                    auto request = regenerate_line_mesh_task(*snapshot.value,
+                                                             ctx.caller,
+                                                             records::MeshId(input.mesh_id.value),
+                                                             input.segments,
+                                                             input.replacement_policy,
+                                                             ctx.idempotency_key);
+                    request.input.revision = *ctx.expected_revision;
+                    return converted(task_service().start(std::move(request)), task_value);
+                } catch (const RecordError& error) {
+                    return Result<Value>{
+                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+                }
+            });
+        if (!regenerate.ok())
+            return regenerate;
+        return registry.register_typed<MeshGenerateLineInput>(
+            InputTraits<MeshGenerateLineInput>::definition(),
+            [&app, task_service = std::move(task_service)](
+                const OperationContext& ctx, const MeshGenerateLineInput& input) -> Result<Value> {
+                const auto snapshot = app.snapshot(*ctx.document);
+                if (!snapshot.ok())
+                    return {snapshot.status, {}, snapshot.error};
+                try {
+                    auto request = line_mesh_task(
+                        *snapshot.value,
+                        ctx.caller,
+                        {},
+                        {records::GeometryId(input.geometry_id.value), input.segments, {}},
+                        ctx.idempotency_key);
+                    // Deduplication compares the original submitted context before freshness
+                    // checks.
+                    request.input.revision = *ctx.expected_revision;
+                    return converted(task_service().start(std::move(request)), task_value);
+                } catch (const RecordError& error) {
+                    return {
+                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
+                }
+            });
+    };
+}
+
+namespace {
+EngineContribution disabled_solver_contribution() {
+    return {"qcae.solver.disabled",
+            {},
+            [](OperationRegistry& registry,
+               RecordApplication&,
+               std::function<TaskService&()>) -> Result<bool> {
+                for (auto definition : {InputTraits<AnalysisStartInput>::definition(),
+                                        InputTraits<AnalysisGetRunInput>::definition(),
+                                        InputTraits<AnalysisGetResultInput>::definition(),
+                                        InputTraits<AnalysisReconcileResultInput>::definition(),
+                                        InputTraits<AnalysisValidateResultInput>::definition(),
+                                        InputTraits<SolverConfigurationInput>::definition()}) {
+                    const auto declared = registry.declare_unavailable(
+                        std::move(definition),
+                        "Local solver support or the Nastran package is disabled");
+                    if (!declared.ok())
+                        return declared;
+                }
+                return {Status::success, true, {}};
+            },
+            {}};
+}
+std::vector<EngineContribution> default_contributions(const LocalSolverConfiguration* config) {
+    std::vector<EngineContribution> result{
+        {"qcae.model",
+         [](RecordRegistry& registry) {
+             for (auto descriptor : generated_record_descriptors())
+                 registry.add(std::move(descriptor));
+             registry.add_rule(records::validate_relations);
+         },
+         TypedHost::default_operations(),
+         [] { return std::vector<OwnedRowHandler>{features::analysis::check_row_handler()}; }}};
+    if (nastran_package_enabled()) {
+        const auto nastran = std::make_shared<NastranArtifactCoordinator>();
+        auto contribution = nastran_engine_contribution(nastran);
+#ifdef QCAE_HAS_SOLVER_LOCAL
+        const auto solver = std::make_shared<SolverCoordinator>(
+            config ? std::optional<LocalSolverConfiguration>(*config) : std::nullopt,
+            [nastran](const Caller& caller, const DocumentRef& document, std::string_view id) {
+                return nastran->verified_artifact(caller, document, id);
+            });
+        const auto base = std::move(contribution.publisher_factory);
+        contribution.publisher_factory =
+            [base, solver](RecordApplication& app,
+                           std::function<bool(const ProfileRef&)> supported) {
+                return solver->wrap_publisher(app, base(app, std::move(supported)));
+            };
+        result.push_back(std::move(contribution));
+        result.push_back(solver_engine_contribution(solver));
+#else
+        if (config)
+            throw RecordError(
+                ErrorCode::unsupported_capability, "Local solver support is disabled", "solver");
+        result.push_back(std::move(contribution));
+        result.push_back(disabled_solver_contribution());
+#endif
+    } else if (config) {
+        throw RecordError(
+            ErrorCode::unsupported_capability, "The Nastran package is disabled", "solver");
+    } else {
+        result.push_back(disabled_solver_contribution());
+    }
+    return result;
+}
+} // namespace
+std::vector<EngineContribution> default_engine_contributions() {
+    return default_contributions(nullptr);
+}
+std::vector<EngineContribution>
+default_engine_contributions(const LocalSolverConfiguration& config) {
+    return default_contributions(&config);
+}
+bool nastran_package_enabled() noexcept {
+    return QCAE_NASTRAN_PACKAGE_ENABLED != 0;
+}
+EngineAssembly assemble_engine(std::span<const EngineContribution> contributions) {
+    auto registry = std::make_shared<RecordRegistry>();
+    std::set<std::string> identities;
+    std::vector<TypedHost::OperationContributor> contributors;
+    std::vector<OwnedRowHandler> owned_rows;
+    TypedHost::TaskPublisherFactory publisher_factory;
+    for (const auto& contribution : contributions) {
+        if (contribution.id.empty() || !identities.insert(contribution.id).second ||
+            (!contribution.records && !contribution.operations))
+            throw RecordError(
+                ErrorCode::invalid_input,
+                "Engine contribution identity must be unique and nonempty, with a registration",
+                "contribution");
+        if (contribution.records)
+            contribution.records(*registry);
+        if (contribution.operations)
+            contributors.push_back(contribution.operations);
+        if (contribution.owned_rows) {
+            auto rows = contribution.owned_rows();
+            owned_rows.insert(owned_rows.end(),
+                              std::make_move_iterator(rows.begin()),
+               …635 tokens truncated…eturn {Status::success, std::move(value), std::nullopt};
+}
+
+const UnitDescriptor* find_unit(std::string_view symbol) {
+    const auto found = std::find_if(
+        units.begin(), units.end(), [symbol](const auto& unit) { return unit.symbol == symbol; });
+    return found == units.end() ? nullptr : &*found;
+}
+
+Result<double> checked_value(long double value, std::string field) {
+    if (!std::isfinite(value) || std::abs(value) > std::numeric_limits<double>::max()) {
+        return failure<double>(ErrorCode::invalid_input,
+                               "Numeric result is nonfinite or exceeds the double range.",
+                               std::move(field));
+    }
+    // Keep the supported numeric range explicit, rather than silently flushing denormals to zero.
+    if (value != 0.0L && std::abs(value) < std::numeric_limits<double>::min()) {
+        return failure<double>(ErrorCode::invalid_input,
+                               "Numeric result underflows the supported normal double range.",
+                               std::move(field));
+    }
+    return success(static_cast<double>(value));
+}
+
+Result<Vector3> transform(const CoordinateFrame& frame, const Vector3& input, bool inverse) {
+    const auto valid = validate_frame(frame);
+    if (!valid.ok()) {
+        return {valid.status, std::nullopt, valid.error};
+    }
+    for (double value : input) {
+        if (!std::isfinite(value)) {
+            return failure<Vector3>(ErrorCode::invalid_input,
+                                    "Coordinates must be finite millimeter values.",
+                                    "coordinates");
+        }
+    }
+    Vector3 output{};
+    for (std::size_t row = 0; row < 3; ++row) {
+        long double value = inverse ? 0.0L : static_cast<long double>(frame.origin_mm[row]);
+        for (std::size_t column = 0; column < 3; ++column) {
+            const long double component =
+                inverse ? static_cast<long double>(input[column]) - frame.origin_mm[column]
+                        : input[column];
+            const long double coefficient =
+                inverse ? frame.basis[column][row] : frame.basis[row][column];
+            value = std::fma(coefficient, component, value);
+        }
+        const auto checked = checked_value(value, "coordinates");
+        if (!checked.ok()) {
+            return {checked.status, std::nullopt, checked.error};
+        }
+        output[row] = *checked.value;
+    }
+    return success(output);
+}
+} // namespace
+
+std::span<const UnitDescriptor> unit_registry() {
+    return units;
+}
+
+std::string_view canonical_unit(Dimension dimension) {
+    switch (dimension) {
+    case Dimension::length:
+        return "mm";
+    case Dimension::force:
+        return "N";
+    case Dimension::pressure:
+        return "MPa";
+    case Dimension::area:
+        return "mm2";
+    case Dimension::inertia:
+        return "mm4";
+    case Dimension::angle:
+        return "rad";
+    }
+    return {};
+}
+
+Result<Quantity> convert_quantity(const Quantity& input,
+                                  Dimension expected_dimension,
+                                  std::string_view output_unit) {
+    if (input.unit.empty() || output_unit.empty()) {
+        return failure<Quantity>(ErrorCode::missing_input,
+                                 "Input and output units must be explicit.",
+                                 input.unit.empty() ? "unit" : "output_unit",
+                                 Status::needs_input);
+    }
+    const auto* source = find_unit(input.unit);
+    const auto* target = find_unit(output_unit);
+    if (!source || !target || source->dimension != expected_dimension ||
+        target->dimension != expected_dimension) {
+        return failure<Quantity>(
+            ErrorCode::invalid_unit, "Unknown unit or incompatible quantity dimension.", "unit");
+    }
+    if (!std::isfinite(input.value)) {
+        return failure<Quantity>(
+            ErrorCode::invalid_input, "Quantity value must be finite.", "value");
+    }
+    // Form the ratio first: converting an already large canonical value to itself must not
+    // overflow.
+    const long double factor =
+        static_cast<long double>(source->to_canonical) / target->to_canonical;
+    const long double scaled_value = static_cast<long double>(input.value) * factor;
+    if (input.value != 0.0 && scaled_value == 0.0L) {
+        return failure<Quantity>(
+            ErrorCode::invalid_input, "Quantity conversion underflowed to zero.", "value");
+    }
+    const auto converted = checked_value(scaled_value, "value");
+    if (!converted.ok()) {
+        return {converted.status, std::nullopt, converted.error};
+    }
+    return success(Quantity{*converted.value, std::string(output_unit)});
+}
+
+Result<Quantity> canonical_quantity(const Quantity& input, Dimension expected_dimension) {
+    const auto symbol = canonical_unit(expected_dimension);
+    if (symbol.empty()) {
+        return failure<Quantity>(
+            ErrorCode::invalid_unit, "Unknown quantity dimension.", "dimension");
+    }
+    return convert_quantity(input, expected_dimension, symbol);
+}
+
+Result<bool> validate_frame(const CoordinateFrame& frame) {
+    for (double value : frame.origin_mm) {
+        if (!std::isfinite(value)) {
+            return failure<bool>(ErrorCode::invalid_input,
+                                 "Coordinate origin must be finite millimeter values.",
+                                 "origin_mm");
+        }
+    }
+    for (const auto& row : frame.basis) {
+        for (double value : row) {
+            if (!std::isfinite(value)) {
+                return failure<bool>(ErrorCode::invalid_input,
+                                     "Coordinate basis must contain finite values.",
+                                     "basis");
+            }
+        }
+    }
+    for (std::size_t first = 0; first < 3; ++first) {
+        for (std::size_t second = first; second < 3; ++second) {
+            long double dot = 0.0L;
+            for (std::size_t row = 0; row < 3; ++row) {
+                dot += static_cast<long double>(frame.basis[row][first]) * frame.basis[row][second];
+            }
+            const long double expected = first == second ? 1.0L : 0.0L;
+            if (!std::isfinite(dot) || std::abs(dot - expected) > frame_tolerance) {
+                return failure<bool>(ErrorCode::invalid_input,
+                                     "Coordinate axes must be orthonormal within 1e-9.",
+                                     "basis");
+            }
+        }
+    }
+    const auto& b = frame.basis;
+    const long double determinant =
+        static_cast<long double>(b[0][0]) * (static_cast<long double>(b[1][1]) * b[2][2] -
+                                             static_cast<long double>(b[1][2]) * b[2][1]) -
+        static_cast<long double>(b[0][1]) * (static_cast<long double>(b[1][0]) * b[2][2] -
+                                             static_cast<long double>(b[1][2]) * b[2][0]) +
+        static_cast<long double>(b[0][2]) * (static_cast<long double>(b[1][0]) * b[2][1] -
+                                             static_cast<long double>(b[1][1]) * b[2][0]);
+    if (!std::isfinite(determinant) || std::abs(determinant - 1.0L) > frame_tolerance) {
+        return failure<bool>(ErrorCode::invalid_input,
+                             "Coordinate basis must be a proper rotation with determinant +1.",
+                             "basis");
+    }
+    return success(true);
+}
+
+Result<Vector3> local_to_global(const CoordinateFrame& frame, const Vector3& local_mm) {
+    return transform(frame, local_mm, false);
+}
+
+Result<Vector3> global_to_local(const CoordinateFrame& frame, const Vector3& global_mm) {
+    return transform(frame, global_mm, true);
+}
+
+ScalarTable1D::ScalarTable1D(Dimension x_dimension,
+                             Dimension y_dimension,
+                             std::vector<TablePoint> canonical_points)
+    : x_dimension_(x_dimension), y_dimension_(y_dimension), points_(std::move(canonical_points)) {}
+
+Result<ScalarTable1D> ScalarTable1D::create(Dimension x_dimension,
+                                            Dimension y_dimension,
+                                            std::vector<TablePoint> points) {
+    if (points.size() < 2) {
+        return failure<ScalarTable1D>(
+            ErrorCode::invalid_input, "A linear table requires at least two points.", "points");
+    }
+    for (std::size_t index = 0; index < points.size(); ++index) {
+        auto x = canonical_quantity(points[index].x, x_dimension);
+        auto y = canonical_quantity(points[index].y, y_dimension);
+        if (!x.ok()) {
+            x.error->field = "points[" + std::to_string(index) + "].x." + x.error->field;
+            return {x.status, std::nullopt, x.error};
+        }
+        if (!y.ok()) {
+            y.error->field = "points[" + std::to_string(index) + "].y." + y.error->field;
+            return {y.status, std::nullopt, y.error};
+        }
+        points[index] = {*x.value, *y.value};
+        if (index > 0 && points[index - 1].x.value >= points[index].x.value) {
+            return failure<ScalarTable1D>(
+                ErrorCode::invalid_input,
+                "Table abscissae must be strictly increasing after unit conversion.",
+                "points");
+        }
+    }
+    return success(ScalarTable1D{x_dimension, y_dimension, std::move(points)});
+}
+
+Result<Quantity> ScalarTable1D::evaluate(const Quantity& x, OutsidePolicy outside_policy) const {
+    if (points_.size() < 2) {
+        return failure<Quantity>(ErrorCode::invalid_input,
+                                 "Table has no valid point range, possibly after a move.",
+                                 "points");
+    }
+    if (outside_policy != OutsidePolicy::reject && outside_policy != OutsidePolicy::clamp) {
+        return failure<Quantity>(ErrorCode::invalid_input, "Unknown table range policy.", "policy");
+    }
+    const auto query = canonical_quantity(x, x_dimension_);
+    if (!query.ok()) {
+        return query;
+    }
+    const double value = query.value->value;
+    if (value < points_.front().x.value || value > points_.back().x.value) {
+        if (outside_policy == OutsidePolicy::reject) {
+            return failure<Quantity>(
+                ErrorCode::invalid_input, "Query lies outside the table range.", "x");
+        }
+        return success(value < points_.front().x.value ? points_.front().y : points_.back().y);
+    }
+    const auto high =
+        std::lower_bound(points_.begin(), points_.end(), value, [](const auto& point, double v) {
+            return point.x.value < v;
+        });
+    if (high->x.value == value) {
+        return success(high->y);
+    }
+    const auto& low = *(high - 1);
+    const long double scale = std::max(std::abs(low.x.value), std::abs(high->x.value));
+    const long double fraction =
+        (static_cast<long double>(value) / scale - static_cast<long double>(low.x.value) / scale) /
+        (static_cast<long double>(high->x.value) / scale -
+         static_cast<long double>(low.x.value) / scale);
+    if (!std::isfinite(fraction) || fraction <= 0.0L || fraction >= 1.0L) {
+        return failure<Quantity>(ErrorCode::invalid_input,
+                                 "Interpolation fraction is outside the supported numeric range.",
+                                 "x");
+    }
+    const auto result = checked_value(std::lerp(static_cast<long double>(low.y.value),
+                                                static_cast<long double>(high->y.value),
+                                                fraction),
+                                      "y");
+    if (!result.ok()) {
+        return {result.status, std::nullopt, result.error};
+    }
+    return success(Quantity{*result.value, std::string(canonical_unit(y_dimension_))});
+}
+
+std::span<const TablePoint> ScalarTable1D::points() const {
+    return points_;
+}
+
+Dimension ScalarTable1D::x_dimension() const {
+    return x_dimension_;
+}
+
+Dimension ScalarTable1D::y_dimension() const {
+    return y_dimension_;
+}
+} // namespace qcae::parameters

@@ -1,0 +1,23 @@
+[225/233] Linking CXX executable consumer_qcae_result_features_qcae_static_validation_hpp
+[226/233] Linking CXX executable consumer_qcae_result_features_qcae_result_service_hpp
+[227/233] Linking CXX executable consumer_qcae_solver_local_qcae_solver_local_hpp
+[228/233] Linking CXX executable consumer_generated_operations
+[229/233] Linking CXX executable consumer_operation_contracts
+[230/233] Linking CXX executable qcae-engine
+[231/233] Linking CXX executable qcae-cli
+[232/233] Linking CXX executable qcae-mcp
+Python 3.14.0
+/private/tmp/qcae-c4-ext03-41
+codex/c4-ext03-baseline41
+2:"""Require a consistent clang-format layout for handwritten C++ sources."""
+22:    named = shutil.which("clang-format-21")
+28:            [xcrun, "--find", "clang-format"], capture_output=True, text=True, check=False
+32:    return shutil.which("clang-format")
+36:    if not (ROOT / ".clang-format").is_file():
+37:        print("Missing repository .clang-format", file=sys.stderr)
+41:        print("clang-format 21 is required for the C++ readability gate", file=sys.stderr)
+48:        print(f"Cannot run clang-format: {exc}", file=sys.stderr)
+50:    if version.returncode != 0 or "clang-format version 21." not in version.stdout:
+51:        print(f"clang-format 21 required; found: {version.stdout.strip() or executable}", file=sys.stderr)
+64:        print(f"PASS: {len(paths)} C++ files match clang-format 21")
+PASS: typed entity generation; ten registration permutations identical

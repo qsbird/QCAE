@@ -1,0 +1,46 @@
+                ledger::Metric::metadata_copy_bytes,
+                moved_string_bytes(*signature.value));
+    return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
+}
+
+Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
+    auto registered = registry.register_typed<MaterialGetDescriptionInput>(
+        InputTraits<MaterialGetDescriptionInput>::definition(),
+        [&app](const OperationContext& context, const MaterialGetDescriptionInput& input) {
+            const auto snapshot = app.snapshot(*context.document);
+            if (!snapshot.ok())
+                return Result<Value>{snapshot.status, std::nullopt, snapshot.error};
+            const auto record = snapshot.value->records.find<records::Material>(input.entity_id);
+            if (!record)
+                return Result<Value>{Status::failed,
+                                     std::nullopt,
+                                     Diagnostic{ErrorCode::entity_not_found,
+                                                "Material does not exist",
+                                                "entity_id"}};
+            const auto& description = record->get<records::Material>().description;
+            return success(
+                Value(Value::Object{{"entity_id", Value(input.entity_id.value)},
+                                    {"description", description ? Value(*description) : Value()}}));
+        });
+    if (!registered.ok())
+        return registered;
+    registered = registry.register_typed<MaterialCreateInput>(
+        InputTraits<MaterialCreateInput>::definition(),
+        [&app](const OperationContext& context, const MaterialCreateInput& input) {
+            return execute(app, context, input, prepare_create_material);
+        });
+    if (!registered.ok())
+        return registered;
+    registered = registry.register_typed<MaterialSetYoungModulusInput>(
+        InputTraits<MaterialSetYoungModulusInput>::definition(),
+        [&app](const OperationContext& context, const MaterialSetYoungModulusInput& input) {
+            return execute(app, context, input, prepare_set_young_modulus);
+        });
+    if (!registered.ok())
+        return registered;
+    registered = registry.register_typed<MaterialSetDescriptionInput>(
+        InputTraits<MaterialSetDescriptionInput>::definition(),
+        [&app](const OperationContext& context, const MaterialSetDescriptionInput& input) {
+            return execute(app, context, input, prepare_set_description);
+        });
+    if (!registered.ok())

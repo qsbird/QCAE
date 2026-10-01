@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "ctest_argv": [
+    "ctest",
+    "--test-dir",
+    "build-ext03-desktop",
+    "--output-on-failure",
+    "-R",
+    "^(desktop|desktop_selection|c3_desktop_workflow|modeling_tools|desktop_smoke)$"
+  ],
+  "env": {
+    "QT_QPA_PLATFORM": "cocoa",
+    "QCAE_VTK_EVIDENCE_DIR": "/private/tmp/qcae-ext03-41-evidence/desktop-regression-images"
+  },
+  "raw_test_command_stdout": "native-desktop-subtests-raw.log",
+  "tests": [
+    {
+      "name": "desktop",
+      "ctest_raw_line": "1/5 Test #62: desktop ..........................   Passed    8.40 sec"
+    },
+    {
+      "name": "desktop_selection",
+      "ctest_raw_line": "2/5 Test #63: desktop_selection ................   Passed   95.68 sec"
+    },
+    {
+      "name": "c3_desktop_workflow",
+      "ctest_raw_line": "3/5 Test #64: c3_desktop_workflow ..............   Passed  348.75 sec"
+    },
+    {
+      "name": "modeling_tools",
+      "ctest_raw_line": "4/5 Test #65: modeling_tools ...................   Passed    6.51 sec"
+    },
+    {
+      "name": "desktop_smoke",
+      "ctest_raw_line": "5/5 Test #66: desktop_smoke ....................   Passed    5.84 sec"
+    }
+  ]
+}

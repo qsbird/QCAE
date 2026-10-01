@@ -1,0 +1,22 @@
+    const auto history_before = good(fixture.app.history(before.info.document), "history before");
+    const auto generation = fixture.rows->generation;
+    const auto queried =
+        fixture.invoke("material.get_description",
+                       fixture.context(""),
+                       InputTraits<MaterialGetDescriptionInput>::to_value({material}));
+    check(std::holds_alternative<std::monostate>(object(queried).at("description").data) &&
+              fixture.rows->generation == generation,
+          "read-only description query returns explicit null without committing");
+    const auto context = fixture.context("description");
+    const auto input = InputTraits<MaterialSetDescriptionInput>::to_value(
+        {material, std::string("Steel used by the cantilever")});
+    const auto edited = fixture.invoke("material.set_description", context, input);
+    const auto after = fixture.snapshot();
+    const auto& current = after.records.find<records::Material>(material)->get<records::Material>();
+    check(current.description == "Steel used by the cantilever" && current.id == prior.id &&
+              current.name == prior.name && current.young_modulus_mpa == prior.young_modulus_mpa &&
+              current.poisson_ratio == prior.poisson_ratio,
+          "description update preserves Material engineering properties");
+    const auto changes = diff_record_views(before.records, after.records);
+    check(changes.records.size() == 1 && changes.records.front().key.identity == material.value,
+          "description edit changes one Material");

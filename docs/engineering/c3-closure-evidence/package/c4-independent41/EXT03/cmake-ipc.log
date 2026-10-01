@@ -1,0 +1,64 @@
+      --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+    set_tests_properties(ipc m1_ipc PROPERTIES TIMEOUT 60)
+    add_test(NAME mcp_bridge COMMAND Python3::Interpreter
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/mcp_bridge_tests.py"
+      --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+      --mcp $<TARGET_FILE:qcae-mcp>)
+    set_tests_properties(mcp_bridge PROPERTIES TIMEOUT 90)
+    add_test(NAME mcp_protocol COMMAND Python3::Interpreter
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/mcp_protocol_tests.py" --mcp $<TARGET_FILE:qcae-mcp>)
+    set_tests_properties(mcp_protocol PROPERTIES TIMEOUT 30)
+    if(QCAE_BUILD_STORAGE)
+      add_test(NAME mcp_bridge_durable COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/mcp_bridge_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+        --mcp $<TARGET_FILE:qcae-mcp> --durable)
+      set_tests_properties(mcp_bridge_durable PROPERTIES TIMEOUT 90)
+    endif()
+    if(QCAE_BUILD_STORAGE)
+      add_test(NAME analysis_check_ipc COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_check_ipc_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+      set_tests_properties(analysis_check_ipc PROPERTIES TIMEOUT 90)
+      add_test(NAME force_vector_ipc COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/force_vector_ipc_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+      set_tests_properties(force_vector_ipc PROPERTIES TIMEOUT 90)
+      find_package(Qt6 6.10 REQUIRED COMPONENTS Test)
+      add_executable(qcae_skeleton_fault_client_tests tests/skeleton_fault_client_tests.cpp)
+      target_link_libraries(qcae_skeleton_fault_client_tests PRIVATE qcae_desktop_client Qt6::Test)
+      qcae_warnings(qcae_skeleton_fault_client_tests)
+      add_test(NAME skeleton_fault_client COMMAND qcae_skeleton_fault_client_tests)
+      set_tests_properties(skeleton_fault_client PROPERTIES TIMEOUT 90)
+      if(QCAE_ENABLE_NASTRAN_PACKAGE)
+        add_test(NAME geometry_binding_ipc COMMAND Python3::Interpreter
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/skeleton_representative_ipc_tests.py"
+          --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+          --only-case BP-04
+rg: modules/query/include/qcae/entity_queries.hpp: IO error for operation on modules/query/include/qcae/entity_queries.hpp: No such file or directory (os error 2)
+        reject({input.node_ids, EntityId("unknown")}, "mesh-missing");
+        reject({input.node_ids, EntityId("material")}, "mesh-type");
+        original_context = context(app, "create-tri3");
+        const auto created = good(registry.invoke("mesh.create_tri3", original_context,
+                                                  InputTraits<MeshCreateTri3Input>::to_value(input)));
+        triangle = EntityId(std::get<std::string>(std::get<Value::Object>(created.data).at("entity_id").data));
+        const auto after = snapshot();
+        check(after.info.revision == before.info.revision + 1 &&
+                  diff_record_views(before.records, after.records).records.size() == 1,
+              "Tri3 creation must publish exactly one record and one transaction");
+        const auto record = after.records.find<records::Tri3>(triangle);
+        check(record && record->get<records::Tri3>().nodes ==
+                            std::array<EntityId, 3>{EntityId("a"), EntityId("b"), EntityId("c")},
+              "Tri3 must persist ordered connectivity");
+        auto encoded = RecordTraits<records::Tri3>::descriptor().encode(record->object());
+        encoded.version = 2;
+        try {
+            options.registry->from_input(encoded);
+            check(false, "Future Tri3 schema must be rejected");
+        } catch (const RecordError& error) {
+            check(error.code() == ErrorCode::schema_unsupported, "Future schema error");
+        }
+        const auto generation = options.records->load_rows().generation;
+        const auto replay = good(registry.invoke("mesh.create_tri3", original_context,
+                                                 InputTraits<MeshCreateTri3Input>::to_value(input)));
+        check(std::get<Value::Object>(replay.data).at("transaction_id") ==

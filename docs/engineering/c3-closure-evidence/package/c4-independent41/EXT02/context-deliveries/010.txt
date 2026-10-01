@@ -1,0 +1,395 @@
+Warning: truncated output (original token count: 9349)
+Total output lines: 428
+
+--- tests/skeleton_workflow_ipc_tests.py (17373 UTF-8 bytes) ---
+#!/usr/bin/env python3
+"""Three complete pure-CLI workflows from empty documents, with explicit ID bijections."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import time
+import uuid
+
+from analysis_check_ipc_tests import Client
+from result_fixture_ipc_tests import bind_r, create_m, wait_task
+
+
+def write(path, data):
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+
+
+def identities_for_m(rows):
+    mapping = {}
+    grouped = {}
+    for row in rows:
+        grouped.setdefault(row["kind"], []).append(row)
+    nodes = sorted(grouped["node"], key=lambda row: row["position_mm"])
+    for index, row in enumerate(nodes):
+        mapping[row["entity_id"]] = f"node:{index:02}"
+    beams = sorted(grouped["beam"], key=lambda row: (mapping[row["nodes"][0]], mapping[row["nodes"][1]]))
+    for index, row in enumerate(beams):
+        mapping[row["entity_id"]] = f"beam:{index:02}"
+    for kind, members in grouped.items():
+        if kind in {"node", "beam"}:
+            continue
+        # Names are preserved as model semantics. They only choose the identity
+        # bijection for organization records; no field/reference is discarded.
+        ordered = sorted(members, key=lambda row: (row.get("name", ""), row["entity_id"]))
+        for index, row in enumerate(ordered):
+            mapping[row["entity_id"]] = f"{kind}:{index:02}"
+    assert len(mapping) == len(rows) and len(set(mapping.values())) == len(rows), "ID map is not bijective"
+    return mapping
+
+
+def canonical(value, mapping):
+    if isinstance(value, str):
+        return mapping.get(value, value)
+    if isinstance(value, list):
+        return [canonical(item, mapping) for item in value]
+    if isinstance(value, dict):
+        return {key: canonical(item, mapping) for key, item in value.items()}
+    return value
+
+
+def run_once(args, number):
+    evidence = args.evidence_dir / f"cli-{number}"
+    evidence.mkdir(parents=True, exist_ok=True)
+    record = {"mode": "cli", "run_id": f"cli-workflow-{uuid.uuid4().hex}-{number}",
+              "source_tree_sha256": args.source_tree_sha256, "passed": False,
+              "assertions": [], "semantic_checkpoints": {}, "raw_semantic_checkpoints": {}, "real_solver": False,
+              "real_ai_client": False, "result_source_kind": "fixture"}
+
+    def require(condition, expected, actual):
+        record["assertions"].append({"expected": expected, "actual": actual, "passed": bool(condition)})
+        assert condition, expected
+
+    with tempfile.TemporaryDirectory(prefix="qcae-full-cli-", dir=Path("/tmp").resolve()) as folder:
+        root = Path(folder)
+        client = Client(args.engine, args.cli, str(root / "engine.sock"), "cli")
+        process = None
+        with (root / "engine.log").open("w+") as log:
+            def start():
+                nonlocal process
+                process = subprocess.Popen([args.engine, "--socket", client.endpoint,
+                                            "--workspace", str(root / "work.sqlite")], stdout=log, stderr=log)
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        log.seek(0)
+                        raise AssertionError(log.read())
+                    try:
+                        return client.call("capabilities.list")
+                    except (OSError, AssertionError, json.JSONDecodeError):
+                        time.sleep(.05)
+                raise AssertionError("Engine startup timed out")
+
+            def rows():
+                return sorted(client.call("entity.query", context=client.current())["entities"], key=lambda item: item["entity_id"])
+
+            def normalized():
+                return sorted((canonical(row, mapping) for row in rows()), key=lambda item: item["entity_id"])
+
+            def checkpoint(name):
+                actual = rows()
+                record["raw_semantic_checkpoints"][name] = actual
+                record["semantic_checkpoints"][name] = sorted(
+                    (canonical(row, mapping) for row in actual), key=lambda item: item["entity_id"])
+                return record["semantic_checkpoints"][name]
+
+            def current_view():
+                return client.call("view.create", {"hidden_ids": [], "camera_fingerprint": "workflow-through-query"}, client.current())
+
+            try:
+                capabilities = start()
+                require(capabilities["durable"] and not capabilities["recovery_available"],
+                        "Workflow starts in a fresh explicit SQLite workspace with no retained document", capabilities)
+                profile = capabilities["declared_solver_profiles"][0]["profile_ref"]
+                nodes, beams, material, part, analysis = create_m(client, profile)
+                # create_m itself creates the empty document and records every actual
+                # geometry, worker, physics and organization transaction in the transcript.
+                raw_m = rows()
+                mapping = identities_for_m(raw_m)
+                record["identity_bijection"] = mapping
+                write(evidence / "M-identities.json", mapping)
+                write(evidence / "M-original.json", raw_m)
+                original_m = checkpoint("M_baseline")
+                require(len(nodes) == 11 and len(beams) == 10 and len(raw_m) == 33,
+                        "Complete M has the fixed 11-node/10-beam physics, organization, LoadCase and Analysis", {"nodes": len(nodes), "beams": len(beams), "records": len(raw_m)})
+                geometry = client.entities("geometry")[0]["entity_id"]
+                midpoint = client.call("geometry.evaluate_line", {"geometry_id": geometry, "u": .5}, client.current())
+                require(midpoint["position_mm"] == [500, 0, 0], "Production geometry evaluates the M line midpoint", midpoint)
+                view = current_view()
+                selection = client.call("selection.evaluate", {"view_session_id": view["view_session_id"],
+                    "expected_view_revision": view["view_revision"], "predicate": {"op": "all"},
+                    "scope": {"visibility": "through", "candidate_ids": [nodes[5]], "include_hidden": False}}, client.current())
+                selected = client.call("selection.get", {"selection_handle": selection["selection_handle"]}, client.current())
+                require(selected["entity_ids"] == [nodes[5]], "CLI selection resolves exactly original node5 in the single authority", selected)
+                before_preview = client.current()
+                before_history = client.call("history.list", context=before_preview)
+                parameters = {"command": "node.move", "entity_id": nodes[5], "position_mm": [500, 1, 0]}
+                cancelled = client.call("changes.preview", parameters, before_preview)
+                # CLI cancellation is the explicit disposal of the preview intent. It
+                # follows the same contract as GUI cancel: no changes.commit is sent.
+                record["cancelled_preview"] = {"preview_id": cancelled["preview_id"], "intent_disposed": True, "commit_sent": False}
+                require(client.current() == before_preview and client.call("history.list", context=before_preview) == before_history and normalized() == original_m,
+                        "Cancelled preview has zero model/history/revision changes", cancelled)
+                applicable = client.call("changes.preview", parameters, before_preview)
+                applied = client.call("changes.commit", {"preview_id": applicable["preview_id"]}, before_preview, "apply-selected-preview")
+                require(int(client.current()["revision"]) == int(before_preview["revision"]) + 1 and client.fields(nodes[5])["position"] == [500, 1, 0],
+                        "Applying the selected preview creates exactly one transaction", applied)
+                checkpoint("selection_applied")
+                client.call("history.undo", context=client.current(), key="undo-selection")
+                require(checkpoint("selection_undone") == original_m, "Undo restores complete M after preview apply", True)
+                client.call("history.redo", context=client.current(), key="redo-selection")
+                require(client.fields(nodes[5])["position"] == [500, 1, 0], "Redo restores the selected node edit", client.fields(nodes[5]))
+                client.call("history.undo", context=client.current(), key="restore-frozen-M")
+                require(normalized() == original_m, "Workflow restores the frozen M before engineering checks", True)
+
+                load_case = client.entities("load_case")[0]["entity_id"]
+                case_fields = client.fields(load_case)
+                client.call("load_case.set_references", {"load_case_id": load_case, "force_ids": [],
+                    "constraint_ids": case_fields["constraints"]}, client.current(), "remove-load-for-check")
+                checked = client.call("analysis.check", {"analysis_id": analysis}, client.current(), "check-missing-load", expected="needs_input")["data"]
+                require(len(checked["issues"]) == 1 and checked["issues"][0]["rule_id"] == "missing-load" and checked["issues"][0]["entity_id"] == analysis,
+                        "Check produces exactly the specified missing-load Issue on M Analysis", checked)
+                located = client.call("entity.query", {"ids": [checked["issues"][0]["entity_id"]]}, client.current())
+                require(len(located["entities"]) == 1 and located["entities"][0]["entity_id"] == analysis,
+                        "Issue identity locates the authoritative Analysis entity", located)
+                client.call("load_case.set_references", {"load_case_id": load_case, "force_ids": case_fields["forces"],
+                    "constraint_ids": case_fields["constraints"]}, client.current(), "repair-load-reference")
+                repaired = client.call("analysis.check", {"analysis_id": analysis}, client.current(), "recheck-repaired")
+                old_issue = client.call("analysis.get_issues", {"check_id": checked["check_id"]}, client.current())
+                require(repaired["issues"] == [] and old_issue["state"] == "stale", "Repair recheck removes the rule Issue and marks the old report stale", {"repaired": repaired, "old": old_issue})
+                client.call("history.undo", context=client.current(), key="undo-repair")
+                require(client.fields(load_case)["forces"] == [], "Undo of the repair returns the missing reference", client.fields(load_case))
+                client.call("history.redo", context=client.current(), key="redo-repair")
+                require(checkpoint("repaired_M") == original_m, "Redo of the repair restores all M semantics and exact references", True)
+
+                prior = client.current()
+                saved = client.call("project.save", {"path": str(root / "M.qcae")}, prior, "save-M")
+                saved_as = client.call("project.save_as", {"path": str(root / "M-copy.qcae")}, saved, "save-as-M")
+                require(not saved["dirty"] and not saved_as["dirty"] and saved_as["document_id"] == prior["document_id"] and saved_as["project_id"] != saved["project_id"],
+                        "Save and save-as establish exact save markers while retaining document authority", {"saved": saved, "saved_as": saved_as})
+                client.call("project.close", {"policy": "discard"}, saved_as, "close-M")
+                opened = client.call("project.open", {"mode": "normal", "path": str(root / "M.qcae")}, key="normal-open-M")
+                require(opened["document_id"] != prior["document_id"] and opened["revision"] == "0" and checkpoint("normal_open_M") == original_m,
+                        "Normal open uses a new DocumentId and retains every M identity/connection/reference", opened)
+                process.kill()
+                process.wait(timeout=10)
+                require(start()["recovery_available"], "Actual engine process termination exposes explicit recovery", True)
+                recovered = client.call("project.open", {"mode": "recover"}, key="recover-M")
+                require(recovered["document_id"] == opened["document_id"] and recovered["document_epoch"] != opened["document_epoch"] and checkpoint("recovered_M") == original_m,
+                        "Recovery retains the document and complete M under a new Epoch", recovered)
+
+                export_context = client.current()
+                exported = wait_task(client, client.call("model.export", {"analysis_id": analysis,
+                    "output_directory": str(root / "artifact")}, export_context, "publish-Nastran-M", profile=profile))
+                artifact_id = exported["artifact_receipt"]["artifact_id"]
+                artifact = client.call("artifact.get", {"artifact_id": artifact_id}, export_context)
+                manifest_bytes = Path(artifact["manifest_path"]).read_bytes()
+                manifest = json.loads(manifest_bytes)
+                require(artifact["state"] == "published" and artifact["verified"] and manifest["complete"] and client.current()["revision"] == export_context["revision"],
+                        "Actual complete Nastran artifact is published without creating a model transaction", exported)
+                require(hashlib.sha256(manifest_bytes).hexdigest() == exported["artifact_receipt"]["manifest_sha256"],
+                        "Published manifest bytes match the actual task receipt SHA256", artifact)
+                fixture = bind_r(artifact, manifest, nodes)
+                result = client.call("results.read_fixture", {"artifact_id": artifact_id, "fixture_json": json.dumps(fixture)}, export_context, "read-R")
+                require(result["state"] == "current" and result["source_kind"] == "fixture" and result["field"]["values"] == [
+                    {"entity_id": nodes[0], "value": [0, 0, 0]}, {"entity_id": nodes[10], "value": [0, -1, 0]}],
+                    "R fixture is read with exact node values, identity mapping and fixture provenance", result)
+                require(checkpoint("published_M") == original_m,
+                        "Artifact publication and reading R preserve every M field and reference", True)
+                client.call("material.set_young_modulus", {"entity_id": material, "young_modulus": {"value": 200, "unit": "GPa"}}, client.current(), "change-result-input")
+                stale = client.call("results.get", {"result_id": result["result_id"]}, client.current())
+                require(stale["state"] == "stale" and stale["source_kind"] == "fixture" and stale["field"] == result["field"] and stale["input_version"] == result["input_version"],
+                        "Changed corresponding input marks R stale while retaining exact fixture source and frozen fields", stale)
+                checkpoint("stale_result_input_M")
+                write(evidence / "R-bound.json", fixture)
+                write(evidence / "artifact-manifest.json", manifest)
+                write(evidence / "R-current.json", result)
+                write(evidence / "R-stale.json", stale)
+                record["artifact"] = artifact
+                record["result_current"] = result
+                record["result_stale"] = stale
+                record["passed"] = True
+            except Exception as error:
+                record["error"] = str(error)
+            finally:
+                if process and process.poll() is None:
+                    process.terminate()
+                    process.wait(timeout=10)
+                write(evidence / "transcript.json", client.transcript)
+                log.flush()
+                log.seek(0)
+                (evidence / "engine.log").write_text(log.read())
+    write(evidence / "workflow.json", record)
+    print(json.dumps({"mode": "cli", "run_id": record["run_id"], "passed": record["passed"],
+                      "error": record.get("error"), "checkpoints": len(record["semantic_checkpoints"])}), flush=True)
+    return record
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--engine", required=True)
+    parser.add_argument("--cli", required=True)
+    parser.add_argument("--evidence-dir", required=True, type=Path)
+    parser.add_argument("--source-tree-sha256", default="mutable-diagnostic")
+    args = parser.parse_args()
+    args.engine, args.cli = str(Path(args.engine).resolve()), str(Path(args.cli).resolve())
+    args.evidence_dir.mkdir(parents=True, exist_ok=True)
+    reports = [run_once(args, number) for number in range(1, 4)]
+    semantic_differences = 0
+    if all(report["passed"] for report in reports):
+        for report in reports[1:]:
+            semantic_differences += report["semantic_checkpoints"] != reports[0]["semantic_checkpoints"]
+    report = {"mode": "cli", "runs": 3, "…849 tokens truncated…删除、字段、集合、归属、引用及复合修改可完整撤销/重做；故障恢复后保留窗口内历史可用；新编辑裁剪 redo、保存点和 dirty 状态正确 |
+| TST-F07 悬臂梁闭环 | REQ-07、13、14 | 导入/创建 → 修改载荷/截面 → 检查 → 导出 → 真实求解 → 读取位移/反力 → 预登记数值核验；undo/redo 后重新核验；组织变体不改变物理结果 |
+| TST-F08 契约与边界 | REQ-02、16、18 | 每项 P0 业务至少一个无 GUI 契约测试；OperationDescriptor 的参数、单位、错误、影响与真实实现一致；ChangeImpact 沿材料→属性→单元等引用传播，正确失效显示/检查/分析结果，纯组织或相机变化不误改物理输入 |
+
+## 3. 架构验收与旧 ID 映射
+
+原[架构验收 AR-01—AR-12](../architecture/decisions-and-verification.md)分别映射到下表。旧 ID 保留作为追溯别名，后续测试代码使用新的稳定 ID。
+
+| 测试 ID / 旧 ID | 需求 | 验证与通过条件 |
+|---|---|---|
+| TST-A01 / AR-01 核心纯净 | REQ-02、16 | 禁用 Qt/VTK/SQLite/MCP 后构建纯核心及内存适配测试；模型、命令、查询、撤销可运行；检查禁止的编译依赖 |
+| TST-A02 / AR-02 单一宿主 | REQ-15、17 | GUI 先、AI 先、同时启动及两个 MCP 客户端连接同一引擎；同工程只有一个可写活动文档和历史 |
+| TST-A03 / AR-03 工程锁 | REQ-08、17 | 同路径、别名路径重复打开及异常退出；不得产生第二个写入者；验证实例/文件身份后才处理残留锁 |
+| TST-A04 / AR-04 提交故障 | REQ-09、10、15 | 准备、数据库提交、RAM 发布、响应窗口分别注入故障；模型/引用/历史/幂等一致；提交后重试返回原结果；刷新失败不撤销已提交模型 |
+| TST-A05 / AR-05 重开重试 | REQ-10、15 | 正常打开创建新 DocId/Epoch，不激活旧操作空间；恢复保留 DocId/操作事实但更新 Epoch；undo 后重试不重做；旧 Epoch/任务不能写入新文档 |
+| TST-A06 / AR-06 保存窗口 | REQ-08、10 | 备份中断、替换后崩溃、磁盘不足、另存失败/成功；旧或新完整快照可判明；目标和工作库身份/保存内容一致；纯另存不新增修订/undo；明确放弃的状态不再自动恢复 |
+| TST-A07 / AR-07 选择一致 | REQ-05、06、15 | 改变相机、隐藏/遮挡及多对一渲染映射；真实实体命中正确，模型/视图版本匹配；无图形能力返回明确错误而非改变选择语义 |
+| TST-A08 / AR-08 任务产物 | REQ-11、13 | 测试取消、启动后崩溃、PID 复用、部分/缺失产物及状态未明；执行/解析/验证分开，不能凭退出码或文件存在判成功，不无依据再次启动 |
+| TST-A09 / AR-09 结果依据 | REQ-13、15、18 | 求解时改变物理输入，旧结果标为非当前；仅改变相机结果仍适用；结果关联输入摘要、求解配置及解析版本，不只按工程名关联 |
+| TST-A10 / AR-10 无窗口 | REQ-02、13、14 | 未启动 GUI 且无图形上下文，完成数值建模、检查、保存、导出、求解及结果读取；无点击模拟；截图/可见性图形测试另行执行 |
+| TST-A11 / AR-11 配额 | REQ-05、09、11 | 批量数据、历史、队列和任务临时磁盘超额时拒绝或受控失败；无半修改、无无限队列；裁剪历史不误删幂等保证期内记录 |
+| TST-A12 / AR-12 重连 | REQ-15、17 | 丢事件、丢响应、断线重连、GUI 关闭但任务继续；按版本重同步状态，同操作不重复；重新连接可取得原操作和任务真实状态；创建/打开响应丢失且客户端未知DocumentId时，可按宿主作用域查回同一文档，故障/重试不重复创建工作副本 |
+
+补充恢复测试必须覆盖未命名工程、正常工程打开与原工作库故障恢复的区别，以及关闭/放弃后原任务仅归属原上下文。
+
+## 4. AI 场景验收与旧 ID 映射
+
+原[AI-01—AI-10 详细用例](../P0-AI验收用例-v0.6.md)分别映射到下表。工具结果的结构化事实为判据，不能只判断 AI 是否说“成功”。
+
+| 测试 ID / 旧 ID | 需求 | 操作与通过条件 |
+|---|---|---|
+| TST-I01 / AI-01 单位 | REQ-07、14、16 | 输入无单位的尺寸、截面、弹性模量、力，先返回 needs_input 且不提交可求解模型；补齐 mm/GPa/N 后归一化、显示和导出一致 |
+| TST-I02 / AI-02 物理歧义 | REQ-07、14 | 对“左端固定、向下施力”等先固定实体身份、坐标方向和力值；必要信息缺失先澄清；旋转相机不得改变物理方向 |
+| TST-I03 / AI-03 共享属性 | REQ-04、09、14 | 20 单元共享属性，选择 10 个要求仅改它们；预览明确 20 个引用者，复制/重分配若受支持则完整执行，否则报不支持；不能修改 20 个后声称仅改 10 个；一次撤销恢复 |
+| TST-I04 / AI-04 版本冲突 | REQ-09、15 | AI 按 V10 预览，GUI 提交 V11，再提交旧预览；返回 conflict 且 V11 保持不变，重新读取后才能新建预览 |
+| TST-I05 / AI-05 重试 | REQ-09、15 | 提交后响应丢失，用新 request_id/原幂等键及相同参数重试；返回原事务，无重复载荷/历史/修订；同键不同参数拒绝 |
+| TST-I06 / AI-06 取消失败 | REQ-09、11、13 | 计算取消、提交前失败、提交后取消及求解取消；未提交候选丢弃，已提交报告事实，部分求解结果无效，取消不伪称模型已回滚 |
+| TST-I07 / AI-07 陈旧结果 | REQ-13、14、15 | V20 求解期间改为 V21，V20 结果返回时标明旧来源；AI 不用其回答 V21 工况问题，不覆盖当前结论 |
+| TST-I08 / AI-08 验证分层 | REQ-12、13、14 | 真实正确基准达到预登记数值标准；可求解但工况错误的模型不可通过场景检查；退出成功但结果损坏不可通过解析；不得用模拟结果替代 |
+| TST-I09 / AI-09 恢复 | REQ-10、11、15 | V31 已持久化、V32 提交中故障并有状态未明任务；恢复到边界内一致状态，无半 V32；任务成功/中断/待核实均有事实依据，不盲目重复运行 |
+| TST-I10 / AI-10 人机一致 | REQ-02、09、10、14、17 | AI 建模、GUI 改力、AI 撤销、保存重开，再无窗口执行同流程；共享历史，存储语义一致；没有 AI 独立模型或模拟点击依赖 |
+
+每项 AI 用例至少执行 3 次独立会话，记录客户端/模型配置与完整工具调用，关键错误为 0。这是首版受控场景门槛，不表示广泛场景或任意用户输入已可靠。
+
+至少一次必须由真实外部 AI 客户端调用真实 MCP 桥、本地引擎及真实 Nastran 求解器，完成带单位的结果读取和数值核验。只有工具替身回放不能计为通过。
+
+## 5. 求解器边界验收（P0仍为一个生产目标）
+
+以下验证契约和适配边界，可使用显式标为test-only的合成profile；不据此宣称新增第二求解器。涉及真实数值的测试继续要求既定Nastran环境。
+
+| 测试 ID | 需求 | 步骤与通过条件 |
+|---|---|---|
+| TST-P01 编号身份 | REQ-03、20 | 同一EntityId拥有来源编号及两个测试导出映射；原身份不变；跨INCLUDE同节点namespace冲突被识别，材料/节点同数字不误合并；结果使用运行冻结映射 |
+| TST-P02 字段权威 | REQ-04、09、19 | 公共E字段的原生卡片投影不可形成第二个独立值；专有字段有类型/单位/引用并通过统一事务；冲突来源、未知schema和越权直写拒绝，undo恢复全部引用 |
+| TST-P03 目标绑定 | REQ-07、15、19 | 切换GUI活动分析不改模型；目标相关请求携带analysis/profile上下文；显式改绑定/升级产生预览/事务并使相关检查失效；不能使用全局当前模板隐式补齐 |
+| TST-P04 能力一致 | REQ-02、14、16、19 | GUI/CLI/AI对同ProfileRef返回相同能力；区分declared/configured/validated；未配置目标不运行；一般建模未完成可诊断，结构不变量损坏不能提交 |
+| TST-P05 转换边界 | REQ-08、18、20 | 用测试映射验证exact/conditional/approximate/unsupported报告；未处理条件、近似或不支持项不冒充无损成功；源模型保持原样；实际第二求解器转换不纳入P0 |
+| TST-P06 结果语义 | REQ-13、20 | 位移/反力包含数量、单位、位置、形状/分量、坐标基和工况；合成不同位置/坐标数据不能悄然混合；派生转换记录依据；旧结果不使用当前编号映射 |
+| TST-P07 版本依据 | REQ-10、13、15、19、20 | 同一修订下传入与分析绑定不符的ProfileRef，或原定义已不可用时，新操作必须拒绝；显式绑定升级递增修订，不热替换；旧运行仍绑定原规则/映射/解析版本；同幂等键已提交重试仅返回旧事实；缺失schema恢复不能静默解释 |
+| TST-P08 交互与引用 | REQ-04、12、14、18、19 | 专用编辑器和AI走同一校验；共享材料更新影响所有引用分析；不支持字段明确诊断；复杂规则不能只在Qt面板实现，未知专有引用不能安全重编号 |
+
+## 6. 需求覆盖索引
+
+此表用于发现缺漏，不替代各测试的故障分支和数据集。
+
+| 需求 | 最低覆盖 |
+|---|---|
+| REQ-01 工作区 | TST-F01 |
+| REQ-02 无界面业务 | TST-F08、TST-A01、TST-A10、TST-I10 |
+| REQ-03 身份与组织 | TST-F02、TST-F05 |
+| REQ-04 引用依赖 | TST-F02、TST-F04、TST-I03 |
+| REQ-05 查询选择 | TST-F03、TST-A07、TST-A11 |
+| REQ-06 基础显示 | TST-F01、TST-F03、TST-A07 |
+| REQ-07 最小分析 | TST-F04、TST-F07、TST-I01、TST-I02 |
+| REQ-08 工程文件 | TST-F05、TST-A03、TST-A06 |
+| REQ-09 修改历史 | TST-F06、TST-A04、TST-A11、TST-I03—06、TST-I10 |
+| REQ-10 持久化恢复 | TST-F06、TST-A04—06、TST-I09、TST-I10 |
+| REQ-11 任务配额 | TST-A08、TST-A11、TST-I06、TST-I09 |
+| REQ-12 检查 | TST-F04、TST-I08 |
+| REQ-13 求解结果 | TST-F07、TST-A08—10、TST-I06—08 |
+| REQ-14 AI 场景 | TST-F07、TST-A10、TST-I01—03、TST-I07—08、TST-I10 |
+| REQ-15 一致性 | TST-A02、TST-A04—05、TST-A07、TST-A09、TST-A12、TST-I04—05、TST-I07、TST-I09 |
+| REQ-16 操作描述 | TST-F08、TST-A01、TST-I01 |
+| REQ-17 生命周期 | TST-A02—03、TST-A12、TST-I10 |
+| REQ-18 交换与影响 | TST-F05、TST-F08、TST-A09、TST-P05、TST-P08 |
+| REQ-19 目标能力与语义边界 | TST-P02、TST-P03、TST-P04、TST-P07、TST-P08 |
+| REQ-20 编号与通用结果 | TST-P01、TST-P05、TST-P06、TST-P07 |
+
+## 7. 开发阶段完成标准
+
+| 阶段 | 退出条件 |
+|---|---|
+| M0 契约与宿主 | 纯核心构建、真实本地 IPC/并发连接验证，TST-A01—03 通过基础路径；环境未知项有明确登记 |
+| M1 文档与格式 | TST-F02、F04、F05 的受控数据闭环；全部修改为后续统一事务提供可验证变更，不能形成第二条直写路径 |
+| M2 事务与存储 | TST-F06、TST-A04—06、TST-I04—05、I09 的确定性测试；配额和持久化配置固定 |
+| M3 查询与桌面 | TST-F01、F03、TST-A07、A12 的 GUI 路径；人机/CLI 共享模型与历史；记录交互性能 |
+| M4 任务与求解 | TST-F07、TST-A08—11 通过；真实求解数值有证据；取消、陈旧结果、异常恢复可复现 |
+| M5 AI 接入 | TST-I01—10 的工具契约及真实会话门槛通过，至少一个真实 AI + 真实求解器完整闭环 |
+| M6 P0 发布 | 全部适用测试通过，全部 REQ 有证据；目标系统构建/部署、性能分档与联合回归完成，无未说明阻塞 |
+
+阶段可以并行准备数据和测试，但依赖行为必须已落实再判定下游通过。受控场景未实现的能力返回不支持，不能通过缩小测试范围掩盖原需求缺失。
+
+完成报告列出通过测试、配置、证据路径及已知限制；明确区分文档基线完成、代码完成和 P0 产品验收完成。研发 token 预算不作为任何测试通过判据。
+
+
+基线1.1在M0/M1验证TST-P01—P04的契约/映射，M2验证扩展历史恢复，M4验证真实运行结果依据，M5验证AI与GUI一致性。TST-P05仅为转换报告契约测试，不包含新转换器交付。
+
+## M1阶段证据边界
+
+[M1实现](../implementation/m1.md)覆盖TST-F02/F04/F05和TST-P01的部分底层条件：组织视角中的稳定身份、引用约束、全模型撤销、受控BDF资源包语义往返及明确报告。该记录不把这些P0验收项整体标为通过：工程保存、持久恢复、资源发布、真实目标版本及求解尚未完成。
+
+## 8. 代码可读性门禁
+
+本节是每个开发切片的工程质量退出条件，不把原有TST-F/A/I/P产品验收误记为已通过。
+
+| 门禁 | 必须提供的证据 | 失败处理 |
+|---|---|---|
+| QG-01 自动格式 | `python3 tools/check_cpp_format.py`通过；手写C++文件使用同一`.clang-format`，且`git diff --check`通过 | 格式差异、缺少指定版本工具或空白错误均阻止完成 |
+| QG-02 可理解的代码 | 审查记录说明本切片的入口→业务状态→外部适配路径、主要不变量、错误处理和测试；审查者能定位权威状态与副作用 | 命名含糊、职责混杂、重复规则、压缩表达或无依据的复杂性作为阻塞项修复；记录具体文件与结论 |
+| QG-03 行为保持 | 对格式/整理前后的同一相关测试集留存结果；编译警告、生成契约/能力摘要与核心/IPC回归均按受影响范围检查 | 回归失败时不能仅称为“格式改动”，需修复或回退；未执行的环境验证仍列为未完成 |
+
+自动格式不衡量架构质量，也不要求将每个逻辑模块拆成独立库。人工审查不以固定行数替代职责判断；有争议时给出具体调用链和维护成本。未来新增代码与现有代码适用同一格式规则，不设置存量豁免。
+
+## M2/M3阶段证据边界
+
+[M2/M3实现记录](../implementation/m2-m3.md)覆盖持久工作库、差量历史、工程保存/另存/明确恢复与放弃、宿主幂等、路径/inode锁、类型条件查询、选择句柄及真实Qt/VTK工作区。旧M0/M1回归继续执行。具体故障、协议和桌面测试以验证记录为准。
+
+TST-F06、TST-A04—06、TST-I04—05/I09已有确定性的核心/存储/真实引擎证据，但这些证据不包含真实AI会话。TST-F01/F03、TST-A07/A12已有受控小模型GUI与接口证据；完整事件订阅、布局恢复、批量数据通道、无界面遮挡选择和分档性能仍未完成，因此不把M3或完整P0的全部退出条件标为通过。该阶段尚无后台任务；后续C2已增加持久线网格任务，仍不能将其关闭/恢复证据扩展解释为在途外部求解进程的恢复。
+
+## 工程化骨架重构验收
+
+用户已同意平台骨架与Archer架构对齐方案。重构阶段采用[SK-01—14检查点](skeleton-acceptance.md)作为完成合同；原P0产品标准继续有效，不能用骨架验收代替真实求解、AI或全部产品验收。C1/C2已有阶段证据，完整SK检查点尚未逐项验收通过。
+
+## C1/C2当前证据边界
+
+[C2验证记录](../engineering/c2-validation.md)登记记录事务与历史、6份旧夹具迁移、真实SQLite工作库中的CLI/脚本流程6/6、网格任务成功/取消/过期30/30，以及完整Release回归36/36、纯核心25/25和公共头消费者42/42。这些为已归档的阶段运行结果；本次文档同步没有重新执行产品测试。
+
+新增几何/网格工具尚无GUI入口；生产实体查询仍有旧投影分支，操作版本/Profile与静态贡献装配仍需补强，见[扩展审查](../engineering/extensibility-audit-c2.md)。后续按[接续计划](development-plan.md#c2之后的接续计划)推进，不据此将SK-04、SK-13或任何完整P0项自动标为通过。
+
+## C3首个显示交互切片证据边界
+
+[C3切片记录](../engineering/c3-display-validation.md)补充GeometryLine显示/稳定ID拾取、建线预览/提交和网格任务桌面入口，以及真实引擎的共享历史、保存重开同步证据。NEXT-01—03已修复上节列出的查询与契约/装配缺口；上节为C2历史状态。本次只覆盖TST-F01/F03/F06、TST-A07/A12及SK-04/10/12的相关子集；分块资源、事件重同步、增量显示、容量性能及完整SK/P0仍待验收。
+
+## C3资源、同步与局部显示续片证据边界
+
+[续片验证记录](../engineering/c3-sync-validation.md)补充分块资源、事件缺口重同步、已有点/线类型的显示贡献与局部更新、布局往返及真实引擎工具生命周期证据。上述首片未完成项中的相应运行链现已接通。局部编辑字节仅覆盖已插桩的应用、投影、编码及SQLite逻辑批次；图形、输入反馈和任务确认分别测量，不合并推导完整端到端性能。点/线PICK矩阵8项已有证据，Tri3的4项随C4扩展补验。完整SK-10/12、SK-14及P0门禁继续保留。

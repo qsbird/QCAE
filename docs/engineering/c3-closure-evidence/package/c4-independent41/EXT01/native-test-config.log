@@ -1,0 +1,42 @@
+      if(NOT EXISTS "${QCAE_C3_HARFBUZZ_SDK_MANIFEST}" OR NOT EXISTS "${QCAE_C3_HARFBUZZ_LIBRARY}")
+        message(FATAL_ERROR "The isolated HarfBuzz observer needs both its exact manifest and library")
+      endif()
+      add_test(NAME harfbuzz_source_copy COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/harfbuzz_source_copy_probe.py"
+        --observed "${QCAE_C3_HARFBUZZ_LIBRARY}" --manifest "${QCAE_C3_HARFBUZZ_SDK_MANIFEST}"
+        --report "${CMAKE_BINARY_DIR}/harfbuzz-source-copy-report.json")
+      set_tests_properties(harfbuzz_source_copy PROPERTIES TIMEOUT 30)
+      if(QCAE_C3_QT_SDK_MANIFEST)
+        target_compile_definitions(qcae_c3_qt_source_bridge_tests PRIVATE
+          QCAE_C3_HARFBUZZ_SDK_MANIFEST="${QCAE_C3_HARFBUZZ_SDK_MANIFEST}"
+          QCAE_C3_HARFBUZZ_LIBRARY="${QCAE_C3_HARFBUZZ_LIBRARY}")
+      endif()
+    endif()
+
+    add_executable(qcae_desktop_tests tests/desktop_tests.cpp)
+    set_target_properties(qcae_desktop_tests PROPERTIES AUTOMOC ON)
+    target_link_libraries(qcae_desktop_tests PRIVATE qcae_desktop_client qcae_vtk_view Qt6::Test)
+    qcae_warnings(qcae_desktop_tests)
+    vtk_module_autoinit(TARGETS qcae_desktop_tests MODULES ${VTK_LIBRARIES})
+    add_test(NAME desktop COMMAND qcae_desktop_tests)
+    set_tests_properties(desktop PROPERTIES TIMEOUT 60)
+    if(UNIX)
+      add_executable(qcae_desktop_selection_tests tests/desktop_selection_tests.cpp)
+      set_target_properties(qcae_desktop_selection_tests PROPERTIES AUTOMOC ON)
+      target_link_libraries(qcae_desktop_selection_tests PRIVATE qcae_desktop_ui Qt6::Test)
+      qcae_warnings(qcae_desktop_selection_tests)
+      vtk_module_autoinit(TARGETS qcae_desktop_selection_tests MODULES ${VTK_LIBRARIES})
+      add_test(NAME desktop_selection COMMAND qcae_desktop_selection_tests)
+      set_tests_properties(desktop_selection PROPERTIES TIMEOUT 180)
+      add_executable(qcae_c3_desktop_workflow_tests tests/c3_desktop_workflow_tests.cpp)
+      set_target_properties(qcae_c3_desktop_workflow_tests PROPERTIES AUTOMOC ON)
+      target_link_libraries(qcae_c3_desktop_workflow_tests PRIVATE qcae_desktop_ui Qt6::Test)
+      qcae_warnings(qcae_c3_desktop_workflow_tests)
+      vtk_module_autoinit(TARGETS qcae_c3_desktop_workflow_tests MODULES ${VTK_LIBRARIES})
+      add_test(NAME c3_desktop_workflow COMMAND qcae_c3_desktop_workflow_tests
+        $<TARGET_FILE:qcae-engine> "${CMAKE_CURRENT_BINARY_DIR}/c3-evidence/desktop")
+      set_tests_properties(c3_desktop_workflow PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+      add_executable(qcae_modeling_tools_tests tests/modeling_tools_tests.cpp)
+      set_target_properties(qcae_modeling_tools_tests PROPERTIES AUTOMOC ON)
+      target_include_directories(qcae_modeling_tools_tests PRIVATE ui/desktop/src)
+      target_link_libraries(qcae_modeling_tools_tests PRIVATE qcae_desktop_ui Qt6::Test)

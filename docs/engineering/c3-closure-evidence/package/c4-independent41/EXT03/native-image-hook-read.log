@@ -1,0 +1,33 @@
+    return coloredPixels(widget->grab().toImage(), [](const QColor& color) {
+        return color.red() > 150 && color.green() < 150 && color.blue() > 180;
+    });
+}
+
+bool saveEvidence(QVTKOpenGLNativeWidget* widget, const QString& name) {
+    const auto directory = qEnvironmentVariable("QCAE_VTK_EVIDENCE_DIR");
+    return directory.isEmpty() ||
+           (QDir().mkpath(directory) && widget->grab().save(QDir(directory).filePath(name)));
+}
+
+using PointArrays = std::map<vtkPoints*, vtkMTimeType>;
+PointArrays pointArrays(QVTKOpenGLNativeWidget* widget) {
+    PointArrays result;
+    auto* actors = widget->renderWindow()->GetRenderers()->GetFirstRenderer()->GetActors();
+    actors->InitTraversal();
+    while (auto* actor = actors->GetNextActor()) {
+        if (!actor->GetMapper())
+            continue;
+        auto* data = vtkPolyData::SafeDownCast(actor->GetMapper()->GetInput());
+        if (data && data->GetPoints())
+            result.emplace(data->GetPoints(), data->GetPoints()->GetMTime());
+    }
+    return result;
+}
+
+qcae::RenderPacket chainPacket(std::size_t nodes) {
+    qcae::RenderPacket packet;
+70:bool saveEvidence(QVTKOpenGLNativeWidget* widget, const QString& name) {
+71:    const auto directory = qEnvironmentVariable("QCAE_VTK_EVIDENCE_DIR");
+646:        QVERIFY(saveEvidence(widget, "geometry-highlight.png"));
+671:        QVERIFY(saveEvidence(widget, "geometry-preview.png"));
+700:        QVERIFY(saveEvidence(widget, "geometry-preview-cleared.png"));

@@ -1,0 +1,58 @@
+{
+  "request": {
+    "api_version": "1.1",
+    "request_id": "analysis-121",
+    "operation": "entity.references",
+    "parameters": {
+      "entity_id": "node-task-d56a8c52cd9626e8-1-5",
+      "direction": "incoming"
+    },
+    "document_id": "doc-4a518dc0aa9768bce4f2f9ab8bc7adf4-1",
+    "document_epoch": "epoch-4a518dc0aa9768bce4f2f9ab8bc7adf4-2",
+    "expected_revision": "15"
+  },
+  "response": {
+    "data": {
+      "affected_analyses": [
+        "entity-4a518dc0aa9768bce4f2f9ab8bc7adf4-50"
+      ],
+      "references": [
+        {
+          "from": "line-task-d56a8c52cd9626e8-1-4",
+          "role": "beam.node",
+          "to": "node-task-d56a8c52cd9626e8-1-5"
+        },
+        {
+          "from": "line-task-d56a8c52cd9626e8-1-5",
+          "role": "beam.node",
+          "to": "node-task-d56a8c52cd9626e8-1-5"
+        },
+        {
+          "from": "entity-4a518dc0aa9768bce4f2f9ab8bc7adf4-57",
+          "role": "tri3.node",
+          "to": "node-task-d56a8c52cd9626e8-1-5"
+        }
+      ],
+      "revision": "15"
+    },
+    "request_id": "analysis-121",
+    "revision": "15",
+    "status": "success"
+  }
+}
+11:std::string reference_role(const Record& record, RecordFieldId id) {
+17:        return descriptor.query_kind;
+29:    return descriptor.query_kind + "." + role;
+54:    if (!owner || owner->descriptor().query_kind.empty())
+105:bool query_kind_registered(const DocumentView& view, std::string_view kind) {
+110:        return view.registry()->find(type)->query_kind == kind;
+117:        if (!descriptor->query_kind.empty() && (kind.empty() || kind == descriptor->query_kind))
+138:    if (!filter.kind.empty() && !query_kind_registered(view, filter.kind))
+153:        if (descriptor.query_kind.empty() ||
+154:            (!filter.kind.empty() && filter.kind != descriptor.query_kind) ||
+166:            {EntityId(record->key().identity), descriptor.query_kind, std::string(name)});
+169:                                         descriptor.query_kind.size() + name.size();
+175:    if (!record || record->descriptor().query_kind.empty())
+188:    if (!chosen || chosen->descriptor().query_kind.empty())
+213:        if (record->descriptor().query_kind.empty())
+221:                    record->key().identity, target, [&] { return reference_role(record, field); });

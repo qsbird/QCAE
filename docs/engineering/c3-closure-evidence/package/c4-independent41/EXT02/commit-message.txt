@@ -1,0 +1,17 @@
+feat(mesh): translate selected nodes atomically
+
+Add a public typed batch translation contract and production mesh_editing
+registry handlers. A single prepared EditSession applies canonical length
+offsets, preserving shared transaction, preview and retry semantics.
+
+Real CLI and Unix-socket tests construct the 11-node, 10-Line2 geometry
+mesh and compare full records across rejection, one commit, undo and redo.
+
+Constraint: 4 handwritten product files; protected files and generators unchanged; no dependencies added
+Rejected: Second writable model or wire entity special cases
+Confidence: Core, local IPC, public consumer and native desktop evidence retained
+Scope-risk: Batch translation and preview in the existing mesh_editing contribution
+Directive: EXT-02 from frozen common baseline b740b374c934f3b4624a21247b9a5deeb2ca6bf4
+Tested: Core Release CTest 39/39; local regression 13/13; public consumers 48/48; new IPC CLI and script; native desktop 5/5
+Tested: Design, clang-format 21, generated contract check and git diff --check
+Not-tested: Final common Release integration, solver execution, real AI integration or complete C4/P0 acceptance

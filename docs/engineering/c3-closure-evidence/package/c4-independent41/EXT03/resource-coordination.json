@@ -1,0 +1,60 @@
+{
+  "schema": "qcae.ext03.extra-context.v1",
+  "token_count": null,
+  "messages": [
+    {
+      "sender": "/root",
+      "text": "任务 ID：EXT-03\n工作目录：/private/tmp/qcae-c4-ext03-41\nBaseline commit：b740b374c934f3b4624a21247b9a5deeb2ca6bf4\n任务包：/private/tmp/qcae-c4-ext03-41/docs/engineering/c4-executor-task.md",
+      "utf8_bytes": 201,
+      "sha256": "f2af6a0fa55ae5a127592c00abda9f645807ea0544d52d124a19013f020514b4"
+    },
+    {
+      "sender": "/root",
+      "text": "执行资源协调：root 正在使用唯一 native GUI 槽执行真实 GUI–AI 验收。请继续独立实现和 headless 验证；启动任何 native Qt/VTK 测试前向 root 申请该执行槽，待 root 明确释放。此消息属于执行期额外上下文，请计入读取账本；不含产品实现建议。",
+      "utf8_bytes": 316,
+      "sha256": "3a7b6a79e397a79427851518299406d6e456970f8cbd3e807a98e6b1ef336d79"
+    },
+    {
+      "sender": "/root",
+      "text": "补充资源限制：编译并行度最多 2，禁止修改主工作区、其他执行者源码或共有构建。请将本协调消息也计入额外上下文读取账本。",
+      "utf8_bytes": 173,
+      "sha256": "b37ad51d7a5f351102dc2f8d36834da86bba3cb0d3613893e0e6e89f0795eb4b"
+    },
+    {
+      "sender": "/root",
+      "text": "native GUI 槽目前授予 EXT-01，之后 EXT-02，再授予你；你尚未获得启动许可。先完成所有 headless/IPC/SQLite/公开消费者/摘要/完整diff/审查与读取账本。root 当前 AI 批次已停止且失败保留，root 仅进行 headless SDK 验证。此协调消息计入额外上下文。",
+      "utf8_bytes": 315,
+      "sha256": "0f0049a9a0d14e93d8bb3afb90613f6fcd1f0f555c9cc057b5d205fdc39a3acc"
+    },
+    {
+      "sender": "/root",
+      "text": "读取成本审计请明确区分：首次“初始八文件”交付是否也发生外层截断，还是仅后续读取；重复交付分别列 phase、已知实际字节及 unknown 范围。42601 是固定完整包大小，不能替代累计实际交付量或遮蔽重试。不要填完整上下文已测量、tokens 或未知读取总量为通过；保留该限制供最终审查。此协调消息计入额外上下文。",
+      "utf8_bytes": 424,
+      "sha256": "0f9f5dfa846c040b10a5040a945c4087a6aed73f419e7402d5c5833b35b20f65"
+    },
+    {
+      "sender": "/root",
+      "text": "收到读取成本澄清，保留 initial 第一轮外层真实交付 unknown、第二轮42601以及所有重复/协调消息，累计/token 不得由磁盘长度替代。EXT-02 现在拥有 native 槽，你仍在其后排队。后续 QG-02 由根任务只读审查你的最终稳定产品 diff；请在原生 PICK 后明确通知产品路径已稳定并给最终 handoff 索引。",
+      "utf8_bytes": 381,
+      "sha256": "bd599ef1267dd63bb10c0298dd008b84dffb9725c94ff94d79557e67881e95b8"
+    },
+    {
+      "sender": "/root",
+      "text": "EXT-02 已通过五项 native 回归并释放。现在授予 EXT-03 独占 native GUI 槽，请执行原定12 PICK与受影响桌面回归，使用实际冻结相机/像素/id集合全等，保留 argv/退出码/原始日志/图像。结束立即通知释放，根任务随后执行真实 AI–GUI 三会话与SDK64；目前其他任务不运行 GUI。",
+      "utf8_bytes": 352,
+      "sha256": "e7fb9207c58704cff4e6c4175acfeec3227e4e349d710e2e67ad8e4c2ac26328"
+    },
+    {
+      "sender": "/root",
+      "text": "收到12 PICK 全等通过。请确认十个产品文件是否已稳定并提供实际路径清单；可在剩余桌面测试期间由根只读 QG-02 审查，不代写补丁。冻结camera/原八项fixture与新四项fixture/图像SHA须保留完整原始参数，实际图像尺寸1280×840按你PICK专用fixture记录，不用共同性能环境1280×720冒认。",
+      "utf8_bytes": 366,
+      "sha256": "d336e03c7db7051e9e2774f9b31d0f2f0b896d62cc98874bd96bc5fb98def932"
+    },
+    {
+      "sender": "/root",
+      "text": "十个稳定手写产品路径只读 QG-02 审查通过，无产品补丁建议。Tri3 schema 声明 Node/Mesh 引用，typed准备保留 winding，现有反向依赖验证（已核对 collapse/delete 测试）保护节点变更和删除；面积使用正有限 magnitude，渲染贡献复用公共polygon，无wire特例。分析冻结/check和两条导出路径显式拒绝未实现壳能力，未静默丢弃。请完成 native 五项后通知释放，并按 Lore 提交/交付完整 baseline diff/hash、manifest、夹具/图像/读取账本和失败；上下文缺口继续保留，最终公共 Release 由根执行。",
+      "utf8_bytes": 623,
+      "sha256": "68395ae8fa5f3ecc066a09ff54c369bb545532a305e73fe72418f51479aacf3a"
+    }
+  ]
+}

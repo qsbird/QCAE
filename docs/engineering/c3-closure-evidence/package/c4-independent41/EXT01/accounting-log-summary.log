@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json;from pathlib import Path; entries=[json.loads(x) for x in Path("docs/engineering/c4-ext01-evidence/commands.jsonl").read_text().splitlines()];print(json.dumps({"entries":len(entries),"oversized_legacy":[{"name":e["name"],"bytes":e["disk_utf8_bytes"],"complete":e.get("delivered_complete_output"),"delivered":e.get("delivered_utf8_bytes")} for e in entries if e["disk_utf8_bytes"]>16000],"failures":[{"name":e["name"],"exit":e["exit_code"]} for e in entries if e["exit_code"]]},indent=2))
+                                                                                                                                                                                                                                                                                                                                                                                       ~^^^^^^^^^^^^^^^^^^^
+KeyError: 'disk_utf8_bytes'

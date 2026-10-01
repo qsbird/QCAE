@@ -1,0 +1,585 @@
+#!/usr/bin/env python3
+"""Three complete pure-CLI workflows from empty documents, with explicit ID bijections."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import time
+import uuid
+
+from analysis_check_ipc_tests import Client
+from result_fixture_ipc_tests import bind_r, create_m, wait_task
+
+
+def write(path, data):
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+
+
+def identities_for_m(rows):
+    mapping = {}
+    grouped = {}
+    for row in rows:
+        grouped.setdefault(row["kind"], []).append(row)
+    nodes = sorted(grouped["node"], key=lambda row: row["position_mm"])
+    for index, row in enumerate(nodes):
+        mapping[row["entity_id"]] = f"node:{index:02}"
+    beams = sorted(grouped["beam"], key=lambda row: (mapping[row["nodes"][0]], mapping[row["nodes"][1]]))
+    for index, row in enumerate(beams):
+        mapping[row["entity_id"]] = f"beam:{index:02}"
+    for kind, members in grouped.items():
+        if kind in {"node", "beam"}:
+            continue
+        # Names are preserved as model semantics. They only choose the identity
+        # bijection for organization records; no field/reference is discarded.
+        ordered = sorted(members, key=lambda row: (row.get("name", ""), row["entity_id"]))
+        for index, row in enumerate(ordered):
+            mapping[row["entity_id"]] = f"{kind}:{index:02}"
+    assert len(mapping) == len(rows) and len(set(mapping.values())) == len(rows), "ID map is not bijective"
+    return mapping
+
+
+def canonical(value, mapping):
+    if isinstance(value, str):
+        return mapping.get(value, value)
+    if isinstance(value, list):
+        return [canonical(item, mapping) for item in value]
+    if isinstance(value, dict):
+        return {key: canonical(item, mapping) for key, item in value.items()}
+    return value
+
+
+def run_once(args, number):
+    evidence = args.evidence_dir / f"cli-{number}"
+    evidence.mkdir(parents=True, exist_ok=True)
+    record = {"mode": "cli", "run_id": f"cli-workflow-{uuid.uuid4().hex}-{number}",
+              "source_tree_sha256": args.source_tree_sha256, "passed": False,
+              "assertions": [], "semantic_checkpoints": {}, "raw_semantic_checkpoints": {}, "real_solver": False,
+              "real_ai_client": False, "result_source_kind": "fixture"}
+
+    def require(condition, expected, actual):
+        record["assertions"].append({"expected": expected, "actual": actual, "passed": bool(condition)})
+        assert condition, expected
+
+    with tempfile.TemporaryDirectory(prefix="qcae-full-cli-", dir=Path("/tmp").resolve()) as folder:
+        root = Path(folder)
+        client = Client(args.engine, args.cli, str(root / "engine.sock"), "cli")
+        process = None
+        with (root / "engine.log").open("w+") as log:
+            def start():
+                nonlocal process
+                process = subprocess.Popen([args.engine, "--socket", client.endpoint,
+                                            "--workspace", str(root / "work.sqlite")], stdout=log, stderr=log)
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        log.seek(0)
+                        raise AssertionError(log.read())
+                    try:
+                        return client.call("capabilities.list")
+                    except (OSError, AssertionError, json.JSONDecodeError):
+                        time.sleep(.05)
+                raise AssertionError("Engine startup timed out")
+
+            def rows():
+                return sorted(client.call("entity.query", context=client.current())["entities"], key=lambda item: item["entity_id"])
+
+            def normalized():
+                return sorted((canonical(row, mapping) for row in rows()), key=lambda item: item["entity_id"])
+
+            def checkpoint(name):
+                actual = rows()
+                record["raw_semantic_checkpoints"][name] = actual
+                record["semantic_checkpoints"][name] = sorted(
+                    (canonical(row, mapping) for row in actual), key=lambda item: item["entity_id"])
+                return record["semantic_checkpoints"][name]
+
+            def current_view():
+                return client.call("view.create", {"hidden_ids": [], "camera_fingerprint": "workflow-through-query"}, client.current())
+
+            try:
+                capabilities = start()
+                require(capabilities["durable"] and not capabilities["recovery_available"],
+                        "Workflow starts in a fresh explicit SQLite workspace with no retained document", capabilities)
+                profile = capabilities["declared_solver_profiles"][0]["profile_ref"]
+                nodes, beams, material, part, analysis = create_m(client, profile)
+                # create_m itself creates the empty document and records every actual
+                # geometry, worker, physics and organization transaction in the transcript.
+                raw_m = rows()
+                mapping = identities_for_m(raw_m)
+                record["identity_bijection"] = mapping
+                write(evidence / "M-identities.json", mapping)
+                write(evidence / "M-original.json", raw_m)
+                original_m = checkpoint("M_baseline")
+                require(len(nodes) == 11 and len(beams) == 10 and len(raw_m) == 33,
+                        "Complete M has the fixed 11-node/10-beam physics, organization, LoadCase and Analysis", {"nodes": len(nodes), "beams": len(beams), "records": len(raw_m)})
+                geometry = client.entities("geometry")[0]["entity_id"]
+                midpoint = client.call("geometry.evaluate_line", {"geometry_id": geometry, "u": .5}, client.current())
+                require(midpoint["position_mm"] == [500, 0, 0], "Production geometry evaluates the M line midpoint", midpoint)
+                view = current_view()
+                selection = client.call("selection.evaluate", {"view_session_id": view["view_session_id"],
+                    "expected_view_revision": view["view_revision"], "predicate": {"op": "all"},
+                    "scope": {"visibility": "through", "candidate_ids": [nodes[5]], "include_hidden": False}}, client.current())
+                selected = client.call("selection.get", {"selection_handle": selection["selection_handle"]}, client.current())
+                require(selected["entity_ids"] == [nodes[5]], "CLI selection resolves exactly original node5 in the single authority", selected)
+                before_preview = client.current()
+                before_history = client.call("history.list", context=before_preview)
+                parameters = {"command": "node.move", "entity_id": nodes[5], "position_mm": [500, 1, 0]}
+                cancelled = client.call("changes.preview", parameters, before_preview)
+                # CLI cancellation is the explicit disposal of the preview intent. It
+                # follows the same contract as GUI cancel: no changes.commit is sent.
+                record["cancelled_preview"] = {"preview_id": cancelled["preview_id"], "intent_disposed": True, "commit_sent": False}
+                require(client.current() == before_preview and client.call("history.list", context=before_preview) == before_history and normalized() == original_m,
+                        "Cancelled preview has zero model/history/revision changes", cancelled)
+                applicable = client.call("changes.preview", parameters, before_preview)
+                applied = client.call("changes.commit", {"preview_id": applicable["preview_id"]}, before_preview, "apply-selected-preview")
+                require(int(client.current()["revision"]) == int(before_preview["revision"]) + 1 and client.fields(nodes[5])["position"] == [500, 1, 0],
+                        "Applying the selected preview creates exactly one transaction", applied)
+                checkpoint("selection_applied")
+                client.call("history.undo", context=client.current(), key="undo-selection")
+                require(checkpoint("selection_undone") == original_m, "Undo restores complete M after preview apply", True)
+                client.call("history.redo", context=client.current(), key="redo-selection")
+                require(client.fields(nodes[5])["position"] == [500, 1, 0], "Redo restores the selected node edit", client.fields(nodes[5]))
+                client.call("history.undo", context=client.current(), key="restore-frozen-M")
+                require(normalized() == original_m, "Workflow restores the frozen M before engineering checks", True)
+
+                load_case = client.entities("load_case")[0]["entity_id"]
+                case_fields = client.fields(load_case)
+                client.call("load_case.set_references", {"load_case_id": load_case, "force_ids": [],
+                    "constraint_ids": case_fields["constraints"]}, client.current(), "remove-load-for-check")
+                checked = client.call("analysis.check", {"analysis_id": analysis}, client.current(), "check-missing-load", expected="needs_input")["data"]
+                require(len(checked["issues"]) == 1 and checked["issues"][0]["rule_id"] == "missing-load" and checked["issues"][0]["entity_id"] == analysis,
+                        "Check produces exactly the specified missing-load Issue on M Analysis", checked)
+                located = client.call("entity.query", {"ids": [checked["issues"][0]["entity_id"]]}, client.current())
+                require(len(located["entities"]) == 1 and located["entities"][0]["entity_id"] == analysis,
+                        "Issue identity locates the authoritative Analysis entity", located)
+                client.call("load_case.set_references", {"load_case_id": load_case, "force_ids": case_fields["forces"],
+                    "constraint_ids": case_fields["constraints"]}, client.current(), "repair-load-reference")
+                repaired = client.call("analysis.check", {"analysis_id": analysis}, client.current(), "recheck-repaired")
+                old_issue = client.call("analysis.get_issues", {"check_id": checked["check_id"]}, client.current())
+                require(repaired["issues"] == [] and old_issue["state"] == "stale", "Repair recheck removes the rule Issue and marks the old report stale", {"repaired": repaired, "old": old_issue})
+                client.call("history.undo", context=client.current(), key="undo-repair")
+                require(client.fields(load_case)["forces"] == [], "Undo of the repair returns the missing reference", client.fields(load_case))
+                client.call("history.redo", context=client.current(), key="redo-repair")
+                require(checkpoint("repaired_M") == original_m, "Redo of the repair restores all M semantics and exact references", True)
+
+                prior = client.current()
+                saved = client.call("project.save", {"path": str(root / "M.qcae")}, prior, "save-M")
+                saved_as = client.call("project.save_as", {"path": str(root / "M-copy.qcae")}, saved, "save-as-M")
+                require(not saved["dirty"] and not saved_as["dirty"] and saved_as["document_id"] == prior["document_id"] and saved_as["project_id"] != saved["project_id"],
+                        "Save and save-as establish exact save markers while retaining document authority", {"saved": saved, "saved_as": saved_as})
+                client.call("project.close", {"policy": "discard"}, saved_as, "close-M")
+                opened = client.call("project.open", {"mode": "normal", "path": str(root / "M.qcae")}, key="normal-open-M")
+                require(opened["document_id"] != prior["document_id"] and opened["revision"] == "0" and checkpoint("normal_open_M") == original_m,
+                        "Normal open uses a new DocumentId and retains every M identity/connection/reference", opened)
+                process.kill()
+                process.wait(timeout=10)
+                require(start()["recovery_available"], "Actual engine process termination exposes explicit recovery", True)
+                recovered = client.call("project.open", {"mode": "recover"}, key="recover-M")
+                require(recovered["document_id"] == opened["document_id"] and recovered["document_epoch"] != opened["document_epoch"] and checkpoint("recovered_M") == original_m,
+                        "Recovery retains the document and complete M under a new Epoch", recovered)
+
+                export_context = client.current()
+                exported = wait_task(client, client.call("model.export", {"analysis_id": analysis,
+                    "output_directory": str(root / "artifact")}, export_context, "publish-Nastran-M", profile=profile))
+                artifact_id = exported["artifact_receipt"]["artifact_id"]
+                artifact = client.call("artifact.get", {"artifact_id": artifact_id}, export_context)
+                manifest_bytes = Path(artifact["manifest_path"]).read_bytes()
+                manifest = json.loads(manifest_bytes)
+                require(artifact["state"] == "published" and artifact["verified"] and manifest["complete"] and client.current()["revision"] == export_context["revision"],
+                        "Actual complete Nastran artifact is published without creating a model transaction", exported)
+                require(hashlib.sha256(manifest_bytes).hexdigest() == exported["artifact_receipt"]["manifest_sha256"],
+                        "Published manifest bytes match the actual task receipt SHA256", artifact)
+                fixture = bind_r(artifact, manifest, nodes)
+                result = client.call("results.read_fixture", {"artifact_id": artifact_id, "fixture_json": json.dumps(fixture)}, export_context, "read-R")
+                require(result["state"] == "current" and result["source_kind"] == "fixture" and result["field"]["values"] == [
+                    {"entity_id": nodes[0], "value": [0, 0, 0]}, {"entity_id": nodes[10], "value": [0, -1, 0]}],
+                    "R fixture is read with exact node values, identity mapping and fixture provenance", result)
+#!/usr/bin/env python3
+"""NEXT-01 real engine/CLI record queries and M1 organization compatibility."""
+from __future__ import annotations
+
+import argparse
+from contextlib import contextmanager
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import time
+
+from c2_workflow_tests import Client
+from m1_ipc_tests import ROOT_DECK, NODE_DECK, BEAM_DECK
+
+
+@contextmanager
+def engine_client(engine, cli, root, evidence):
+    endpoint = str(root / "engine.sock")
+    client = Client("cli", cli, endpoint)
+    with (root / "engine.log").open("w+") as log:
+        process = subprocess.Popen(
+            [engine, "--socket", endpoint, "--workspace", str(root / "work.sqlite")],
+            stdout=log, stderr=log,
+        )
+        try:
+            deadline = time.monotonic() + 15
+            while not Path(endpoint).exists():
+                if process.poll() is not None or time.monotonic() > deadline:
+                    log.seek(0)
+                    raise AssertionError(f"Engine startup failed: {log.read()}")
+                time.sleep(.02)
+            yield client
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=10)
+            if evidence:
+                evidence.mkdir(parents=True, exist_ok=True)
+                (evidence / f"{root.name}-transcript.json").write_text(
+                    json.dumps(client.transcript, indent=2) + "\n")
+
+
+def query(client, **parameters):
+    return client.call("entity.query", parameters, client.current())
+
+
+def identities(rows):
+    return {row["entity_id"] for row in rows}
+
+
+def references(client, entity, direction):
+    return client.call("entity.references", {"entity_id": entity, "direction": direction},
+                       client.current())["references"]
+
+
+def check_fields(client, row):
+    fields = client.fields(row["entity_id"])
+    for name, value in fields.items():
+        if name in {"position", "start", "end"}:
+            name += "_mm"
+        elif name in {"material", "section", "mesh", "geometry", "parent", "node"}:
+            name += "_id"
+        assert row[name] == value, (row, name, value)
+    assert row["sources"] is not None
+
+
+def generate_mesh(client, line, segments, key):
+    task = client.call("mesh.generate_line", {"geometry_id": line, "segments": segments},
+                       client.current(), key)
+    deadline = time.monotonic() + 15
+    while task["state"] not in {"succeeded", "failed", "cancelled", "conflicted"}:
+        assert time.monotonic() < deadline, task
+        time.sleep(.01)
+        task = client.call("task.status", {"task_id": task["task_id"]}, client.current())
+    assert task["state"] == "succeeded", task
+
+
+def geometry_queries(client):
+    doc = client.call("project.create", {"name": "Record query regressions"}, key="new")
+    line = client.call("geometry.create_line", {"start_mm": [0, 0, 0], "end_mm": [1000, 0, 0]},
+                       doc, "line")["entity_id"]
+    # The three original C2 counterexamples must now return the same entity and fields.
+    native = query(client, kind="geometry")
+    unfiltered = query(client)
+    filtered = query(client, kind="geometry", name_contains="")
+    assert native["total"] == unfiltered["total"] == filtered["total"] == 1
+    assert native["entities"] == unfiltered["entities"] == filtered["entities"]
+    assert native["entities"][0]["entity_id"] == line
+    check_fields(client, native["entities"][0])
+    assert references(client, line, "incoming") == references(client, line, "outgoing") == []
+
+    generate_mesh(client, line, 3, "mesh")
+    all_rows = query(client)["entities"]
+    assert len(all_rows) == 9  # Geometry, Mesh, four Nodes, three Beams.
+    for kind in ("node", "beam", "geometry", "mesh"):
+        rows = query(client, kind=kind)["entities"]
+        assert rows == query(client, kind=kind, name_contains="")["entities"]
+        assert identities(rows) == {row["entity_id"] for row in all_rows if row["kind"] == kind}
+        for row in rows:
+            assert query(client, ids=[row["entity_id"]])["entities"] == [row]
+            assert query(client, kind=kind, ids=[row["entity_id"], "unknown"])["entities"] == [row]
+            check_fields(client, row)
+    mesh = query(client, kind="mesh")["entities"][0]
+    assert query(client, name_contains=mesh["name"])["entities"] == [mesh]
+    assert query(client, kind="geometry", name_contains="missing")["total"] == 0
+    assert query(client, ids=[])["total"] == query(client, ids=["unknown"])["total"] == 0
+    assert query(client, limit=0)["total"] == 9 and query(client, limit=0)["entities"] == []
+    pages = []
+    for offset in range(0, 10, 2):
+        page = query(client, offset=offset, limit=2)
+        assert page["total"] == 9 and page["offset"] == offset and page["limit"] == 2
+        pages.extend(page["entities"])
+    assert pages == all_rows and len(identities(pages)) == 9
+    assert query(client, offset=100000)["entities"] == []
+    assert references(client, line, "incoming") == [
+        {"from": mesh["entity_id"], "to": line, "role": "mesh.geometry"}]
+    assert references(client, mesh["entity_id"], "outgoing") == [
+        {"from": mesh["entity_id"], "to": line, "role": "mesh.geometry"}]
+    incoming = references(client, mesh["entity_id"], "incoming")
+    assert len(incoming) == 7 and {ref["role"] for ref in incoming} == {"node.mesh", "beam.mesh"}
+    node = query(client, kind="node")["entities"][0]
+    assert references(client, node["entity_id"], "outgoing") == [
+        {"from": node["entity_id"], "to": mesh["entity_id"], "role": "node.mesh"}]
+    before = client.current()
+    for params in ({"kind": "unknown"}, {"kind": "unknown", "name_contains": ""},
+                   {"where": {}}, {"owner_id": line}, {"view": "spatial", "owner_id": line},
+                   {"view": "part", "owner_id": line}, {"limit": 1001}, {"offset": -1},
+                   {"offset": .5}):
+        response = client.call("entity.query", params, before, expected="failed")
+        assert response["error"]["code"] == "INVALID_INPUT", response
+    for operation, params in (
+            ("entity.query", {"view": "part", "owner_id": "unknown"}),
+            ("entity.references", {"entity_id": "unknown", "direction": "incoming"})):
+        response = client.call(operation, params, before, expected="failed")
+        assert response["error"]["code"] == "ENTITY_NOT_FOUND", response
+    response = client.call("entity.references", {"entity_id": line, "direction": "both"},
+                           before, expected="failed")
+    assert response["error"]["code"] == "INVALID_INPUT", response
+    assert client.current()["revision"] == before["revision"]
+    expired = {**before, "document_epoch": "expired"}
+    response = client.call("entity.query", {}, expired, expected="conflict")
+    assert response["error"]["code"] == "DOCUMENT_EPOCH_EXPIRED", response
+    # entity.references retains the complete legacy response across its bounded internal pages.
+    generate_mesh(client, line, 501, "mesh-many-references")
+    second_mesh = next(row for row in query(client, kind="mesh")["entities"]
+                       if row["entity_id"] != mesh["entity_id"])
+    incoming = references(client, second_mesh["entity_id"], "incoming")
+    assert len(incoming) == 1003 and len({ref["from"] for ref in incoming}) == 1003
+    assert all(ref["to"] == second_mesh["entity_id"] for ref in incoming)
+
+
+def edit(client, command, parameters):
+    doc = client.current()
+    preview = client.call("changes.preview", {"command": command, **parameters}, doc)
+    client.call("changes.commit", {"preview_id": preview["preview_id"]}, doc,
+                key=f"{command}-{doc['revision']}")
+    return preview["affected_entity_id"]
+
+
+def organization_queries(client):
+    profile = client.call("capabilities.list")["declared_solver_profiles"][0]["profile_ref"]
+    client.call("project.create", {"name": "Organization query preservation"}, key="new")
+    edit(client, "model.import", {
+        "root_resource": "model.bdf", "source_profile_ref": profile, "unit_system": "mm-N-MPa",
+        "resources": [{"path": "model.bdf", "text": ROOT_DECK},
+                      {"path": "parts/nodes.bdf", "text": NODE_DECK},
+                      {"path": "parts/physics/beam.bdf", "text": BEAM_DECK}],
+    })
+    nodes = query(client, kind="node")["entities"]
+    beam = query(client, kind="beam")["entities"][0]
+    section = query(client, kind="section")["entities"][0]
+    material = query(client, kind="material")["entities"][0]
+    analysis = query(client, kind="analysis")["entities"][0]
+    part = edit(client, "part.upsert", {"name": "Part", "members": [beam["entity_id"]]})
+    assembly = edit(client, "assembly.upsert", {"name": "Assembly", "children": [part]})
+    root = edit(client, "assembly.upsert", {"name": "Root", "children": [assembly]})
+    group = edit(client, "set.upsert", {"name": "Beams", "members": [beam["entity_id"]]})
+    connected = identities(nodes) | {beam["entity_id"]}
+    expected = {("part", part): connected,
+};
+std::vector<StoredRow> encode_record_state_image(const RecordStateImage&);
+RecordStateImage decode_record_state_image(std::span<const StoredRow>,
+                                           std::shared_ptr<const RecordRegistry>,
+                                           Limits = {},
+                                           std::span<const OwnedRowHandler> = {});
+std::string encode_record_rows(std::span<const StoredRow>);
+std::vector<StoredRow> decode_record_rows(std::string_view);
+
+class RecordApplication {
+  public:
+    explicit RecordApplication(RecordApplicationOptions);
+    ~RecordApplication();
+    RecordApplication(const RecordApplication&) = delete;
+    RecordApplication& operator=(const RecordApplication&) = delete;
+    bool durable() const noexcept;
+    bool recovery_available() const;
+    Result<DocumentInfo> create_document(const Caller&, const std::string&, const std::string&);
+    Result<DocumentInfo> current_document() const;
+    Result<DocumentInfo> open_document(const Caller&, const std::string&, const std::string&);
+    Result<DocumentInfo> open_migrated_document(const Caller&,
+                                                const std::string& source_path,
+                                                const std::string& idempotency_key,
+                                                const ProjectRecordMigration&);
+    Result<DocumentInfo> recover_document(const Caller&, const std::string&);
+    Result<DocumentInfo>
+    save_document(const Caller&, const WriteContext&, const std::string&, bool, const std::string&);
+    Result<DocumentInfo>
+    close_document(const Caller&, const WriteContext&, ClosePolicy, const std::string&);
+    Result<DocumentInfo>
+    host_operation(const Caller&, const std::string&, const std::string&) const;
+    Result<RecordSnapshot> snapshot(const DocumentRef&) const;
+    Result<RecordChangeBatch> changes_since(const DocumentRef&, Revision) const;
+    ChangeJournalStats change_journal_stats() const;
+    Result<ChangePreview> preview(const Caller&, const WriteContext&, const RecordPrepare&);
+    Result<ChangeReceipt>
+    commit(const Caller&, const WriteContext&, const PreviewId&, const std::string&);
+    Result<ChangeReceipt> commit_with_rows(const Caller&,
+                                           const WriteContext&,
+#include "qcae/record_application.hpp"
+#include "qcae/records.hpp"
+#include "qcae/records_model_bridge.hpp"
+#include <algorithm>
+#include <stdexcept>
+
+using namespace qcae;
+namespace {
+void check(bool value, const char* message) {
+    if (!value)
+        throw std::runtime_error(message);
+}
+template <class T> T good(Result<T> value) {
+    if (!value.ok())
+        throw std::runtime_error(value.error ? value.error->message : "Missing result");
+    return std::move(*value.value);
+}
+struct Store final : IRecordStore {
+    std::uint64_t generation{};
+    std::map<StoreKey, SharedStoreBytes> rows;
+    StoreBatch last;
+    enum class Fault { none, before, after } fault{};
+    LoadedRows load_rows() override {
+        LoadedRows result;
+        result.generation = generation;
+        for (const auto& [key, value] : rows)
+            result.rows.push_back({key, value});
+        return result;
+    }
+    BatchReceipt commit_rows(const StoreBatch& batch) override {
+        check(batch.expected_generation == generation, "Store generation mismatch");
+        if (fault == Fault::before) {
+            fault = Fault::none;
+            throw StorageError("Before commit");
+        }
+        auto next = rows;
+        for (const auto& row : batch.mutations)
+            if (row.after)
+                next[row.key] = row.after;
+            else
+                next.erase(row.key);
+        auto cached = batch;
+        rows.swap(next);
+        last = std::move(cached);
+        ++generation;
+        if (fault == Fault::after) {
+            fault = Fault::none;
+            throw StorageError("After commit", true);
+        }
+        return {generation, batch.mutations.size(), 0};
+    }
+};
+WriteContext at(const DocumentInfo& info) {
+    return {info.document, info.revision};
+}
+RecordApplicationOptions options(const std::shared_ptr<Store>& store) {
+    RecordApplicationOptions result;
+    result.registry = make_record_registry();
+    result.records = store;
+    return result;
+}
+Result<RecordPreparedOperation> change_modulus(const DocumentView& view, double value) {
+    EditSession edit(view);
+    edit.update<records::Material>(EntityId("material"),
+                                   [&](auto& material) { material.young_modulus_mpa = value; });
+    return {Status::success,
+            RecordPreparedOperation{
+                edit.prepare(), "Set modulus", EntityId("material"), "modulus", value, false},
+            {}};
+}
+void bounded_commit_and_recovery() {
+    auto store = std::make_shared<Store>();
+    Caller caller{"record-tests"};
+    DocumentInfo info;
+    {
+        RecordApplication app(options(store));
+        info = good(app.create_document(caller, "Records", "create"));
+        auto preview = good(app.preview(
+            caller,
+            at(info),
+            [](const DocumentView& view,
+               const RecordIdentityAllocator&) -> Result<RecordPreparedOperation> {
+                EditSession edit(view);
+                edit.put(records::Material{EntityId("material"), "Steel", 210000, .3});
+                for (int i = 0; i < 2048; ++i)
+                    edit.put(records::Node{
+                        EntityId("node-" + std::to_string(i)), {double(i), 0, 0}, std::nullopt});
+                return {Status::success,
+                        RecordPreparedOperation{
+                            edit.prepare(), "Seed", EntityId("material"), "seed", 0, false},
+                        {}};
+            }));
+        good(app.commit(caller, at(info), preview.id, "seed"));
+        info = good(app.current_document());
+        auto before = good(app.snapshot(info.document));
+        const auto start = app.stats();
+        const auto activity_start = record_activity_counters();
+        preview = good(app.preview(
+            caller, at(info), [](const DocumentView& view, const RecordIdentityAllocator&) {
+                return change_modulus(view, 70000);
+add_subdirectory(features/mesh_generation)
+add_subdirectory(features/materials)
+add_subdirectory(features/mesh_editing)
+add_subdirectory(features/analysis)
+add_subdirectory(features/results)
+add_subdirectory(modules/query)
+add_subdirectory(profiles/nastran)
+add_subdirectory(adapters/artifacts_local)
+if(QCAE_BUILD_SOLVER_LOCAL)
+  if(NOT UNIX)
+    message(FATAL_ERROR "The local solver adapter currently requires POSIX process facilities")
+  endif()
+  add_subdirectory(adapters/solver_local)
+endif()
+
+# Compatibility for existing core consumers; production modules use explicit boundaries.
+add_library(qcae_core INTERFACE)
+target_link_libraries(qcae_core INTERFACE qcae_legacy_api qcae_query)
+
+if(BUILD_TESTING)
+  add_test(NAME acceptance_checker COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_acceptance_checker.py")
+  add_test(NAME architecture_gate_unit COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_architecture_gate.py")
+  add_test(NAME c4_freeze_contract COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_c4_freeze.py")
+  add_test(NAME macos_package_preflight COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_macos_package.py")
+  set_tests_properties(c4_freeze_contract PROPERTIES TIMEOUT 90)
+  add_executable(qcae_record_application_tests tests/record_application_tests.cpp)
+  target_link_libraries(qcae_record_application_tests PRIVATE qcae_application)
+  qcae_warnings(qcae_record_application_tests)
+  add_test(NAME record_application COMMAND qcae_record_application_tests)
+  add_executable(qcae_operation_registry_tests tests/operation_registry_tests.cpp)
+  target_link_libraries(qcae_operation_registry_tests PRIVATE qcae_operations)
+  qcae_warnings(qcae_operation_registry_tests)
+  add_test(NAME operation_registry COMMAND qcae_operation_registry_tests)
+  add_test(NAME generated_operation_inputs COMMAND Python3::Interpreter
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_operation_contracts.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/schemas/operations" "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp" --check)
+  add_test(NAME operation_generation COMMAND Python3::Interpreter
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_operation_generation.py")
+  add_executable(qcae_parameter_tests tests/parameter_tests.cpp)
+  target_link_libraries(qcae_parameter_tests PRIVATE qcae_parameters)
+  qcae_warnings(qcae_parameter_tests)
+  add_test(NAME parameters COMMAND qcae_parameter_tests)
+  add_executable(qcae_model_operation_tests tests/model_operation_tests.cpp)
+  target_link_libraries(qcae_model_operation_tests PRIVATE qcae_material_features qcae_mesh_editing qcae_legacy_api)
+  qcae_warnings(qcae_model_operation_tests)
+  add_test(NAME model_operations COMMAND qcae_model_operation_tests)
+  add_executable(qcae_quantity_entry_consistency_tests tests/quantity_entry_consistency_tests.cpp)
+  target_link_libraries(qcae_quantity_entry_consistency_tests PRIVATE qcae_legacy_api qcae_parameters)
+  qcae_warnings(qcae_quantity_entry_consistency_tests)
+  add_test(NAME quantity_entry_consistency COMMAND qcae_quantity_entry_consistency_tests)
+  add_executable(qcae_record_query_tests tests/record_query_tests.cpp)
+  target_link_libraries(qcae_record_query_tests PRIVATE qcae_query)
+  qcae_warnings(qcae_record_query_tests)
+  add_test(NAME record_query COMMAND qcae_record_query_tests)
+  add_test(NAME cpp_format COMMAND Python3::Interpreter
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_cpp_format.py")
+  foreach(suite model nastran delta persistence query)
+    add_executable(qcae_${suite}_tests tests/${suite}_tests.cpp)
+    if(suite STREQUAL "nastran")
+      target_link_libraries(qcae_${suite}_tests PRIVATE qcae_nastran)
+    else()
+      target_link_libraries(qcae_${suite}_tests PRIVATE qcae_core)
+    endif()
+    target_compile_definitions(qcae_${suite}_tests PRIVATE QCAE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    qcae_warnings(qcae_${suite}_tests)
+    add_test(NAME ${suite} COMMAND qcae_${suite}_tests)

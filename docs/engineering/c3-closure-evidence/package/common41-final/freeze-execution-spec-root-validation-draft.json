@@ -1,0 +1,1214 @@
+{
+  "schema": "qcae.c4-freeze-execution/1",
+  "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+  "environment_manifest_sha256": "addb4aeb04ac3418e94bb859cd51adeff405b73b1025bb1146d1b2da00cddafa",
+  "quality_gates": {
+    "design": {
+      "passed": true,
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_design.py"
+        ],
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_architecture.py",
+          "--build-dir",
+          "build-c3-closure-desktop",
+          "--report",
+          "docs/engineering/c3-closure-evidence/package/common41-final/architecture.json"
+        ]
+      ],
+      "exit_codes": [
+        0,
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/design.log",
+          "sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/architecture.log",
+          "sha256": "b8a96a06c49d9cc5d5acebff951d318c6bc980ae7fc0d29a9dd52bbbbbdeb621"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/architecture.json",
+          "sha256": "fa3584fac48daba6df1b3939f88c6cad60451e80a0efdb75a015dbdadef42b33"
+        }
+      ]
+    },
+    "cpp_format": {
+      "passed": true,
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_cpp_format.py"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/cpp-format.log",
+          "sha256": "334731a3def20b1bb267f752779a8fd7fc3b7133e7ede9c95d86bd12a4db40bc"
+        }
+      ]
+    },
+    "diff_check": {
+      "passed": true,
+      "commands": [
+        [
+          "git",
+          "diff",
+          "--check"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/diff-check.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    "protected_ast": {
+      "passed": true,
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_protected_entity_ast.py",
+          "--build-dir",
+          "build-c3-closure-desktop",
+          "--libclang",
+          "/opt/homebrew/opt/llvm/lib/libclang.dylib",
+          "--bindings-dir",
+          "/opt/homebrew/opt/llvm/lib/python3.12/site-packages",
+          "--clang-argument=-resource-dir",
+          "--clang-argument=/Library/Developer/CommandLineTools/usr/lib/clang/21",
+          "--clang-argument=-isysroot",
+          "--clang-argument=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "--clang-argument=-isystem",
+          "--clang-argument=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1",
+          "--report",
+          "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.json",
+          "--self-test"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.log",
+          "sha256": "99359e82be4d09fa296f27f4129db7e3124dc575019455d08d6118bf02a2d4a7"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.json",
+          "sha256": "b01b632a3b8d473362b6381c8346ffbc44b550bf8cfc227aa0d20e7c4c3223c6"
+        }
+      ]
+    },
+    "public_api_consumers": {
+      "passed": true,
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          "tests/public_api_consumers",
+          "-B",
+          "build-c3-public-consumers35",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=ON",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include",
+          "-DQt6_DIR=/opt/homebrew/opt/qt/lib/cmake/Qt6",
+          "-DVTK_DIR=/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/cmake/vtk-9.7"
+        ],
+        [
+          "cmake",
+          "--build",
+          "build-c3-public-consumers35",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0,
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-configure.log",
+          "sha256": "4d5b44732f39c06e3087b8fc7a7456ab96cf2b58a5ccef2fcceb954cebeb6dd5"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-build.log",
+          "sha256": "51bbb2cf5c8015090a763ec3ad09f9b5b8e03cdc9e489ed16dc5c369a5ae667e"
+        }
+      ]
+    },
+    "readability": {
+      "passed": true,
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "/private/tmp/qcae-common41-review-check.py"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/changed-source-inventory.json",
+          "sha256": "0cd2384b0252db9995c02d08977afaeb5d9ba1a0ce03536f84660d5dc43e4a74"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-execution-validation.json",
+          "sha256": "fdf12e747763be39d881bef304512487ad20cc55b37ffd5ab0dd440acb1493b9"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-precommit-reviewed-evidence.json",
+          "sha256": "0136a0553ba1fb3cdbfb594203150fcf438b1ecfa2af1aaa31223a735c5cbe08"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-qg02-review.md",
+          "sha256": "31595a6ceb0abaa3ba85b44e03a432cd65a8a395dc736d620c01cd5509a198bb"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-review-hash-bindings.json",
+          "sha256": "074c0721be2feae665b5fd795387a954b8cfc6bdeca94b0f5672aee971bcc718"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-source-binding.json",
+          "sha256": "584d27f1857368fa69bef82f9afacdb6f0785b59f06ea53e166faad910c08856"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-validation.log",
+          "sha256": "a62ba1915af0ac57d1011f355299ac563958ad637c75b7f197511c3fc690302a"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/copy-receipt.json",
+          "sha256": "4e4c59e7f8814264188af541a26c48ce5b20d6209a63fb3c667efd0f4a356843"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/freeze-metadata-final-fence.json",
+          "sha256": "85652a9f12edce1e5df04022f68385cc351d1549aee867642fc41e115bb1437c"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/historical-gui-presentation-diff.patch",
+          "sha256": "4a9370bbe585cf10c4ab6d13372c88440ece733610d13324eac6a53339b454d6"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/post-repair-supplement.md",
+          "sha256": "2dc5e2e418172c2e5e861867a6546bb3bb6738147ae356184e3c574821214b2c"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/prepare-review.md",
+          "sha256": "cabf85d0618a57e3fa7bc4a80a187687481aa52383cd2d7bc04992869951edc4"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/root-evidence-review-check.original.py",
+          "sha256": "789bd0b91932f95b4576916607cb9d0ce3ce3009d4055e5c0a50519f0909d5c8"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/sdk8-private-archive-validation.json",
+          "sha256": "10aca842842aca863028e54ba55c995c01cdab66e1172573c7a8102b11fb31a2"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/slice-source-coverage.json",
+          "sha256": "3d3b035767e253802425f48d7a3d460f8b2713d743692ad9ff1f43d277da9a1a"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/stage-root-independent-green41.log",
+          "sha256": "21b2edaafb65a0502fab9b56b42580528e39a225900a579715d35a6e05729506"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability/validate-common41-readability.py",
+          "sha256": "f879a2617f556d58bbd83cff58567e6c91a1783327b35c8f60b5aad1b3b1cdb0"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/root-evidence-review-validation.log",
+          "sha256": "5fda065cc2c7a9379f8e87156a7b0c9349264b016f7742bc9206e1ac382a7f6c"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/root-evidence-review-validation.json",
+          "sha256": "55ef3f7470d1af69c278ef411f97411a97826af4b9895239c41f1690985a588c"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/root-evidence-review-command.json",
+          "sha256": "71b7b6efe8ef21ab996e82b0c94886b6a7d0da0c2961016126c180835ebabb42"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/actual-commands.json",
+          "sha256": "d8638fe83b1d24bed272eb9626326798aff340e3cebab6620307fb748d6dcaa9"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/readability-record.json",
+          "sha256": "59316ae189948f8c646e46a16db7d8aaebfc83841ae83db8cfecfee494bd9c61"
+        }
+      ]
+    }
+  },
+  "build_matrix": {
+    "core": {
+      "passed": true,
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c3-closure-core",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=OFF",
+          "-DQCAE_BUILD_STORAGE=OFF",
+          "-DQCAE_BUILD_DESKTOP=OFF",
+          "-DQCAE_ENABLE_SANITIZERS=OFF"
+        ],
+        [
+          "cmake",
+          "--build",
+          "build-c3-closure-core",
+          "-j",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "build-c3-closure-core",
+          "--output-on-failure",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-configure.log",
+          "sha256": "5fc00c4d7537b4c6535f63ef1cff6000ad19d36cece7377c2efe74a69f9885a4"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-tests.log",
+          "sha256": "fa5d9e8c914ab996e6815e1c5cd93fea5bfa55039ab91b23d83bf1e7b4c90b15"
+        }
+      ],
+      "configuration": {
+        "build_type": "Release",
+        "qt_enabled": false,
+        "vtk_enabled": false,
+        "sqlite_enabled": false,
+        "asan_enabled": false,
+        "ubsan_enabled": false
+      },
+      "artifacts": [
+        {
+          "path": "build-c3-closure-core/CMakeCache.txt",
+          "sha256": "6061279160f2c9925693b775a12b002283471021b197ea5ed3c36393d764820c"
+        },
+        {
+          "path": "build-c3-closure-core/compile_commands.json",
+          "sha256": "1bc27cb27760ce937c6e60818159c2442576a3bac6cc15704948daec02741b7c"
+        },
+        {
+          "path": "build-c3-closure-core/generated/qcae/operation_inputs.hpp",
+          "sha256": "7ebd3af3b08c4818d46bc1bde69552f27c54ad1294adadb28d0c97e6d49daba9"
+        },
+        {
+          "path": "build-c3-closure-core/generated/qcae/operations.hpp",
+          "sha256": "a7c06a45e20841e04be122369751d08034d3aa056eee6b4d181adc8cdc21b3fc"
+        },
+        {
+          "path": "build-c3-closure-core/profiles/nastran/generated/qcae/nastran_digest.hpp",
+          "sha256": "f22f9a190057c50530ef4b4278caaa3b3b9674d6abf7915aabdbd01b56118507"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_allocation_tests",
+          "sha256": "b4804ee35b15965aab355924e92337d521f69f5d425fc5b0c543adc64e4256c4"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_analysis_check_tests",
+          "sha256": "55a20af14a57982819807727ec60d46dc770b0fc8fcc195c08f448810107d952"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_artifacts_local_tests",
+          "sha256": "0dff4c54c6ebcf263215194442985ee1d42ce80b08e91c67937b9091b28781c3"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_change_event_tests",
+          "sha256": "366098143241b0520030adb28e2a1e997ee54a035d13ee9063ecefa05251eaec"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_contract_tests",
+          "sha256": "0231225ba34d5e03e20b6e029e72a23a60e713bac9b17172b190233d03c73b7d"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_core_tests",
+          "sha256": "83bbcbbc76bb1c01136c00794059e979e46ab0727d978608e09efbedfe6ee0f5"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_delta_tests",
+          "sha256": "e394ec8ce490b5fa7e5ddc3d376f93b8497e3315ae713e0ad9514bcabc9520b0"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_geometry_mesh_tests",
+          "sha256": "6a278b2ee13059a5616968deedac8ef733962b885f31fd08dd3f384c53186b26"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_line_mesh_regeneration_tests",
+          "sha256": "5b55ec933d7a0f623688370c6591eb02a4b329aacc33b21a0517c466c757daf9"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_model_operation_tests",
+          "sha256": "19b5f7ed282db8d1630e7ab69d67a9ce7ac57d63945ac5a83906ffbe814e22be"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_model_tests",
+          "sha256": "58b1f51cf7a38a87067dcbf2498b84c0079faf5a4172ed417ba5d64da47f54df"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_nastran_static_result_tests",
+          "sha256": "e5b62abb9b1af4d2cf4c490fba61a6a9c847ea7a5c8eef10669574c2950b06d4"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_nastran_tests",
+          "sha256": "6c7e1fbbcc1d41bfe8339f3098c1a88d94292be28dd2db240273ea9974ac35a3"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_operation_registry_tests",
+          "sha256": "d9af2d5a7646dfadbf0968900e4116863d39d5bf64372361426726a4f59ff08e"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_parameter_tests",
+          "sha256": "3bdb09db0b2acd991a7fd11af5b2b61ed6960ab1f979eedc7f4eae2368b0ad6a"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_persistence_tests",
+          "sha256": "2c49b9319a9bbb180561fa47b19b397a735d44a266f26054cef67b5c9e1f7058"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_quantity_entry_consistency_tests",
+          "sha256": "cdbc592416d259e49bf9d09da1c75fb19e263b677c7871486ac6a8daa5abdbe9"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_query_tests",
+          "sha256": "ce1b9c1e73a3bb7ef93dcceab0b35bbaa54e81de4e31ff912321731a3f1529b6"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_record_application_tests",
+          "sha256": "32e883da487f280252fc915166013a705539ba8302b12d030a9bf5e2b5ab281d"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_record_document_tests",
+          "sha256": "3899684268dbe386d5f444467b2e5e1ebb2484e8279ca9b432178282ba0bae17"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_record_query_tests",
+          "sha256": "d63e9644d54ba069f1f3fe2f3e7312dd554c2340e0f7f00323be98d49913cb1f"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_render_projector_tests",
+          "sha256": "d6617ced634e13e9cf00aa21a1b245b11d19c276a720e2614e2b5216722ee435"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_result_fixture_tests",
+          "sha256": "c52ed9b50e040ff1e48bebea21285eaf5f5675e69ecb155e7f2566f6cd345ca2"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_runtime_tests",
+          "sha256": "946d8954867f379b366526f6d7f36d5118c3315265c7b89bdaeac5f644714d8f"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_solver_local_tests",
+          "sha256": "2a8bc80d6729e2a2b14a90fdfae9503331450a810976fcb4fb1c434a0986d276"
+        },
+        {
+          "path": "build-c3-closure-core/qcae_static_validation_tests",
+          "sha256": "c3a50fd2da21a7f4b9c683fbd87486a92470716fc523c4d3da056a8ca69ed0db"
+        }
+      ]
+    },
+    "sqlite_headless": {
+      "passed": true,
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c3-vtk-sqlite-release",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=OFF",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=OFF",
+          "-DQCAE_ENABLE_SANITIZERS=OFF",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include"
+        ],
+        [
+          "cmake",
+          "--build",
+          "build-c3-vtk-sqlite-release",
+          "-j",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "build-c3-vtk-sqlite-release",
+          "--output-on-failure",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-configure.log",
+          "sha256": "408146df3a40701cc4aa41ff31a196e97d79253368197de4188988ea71e93d12"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-tests.log",
+          "sha256": "b4e7e966835793ae2704b82e9f197b89099098984490867d9e515281f7c2039a"
+        }
+      ],
+      "configuration": {
+        "build_type": "Release",
+        "qt_enabled": false,
+        "vtk_enabled": false,
+        "sqlite_enabled": true,
+        "asan_enabled": false,
+        "ubsan_enabled": false
+      },
+      "artifacts": [
+        {
+          "path": "build-c3-vtk-sqlite-release/CMakeCache.txt",
+          "sha256": "7137cfd7d74da8b99652980cb4839e0de82f7b983229d5f53ad9af6f17854aa8"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/compile_commands.json",
+          "sha256": "a2e3c98a4eacc833874f245524a5e3131c08cf3096faf84e561b80c8923f20bd"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/generated/qcae/operation_inputs.hpp",
+          "sha256": "7ebd3af3b08c4818d46bc1bde69552f27c54ad1294adadb28d0c97e6d49daba9"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/generated/qcae/operations.hpp",
+          "sha256": "a7c06a45e20841e04be122369751d08034d3aa056eee6b4d181adc8cdc21b3fc"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/profiles/nastran/generated/qcae/nastran_digest.hpp",
+          "sha256": "f22f9a190057c50530ef4b4278caaa3b3b9674d6abf7915aabdbd01b56118507"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_allocation_tests",
+          "sha256": "b4804ee35b15965aab355924e92337d521f69f5d425fc5b0c543adc64e4256c4"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_analysis_check_tests",
+          "sha256": "55a20af14a57982819807727ec60d46dc770b0fc8fcc195c08f448810107d952"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_artifacts_local_tests",
+          "sha256": "0dff4c54c6ebcf263215194442985ee1d42ce80b08e91c67937b9091b28781c3"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_change_event_tests",
+          "sha256": "366098143241b0520030adb28e2a1e997ee54a035d13ee9063ecefa05251eaec"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_contract_tests",
+          "sha256": "0231225ba34d5e03e20b6e029e72a23a60e713bac9b17172b190233d03c73b7d"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_core_tests",
+          "sha256": "83bbcbbc76bb1c01136c00794059e979e46ab0727d978608e09efbedfe6ee0f5"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_delta_tests",
+          "sha256": "e394ec8ce490b5fa7e5ddc3d376f93b8497e3315ae713e0ad9514bcabc9520b0"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_geometry_mesh_sqlite_tests",
+          "sha256": "7753b7a9fcdda2996cb3e61ce22786d419d8db686c726d3d67504a4354f2d82b"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_geometry_mesh_tests",
+          "sha256": "6a278b2ee13059a5616968deedac8ef733962b885f31fd08dd3f384c53186b26"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_line_mesh_regeneration_tests",
+          "sha256": "5b55ec933d7a0f623688370c6591eb02a4b329aacc33b21a0517c466c757daf9"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_model_operation_tests",
+          "sha256": "19b5f7ed282db8d1630e7ab69d67a9ce7ac57d63945ac5a83906ffbe814e22be"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_model_tests",
+          "sha256": "58b1f51cf7a38a87067dcbf2498b84c0079faf5a4172ed417ba5d64da47f54df"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_nastran_package_tests",
+          "sha256": "0f42f7794a91966e33c97925226ae495b2288045b2dec07e076d5f771bafa185"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_nastran_static_result_tests",
+          "sha256": "e5b62abb9b1af4d2cf4c490fba61a6a9c847ea7a5c8eef10669574c2950b06d4"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_nastran_tests",
+          "sha256": "6c7e1fbbcc1d41bfe8339f3098c1a88d94292be28dd2db240273ea9974ac35a3"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_operation_registry_tests",
+          "sha256": "d9af2d5a7646dfadbf0968900e4116863d39d5bf64372361426726a4f59ff08e"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_parameter_tests",
+          "sha256": "3bdb09db0b2acd991a7fd11af5b2b61ed6960ab1f979eedc7f4eae2368b0ad6a"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_persistence_tests",
+          "sha256": "2c49b9319a9bbb180561fa47b19b397a735d44a266f26054cef67b5c9e1f7058"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_quantity_entry_consistency_tests",
+          "sha256": "cdbc592416d259e49bf9d09da1c75fb19e263b677c7871486ac6a8daa5abdbe9"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_query_tests",
+          "sha256": "ce1b9c1e73a3bb7ef93dcceab0b35bbaa54e81de4e31ff912321731a3f1529b6"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_record_application_tests",
+          "sha256": "32e883da487f280252fc915166013a705539ba8302b12d030a9bf5e2b5ab281d"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_record_document_tests",
+          "sha256": "3899684268dbe386d5f444467b2e5e1ebb2484e8279ca9b432178282ba0bae17"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_record_query_tests",
+          "sha256": "d63e9644d54ba069f1f3fe2f3e7312dd554c2340e0f7f00323be98d49913cb1f"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_record_store_tests",
+          "sha256": "282c0a7ad2352eca134a712c085c4fcdf6800a404986795ec699fdc95493033d"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_render_projector_tests",
+          "sha256": "d6617ced634e13e9cf00aa21a1b245b11d19c276a720e2614e2b5216722ee435"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_result_fixture_tests",
+          "sha256": "c52ed9b50e040ff1e48bebea21285eaf5f5675e69ecb155e7f2566f6cd345ca2"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_runtime_tests",
+          "sha256": "946d8954867f379b366526f6d7f36d5118c3315265c7b89bdaeac5f644714d8f"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_skeleton_fault_tests",
+          "sha256": "600834c10c74ac88bbf2b6c1485dc85fcc707849e0400dffe4499e34ad5ac501"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_skeleton_representative_tests",
+          "sha256": "33c8cf239f1e48ba877c197881a39d7e16eacef03dec6e18d34029acf00216ba"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_solver_local_tests",
+          "sha256": "2a8bc80d6729e2a2b14a90fdfae9503331450a810976fcb4fb1c434a0986d276"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_sqlite_tests",
+          "sha256": "26c7d6d52ed8c29aa790f337cb8bdac9ef0747f703090109ea44d60fa0060df1"
+        },
+        {
+          "path": "build-c3-vtk-sqlite-release/qcae_static_validation_tests",
+          "sha256": "c3a50fd2da21a7f4b9c683fbd87486a92470716fc523c4d3da056a8ca69ed0db"
+        }
+      ]
+    },
+    "desktop": {
+      "passed": true,
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c3-closure-desktop",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=ON",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=ON",
+          "-DQCAE_ENABLE_SANITIZERS=OFF",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include",
+          "-DQt6_DIR=/opt/homebrew/opt/qt/lib/cmake/Qt6",
+          "-DVTK_DIR=/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/cmake/vtk-9.7"
+        ],
+        [
+          "cmake",
+          "--build",
+          "build-c3-closure-desktop",
+          "-j",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "build-c3-closure-desktop",
+          "--output-on-failure",
+          "-j",
+          "1"
+        ]
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-configure.log",
+          "sha256": "ebcfbc846b7551a242b527d3e1071ce08216079595da07e1a223ad12fa936447"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-build.log",
+          "sha256": "7ff06cb05b1e9609245b9e5593c059777ed9414801d39f62c9087dd8b81c69a9"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-tests.log",
+          "sha256": "07a4c3c6d21bb2788feecdd37bb41e8c354083e2c3c901aa9af50629092d854f"
+        }
+      ],
+      "configuration": {
+        "build_type": "Release",
+        "qt_enabled": true,
+        "vtk_enabled": true,
+        "sqlite_enabled": true,
+        "asan_enabled": false,
+        "ubsan_enabled": false
+      },
+      "artifacts": [
+        {
+          "path": "build-c3-closure-desktop/CMakeCache.txt",
+          "sha256": "e84200c372efdb3b14689310217f4be22163a256d0bc539d5d3891503e310d9a"
+        },
+        {
+          "path": "build-c3-closure-desktop/compile_commands.json",
+          "sha256": "9c7a39542503bd5d95777f4900182139f009909243a37058a1b2f0cc79e184cb"
+        },
+        {
+          "path": "build-c3-closure-desktop/desktop-smoke.png",
+          "sha256": "f5b6506023b6b9cc5d2038189711793cc87cd75d5e2ce9b5795e5bc627ae4662"
+        },
+        {
+          "path": "build-c3-closure-desktop/generated/qcae/operation_inputs.hpp",
+          "sha256": "7ebd3af3b08c4818d46bc1bde69552f27c54ad1294adadb28d0c97e6d49daba9"
+        },
+        {
+          "path": "build-c3-closure-desktop/generated/qcae/operations.hpp",
+          "sha256": "a7c06a45e20841e04be122369751d08034d3aa056eee6b4d181adc8cdc21b3fc"
+        },
+        {
+          "path": "build-c3-closure-desktop/profiles/nastran/generated/qcae/nastran_digest.hpp",
+          "sha256": "f22f9a190057c50530ef4b4278caaa3b3b9674d6abf7915aabdbd01b56118507"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae-cli",
+          "sha256": "78f32e39651588b9fd77aefb85e56dfabb82d2c25222c3531a9e8217fc583825"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae-desktop",
+          "sha256": "3b877646544580f87cc3a087bdda31e1136d1c03b5869f2e1bbb80fa81f7719c"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae-engine",
+          "sha256": "1a8e95748c8c8a5fa68d5f2167d3ab364aaf92f74af011802b2afc7a258e3eae"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae-mcp",
+          "sha256": "fe64dc70821f32cfe74a9c50bf28868228036d51c6df1614b75f4bfa37ce9105"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_allocation_tests",
+          "sha256": "b4804ee35b15965aab355924e92337d521f69f5d425fc5b0c543adc64e4256c4"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_analysis_check_tests",
+          "sha256": "55a20af14a57982819807727ec60d46dc770b0fc8fcc195c08f448810107d952"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_artifacts_local_tests",
+          "sha256": "0dff4c54c6ebcf263215194442985ee1d42ce80b08e91c67937b9091b28781c3"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_c3_desktop_workflow_tests",
+          "sha256": "454f374c892b5e1657eddc0606a64048460aa0b141eb5a27a0038df91a3e1962"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_c3_tool_lifecycle_tests",
+          "sha256": "9eff153fdf53f97c8fdb62b3b67c97762ea419b60c027fe24d8cd732874091a6"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_change_event_tests",
+          "sha256": "366098143241b0520030adb28e2a1e997ee54a035d13ee9063ecefa05251eaec"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_contract_tests",
+          "sha256": "0231225ba34d5e03e20b6e029e72a23a60e713bac9b17172b190233d03c73b7d"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_contributed_engine",
+          "sha256": "647a6864a1b3a6d087fe365aa2ff02bb2db36eaea35bf0c552f4fb788725304b"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_core_tests",
+          "sha256": "83bbcbbc76bb1c01136c00794059e979e46ab0727d978608e09efbedfe6ee0f5"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_delta_tests",
+          "sha256": "e394ec8ce490b5fa7e5ddc3d376f93b8497e3315ae713e0ad9514bcabc9520b0"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_desktop_selection_tests",
+          "sha256": "c165f0379b565c50e421a17c3832304c92430f186d8064c0c39c044c52bebf2e"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_desktop_tests",
+          "sha256": "e0058e3eef979b6905302fd318fcc8ea7beb4d1b70bbe4ab4cb96e39bcd57387"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_engine_assembly_tests",
+          "sha256": "aca5d1152d394a1c8e949e1ed20d439d22f52ab1793176102737409d932f2c47"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_event_client_tests",
+          "sha256": "36f49b2e6fab329160ee2ac308e0a32b8b621810a432c440c8cd4e6a9e36da85"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_event_stream_tests",
+          "sha256": "c69dbb0d69bc353982043ae779bb9fd298e16087d8f019b9cf68a835ff22f899"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_geometry_mesh_sqlite_tests",
+          "sha256": "7753b7a9fcdda2996cb3e61ce22786d419d8db686c726d3d67504a4354f2d82b"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_geometry_mesh_tests",
+          "sha256": "6a278b2ee13059a5616968deedac8ef733962b885f31fd08dd3f384c53186b26"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_json_ledger_tests",
+          "sha256": "1784ffe265781410bc459a97e83b8f39805cd2f64dc3fe8a988bc7d7d8c7cd23"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_legacy_migration_tests",
+          "sha256": "29a4aaf4d056a258c3329525e839639f23d80d889b29fc3429ea7901a9f91270"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_line_mesh_regeneration_tests",
+          "sha256": "5b55ec933d7a0f623688370c6591eb02a4b329aacc33b21a0517c466c757daf9"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_model_operation_tests",
+          "sha256": "19b5f7ed282db8d1630e7ab69d67a9ce7ac57d63945ac5a83906ffbe814e22be"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_model_tests",
+          "sha256": "58b1f51cf7a38a87067dcbf2498b84c0079faf5a4172ed417ba5d64da47f54df"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_modeling_tools_tests",
+          "sha256": "475e589f764db10d280be60a26de96451c0c9965f173845b4d69627c1b5c06c3"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_nastran_package_tests",
+          "sha256": "0f42f7794a91966e33c97925226ae495b2288045b2dec07e076d5f771bafa185"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_nastran_static_result_tests",
+          "sha256": "e5b62abb9b1af4d2cf4c490fba61a6a9c847ea7a5c8eef10669574c2950b06d4"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_nastran_tests",
+          "sha256": "6c7e1fbbcc1d41bfe8339f3098c1a88d94292be28dd2db240273ea9974ac35a3"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_operation_registry_tests",
+          "sha256": "d9af2d5a7646dfadbf0968900e4116863d39d5bf64372361426726a4f59ff08e"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_parameter_tests",
+          "sha256": "3bdb09db0b2acd991a7fd11af5b2b61ed6960ab1f979eedc7f4eae2368b0ad6a"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_persistence_tests",
+          "sha256": "2c49b9319a9bbb180561fa47b19b397a735d44a266f26054cef67b5c9e1f7058"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_qt_text_ledger_probe",
+          "sha256": "efacb306c607b63f386fce66699f55aa52190b5e28abf5f920ff51433f179413"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_qt_widget_copy_probe",
+          "sha256": "8fb69922132699b475bfa803525deef2da2d562c04fa3049c56ff8d34c99ca18"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_quantity_entry_consistency_tests",
+          "sha256": "cdbc592416d259e49bf9d09da1c75fb19e263b677c7871486ac6a8daa5abdbe9"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_query_tests",
+          "sha256": "ce1b9c1e73a3bb7ef93dcceab0b35bbaa54e81de4e31ff912321731a3f1529b6"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_record_application_tests",
+          "sha256": "32e883da487f280252fc915166013a705539ba8302b12d030a9bf5e2b5ab281d"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_record_document_tests",
+          "sha256": "3899684268dbe386d5f444467b2e5e1ebb2484e8279ca9b432178282ba0bae17"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_record_query_tests",
+          "sha256": "d63e9644d54ba069f1f3fe2f3e7312dd554c2340e0f7f00323be98d49913cb1f"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_record_store_tests",
+          "sha256": "282c0a7ad2352eca134a712c085c4fcdf6800a404986795ec699fdc95493033d"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_render_projector_tests",
+          "sha256": "d6617ced634e13e9cf00aa21a1b245b11d19c276a720e2614e2b5216722ee435"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_render_service_tests",
+          "sha256": "78618a678b7ae1ca7dbe1bf3afa316862f34b46f6dad8c531ea6b2b6ff56d718"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_render_wire_tests",
+          "sha256": "071641c515afe5d3b25fa821df9ad5fdb86476e320e880142a3ca59026697f24"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_resource_tests",
+          "sha256": "0d030e410551777247c0f0ae04f3eeccd57608c322f2d41a1092ac9d208fe08a"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_result_fixture_tests",
+          "sha256": "c52ed9b50e040ff1e48bebea21285eaf5f5675e69ecb155e7f2566f6cd345ca2"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_runtime_tests",
+          "sha256": "946d8954867f379b366526f6d7f36d5118c3315265c7b89bdaeac5f644714d8f"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_skeleton_fault_client_tests",
+          "sha256": "36d60c0e6be4db87bbce709400ffd39a121075bee7695e9f4d1e9e7532c4b9ed"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_skeleton_fault_tests",
+          "sha256": "600834c10c74ac88bbf2b6c1485dc85fcc707849e0400dffe4499e34ad5ac501"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_skeleton_representative_tests",
+          "sha256": "33c8cf239f1e48ba877c197881a39d7e16eacef03dec6e18d34029acf00216ba"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_solver_local_tests",
+          "sha256": "2a8bc80d6729e2a2b14a90fdfae9503331450a810976fcb4fb1c434a0986d276"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_solver_numerical_validation_tests",
+          "sha256": "57bc31095e5a400200cb4146ab546f9a3c2ca4614bed1e702775762cdc3f1c04"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_solver_result_store_tests",
+          "sha256": "d4ed92c9a57ebe88b5b16ae0d8799b45b27ed46996a4585d1b743b738872f795"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_solver_version_probe_tests",
+          "sha256": "f963f20c031e05854f893465520dfbe361e9aa626c77485ba1625ea1f2813f8b"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_sqlite_tests",
+          "sha256": "26c7d6d52ed8c29aa790f337cb8bdac9ef0747f703090109ea44d60fa0060df1"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_static_validation_tests",
+          "sha256": "c3a50fd2da21a7f4b9c683fbd87486a92470716fc523c4d3da056a8ca69ed0db"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_typed_host_tests",
+          "sha256": "a00241b7c55bbd832d1ed1628da7448e48301eeebb1de1e494615129179cadbb"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_vtk_coordinate_range_tests",
+          "sha256": "b57636b575f70fba0d0e52dd90ca8a338ba662a00625ae524dc91b5bf3543a73"
+        },
+        {
+          "path": "build-c3-closure-desktop/qcae_vtk_shift_scale_copy_tests",
+          "sha256": "e0e027bd1752c516eec66544c5d7f75c078dcfbb0f0413acabfb23709195656e"
+        }
+      ]
+    },
+    "asan_ubsan": {
+      "passed": true,
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c4-baseline-sqlite-sanitizers40",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DQCAE_BUILD_IPC=OFF",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=OFF",
+          "-DQCAE_ENABLE_SANITIZERS=ON",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include"
+        ],
+        [
+          "cmake",
+          "--build",
+          "build-c4-baseline-sqlite-sanitizers40",
+          "-j",
+          "2"
+        ],
+        [
+          "ctest",
+          "--test-dir",
+          "build-c4-baseline-sqlite-sanitizers40",
+          "--output-on-failure",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-configure.log",
+          "sha256": "1e849869a4d02bd285a53f56b621b6a8f44d5918252ec9400f659ec86d69f019"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-tests.log",
+          "sha256": "c5a59219739b24b44b5c5c32c39da6128a5b4978d79424305d68fe7f7de72246"
+        }
+      ],
+      "configuration": {
+        "build_type": "Debug",
+        "qt_enabled": false,
+        "vtk_enabled": false,
+        "sqlite_enabled": true,
+        "asan_enabled": true,
+        "ubsan_enabled": true
+      },
+      "artifacts": [
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/CMakeCache.txt",
+          "sha256": "71ffe798139bf747d102158484a13857e961253da6a05393b168a230762054a8"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/compile_commands.json",
+          "sha256": "61239982f70bd8a31941c0ab38800b59785c7726940c6e9a8c169da7584aa6fd"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/generated/qcae/operation_inputs.hpp",
+          "sha256": "7ebd3af3b08c4818d46bc1bde69552f27c54ad1294adadb28d0c97e6d49daba9"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/generated/qcae/operations.hpp",
+          "sha256": "a7c06a45e20841e04be122369751d08034d3aa056eee6b4d181adc8cdc21b3fc"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/profiles/nastran/generated/qcae/nastran_digest.hpp",
+          "sha256": "f22f9a190057c50530ef4b4278caaa3b3b9674d6abf7915aabdbd01b56118507"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_allocation_tests",
+          "sha256": "1de2d09487b9383dccbab00b98da02d99dc9a2e41fc81ed61ad08c47556593d9"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_analysis_check_tests",
+          "sha256": "2f5648eb23b7efc27d965822310a4139747c50c92e8ee12c66a97e483ae613da"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_artifacts_local_tests",
+          "sha256": "17134b7bb0e5e8c6a31823cf128fd8760cc1f95ea2ce63b70d88b13ed92d216a"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_change_event_tests",
+          "sha256": "7a4162cd6825ed3f0bb82a7a415a43a52aa4d654c5a849ecbc03aaf7ecc8d2a0"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_contract_tests",
+          "sha256": "c157b8c255e8ea4cf32d2c0ef25e794177d5f33baaea6842c31d31b47b0ecb0e"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_core_tests",
+          "sha256": "55e511301aa81a98243e27a2c1026ee9eef6c96a16f51ab81825682396cfbe92"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_delta_tests",
+          "sha256": "0aecb264f64eb6e9684e95f0cd0a2471d8dce4b0f6b21e7a8582c26681870aec"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_geometry_mesh_sqlite_tests",
+          "sha256": "23f0decc6ec7c2e6346890bef26b4350a103d1f13a5b95a01dafc6f681dbba20"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_geometry_mesh_tests",
+          "sha256": "73be03003f4c4aa4476619a42ceaac16df1324aa2733def2f016c7c21eccbc49"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_line_mesh_regeneration_tests",
+          "sha256": "0034fc61dfa844cc79a6727c26195207467ba31f00e9931d9b783798a8104630"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_model_operation_tests",
+          "sha256": "540283ec9ffe7fb64ad13e4a76683f602e1a27c17bf4f2b13058e07e106b92f1"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_model_tests",
+          "sha256": "594dd597b7cc548c39002cd9d9931c747b4f7444507418de87d031f126d49d95"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_package_tests",
+          "sha256": "7c27a838435dbed43ea2a018c04025f2629e093bdf50911ccdd6b8103b787e60"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_static_result_tests",
+          "sha256": "8d9f06b3d2883f41c09d01d2967253fd5aaf6d7955c09260b185e3f4f06e006b"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_tests",
+          "sha256": "205c85f9316b84a193d73c3c3d3978edbe442dbb0d7ae8075622e6e124d59bfb"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_operation_registry_tests",
+          "sha256": "9ba3acf4714b6661d8d64bdb8271027b4669bcf6d9b3599a74af2ba12ce2f93f"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_parameter_tests",
+          "sha256": "d45f4fbc943e53d8305cfddb9b103f1e9d41906888fdc4dd2debd36a1b889f1a"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_persistence_tests",
+          "sha256": "8820067c70d0557b93a5b063a28f04ad7a0c1bd450b586cbcf807f6fe6ae83ae"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_quantity_entry_consistency_tests",
+          "sha256": "649b105c695df88d438b54dd346da05eedeb82f397de9c86ef59ec3f5b0f831b"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_query_tests",
+          "sha256": "5417c02898d35c092f8c82b2d7d1b1c77da76212a67dce1bf686ad071547546a"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_application_tests",
+          "sha256": "b47ee82dd5a3c257e14d7dc53e553c6eecae093e4fb4c4eec958ff703b49d8c1"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_document_tests",
+          "sha256": "6dd1996f66141f5e93110d08840aec9fba681feaf659882e3bc487c071194a14"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_query_tests",
+          "sha256": "e8d6c587fb00864da6d6bc01f9d2fc0a4de09d946fb6ea338254ec24a1744f5e"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_store_tests",
+          "sha256": "3f22f3b8c700413c6be703fa456a73c11c422ab25c46478d4193964ff19561f8"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_render_projector_tests",
+          "sha256": "34fc251669f41d2e2a8dfb6c12d81abe05d02a852205d2b69b52742074afe998"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_result_fixture_tests",
+          "sha256": "a2decdd4e7d0a56f38cb79f0e50c47704794a20e3ef118d6a45a24647c1889da"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_runtime_tests",
+          "sha256": "04e3fd78806545b54872ce7ecd4cc2cc4a36986c710cebc9b7a33f31fb43fc60"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_skeleton_fault_tests",
+          "sha256": "f901d8ab727c941e357153b4fa74f7d14df987931ce737dbaa1b6d94d79d7a09"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_skeleton_representative_tests",
+          "sha256": "4dd37db515b8d196c47d9ce4793e5ef495de3c069814f59ee44cf3b55ba3505a"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_solver_local_tests",
+          "sha256": "76606c951dd01100741362e1480c8086dea960781375e0cf2f3ca6b4d70edfac"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_sqlite_tests",
+          "sha256": "0ab8ec827ae68dc1087df78c26192f18b87de7c49378072a37c14dc93a215ecf"
+        },
+        {
+          "path": "build-c4-baseline-sqlite-sanitizers40/qcae_static_validation_tests",
+          "sha256": "6cfdd0db8fc5ef231c8067347663e8a6743d0580cf46c89a5bba4c3f893afbc2"
+        }
+      ]
+    }
+  }
+}

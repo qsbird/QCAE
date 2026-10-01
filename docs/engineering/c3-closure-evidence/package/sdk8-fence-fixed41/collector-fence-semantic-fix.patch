@@ -1,0 +1,12 @@
+--- a/collector-optional-status.hpp
++++ b/collector-optional-status.hpp
+@@ -121,6 +121,9 @@
+         if (fence.value("version") != QJsonValue(1) ||
+             fence.value("failure_is_unknown") != QJsonValue(true) ||
+             fence.value("callback_abi_unchanged") != QJsonValue(true) ||
++            fence.value("noexcept_callback_boundary") != QJsonValue(true) ||
++            fence.value("original_C_declarations_and_scope_layout_unchanged") != QJsonValue(true) ||
++            fence.value("balanced_admission_stack_capacity") != QJsonValue(1024) ||
+             fence.value("sticky_status_symbol") != QJsonValue("qcae_qt_sdk_observer_status") ||
+             fence.value("collector_loss_symbol") !=
+                 QJsonValue("qcae_qt_sdk_observer_collector_loss") ||

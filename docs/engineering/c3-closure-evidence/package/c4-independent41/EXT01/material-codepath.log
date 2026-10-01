@@ -1,0 +1,16 @@
+rg: modules/document/src/records_model_bridge.cpp: No such file or directory (os error 2)
+rg: modules/query/src/record_query.cpp: No such file or directory (os error 2)
+adapters/engine_api/src/ipc_model.cpp:22:void fields(const QJsonObject& o, std::initializer_list<const char*> allowed) {
+adapters/engine_api/src/ipc_model.cpp:75:    fields(p, {"profile_id", "profile_version", "definition_digest"});
+adapters/engine_api/src/ipc_model.cpp:169:    // Preserve the established entity.query wire names; entity.fields uses schema names.
+adapters/engine_api/src/ipc_model.cpp:186:    for (const auto& descriptor : record->descriptor().fields) {
+adapters/engine_api/src/ipc_model.cpp:326:    fields(parameters, {"kind", "name_contains", "ids", "view", "owner_id", "offset", "limit"});
+adapters/engine_api/src/ipc_model.cpp:354:    fields(parameters, {"entity_id", "direction"});
+adapters/engine_api/src/ipc_model.cpp:483:            fields(p,
+adapters/engine_api/src/ipc_model.cpp:499:                fields(item, {"path", "text"});
+adapters/engine_api/src/ipc_model.cpp:528:                fields(p, {"command", "entity_id", "name", "members"});
+adapters/engine_api/src/ipc_model.cpp:532:                fields(p, {"command", "entity_id", "name", "children"});
+adapters/engine_api/src/ipc_model.cpp:536:                fields(p, {"command", "entity_id", "name", "members"});
+adapters/engine_api/src/ipc_model.cpp:540:                fields(p, {"command", "entity_id", "position_mm"});
+adapters/engine_api/src/ipc_model.cpp:544:                fields(p, {"command", "entity_id"});
+adapters/engine_api/src/ipc_model.cpp:556:            fields(p, {"analysis_id", "expected_profile_ref"});

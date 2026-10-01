@@ -1,0 +1,167 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6ff0fa4..32f11af 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -88,6 +88,10 @@ if(BUILD_TESTING)
+   target_link_libraries(qcae_model_operation_tests PRIVATE qcae_material_features qcae_mesh_editing qcae_legacy_api)
+   qcae_warnings(qcae_model_operation_tests)
+   add_test(NAME model_operations COMMAND qcae_model_operation_tests)
++  add_executable(qcae_tri3_tests tests/tri3_tests.cpp)
++  target_link_libraries(qcae_tri3_tests PRIVATE qcae_mesh_editing qcae_query qcae_nastran qcae_analysis_features)
++  qcae_warnings(qcae_tri3_tests)
++  add_test(NAME tri3 COMMAND qcae_tri3_tests)
+   add_executable(qcae_quantity_entry_consistency_tests tests/quantity_entry_consistency_tests.cpp)
+   target_link_libraries(qcae_quantity_entry_consistency_tests PRIVATE qcae_legacy_api qcae_parameters)
+   qcae_warnings(qcae_quantity_entry_consistency_tests)
+@@ -166,6 +170,11 @@ if(QCAE_BUILD_STORAGE)
+     target_link_libraries(qcae_record_store_tests PRIVATE qcae_sqlite ${QCAE_SQLITE_TARGET})
+     qcae_warnings(qcae_record_store_tests)
+     add_test(NAME record_store COMMAND qcae_record_store_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/legacy")
++    add_executable(qcae_tri3_sqlite_tests tests/tri3_tests.cpp)
++    target_link_libraries(qcae_tri3_sqlite_tests PRIVATE qcae_mesh_editing qcae_query qcae_nastran qcae_analysis_features qcae_sqlite)
++    target_compile_definitions(qcae_tri3_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
++    qcae_warnings(qcae_tri3_sqlite_tests)
++    add_test(NAME tri3_sqlite COMMAND qcae_tri3_sqlite_tests)
+     add_executable(qcae_geometry_mesh_sqlite_tests tests/geometry_mesh_tests.cpp)
+     target_link_libraries(qcae_geometry_mesh_sqlite_tests PRIVATE qcae_geometry_features qcae_mesh_generation qcae_sqlite)
+     target_compile_definitions(qcae_geometry_mesh_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
+@@ -254,6 +263,11 @@ if(QCAE_BUILD_IPC)
+         "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_check_ipc_tests.py"
+         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+       set_tests_properties(analysis_check_ipc PROPERTIES TIMEOUT 90)
++      add_test(NAME tri3_ipc COMMAND Python3::Interpreter
++        "${CMAKE_CURRENT_SOURCE_DIR}/tests/tri3_ipc_tests.py"
++        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
++        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/ext03-evidence/ipc")
++      set_tests_properties(tri3_ipc PROPERTIES TIMEOUT 90)
+       add_test(NAME force_vector_ipc COMMAND Python3::Interpreter
+         "${CMAKE_CURRENT_SOURCE_DIR}/tests/force_vector_ipc_tests.py"
+         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+diff --git a/tests/desktop_tests.cpp b/tests/desktop_tests.cpp
+index a7e8f84..4ea47a4 100644
+--- a/tests/desktop_tests.cpp
++++ b/tests/desktop_tests.cpp
+@@ -234,6 +234,22 @@ class DesktopTests : public QObject {
+             QTest::newRow(qPrintable(pick_case.value("id").toString())) << fixture << pick_case;
+         }
+         qInfo().noquote() << "PICK fixture SHA-256:" << digest;
++        QFile triangles(QFINDTESTDATA("fixtures/vtk-tri3-pick-matrix-v1.json"));
++        QVERIFY(triangles.open(QIODevice::ReadOnly));
++        const auto triangle_bytes = triangles.readAll();
++        const auto triangle_digest =
++            QCryptographicHash::hash(triangle_bytes, QCryptographicHash::Sha256).toHex();
++        QCOMPARE(triangle_digest,
++                 QByteArray("3cf184545acdf140d28718f5b1cc8fd525c93a136a7137105cc3032695d27ac3"));
++        const auto triangle_fixture = QJsonDocument::fromJson(triangle_bytes).object();
++        const auto triangle_cases = triangle_fixture.value("cases").toArray();
++        QCOMPARE(triangle_cases.size(), 4);
++        for (const auto& value : triangle_cases) {
++            const auto pick_case = value.toObject();
++            QTest::newRow(qPrintable(pick_case.value("id").toString()))
++                << triangle_fixture << pick_case;
++        }
++        qInfo().noquote() << "Tri3 PICK fixture SHA-256:" << triangle_digest;
+     }
+ 
+     void frozenPointAndLinePickingMatrix() {
+@@ -256,7 +272,7 @@ class DesktopTests : public QObject {
+                                          coordinates(row.value("position")),
+                                          row.value("visible").toBool()});
+             }
+-        } else {
++        } else if (pick_case.value("topology") == "line") {
+             for (const auto& value : fixture.value("lines").toArray()) {
+                 const auto row = value.toObject();
+                 packet.geometry_lines.push_back(
+@@ -265,6 +281,23 @@ class DesktopTests : public QObject {
+                      coordinates(row.value("end")),
+                      row.value("visible").toBool()});
+             }
++        } else {
++            for (const auto& value : fixture.value("triangles").toArray()) {
++                const auto row = value.toObject();
++                const auto id = row.value("id").toString();
++                const auto base = packet.points.size();
++                for (const auto& point : row.value("positions").toArray()) {
++                    packet.points.push_back(
++                        {qcae::EntityId(
++                             (id + "-node-" + QString::number(packet.points.size())).toStdString()),
++                         coordinates(point),
++                         false});
++                }
++                packet.cells.push_back({qcae::EntityId(id.toStdString()),
++                                        qcae::RenderCellKind::polygon,
++                                        {base, base + 1, base + 2},
++                                        row.value("visible").toBool()});
++            }
+         }
+         qcae::VtkView view;
+         const auto viewport = fixture.value("viewport_logical_pixels").toArray();
+@@ -291,6 +324,19 @@ class DesktopTests : public QObject {
+                 QCOMPARE(camera->GetViewTransformMatrix()->GetElement(row, column),
+                          matrix[row * 4 + column].toDouble());
+         widget->renderWindow()->Render();
++        if (fixture.contains("device_pixel_ratio")) {
++            QCOMPARE(widget->devicePixelRatioF(), fixture.value("device_pixel_ratio").toDouble());
++            const auto pixels = fixture.value("framebuffer_pixels").toArray();
++            QCOMPARE(widget->renderWindow()->GetSize()[0], pixels[0].toInt());
++            QCOMPARE(widget->renderWindow()->GetSize()[1], pixels[1].toInt());
++            const auto projection = camera_fixture.value("projection_matrix").toArray();
++            auto* actual_projection = camera->GetProjectionTransformMatrix(
++                static_cast<double>(widget->width()) / widget->height(), -1, 1);
++            for (int row = 0; row < 4; ++row)
++                for (int column = 0; column < 4; ++column)
++                    QVERIFY(std::abs(actual_projection->GetElement(row, column) -
++                                     projection[row * 4 + column].toDouble()) < 1e-12);
++        }
+         view.setThroughSelection(pick_case.value("through").toBool());
+         view.setBoxMode(pick_case.value("box_mode") == "contained"
+                             ? qcae::VtkView::BoxMode::contained
+@@ -308,6 +354,20 @@ class DesktopTests : public QObject {
+         actual.sort();
+         expected.sort();
+         QCOMPARE(actual, expected);
++        if (pick_case.value("topology") == "tri3") {
++            auto stale = deltaFor(packet);
++            stale.base_revision = 0;
++            stale.visibility = {{qcae::RenderPrimitive::cell, 0, packet.cells[0].entity, false}};
++            QVERIFY(!view.applyDelta(stale));
++            stale = deltaFor(packet);
++            stale.base_view_revision = 0;
++            QVERIFY(!view.applyDelta(stale));
++            stale = deltaFor(packet);
++            stale.document.epoch = qcae::DocumentEpoch("expired");
++            QVERIFY(!view.applyDelta(stale));
++            QCOMPARE(view.installedVersion()->revision, packet.revision);
++            QCOMPARE(view.installedVersion()->view_revision, packet.view_revision);
++        }
+         qInfo().noquote() << pick_case.value("id").toString()
+                           << "device_pixel_ratio=" << widget->devicePixelRatioF()
+                           << "missed=0 extra=0";
+{
+  "schema": "qcae.vtk-tri3-pick-matrix.v1",
+  "viewport_logical_pixels": [640, 420],
+  "framebuffer_pixels": [1280, 840],
+  "device_pixel_ratio": 2,
+  "camera": {
+    "position": [0, -500, 0],
+    "focal_point": [0, 0, 0],
+    "view_up": [0, 0, 1],
+    "parallel_scale": 100,
+    "clipping_range": [1, 1000],
+    "view_matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, -500, 0, 0, 0, 1],
+    "projection_matrix": [0.0065625, 0, 0, 0, 0, 0.01, 0, 0, 0, 0, -0.002002002002002002, -1.002002002002002, 0, 0, 0, 1]
+  },
+  "triangles": [
+    {"id": "tri3-behind", "positions": [[-60, 20, -30], [60, 20, -30], [0, 20, 30]], "visible": true},
+    {"id": "tri3-front", "positions": [[-60, -20, -30], [60, -20, -30], [0, -20, 30]], "visible": true},
+    {"id": "tri3-outside", "positions": [[70, 0, 50], [90, 0, 50], [80, 0, 70]], "visible": true},
+    {"id": "tri3-hidden", "positions": [[-60, -40, -30], [60, -40, -30], [0, -40, 30]], "visible": false}
+  ],
+  "cases": [
+    {"id": "tri3-contained", "topology": "tri3", "box_mode": "contained", "through": true, "box": [180, 130, 460, 285], "golden": ["tri3-behind", "tri3-front"]},
+    {"id": "tri3-intersecting", "topology": "tri3", "box_mode": "intersecting", "through": true, "box": [300, 200, 340, 230], "golden": ["tri3-behind", "tri3-front"]},
+    {"id": "tri3-occluded-visible", "topology": "tri3", "box_mode": "intersecting", "through": false, "box": [300, 200, 340, 230], "golden": ["tri3-front"]},
+    {"id": "tri3-occluded-through", "topology": "tri3", "box_mode": "intersecting", "through": true, "box": [300, 200, 340, 230], "golden": ["tri3-behind", "tri3-front"]}
+  ]
+}

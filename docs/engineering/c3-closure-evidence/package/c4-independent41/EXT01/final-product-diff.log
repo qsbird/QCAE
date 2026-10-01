@@ -1,0 +1,197 @@
+diff --git a/adapters/engine_api/src/ipc_model.cpp b/adapters/engine_api/src/ipc_model.cpp
+index 5e1b34f..ab07990 100644
+--- a/adapters/engine_api/src/ipc_model.cpp
++++ b/adapters/engine_api/src/ipc_model.cpp
+@@ -193,6 +193,12 @@ QJsonObject record_entity_json(const EntitySummary& entity, const DocumentView&
+             if (descriptor.kind == RecordFieldKind::target)
+                 result.insert("profile_ref",
+                               profile_ref_json(record_wire::read_target(field->payload).profile));
++        } else if (descriptor.optional && descriptor.introduced_version > 1) {
++            // Newly introduced optional fields expose their null default on old records too.
++            const auto key = entity_field_name(descriptor);
++            const QJsonValue value;
++            result.insert(key, value);
++            copies.insert(key, value, true, false);
+         } else if (entity.kind == "beam" && descriptor.name == "section")
+             result.insert("section_id", QJsonValue());
+     }
+diff --git a/features/materials/CMakeLists.txt b/features/materials/CMakeLists.txt
+index 16252e6..9c8c205 100644
+--- a/features/materials/CMakeLists.txt
++++ b/features/materials/CMakeLists.txt
+@@ -3,3 +3,10 @@ target_include_directories(qcae_material_features PUBLIC "${CMAKE_CURRENT_SOURCE
+ target_compile_features(qcae_material_features PUBLIC cxx_std_20)
+ target_link_libraries(qcae_material_features PUBLIC qcae_application qcae_operations qcae_parameters)
+ qcae_warnings(qcae_material_features)
++if(BUILD_TESTING AND QCAE_BUILD_IPC AND QCAE_BUILD_STORAGE AND UNIX)
++  add_test(NAME material_description_ipc COMMAND Python3::Interpreter
++    "${PROJECT_SOURCE_DIR}/tests/material_description_ipc_tests.py"
++    --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
++    --evidence-dir "${CMAKE_BINARY_DIR}/ext01-ipc-evidence")
++  set_tests_properties(material_description_ipc PROPERTIES TIMEOUT 120)
++endif()
+diff --git a/features/materials/include/qcae/material_operations.hpp b/features/materials/include/qcae/material_operations.hpp
+index 99026cf..f995d57 100644
+--- a/features/materials/include/qcae/material_operations.hpp
++++ b/features/materials/include/qcae/material_operations.hpp
+@@ -10,6 +10,9 @@ struct OperationPlan {
+ [[nodiscard]] Result<OperationPlan> prepare_create_material(const operations::MaterialCreateInput&);
+ [[nodiscard]] Result<OperationPlan>
+ prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput&);
++// An absent description clears the optional field; supplied text must be nonempty.
++[[nodiscard]] Result<OperationPlan>
++prepare_set_description(const operations::MaterialSetDescriptionInput&);
+ [[nodiscard]] Result<OperationPlan> prepare_create_section(const operations::SectionCreateInput&);
+ [[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
+ } // namespace qcae::features::materials
+diff --git a/features/materials/src/material_operations.cpp b/features/materials/src/material_operations.cpp
+index 6984472..c7dcee2 100644
+--- a/features/materials/src/material_operations.cpp
++++ b/features/materials/src/material_operations.cpp
+@@ -9,7 +9,8 @@ using namespace operations;
+ void observe_record_temporary(const records::Material& value) noexcept {
+     ledger::add(ledger::Stage::application,
+                 ledger::Metric::model_copy_bytes,
+-                sizeof(value) + value.id.value.size() + value.name.size());
++                sizeof(value) + value.id.value.size() + value.name.size() +
++                    (value.description ? value.description->size() : 0));
+ }
+ void observe_record_temporary(const records::BeamSection& value) noexcept {
+     ledger::add(ledger::Stage::application,
+@@ -39,6 +40,12 @@ void observe_capture_move(const MaterialSetYoungModulusInput& input) noexcept {
+                 2 * (sizeof(input.young_modulus.value) + moved_string_bytes(input.entity_id.value) +
+                      moved_string_bytes(input.young_modulus.unit)));
+ }
++void observe_capture_move(const MaterialSetDescriptionInput& input) noexcept {
++    ledger::add(ledger::Stage::application,
++                ledger::Metric::model_copy_bytes,
++                2 * (sizeof(input.description) + moved_string_bytes(input.entity_id.value) +
++                     (input.description ? moved_string_bytes(*input.description) : 0)));
++}
+ void observe_capture_move(const SectionCreateInput& input) noexcept {
+     ledger::add(ledger::Stage::application,
+                 ledger::Metric::model_copy_bytes,
+@@ -209,6 +216,43 @@ prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput& input)
+     return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
+ }
+ 
++Result<OperationPlan>
++prepare_set_description(const operations::MaterialSetDescriptionInput& input) {
++    auto signature = canonical_value(InputTraits<MaterialSetDescriptionInput>::to_value(input));
++    if (!signature.ok()) {
++        return {signature.status, std::nullopt, signature.error};
++    }
++    auto canonical = input;
++    wire::observe_input_copy(canonical, canonical.entity_id, canonical.description);
++    observe_capture_move(canonical);
++    observe_signature_capture(*signature.value);
++    RecordPrepare prepare = [canonical = std::move(canonical), signature = *signature.value](
++                                const DocumentView& view, const RecordIdentityAllocator&) {
++        try {
++            EditSession edit(view);
++            edit.update<records::Material>(canonical.entity_id, [&](auto& material) {
++                material.description = canonical.description;
++                ledger::add(ledger::Stage::application,
++                            ledger::Metric::model_copy_bytes,
++                            sizeof(material.description) +
++                                (material.description ? material.description->size() : 0));
++            });
++            return prepared(edit.prepare(),
++                            "Set material description",
++                            canonical.entity_id,
++                            signature,
++                            0,
++                            false);
++        } catch (const RecordError& error) {
++            return failed<RecordPreparedOperation>(error);
++        }
++    };
++    ledger::add(ledger::Stage::application,
++                ledger::Metric::metadata_copy_bytes,
++                moved_string_bytes(*signature.value));
++    return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
++}
++
+ Result<OperationPlan> prepare_create_section(const operations::SectionCreateInput& input) {
+     auto canonical = input;
+     wire::observe_input_copy(canonical, canonical.name, canonical.material_id);
+@@ -288,6 +332,13 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
+         });
+     if (!registered.ok())
+         return registered;
++    registered = registry.register_typed<MaterialSetDescriptionInput>(
++        InputTraits<MaterialSetDescriptionInput>::definition(),
++        [&app](const OperationContext& context, const MaterialSetDescriptionInput& input) {
++            return execute(app, context, input, prepare_set_description);
++        });
++    if (!registered.ok())
++        return registered;
+     return registry.register_typed<SectionCreateInput>(
+         InputTraits<SectionCreateInput>::definition(),
+         [&app](const OperationContext& context, const SectionCreateInput& input) {
+diff --git a/schemas/entities/entities.json b/schemas/entities/entities.json
+index 90a3e0f..59219e3 100644
+--- a/schemas/entities/entities.json
++++ b/schemas/entities/entities.json
+@@ -6,7 +6,7 @@
+     {
+       "id": 4097,
+       "name": "Material",
+-      "version": 1,
++      "version": 2,
+       "fields": [
+         {
+           "id": 2,
+@@ -29,6 +29,15 @@
+           "optional": true,
+           "exclusive_min": -1,
+           "exclusive_max": 0.5
++        },
++        {
++          "id": 5,
++          "name": "description",
++          "kind": "text",
++          "nonempty": true,
++          "optional": true,
++          "introduced_version": 2,
++          "default": null
+         }
+       ],
+       "legacy": "materials",
+diff --git a/schemas/operations/basic.json b/schemas/operations/basic.json
+index 8f715dc..3d900cd 100644
+--- a/schemas/operations/basic.json
++++ b/schemas/operations/basic.json
+@@ -73,6 +73,32 @@
+         }
+       ]
+     },
++    {
++      "operation_id": "material.set_description",
++      "version": 1,
++      "schema_id": "qcae.operation.material.set_description.v1",
++      "type_name": "MaterialSetDescriptionInput",
++      "effect": "document_write",
++      "context": {
++        "document": true,
++        "epoch": true,
++        "expected_revision": true,
++        "idempotency_key": true
++      },
++      "fields": [
++        {
++          "field_id": 1,
++          "name": "entity_id",
++          "type": "entity_id"
++        },
++        {
++          "field_id": 2,
++          "name": "description",
++          "type": "string",
++          "optional": true
++        }
++      ]
++    },
+     {
+       "operation_id": "node.move",
+       "version": 1,

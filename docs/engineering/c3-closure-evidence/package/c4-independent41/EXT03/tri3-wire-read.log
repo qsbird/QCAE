@@ -1,0 +1,51 @@
+1138:    static Result<MeshCreateTri3Input> from_value(const Value& value) {
+1139-        static constexpr std::array<std::string_view, 2> allowed{"node_ids", "mesh_id"};
+1140-        static constexpr std::array<std::string_view, 2> required{"node_ids", "mesh_id"};
+1141-        const auto object = wire::object_fields(value, allowed, required, "input");
+1142-        if (!object.ok()) {
+1143-            return {object.status, std::nullopt, object.error};
+1144-        }
+1145-        const auto& fields = **object.value;
+1146-        const auto node_ids = wire::entity_id_array(fields.at("node_ids"), "input.node_ids");
+1147-        if (!node_ids.ok()) {
+1148-            return {node_ids.status, std::nullopt, node_ids.error};
+1149-        }
+1150-        const auto mesh_id = wire::entity_id(fields.at("mesh_id"), "input.mesh_id");
+1151-        if (!mesh_id.ok()) {
+1152-            return {mesh_id.status, std::nullopt, mesh_id.error};
+1153-        }
+1154-        MeshCreateTri3Input input{*node_ids.value, *mesh_id.value};
+1155-        wire::observe_input_copy(input, input.node_ids, input.mesh_id);
+1156-        return {Status::success, std::move(input), std::nullopt};
+1157-    }
+1158-
+1159-    static Value to_value(const MeshCreateTri3Input& input) {
+1160-        Value::Object object;
+1161-        object.emplace("node_ids", wire::to_value(input.node_ids));
+1162-        wire::observe_key("node_ids");
+1163-        object.emplace("mesh_id", Value(input.mesh_id.value));
+1164-        wire::observe_key("mesh_id");
+1165-        return Value(std::move(object));
+1166-    }
+1167-};
+1168-
+1169-struct MeshGenerateLineInput {
+1170-    EntityId geometry_id{};
+1171-    std::uint32_t segments{};
+1172-};
+1173-
+1174-template <> struct InputTraits<MeshGenerateLineInput> {
+1175-    static constexpr std::string_view operation_id = "mesh.generate_line";
+1176-    static constexpr std::string_view schema_id = "qcae.operation.mesh.generate_line.v1";
+1177-    static OperationDefinition definition() {
+1178-        return {"mesh.generate_line", 1, "qcae.operation.mesh.generate_line.v1",
+1179-                OperationEffect::background_task,
+1180-                {true, true, true, true, false},
+1181-                {
+1182-                    {1, "geometry_id", "entity_id", {}, true, false},
+1183-                    {2, "segments", "positive_uint32", {}, true, false}
+1184-                }};
+1185-    }
+1186-
+1187-    static Result<MeshGenerateLineInput> from_value(const Value& value) {
+1188-        static constexpr std::array<std::string_view, 2> allowed{"geometry_id", "segments"};

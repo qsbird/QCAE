@@ -1,0 +1,47 @@
+47-    const records::MeshId mesh(mesh_identity);
+48-    auto add = [&](auto value) {
+49-        auto record = registry->make(std::move(value), stats);
+50-        changes.records.push_back({record->key(), std::nullopt, std::move(record), {}});
+51-    };
+52-    for (const auto& value : model.materials)
+53:        add(records::Material{value.id, value.name, value.young_modulus_mpa, value.poisson_ratio});
+54-    if (!model.nodes.empty() || !model.beams.empty())
+55-        add(records::Mesh{mesh, "Imported mesh", "imported", std::nullopt, 0, false});
+56-    for (const auto& value : model.nodes)
+57-        add(records::Node{value.id, coordinates(value.position), mesh});
+58-    for (const auto& value : model.sections)
+59-        add(records::BeamSection{value.id,
+60-                                 value.name,
+61-                                 value.material,
+62-                                 value.area_mm2,
+63-                                 value.i1_mm4,
+64-                                 value.i2_mm4,
+65-                                 value.torsion_mm4});
+66-    for (const auto& value : model.beams)
+67-        add(records::Beam{
+68-            value.id, value.section, value.nodes, coordinates(value.orientation), mesh});
+69-    for (const auto& value : model.parts)
+--
+105-    if (stats) {
+106-        view.visit([&](const Record& record) {
+107-            stats->model_bytes_copied += record->descriptor().owned_bytes(record->object());
+108-        });
+109-    }
+110-    Model result;
+111:    visit_typed<records::Material>(view, [&](const auto& value) {
+112-        result.materials.push_back(
+113-            {value.id, value.name, value.young_modulus_mpa, value.poisson_ratio});
+114-    });
+115-    visit_typed<records::Node>(view, [&](const auto& value) {
+116-        result.nodes.push_back({value.id, coordinates(value.position)});
+117-    });
+118-    visit_typed<records::BeamSection>(view, [&](const auto& value) {
+119-        result.sections.push_back({value.id,
+120-                                   value.name,
+121-                                   value.material,
+122-                                   value.area_mm2,
+123-                                   value.i1_mm4,
+124-                                   value.i2_mm4,
+125-                                   value.torsion_mm4});
+126-    });
+127-    visit_typed<records::Beam>(view, [&](const auto& value) {

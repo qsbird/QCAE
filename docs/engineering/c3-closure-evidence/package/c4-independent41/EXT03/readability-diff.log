@@ -1,0 +1,149 @@
+diff --git a/adapters/engine_api/src/ipc_model.cpp b/adapters/engine_api/src/ipc_model.cpp
+index 5e1b34f..7dfc643 100644
+--- a/adapters/engine_api/src/ipc_model.cpp
++++ b/adapters/engine_api/src/ipc_model.cpp
+@@ -470,6 +470,17 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
+             return op == "entity.query" ? entity_query(id, p, *snapshot.value)
+                                         : entity_references(id, p, *snapshot.value);
+         }
++        if (op == "model.export_preview") {
++            const auto records = app.record_application().snapshot(ref(r));
++            if (!records.ok())
++                return error(id, records);
++            if (ctx(r).expected_revision != records.value->info.revision)
++                return failure(
++                    id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
++            if (records.value->records.count(RecordTraits<records::Tri3>::type_id))
++                return failure(
++                    id, "UNSUPPORTED_CAPABILITY", "Tri3 shell export is not implemented");
++        }
+         const auto snap = app.snapshot(ref(r));
+         if (!snap.ok())
+             return error(id, snap);
+diff --git a/features/analysis/src/analysis_checks.cpp b/features/analysis/src/analysis_checks.cpp
+index 552022a..2b1c721 100644
+--- a/features/analysis/src/analysis_checks.cpp
++++ b/features/analysis/src/analysis_checks.cpp
+@@ -81,6 +81,10 @@ std::span<const RuleDefinition> RuleCatalog::definitions() const noexcept {
+     return detail::cantilever_rules();
+ }
+ Result<CheckReport> RuleCatalog::check(const DocumentView& view, const EntityId& identity) const {
++    if (view.count(RecordTraits<records::Tri3>::type_id))
++        return failed<CheckReport>(ErrorCode::unsupported_capability,
++                                   "Tri3 shell analysis checks are not implemented",
++                                   "tri3");
+     const auto record = view.find<records::AnalysisDefinition>(identity);
+     if (!record)
+         return failed<CheckReport>(
+diff --git a/features/analysis/src/analysis_input.cpp b/features/analysis/src/analysis_input.cpp
+index 3fe2402..fccbef2 100644
+--- a/features/analysis/src/analysis_input.cpp
++++ b/features/analysis/src/analysis_input.cpp
+@@ -54,6 +54,10 @@ Result<FrozenAnalysisInput> freeze_analysis_input(const DocumentView& view,
+                                                   const ProfileRef& profile,
+                                                   std::span<const ExportIdentifier> mapping) {
+     try {
++        if (view.count(RecordTraits<records::Tri3>::type_id))
++            invalid(ErrorCode::unsupported_capability,
++                    "Tri3 shell analysis is not implemented",
++                    "tri3");
+         const auto record = view.find<records::AnalysisDefinition>(identity);
+         if (!record)
+             invalid(
+diff --git a/modules/query/src/render_projector.cpp b/modules/query/src/render_projector.cpp
+index 4439660..84edb22 100644
+--- a/modules/query/src/render_projector.cpp
++++ b/modules/query/src/render_projector.cpp
+@@ -92,6 +92,13 @@ RenderContributions default_render_contributions() {
+              return RenderCellSource{
+                  beam.id, RenderCellKind::polyline, {beam.nodes.begin(), beam.nodes.end()}};
+          }});
++    result.add(
++        {RecordTraits<records::Tri3>::type_id, "tri3", [](const Record& record) -> RenderItem {
++             const auto& triangle = record->get<records::Tri3>();
++             return RenderCellSource{triangle.id,
++                                     RenderCellKind::polygon,
++                                     {triangle.nodes.begin(), triangle.nodes.end()}};
++         }});
+     result.add({RecordTraits<records::GeometryLine>::type_id,
+                 "geometry_line",
+                 [](const Record& record) -> RenderItem {
+diff --git a/schemas/entities/entities.json b/schemas/entities/entities.json
+index 90a3e0f..8febd9e 100644
+--- a/schemas/entities/entities.json
++++ b/schemas/entities/entities.json
+@@ -581,6 +581,38 @@
+       ],
+       "query_kind": "load_case",
+       "display_field": "name"
++    },
++    {
++      "id": 4112,
++      "name": "Tri3",
++      "version": 1,
++      "fields": [
++        {
++          "id": 2,
++          "name": "nodes",
++          "kind": "references",
++          "targets": [
++            "Node"
++          ],
++          "count": 3
++        },
++        {
++          "id": 3,
++          "name": "mesh",
++          "kind": "reference",
++          "targets": [
++            "Mesh"
++          ],
++          "id_type": "MeshId"
++        }
++      ],
++      "maximum_encoded_bytes": 4096,
++      "custom_rule": true,
++      "reserved_field_ids": [
++        1
++      ],
++      "rule_version": 1,
++      "query_kind": "tri3"
+     }
+   ],
+   "relation_rules_version": 1
+diff --git a/schemas/operations/basic.json b/schemas/operations/basic.json
+index 8f715dc..105bd8b 100644
+--- a/schemas/operations/basic.json
++++ b/schemas/operations/basic.json
+@@ -324,6 +324,31 @@
+           ]
+         }
+       ]
++    },
++    {
++      "operation_id": "mesh.create_tri3",
++      "version": 1,
++      "schema_id": "qcae.operation.mesh.create_tri3.v1",
++      "type_name": "MeshCreateTri3Input",
++      "effect": "document_write",
++      "context": {
++        "document": true,
++        "epoch": true,
++        "expected_revision": true,
++        "idempotency_key": true
++      },
++      "fields": [
++        {
++          "field_id": 1,
++          "name": "node_ids",
++          "type": "entity_id_array"
++        },
++        {
++          "field_id": 2,
++          "name": "mesh_id",
++          "type": "entity_id"
++        }
++      ]
+     }
+   ]
+ }

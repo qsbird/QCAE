@@ -1,0 +1,366 @@
+{
+  "scope": "responsibility inventory and review index, not independent line-by-line approval",
+  "commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+  "changed_source_count": 245,
+  "groups": [
+    {
+      "slice": "analysis_force",
+      "count": 13,
+      "paths": [
+        "features/analysis/include/qcae/analysis_features.hpp",
+        "features/analysis/include/qcae/analysis_input.hpp",
+        "features/analysis/src/analysis_checks.cpp",
+        "features/analysis/src/analysis_input.cpp",
+        "features/analysis/src/analysis_input_codec.cpp",
+        "features/analysis/src/analysis_operations.cpp",
+        "features/analysis/src/cantilever_checks.cpp",
+        "features/analysis/src/cantilever_checks.hpp",
+        "features/analysis/src/check_report.cpp",
+        "schemas/operations/analysis.json",
+        "tests/analysis_check_ipc_tests.py",
+        "tests/analysis_check_tests.cpp",
+        "tests/force_vector_ipc_tests.py"
+      ]
+    },
+    {
+      "slice": "build_integration",
+      "count": 12,
+      "paths": [
+        "CMakeLists.txt",
+        "adapters/artifacts_local/CMakeLists.txt",
+        "adapters/engine_api/CMakeLists.txt",
+        "adapters/solver_local/CMakeLists.txt",
+        "apps/engine/CMakeLists.txt",
+        "apps/mcp/CMakeLists.txt",
+        "features/analysis/CMakeLists.txt",
+        "features/mesh_generation/CMakeLists.txt",
+        "features/results/CMakeLists.txt",
+        "modules/targets.json",
+        "profiles/nastran/CMakeLists.txt",
+        "ui/desktop/CMakeLists.txt"
+      ]
+    },
+    {
+      "slice": "c4_freeze_architecture",
+      "count": 6,
+      "paths": [
+        "tests/test_architecture_gate.py",
+        "tests/test_c4_freeze.py",
+        "tools/c4_context_read.py",
+        "tools/check_architecture.py",
+        "tools/check_protected_entity_ast.py",
+        "tools/freeze_c4_baseline.py"
+      ]
+    },
+    {
+      "slice": "core_records_history_task",
+      "count": 30,
+      "paths": [
+        "features/materials/src/material_operations.cpp",
+        "modules/application/include/qcae/immutable_fact_map.hpp",
+        "modules/application/include/qcae/record_application.hpp",
+        "modules/application/src/application_state.cpp",
+        "modules/application/src/application_state.hpp",
+        "modules/application/src/core.cpp",
+        "modules/contracts/include/qcae/profile_provider.hpp",
+        "modules/document/include/qcae/document_view.hpp",
+        "modules/document/include/qcae/edit_session.hpp",
+        "modules/document/include/qcae/records.hpp",
+        "modules/document/src/document_view.cpp",
+        "modules/document/src/edit_session.cpp",
+        "modules/document/src/record_model_bridge.cpp",
+        "modules/document/src/record_registry.cpp",
+        "modules/document/src/records_rules.cpp",
+        "modules/operations/include/qcae/operation_registry.hpp",
+        "modules/operations/src/canonical_value.cpp",
+        "modules/operations/src/change_receipt_value.cpp",
+        "modules/operations/src/operation_registry.cpp",
+        "modules/runtime/include/qcae/task_service.hpp",
+        "modules/runtime/src/task_record.cpp",
+        "modules/runtime/src/task_service.cpp",
+        "schemas/entities/entities.json",
+        "schemas/operations/basic.json",
+        "tests/model_operation_tests.cpp",
+        "tests/operation_registry_tests.cpp",
+        "tests/record_application_tests.cpp",
+        "tests/record_document_tests.cpp",
+        "tests/record_store_tests.cpp",
+        "tests/runtime_tests.cpp"
+      ]
+    },
+    {
+      "slice": "desktop_tools_properties_selection",
+      "count": 10,
+      "paths": [
+        "tests/c3_desktop_workflow_tests.cpp",
+        "tests/desktop_selection_tests.cpp",
+        "tests/desktop_tests.cpp",
+        "ui/desktop/include/qcae/desktop.hpp",
+        "ui/desktop/src/analysis_tools.cpp",
+        "ui/desktop/src/analysis_tools.hpp",
+        "ui/desktop/src/desktop.cpp",
+        "ui/desktop/src/sdk_copy_widgets.hpp",
+        "ui/desktop/src/shortcut_preferences.cpp",
+        "ui/desktop/src/shortcut_preferences.hpp"
+      ]
+    },
+    {
+      "slice": "display_snapshot_events_wire_vtk",
+      "count": 23,
+      "paths": [
+        "adapters/engine_api/include/qcae/event_stream.hpp",
+        "adapters/engine_api/include/qcae/ipc_model.hpp",
+        "adapters/engine_api/include/qcae/render_service.hpp",
+        "adapters/engine_api/src/event_stream.cpp",
+        "adapters/engine_api/src/ipc_model.cpp",
+        "adapters/engine_api/src/render_service.cpp",
+        "adapters/engine_api/src/resource_store.cpp",
+        "adapters/rendering_vtk/include/qcae/vtk_view.hpp",
+        "adapters/rendering_vtk/src/vtk_view.cpp",
+        "adapters/transport_local/include/qcae/render_wire.hpp",
+        "modules/clients/include/qcae/desktop_client.hpp",
+        "modules/clients/src/desktop_client.cpp",
+        "modules/clients/src/resource_client.cpp",
+        "modules/contracts/include/qcae/render_packet.hpp",
+        "modules/query/include/qcae/render_projector.hpp",
+        "modules/query/src/render_projector.cpp",
+        "tests/c3_sync_ipc_tests.py",
+        "tests/event_client_tests.cpp",
+        "tests/event_stream_tests.cpp",
+        "tests/render_projector_tests.cpp",
+        "tests/render_service_tests.cpp",
+        "tests/render_wire_tests.cpp",
+        "tests/resource_tests.cpp"
+      ]
+    },
+    {
+      "slice": "export_artifact_profile",
+      "count": 13,
+      "paths": [
+        "adapters/artifacts_local/include/qcae/artifacts_local.hpp",
+        "adapters/artifacts_local/src/artifacts_local.cpp",
+        "adapters/engine_api/include/qcae/nastran_contribution.hpp",
+        "adapters/engine_api/src/nastran_contribution.cpp",
+        "profiles/nastran/README.md",
+        "profiles/nastran/include/qcae/nastran_package.hpp",
+        "profiles/nastran/src/nastran_codec.cpp",
+        "profiles/nastran/src/nastran_package.cpp",
+        "schemas/operations/nastran.json",
+        "tests/artifacts_local_tests.cpp",
+        "tests/nastran_artifact_ipc_tests.py",
+        "tests/nastran_disabled_ipc_tests.py",
+        "tests/nastran_package_tests.cpp"
+      ]
+    },
+    {
+      "slice": "fixture_results",
+      "count": 11,
+      "paths": [
+        "adapters/engine_api/include/qcae/result_api.hpp",
+        "adapters/engine_api/src/result_api.cpp",
+        "features/results/include/qcae/result_fixture.hpp",
+        "features/results/include/qcae/result_service.hpp",
+        "features/results/src/result_codec.cpp",
+        "features/results/src/result_fixture.cpp",
+        "features/results/src/result_service.cpp",
+        "schemas/operations/results.json",
+        "tests/fixtures/results/R-displacement-v1.json",
+        "tests/result_fixture_ipc_tests.py",
+        "tests/result_fixture_tests.cpp"
+      ]
+    },
+    {
+      "slice": "generated_contracts_identity",
+      "count": 6,
+      "paths": [
+        "tests/test_entity_generation.py",
+        "tests/test_operation_generation.py",
+        "tests/test_profile_identity.py",
+        "tools/generate_entities.py",
+        "tools/generate_operation_contracts.py",
+        "tools/generate_profile.py"
+      ]
+    },
+    {
+      "slice": "geometry_mesh_regeneration",
+      "count": 5,
+      "paths": [
+        "features/geometry/include/qcae/geometry_features.hpp",
+        "features/geometry/src/geometry_features.cpp",
+        "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+        "features/mesh_generation/src/line_mesh_task.cpp",
+        "tests/line_mesh_regeneration_tests.cpp"
+      ]
+    },
+    {
+      "slice": "host_typed_dispatch",
+      "count": 13,
+      "paths": [
+        "adapters/engine_api/include/qcae/engine_contributions.hpp",
+        "adapters/engine_api/include/qcae/ipc_api.hpp",
+        "adapters/engine_api/include/qcae/typed_host.hpp",
+        "adapters/engine_api/src/engine_contributions.cpp",
+        "adapters/engine_api/src/ipc_api.cpp",
+        "adapters/engine_api/src/typed_host.cpp",
+        "adapters/engine_api/src/typed_json.hpp",
+        "adapters/engine_api/src/typed_values.hpp",
+        "apps/engine/engine_host.cpp",
+        "apps/engine/include/qcae/engine_host.hpp",
+        "apps/engine/main.cpp",
+        "tests/ipc_tests.py",
+        "tests/typed_host_tests.cpp"
+      ]
+    },
+    {
+      "slice": "m4_solver_result_numerical",
+      "count": 43,
+      "paths": [
+        "adapters/engine_api/include/qcae/solver_contribution.hpp",
+        "adapters/engine_api/include/qcae/solver_result.hpp",
+        "adapters/engine_api/include/qcae/solver_result_reader.hpp",
+        "adapters/engine_api/include/qcae/solver_run_record.hpp",
+        "adapters/engine_api/include/qcae/solver_version.hpp",
+        "adapters/engine_api/src/solver_contribution.cpp",
+        "adapters/engine_api/src/solver_result_store.cpp",
+        "adapters/engine_api/src/solver_result_store.hpp",
+        "adapters/engine_api/src/solver_run_record.cpp",
+        "adapters/engine_api/src/solver_validation_store.cpp",
+        "adapters/engine_api/src/solver_validation_store.hpp",
+        "adapters/engine_api/src/solver_version_probe.cpp",
+        "adapters/engine_api/src/solver_version_probe.hpp",
+        "adapters/solver_local/include/qcae/solver_local.hpp",
+        "adapters/solver_local/src/solver_local.cpp",
+        "features/results/include/qcae/static_validation.hpp",
+        "features/results/src/static_validation.cpp",
+        "modules/contracts/include/qcae/solver_runner.hpp",
+        "profiles/nastran/include/qcae/nastran_static_result.hpp",
+        "profiles/nastran/src/nastran_static_result.cpp",
+        "schemas/operations/solver.json",
+        "tests/fixtures/nastran-real-benchmark-v1/beams.bdf",
+        "tests/fixtures/nastran-real-benchmark-v1/cantilever.bdf",
+        "tests/fixtures/nastran-real-benchmark-v1/nodes.bdf",
+        "tests/fixtures/nastran-real-benchmark-v1/properties.bdf",
+        "tests/fixtures/nastran-real-benchmark-v1/reference.json",
+        "tests/fixtures/nastran-real-benchmark-v2/beams.bdf",
+        "tests/fixtures/nastran-real-benchmark-v2/cantilever.bdf",
+        "tests/fixtures/nastran-real-benchmark-v2/nodes.bdf",
+        "tests/fixtures/nastran-real-benchmark-v2/properties.bdf",
+        "tests/fixtures/nastran-real-benchmark-v2/reference.json",
+        "tests/fixtures/nastran-real-benchmark-v3/beams.bdf",
+        "tests/fixtures/nastran-real-benchmark-v3/cantilever.bdf",
+        "tests/fixtures/nastran-real-benchmark-v3/nodes.bdf",
+        "tests/fixtures/nastran-real-benchmark-v3/properties.bdf",
+        "tests/fixtures/nastran-real-benchmark-v3/reference.json",
+        "tests/nastran_static_result_tests.cpp",
+        "tests/solver_local_tests.cpp",
+        "tests/solver_numerical_validation_tests.cpp",
+        "tests/solver_result_store_tests.cpp",
+        "tests/solver_run_ipc_tests.py",
+        "tests/solver_version_probe_tests.cpp",
+        "tests/static_validation_tests.cpp"
+      ]
+    },
+    {
+      "slice": "m6_staging",
+      "count": 2,
+      "paths": [
+        "tests/mac_package_smoke.py",
+        "tools/stage_macos_package.py"
+      ]
+    },
+    {
+      "slice": "mcp_bridge",
+      "count": 4,
+      "paths": [
+        "apps/mcp/bridge.py",
+        "apps/mcp/main.cpp",
+        "tests/mcp_bridge_tests.py",
+        "tests/mcp_protocol_tests.py"
+      ]
+    },
+    {
+      "slice": "owned_copy_ledger_adapters",
+      "count": 11,
+      "paths": [
+        "adapters/rendering_vtk/include/qcae/sdk_copy_observation.hpp",
+        "adapters/rendering_vtk/include/qcae/sdk_copy_tracker.hpp",
+        "adapters/rendering_vtk/src/coordinate_range_observer.hpp",
+        "adapters/rendering_vtk/src/shift_scale_copy_observer.hpp",
+        "adapters/storage_sqlite/src/ledger_vfs.hpp",
+        "adapters/storage_sqlite/src/sqlite_store.cpp",
+        "adapters/transport_local/include/qcae/json_ledger.hpp",
+        "modules/foundation/include/qcae/operation_ledger.hpp",
+        "tests/json_ledger_tests.cpp",
+        "tests/vtk_coordinate_range_tests.cpp",
+        "tests/vtk_shift_scale_copy_tests.cpp"
+      ]
+    },
+    {
+      "slice": "real_ai_harness",
+      "count": 4,
+      "paths": [
+        "tests/real_ai_mcp_clarification.py",
+        "tests/real_ai_mcp_physics_scenarios.py",
+        "tests/real_ai_mcp_session.py",
+        "tests/real_ai_mcp_units_workflow.py"
+      ]
+    },
+    {
+      "slice": "representative_fault_workflow_harness",
+      "count": 9,
+      "paths": [
+        "tests/skeleton_fault_client_tests.cpp",
+        "tests/skeleton_fault_ipc_tests.py",
+        "tests/skeleton_fault_report.py",
+        "tests/skeleton_fault_tests.cpp",
+        "tests/skeleton_representative_ipc_tests.py",
+        "tests/skeleton_representative_tests.cpp",
+        "tests/skeleton_workflow_compare.py",
+        "tests/skeleton_workflow_ipc_tests.py",
+        "tests/thin_script_write.py"
+      ]
+    },
+    {
+      "slice": "same_run_budget_harness",
+      "count": 6,
+      "paths": [
+        "tests/c3_end_to_end_bench.cpp",
+        "tests/c3_graphics_bench.cpp",
+        "tests/c3_host_frame_ledger_tests.py",
+        "tests/c3_ledger_contribution.hpp",
+        "tests/c3_ledger_engine_main.cpp",
+        "tests/c3_task_ack_bench.py"
+      ]
+    },
+    {
+      "slice": "sdk_diagnostic_harness",
+      "count": 24,
+      "paths": [
+        "tests/c3_qt_source_bridge.hpp",
+        "tests/c3_qt_source_bridge_tests.cpp",
+        "tests/c3_sqlite_copy_bridge.cpp",
+        "tests/c3_sqlite_copy_bridge.h",
+        "tests/c3_sqlite_copy_bridge_tests.cpp",
+        "tests/harfbuzz_source_copy_probe.py",
+        "tests/prepare_c3_harfbuzz_alias_tranche.py",
+        "tests/prepare_c3_harfbuzz_sdk_ledger.py",
+        "tests/prepare_c3_harfbuzz_typed_tranche.py",
+        "tests/prepare_c3_qt_freetype_hash_tranche.py",
+        "tests/prepare_c3_qt_freetype_metrics_tranche.py",
+        "tests/prepare_c3_qt_freetype_store_tranche.py",
+        "tests/prepare_c3_qt_glyph_tranche.py",
+        "tests/prepare_c3_qt_sdk_ledger.py",
+        "tests/prepare_c3_qt_text_tranche.py",
+        "tests/prepare_c3_sqlite_ledger.py",
+        "tests/prepare_c3_vtk_qt_sdk.py",
+        "tests/qt_font_backend_behavior_probe.cpp",
+        "tests/qt_freetype_glyph_causal_probe.cpp",
+        "tests/qt_freetype_hash_probe.cpp",
+        "tests/qt_freetype_store_probe.cpp",
+        "tests/qt_source_copy_probe.cpp",
+        "tests/qt_text_ledger_probe.cpp",
+        "tests/qt_widget_copy_probe.cpp"
+      ]
+    }
+  ]
+}

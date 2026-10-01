@@ -1,0 +1,34 @@
+--- modules/operations/CMakeLists.txt (1540 UTF-8 bytes) ---
+file(GLOB QCAE_OPERATION_SCHEMAS CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../schemas/operations/*.json")
+# Membership is a dependency too: removing a schema must invalidate the generated header.
+string(REPLACE ";" "\n" QCAE_OPERATION_SCHEMA_MEMBERSHIP "${QCAE_OPERATION_SCHEMAS}")
+set(QCAE_OPERATION_SCHEMA_LIST "${CMAKE_CURRENT_BINARY_DIR}/operation-schemas.txt")
+file(GENERATE OUTPUT "${QCAE_OPERATION_SCHEMA_LIST}"
+  CONTENT "${QCAE_OPERATION_SCHEMA_MEMBERSHIP}\n")
+add_custom_command(
+  OUTPUT "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp"
+  COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_operation_contracts.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../schemas/operations" "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_operation_contracts.py"
+    ${QCAE_OPERATION_SCHEMAS} "${QCAE_OPERATION_SCHEMA_LIST}"
+  VERBATIM)
+add_custom_target(qcae_generated_operation_inputs
+  DEPENDS "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp")
+add_library(qcae_operations STATIC src/operation_registry.cpp src/canonical_value.cpp src/change_receipt_value.cpp include/qcae/operation_registry.hpp)
+target_include_directories(qcae_operations PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${QCAE_GENERATED_DIR}")
+target_compile_features(qcae_operations PUBLIC cxx_std_20)
+target_link_libraries(qcae_operations PUBLIC qcae_foundation qcae_contracts)
+add_dependencies(qcae_operations qcae_generated_operation_inputs)
+qcae_warnings(qcae_operations)
+tests/operation_registry_tests.cpp:23:    static constexpr std::string_view schema_id = "qcae.operation.test.empty.v1";
+tests/operation_registry_tests.cpp:110:    check(descriptors.size() == 1 && descriptors[0].available &&
+tests/operation_registry_tests.cpp:144:    check(registry.descriptors().size() == 1, "duplicate attempts preserve registry");
+tests/operation_registry_tests.cpp:148:    future.schema_id = "qcae.operation.geometry.future_boolean.v1";
+tests/operation_registry_tests.cpp:152:    check(known.size() == 2 && !known.front().available && known.back().available,
+tests/operation_registry_tests.cpp:329:    check(registry.descriptors().size() == 4,
+tests/operation_registry_tests.cpp:334:    check(operation_schema_digest.size() == 64, "generated schema fingerprint present");
+tests/operation_registry_tests.cpp:381:    future.schema_id = "qcae.operation.test.future_readonly.v1";
+tests/operation_registry_tests.cpp:397:    future.schema_id = "qcae.operation.test.future_profile.v1";
+tests/operation_registry_tests.cpp:530:        check(std::get<Value::Object>(output.data).size() == 5 &&
+Apple clang-format version 21.0.0 (clang-2100.1.1.101)

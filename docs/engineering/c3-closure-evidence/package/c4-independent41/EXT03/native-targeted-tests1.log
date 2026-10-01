@@ -1,0 +1,46 @@
+Test project /private/tmp/qcae-c4-ext03-41/build-ext03-desktop
+      Start  5: record_application
+ 1/14 Test  #5: record_application ...............   Passed    0.69 sec
+      Start 10: model_operations
+ 2/14 Test #10: model_operations .................   Passed    0.56 sec
+      Start 11: tri3
+ 3/14 Test #11: tri3 .............................   Passed    0.55 sec
+      Start 30: tri3_sqlite
+ 4/14 Test #30: tri3_sqlite ......................   Passed    0.36 sec
+      Start 31: geometry_mesh_sqlite
+ 5/14 Test #31: geometry_mesh_sqlite .............   Passed    0.88 sec
+      Start 44: analysis_check_ipc
+ 6/14 Test #44: analysis_check_ipc ...............   Passed    4.96 sec
+      Start 45: tri3_ipc
+ 7/14 Test #45: tri3_ipc .........................***Failed    3.31 sec
+Traceback (most recent call last):
+  File "/private/tmp/qcae-c4-ext03-41/tests/tri3_ipc_tests.py", line 139, in <module>
+    run(parser.parse_args())
+    ~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/qcae-c4-ext03-41/tests/tri3_ipc_tests.py", line 85, in run
+    assert {"from": triangle, "to": nodes[5], "role": "tri3.nodes"} in incoming
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+
+      Start 50: nastran_artifact_ipc
+ 8/14 Test #50: nastran_artifact_ipc .............   Passed    0.47 sec
+      Start 53: c3_display_ipc
+ 9/14 Test #53: c3_display_ipc ...................   Passed    1.94 sec
+      Start 54: entity_query_ipc
+10/14 Test #54: entity_query_ipc .................   Passed    7.52 sec
+      Start 68: render_projector
+11/14 Test #68: render_projector .................   Passed    0.51 sec
+      Start 71: c3_sync_ipc
+12/14 Test #71: c3_sync_ipc ......................   Passed    0.54 sec
+      Start 74: record_document
+13/14 Test #74: record_document ..................   Passed    7.93 sec
+      Start 79: analysis_checks
+14/14 Test #79: analysis_checks ..................   Passed    0.54 sec
+
+93% tests passed, 1 tests failed out of 14
+
+Total Test time (real) =  30.78 sec
+
+The following tests FAILED:
+	 45 - tri3_ipc (Failed)
+Errors while running CTest

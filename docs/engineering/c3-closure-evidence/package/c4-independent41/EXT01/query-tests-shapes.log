@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""NEXT-01 real engine/CLI record queries and M1 organization compatibility."""
+from __future__ import annotations
+
+import argparse
+from contextlib import contextmanager
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import time
+
+from c2_workflow_tests import Client
+from m1_ipc_tests import ROOT_DECK, NODE_DECK, BEAM_DECK
+
+
+@contextmanager
+def engine_client(engine, cli, root, evidence):
+    endpoint = str(root / "engine.sock")
+    client = Client("cli", cli, endpoint)
+    with (root / "engine.log").open("w+") as log:
+        process = subprocess.Popen(
+            [engine, "--socket", endpoint, "--workspace", str(root / "work.sqlite")],
+            stdout=log, stderr=log,
+        )
+        try:
+            deadline = time.monotonic() + 15
+            while not Path(endpoint).exists():
+                if process.poll() is not None or time.monotonic() > deadline:
+                    log.seek(0)
+                    raise AssertionError(f"Engine startup failed: {log.read()}")
+                time.sleep(.02)
+            yield client
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=10)
+            if evidence:
+                evidence.mkdir(parents=True, exist_ok=True)
+                (evidence / f"{root.name}-transcript.json").write_text(
+                    json.dumps(client.transcript, indent=2) + "\n")
+
+
+def query(client, **parameters):
+    return client.call("entity.query", parameters, client.current())
+
+
+def identities(rows):
+    return {row["entity_id"] for row in rows}
+
+
+def references(client, entity, direction):
+    return client.call("entity.references", {"entity_id": entity, "direction": direction},
+                       client.current())["references"]
+
+
+def check_fields(client, row):
+    fields = client.fields(row["entity_id"])
+    for name, value in fields.items():
+        if name in {"position", "start", "end"}:
+            name += "_mm"
+        elif name in {"material", "section", "mesh", "geometry", "parent", "node"}:
+            name += "_id"
+        assert row[name] == value, (row, name, value)
+    assert row["sources"] is not None
+
+
+def generate_mesh(client, line, segments, key):
+    task = client.call("mesh.generate_line", {"geometry_id": line, "segments": segments},
+                       client.current(), key)
+    deadline = time.monotonic() + 15
+    while task["state"] not in {"succeeded", "failed", "cancelled", "conflicted"}:
+        assert time.monotonic() < deadline, task
+        time.sleep(.01)
+        task = client.call("task.status", {"task_id": task["task_id"]}, client.current())
+    assert task["state"] == "succeeded", task
+
+
+def geometry_queries(client):
+    doc = client.call("project.create", {"name": "Record query regressions"}, key="new")
+    line = client.call("geometry.create_line", {"start_mm": [0, 0, 0], "end_mm": [1000, 0, 0]},
+                       doc, "line")["entity_id"]
+    # The three original C2 counterexamples must now return the same entity and fields.
+    native = query(client, kind="geometry")
+    unfiltered = query(client)
+    filtered = query(client, kind="geometry", name_contains="")
+    assert native["total"] == unfiltered["total"] == filtered["total"] == 1
+    assert native["entities"] == unfiltered["entities"] == filtered["entities"]
+    assert native["entities"][0]["entity_id"] == line
+    check_fields(client, native["entities"][0])
+    assert references(client, line, "incoming") == references(client, line, "outgoing") == []
+
+    generate_mesh(client, line, 3, "mesh")
+    all_rows = query(client)["entities"]
+    assert len(all_rows) == 9  # Geometry, Mesh, four Nodes, three Beams.
+    for kind in ("node", "beam", "geometry", "mesh"):
+        rows = query(client, kind=kind)["entities"]
+        assert rows == query(client, kind=kind, name_contains="")["entities"]
+        assert identities(rows) == {row["entity_id"] for row in all_rows if row["kind"] == kind}
+        for row in rows:
+            assert query(client, ids=[row["entity_id"]])["entities"] == [row]
+            assert query(client, kind=kind, ids=[row["entity_id"], "unknown"])["entities"] == [row]
+            check_fields(client, row)
+    mesh = query(client, kind="mesh")["entities"][0]
+    assert query(client, name_contains=mesh["name"])["entities"] == [mesh]
+    assert query(client, kind="geometry", name_contains="missing")["total"] == 0
+    assert query(client, ids=[])["total"] == query(client, ids=["unknown"])["total"] == 0
+    assert query(client, limit=0)["total"] == 9 and query(client, limit=0)["entities"] == []
+    pages = []
+    for offset in range(0, 10, 2):
+        page = query(client, offset=offset, limit=2)
+        assert page["total"] == 9 and page["offset"] == offset and page["limit"] == 2
+        pages.extend(page["entities"])
+    assert pages == all_rows and len(identities(pages)) == 9
+    assert query(client, offset=100000)["entities"] == []
+    assert references(client, line, "incoming") == [
+        {"from": mesh["entity_id"], "to": line, "role": "mesh.geometry"}]
+    assert references(client, mesh["entity_id"], "outgoing") == [
+        {"from": mesh["entity_id"], "to": line, "role": "mesh.geometry"}]
+    incoming = references(client, mesh["entity_id"], "incoming")
+    assert len(incoming) == 7 and {ref["role"] for ref in incoming} == {"node.mesh", "beam.mesh"}
+    node = query(client, kind="node")["entities"][0]
+    assert references(client, node["entity_id"], "outgoing") == [
+        {"from": node["entity_id"], "to": mesh["entity_id"], "role": "node.mesh"}]
+    before = client.current()
+    for params in ({"kind": "unknown"}, {"kind": "unknown", "name_contains": ""},
+                   {"where": {}}, {"owner_id": line}, {"view": "spatial", "owner_id": line},
+                   {"view": "part", "owner_id": line}, {"limit": 1001}, {"offset": -1},
+                   {"offset": .5}):
+        response = client.call("entity.query", params, before, expected="failed")
+        assert response["error"]["code"] == "INVALID_INPUT", response
+    for operation, params in (
+            ("entity.query", {"view": "part", "owner_id": "unknown"}),
+            ("entity.references", {"entity_id": "unknown", "direction": "incoming"})):
+        response = client.call(operation, params, before, expected="failed")
+        assert response["error"]["code"] == "ENTITY_NOT_FOUND", response
+    response = client.call("entity.references", {"entity_id": line, "direction": "both"},
+                           before, expected="failed")
+    assert response["error"]["code"] == "INVALID_INPUT", response
+    assert client.current()["revision"] == before["revision"]

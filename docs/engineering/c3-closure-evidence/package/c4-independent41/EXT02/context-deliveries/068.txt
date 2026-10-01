@@ -1,0 +1,94 @@
+{"label": "native-desktop-tests", "command": ["ctest", "--test-dir", "build-ext02-desktop", "-R", "^(desktop|desktop_selection|modeling_tools|c3_tool_lifecycle|desktop_smoke)$", "-j", "1", "--verbose", "--output-on-failure"], "cwd": "/private/tmp/qcae-c4-ext02-41", "exit_code": 0, "elapsed_seconds": 130.04095220565796, "raw_log_utf8_bytes": 35082, "raw_log": "/private/tmp/qcae-ext02-evidence41/native-desktop-tests.log", "diagnostic_delivery_utf8_bytes": 10000, "diagnostic_range": [25082, 35082], "tokens": null}
+sktopSelectionTests::newerSelectionWinsWhenEvaluateAndGetRepliesAreReordered() selection setup view.render_data QList(QJsonObject({"api_version":"1.1","document_epoch":"epoch","document_id":"document","expected_revision":"7","operation":"view.render_data","parameters":{"expected_view_revision":"1","view_session_id":"view"},"request_id":"2b2c2168-33e3-4fde-9e0d-5cafa70361c3"}), QJsonObject({"api_version":"1.1","document_epoch":"epoch","document_id":"document","expected_revision":"7","operation":"view.render_data","parameters":{"expected_view_revision":"2","view_session_id":"view"},"request_id":"a4a15b13-596c-4244-b6cb-88a3c9482705"}), QJsonObject({"api_version":"1.1","document_epoch":"epoch","document_id":"document","expected_revision":"7","operation":"view.render_data","parameters":{"expected_view_revision":"3","view_session_id":"view"},"request_id":"ba48075b-c1fe-41a0-a058-502f685643ab"}), QJsonObject({"api_version":"1.1","document_epoch":"epoch","document_id":"document","expected_revision":"7","operation":"view.render_data","parameters":{"expected_view_revision":"4","view_session_id":"view"},"request_id":"47dc5050-4616-42f3-9f07-77c62cf652ca"}))
+60: PASS   : DesktopSelectionTests::newerSelectionWinsWhenEvaluateAndGetRepliesAreReordered()
+60: PASS   : DesktopSelectionTests::cleanupTestCase()
+60: Totals: 63 passed, 0 failed, 0 skipped, 0 blacklisted, 95122ms
+60: ********* Finished testing of DesktopSelectionTests *********
+2/5 Test #60: desktop_selection ................   Passed   95.68 sec
+test 62
+    Start 62: modeling_tools
+
+62: Test command: /private/tmp/qcae-c4-ext02-41/build-ext02-desktop/qcae_modeling_tools_tests
+62: Working Directory: /private/tmp/qcae-c4-ext02-41/build-ext02-desktop
+62: Test timeout computed to be: 60
+62: ********* Start testing of ModelingToolsTests *********
+62: Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+62: PASS   : ModelingToolsTests::initTestCase()
+62: PASS   : ModelingToolsTests::previewCancelAndEditsRemainLocal()
+62: PASS   : ModelingToolsTests::applyUsesPreviewContextAndSuppressesRepeatedActivation()
+62: PASS   : ModelingToolsTests::timeoutRetryKeepsOriginalIntent()
+62: PASS   : ModelingToolsTests::pendingReplyCannotChangeAnotherDocumentOrEpoch()
+62: PASS   : ModelingToolsTests::transportSuspendRetainsUncertainAdmission()
+62: PASS   : ModelingToolsTests::resumedEpochDiscardsOldUncertainIntent()
+62: PASS   : ModelingToolsTests::transportResumeReadsTrackedTaskWithoutReadmission()
+62: PASS   : ModelingToolsTests::deletedWidgetIgnoresPendingReply()
+62: PASS   : ModelingToolsTests::cancellationCannotBeOverwrittenByAnOlderPoll()
+62: PASS   : ModelingToolsTests::failedPollOffersReadOnlyRefreshWithoutRestartingMesh()
+62: PASS   : ModelingToolsTests::cleanupTestCase()
+62: Totals: 12 passed, 0 failed, 0 skipped, 0 blacklisted, 5767ms
+62: ********* Finished testing of ModelingToolsTests *********
+3/5 Test #62: modeling_tools ...................   Passed    6.49 sec
+test 63
+    Start 63: desktop_smoke
+
+63: Test command: /Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14 "/private/tmp/qcae-c4-ext02-41/tests/desktop_smoke.py" "--engine" "/private/tmp/qcae-c4-ext02-41/build-ext02-desktop/qcae-engine" "--cli" "/private/tmp/qcae-c4-ext02-41/build-ext02-desktop/qcae-cli" "--desktop" "/private/tmp/qcae-c4-ext02-41/build-ext02-desktop/qcae-desktop" "--screenshot" "/private/tmp/qcae-c4-ext02-41/build-ext02-desktop/desktop-smoke.png"
+63: Working Directory: /private/tmp/qcae-c4-ext02-41/build-ext02-desktop
+63: Test timeout computed to be: 45
+63: Real engine/desktop shared-model smoke passed: /private/tmp/qcae-c4-ext02-41/build-ext02-desktop/desktop-smoke.png
+4/5 Test #63: desktop_smoke ....................   Passed    6.06 sec
+test 70
+    Start 70: c3_tool_lifecycle
+
+70: Test command: /private/tmp/qcae-c4-ext02-41/build-ext02-desktop/qcae_c3_tool_lifecycle_tests "/private/tmp/qcae-c4-ext02-41/build-ext02-desktop/qcae-engine" "/private/tmp/qcae-c4-ext02-41/build-ext02-desktop/c3_tool_lifecycle_evidence"
+70: Working Directory: /private/tmp/qcae-c4-ext02-41/build-ext02-desktop
+70: Test timeout computed to be: 120
+70: ********* Start testing of ToolLifecycle *********
+70: Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+70: PASS   : ToolLifecycle::initTestCase()
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-001 cancel_delta=0 commits=1 empty_golden=true revisions= 0 -> 2
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-002 cancel_delta=0 commits=1 empty_golden=true revisions= 2 -> 4
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-003 cancel_delta=0 commits=1 empty_golden=true revisions= 4 -> 6
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-004 cancel_delta=0 commits=1 empty_golden=true revisions= 6 -> 8
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-005 cancel_delta=0 commits=1 empty_golden=true revisions= 8 -> 10
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-006 cancel_delta=0 commits=1 empty_golden=true revisions= 10 -> 12
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-007 cancel_delta=0 commits=1 empty_golden=true revisions= 12 -> 14
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-008 cancel_delta=0 commits=1 empty_golden=true revisions= 14 -> 16
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-009 cancel_delta=0 commits=1 empty_golden=true revisions= 16 -> 18
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-010 cancel_delta=0 commits=1 empty_golden=true revisions= 18 -> 20
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-011 cancel_delta=0 commits=1 empty_golden=true revisions= 20 -> 22
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-012 cancel_delta=0 commits=1 empty_golden=true revisions= 22 -> 24
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-013 cancel_delta=0 commits=1 empty_golden=true revisions= 24 -> 26
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-014 cancel_delta=0 commits=1 empty_golden=true revisions= 26 -> 28
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-015 cancel_delta=0 commits=1 empty_golden=true revisions= 28 -> 30
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-016 cancel_delta=0 commits=1 empty_golden=true revisions= 30 -> 32
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-017 cancel_delta=0 commits=1 empty_golden=true revisions= 32 -> 34
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-018 cancel_delta=0 commits=1 empty_golden=true revisions= 34 -> 36
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-019 cancel_delta=0 commits=1 empty_golden=true revisions= 36 -> 38
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-020 cancel_delta=0 commits=1 empty_golden=true revisions= 38 -> 40
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-021 cancel_delta=0 commits=1 empty_golden=true revisions= 40 -> 42
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-022 cancel_delta=0 commits=1 empty_golden=true revisions= 42 -> 44
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-023 cancel_delta=0 commits=1 empty_golden=true revisions= 44 -> 46
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-024 cancel_delta=0 commits=1 empty_golden=true revisions= 46 -> 48
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-025 cancel_delta=0 commits=1 empty_golden=true revisions= 48 -> 50
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-026 cancel_delta=0 commits=1 empty_golden=true revisions= 50 -> 52
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-027 cancel_delta=0 commits=1 empty_golden=true revisions= 52 -> 54
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-028 cancel_delta=0 commits=1 empty_golden=true revisions= 54 -> 56
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-029 cancel_delta=0 commits=1 empty_golden=true revisions= 56 -> 58
+70: QINFO  : ToolLifecycle::thirtyRealEngineLineToolRuns() 069d8465-d4c4-4385-9d59-b7f49d5837fe-030 cancel_delta=0 commits=1 empty_golden=true revisions= 58 -> 60
+70: 2026-10-01 11:23:10.754 qcae_c3_tool_lifecycle_tests[802:42820135] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+70: PASS   : ToolLifecycle::thirtyRealEngineLineToolRuns()
+70: PASS   : ToolLifecycle::cleanupTestCase()
+70: Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 16039ms
+70: ********* Finished testing of ToolLifecycle *********
+5/5 Test #70: c3_tool_lifecycle ................   Passed   16.61 sec
+
+The following tests passed:
+	desktop
+	desktop_selection
+	modeling_tools
+	desktop_smoke
+	c3_tool_lifecycle
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) = 130.02 sec

@@ -1,0 +1,94 @@
+{
+  "entries": 95,
+  "first": [
+    {
+      "name": "manifest-selected",
+      "kind": "subsequent",
+      "command": [
+        "python3",
+        "-c",
+        "import json; m=json.load(open(\"docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json\")); print(json.dumps({k:v for k,v in m.items() if k not in [\"committed_source_files\",\"working_tree\",\"build_artifacts\"]},ensure_ascii=False,indent=2))"
+      ],
+      "exit_code": 0,
+      "read_count": 1,
+      "delivered_utf8_bytes": 125760,
+      "output_sha256": "72c367590b14b6677a43e6573c06a680d5a2a2f8935a606011be5e2a0697fb00",
+      "delivered_complete_output": true,
+      "tokens": null
+    },
+    {
+      "name": "manifest-contract",
+      "kind": "subsequent",
+      "command": [
+        "python3",
+        "-c",
+        "import json; m=json.load(open(\"docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json\")); print(list(m)); print(json.dumps({k:m.get(k) for k in [\"baseline_commit\",\"mechanism_frozen\",\"generator_files\",\"generators\",\"environment\",\"build_commands\",\"commands\"]},ensure_ascii=False,indent=2)); print(\"protected:\", [x[\"path\"] for x in m[\"protected_files\"]])"
+      ],
+      "exit_code": 0,
+      "read_count": 1,
+      "delivered_utf8_bytes": 3775,
+      "output_sha256": "c47053a1a225dfe7dd8b8f48ffe6d6460a1917b34a705cec8804eb8b077e060b",
+      "delivered_complete_output": true,
+      "tokens": null
+    }
+  ],
+  "oversized_legacy": [],
+  "failures": [
+    {
+      "name": "lookup-editing2",
+      "exit": 2
+    },
+    {
+      "name": "tests-and-build-locations",
+      "exit": 2
+    },
+    {
+      "name": "material-codepath",
+      "exit": 2
+    },
+    {
+      "name": "sqlite-test-setup",
+      "exit": 1
+    },
+    {
+      "name": "query-field-implementation",
+      "exit": 1
+    },
+    {
+      "name": "schema-query-dispatch",
+      "exit": 1
+    },
+    {
+      "name": "core-tests",
+      "exit": 8
+    },
+    {
+      "name": "core-relevant-retest",
+      "exit": 8
+    },
+    {
+      "name": "local-rebuild",
+      "exit": 1
+    },
+    {
+      "name": "core-final-build",
+      "exit": 1
+    },
+    {
+      "name": "core-repair3-retest",
+      "exit": 8
+    },
+    {
+      "name": "freeze-contract-native-retest",
+      "exit": 8
+    },
+    {
+      "name": "native-progress",
+      "exit": 1
+    },
+    {
+      "name": "accounting-log-summary",
+      "exit": 1
+    }
+  ]
+}

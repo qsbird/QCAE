@@ -1,0 +1,211 @@
+rg: tests/*pick*: No such file or directory (os error 2)
+rg: tests/c4*: No such file or directory (os error 2)
+adapters/rendering_vtk/src/vtk_view.cpp:17:#include <string_view>
+adapters/rendering_vtk/src/vtk_view.cpp:53:QString qs(const std::string& value) {
+adapters/rendering_vtk/src/vtk_view.cpp:54:    return QString::fromStdString(value);
+adapters/rendering_vtk/src/vtk_view.cpp:91:bool polygonContains(const std::vector<QPointF>& points, const QPointF& point) {
+adapters/rendering_vtk/src/vtk_view.cpp:142:                             detail::autoInverseMatrixBytes(vbo),
+adapters/rendering_vtk/src/vtk_view.cpp:143:                             "inverse matrices require the audited AUTO/DISABLE coordinate path");
+adapters/rendering_vtk/src/vtk_view.cpp:145:            !this->ExtraAttributes.empty() || this->GetSelection() ||
+adapters/rendering_vtk/src/vtk_view.cpp:175:            poly->GetVerts(), poly->GetLines(), poly->GetPolys(), poly->GetStrips()};
+adapters/rendering_vtk/src/vtk_view.cpp:177:        auto* edge_flags = poly->GetPointData()->GetAttribute(vtkDataSetAttributes::EDGEFLAG);
+adapters/rendering_vtk/src/vtk_view.cpp:207:                "polygon/strip/edge/vertex/point-representation indices are not audited");
+adapters/rendering_vtk/src/vtk_view.cpp:208:            ledger::unknown(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes);
+adapters/rendering_vtk/src/vtk_view.cpp:222:            ledger::unknown(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes);
+adapters/rendering_vtk/src/vtk_view.cpp:226:        // when arity exceeds two. Line2 uses libc++ geometric growth; twice
+adapters/rendering_vtk/src/vtk_view.cpp:235:        ledger::add(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes, index_writes);
+adapters/rendering_vtk/src/vtk_view.cpp:249:            "camera shift matrices and transformed coordinate buffers are not audited");
+adapters/rendering_vtk/src/vtk_view.cpp:263:                             "shader matrices require an identity actor and coordinate VBO");
+adapters/rendering_vtk/src/vtk_view.cpp:269:        const bool display = cell.Program->IsUniformUsed("MCDCMatrix");
+adapters/rendering_vtk/src/vtk_view.cpp:270:        const bool model_view = cell.Program->IsUniformUsed("MCVCMatrix");
+adapters/rendering_vtk/src/vtk_view.cpp:271:        const bool normal = cell.Program->IsUniformUsed("normalMatrix");
+adapters/rendering_vtk/src/vtk_view.cpp:272:        const bool environment = cell.Program->IsUniformUsed("envMatrix");
+adapters/rendering_vtk/src/vtk_view.cpp:276:            display ? detail::autoShaderMatrixBytes(vbo, true, model_view, normal, environment)
+adapters/rendering_vtk/src/vtk_view.cpp:285:        if (std::string_view(vtkVersion::GetVTKVersion()) == "9.7.0")
+adapters/rendering_vtk/src/vtk_view.cpp:323:    std::unordered_map<std::string, Location> locations;
+adapters/rendering_vtk/src/vtk_view.cpp:326:    std::set<std::string> selected;
+adapters/rendering_vtk/src/vtk_view.cpp:361:                               ledger::Metric::library_internal_copy_bytes);
+adapters/rendering_vtk/src/vtk_view.cpp:362:        render_ledger->unknown(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes);
+adapters/rendering_vtk/src/vtk_view.cpp:406:            if (std::string_view(vtkVersion::GetVTKVersion()) != "9.7.0") {
+adapters/rendering_vtk/src/vtk_view.cpp:418:                        vbo->GetStride() != 3 * sizeof(float) || !vbo->GetPackedVBO().empty()) {
+adapters/rendering_vtk/src/vtk_view.cpp:423:                        static_cast<std::uint64_t>(vbo->GetNumberOfTuples()) * vbo->GetStride();
+adapters/rendering_vtk/src/vtk_view.cpp:438:                        ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes, bytes);
+adapters/rendering_vtk/src/vtk_view.cpp:449:    QString last_camera;
+adapters/rendering_vtk/src/vtk_view.cpp:458:    QStringList projectedBox(const QRectF& rect, BoxMode mode) const {
+adapters/rendering_vtk/src/vtk_view.cpp:459:        std::set<QString> selected_ids;
+adapters/rendering_vtk/src/vtk_view.cpp:493:                if (cell.kind == RenderCellKind::polygon) {
+adapters/rendering_vtk/src/vtk_view.cpp:497:                        hit = hit || polygonContains(projected, corner);
+adapters/rendering_vtk/src/vtk_view.cpp:503:        return QStringList(selected_ids.begin(), selected_ids.end());
+adapters/rendering_vtk/src/vtk_view.cpp:506:    QStringList hardwareBox(const QRect& area) const {
+adapters/rendering_vtk/src/vtk_view.cpp:513:        std::set<QString> ids;
+adapters/rendering_vtk/src/vtk_view.cpp:542:        return QStringList(ids.begin(), ids.end());
+adapters/rendering_vtk/src/vtk_view.cpp:545:    QStringList visibleBox(const QRect& area, BoxMode mode) const {
+adapters/rendering_vtk/src/vtk_view.cpp:548:        QStringList result;
+adapters/rendering_vtk/src/vtk_view.cpp:561:                   vtkCellArray* polygons = nullptr) {
+adapters/rendering_vtk/src/vtk_view.cpp:568:        if (polygons)
+adapters/rendering_vtk/src/vtk_view.cpp:569:            geometry->SetPolys(polygons);
+adapters/rendering_vtk/src/vtk_view.cpp:596:    void cellArrays(Block& block, vtkCellArray* lines, vtkCellArray* polygons, bool highlight) {
+adapters/rendering_vtk/src/vtk_view.cpp:597:        std::vector<std::size_t> line_entities, polygon_entities;
+adapters/rendering_vtk/src/vtk_view.cpp:601:        polygons->AllocateExact(count, indices);
+adapters/rendering_vtk/src/vtk_view.cpp:603:        polygon_entities.reserve(static_cast<std::size_t>(count));
+adapters/rendering_vtk/src/vtk_view.cpp:611:            auto* array = cell.kind == RenderCellKind::polyline ? lines : polygons;
+adapters/rendering_vtk/src/vtk_view.cpp:615:            (cell.kind == RenderCellKind::polyline ? line_entities : polygon_entities)
+adapters/rendering_vtk/src/vtk_view.cpp:624:                block.cell_entities.end(), polygon_entities.begin(), polygon_entities.end());
+adapters/rendering_vtk/src/vtk_view.cpp:627:        ledger::add(ledger::Stage::vtk_apply, ledger::Metric::array_write_bytes, copied);
+adapters/rendering_vtk/src/vtk_view.cpp:632:            vtkNew<vtkCellArray> polygons;
+adapters/rendering_vtk/src/vtk_view.cpp:633:            cellArrays(block, lines, polygons, true);
+adapters/rendering_vtk/src/vtk_view.cpp:635:            makeActor(block.highlight, block.points, lines, false, color, 7, polygons);
+adapters/rendering_vtk/src/vtk_view.cpp:673:                    ledger::Metric::array_write_bytes,
+adapters/rendering_vtk/src/vtk_view.cpp:681:            vtkNew<vtkCellArray> polygons;
+adapters/rendering_vtk/src/vtk_view.cpp:682:            cellArrays(block, lines, polygons, false);
+adapters/rendering_vtk/src/vtk_view.cpp:685:            geometry->SetPolys(polygons);
+adapters/rendering_vtk/src/vtk_view.cpp:715:            ledger::Metric::array_write_bytes,
+adapters/rendering_vtk/src/vtk_view.cpp:727:            ledger::add(ledger::Stage::vtk_apply, ledger::Metric::library_internal_copy_bytes, 0);
+adapters/rendering_vtk/src/vtk_view.cpp:728:            ledger::add(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes, 0);
+adapters/rendering_vtk/src/vtk_view.cpp:771:        vtkNew<vtkCellArray> polygons;
+adapters/rendering_vtk/src/vtk_view.cpp:772:        cellArrays(block, lines, polygons, false);
+adapters/rendering_vtk/src/vtk_view.cpp:774:        makeActor(block.actor, block.points, lines, false, color, 3, polygons);
+adapters/rendering_vtk/src/vtk_view.cpp:907:    void select(const QStringList& ids) {
+adapters/rendering_vtk/src/vtk_view.cpp:909:        std::set<std::string> next;
+adapters/rendering_vtk/src/vtk_view.cpp:911:            if (locations.contains(id.toStdString()))
+adapters/rendering_vtk/src/vtk_view.cpp:912:                next.insert(id.toStdString());
+adapters/rendering_vtk/src/vtk_view.cpp:974:        std::set<std::string> visibility_ids;
+adapters/rendering_vtk/src/vtk_view.cpp:1045:                    ledger::Metric::model_copy_bytes,
+adapters/rendering_vtk/src/vtk_view.cpp:1048:                    ledger::Metric::array_write_bytes,
+adapters/rendering_vtk/src/vtk_view.cpp:1051:                    ledger::Metric::array_invalidated_bytes,
+adapters/rendering_vtk/src/vtk_view.cpp:1053:        // Index payloads and identity strings are local. Allocator bookkeeping and
+adapters/rendering_vtk/src/vtk_view.cpp:1061:        ledger::add(ledger::Stage::vtk_apply, ledger::Metric::metadata_copy_bytes, metadata);
+adapters/rendering_vtk/src/vtk_view.cpp:1133:    std::set<std::string_view> identities;
+adapters/rendering_vtk/src/vtk_view.cpp:1142:            (cell.kind != RenderCellKind::polyline && cell.kind != RenderCellKind::polygon) ||
+adapters/rendering_vtk/src/vtk_view.cpp:1158:void VtkView::setSelectedIds(const QStringList& ids) {
+adapters/rendering_vtk/src/vtk_view.cpp:1235:QString VtkView::cameraFingerprint() const {
+adapters/rendering_vtk/src/vtk_view.cpp:1246:    return QString::fromLatin1(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
+tests/desktop_tests.cpp:26:#include <vtkMatrix4x4.h>
+tests/desktop_tests.cpp:70:bool saveEvidence(QVTKOpenGLNativeWidget* widget, const QString& name) {
+tests/desktop_tests.cpp:99:            {qcae::EntityId("node-" + std::to_string(i)), {static_cast<double>(i), 0, 0}, true});
+tests/desktop_tests.cpp:101:            packet.beams.push_back({qcae::EntityId("beam-" + std::to_string(i - 1)), {i - 1, i}});
+tests/desktop_tests.cpp:140:                {qcae::EntityId("area-node-" + std::to_string(i)), positions[i], false});
+tests/desktop_tests.cpp:142:            {qcae::EntityId("area-front"), qcae::RenderCellKind::polygon, {0, 1, 2, 3}, true},
+tests/desktop_tests.cpp:143:            {qcae::EntityId("area-back"), qcae::RenderCellKind::polygon, {4, 5, 6, 7, 8}, true},
+tests/desktop_tests.cpp:170:                return QStringList{};
+tests/desktop_tests.cpp:171:            return picked.takeFirst()[0].toStringList();
+tests/desktop_tests.cpp:175:            QCOMPARE(pick(false, mode), QStringList({"area-front"}));
+tests/desktop_tests.cpp:178:            QCOMPARE(through, QStringList({"area-back", "area-front"}));
+tests/desktop_tests.cpp:190:        QCOMPARE(pick(true, qcae::VtkView::BoxMode::intersecting), QStringList({"area-back"}));
+tests/desktop_tests.cpp:220:    void frozenPointAndLinePickingMatrix_data() {
+tests/desktop_tests.cpp:222:        QTest::addColumn<QJsonObject>("pick_case");
+tests/desktop_tests.cpp:223:        QFile source(QFINDTESTDATA("fixtures/vtk-pick-matrix-v1.json"));
+tests/desktop_tests.cpp:233:            const auto pick_case = value.toObject();
+tests/desktop_tests.cpp:234:            QTest::newRow(qPrintable(pick_case.value("id").toString())) << fixture << pick_case;
+tests/desktop_tests.cpp:236:        qInfo().noquote() << "PICK fixture SHA-256:" << digest;
+tests/desktop_tests.cpp:239:    void frozenPointAndLinePickingMatrix() {
+tests/desktop_tests.cpp:241:        QFETCH(QJsonObject, pick_case);
+tests/desktop_tests.cpp:248:        packet.document = {qcae::DocumentId("pick-matrix"), qcae::DocumentEpoch("epoch")};
+tests/desktop_tests.cpp:252:        if (pick_case.value("topology") == "point") {
+tests/desktop_tests.cpp:255:                packet.points.push_back({qcae::EntityId(row.value("id").toString().toStdString()),
+tests/desktop_tests.cpp:263:                    {qcae::EntityId(row.value("id").toString().toStdString()),
+tests/desktop_tests.cpp:288:        const auto matrix = camera_fixture.value("view_matrix").toArray();
+tests/desktop_tests.cpp:291:                QCOMPARE(camera->GetViewTransformMatrix()->GetElement(row, column),
+tests/desktop_tests.cpp:292:                         matrix[row * 4 + column].toDouble());
+tests/desktop_tests.cpp:294:        view.setThroughSelection(pick_case.value("through").toBool());
+tests/desktop_tests.cpp:295:        view.setBoxMode(pick_case.value("box_mode") == "contained"
+tests/desktop_tests.cpp:298:        const auto box = pick_case.value("box").toArray();
+tests/desktop_tests.cpp:303:        QCOMPARE(reply[1].toBool(), pick_case.value("through").toBool());
+tests/desktop_tests.cpp:304:        auto actual = reply[0].toStringList();
+tests/desktop_tests.cpp:305:        QStringList expected;
+tests/desktop_tests.cpp:306:        for (const auto& id : pick_case.value("golden").toArray())
+tests/desktop_tests.cpp:307:            expected.append(id.toString());
+tests/desktop_tests.cpp:311:        qInfo().noquote() << pick_case.value("id").toString()
+tests/desktop_tests.cpp:325:        QStringList ids;
+tests/desktop_tests.cpp:337:                    const auto id = request.value("request_id").toString();
+tests/desktop_tests.cpp:360:        QStringList delivered;
+tests/desktop_tests.cpp:362:            delivered.append(reply.value("data").toObject().value("value").toString());
+tests/desktop_tests.cpp:365:            delivered.append(reply.value("data").toObject().value("value").toString());
+tests/desktop_tests.cpp:372:                                          {"data", QJsonObject{{"value", QString::number(index)}}}})
+tests/desktop_tests.cpp:376:        QTRY_COMPARE(delivered, QStringList({"1", "0"}));
+tests/desktop_tests.cpp:377:        QString timeout_code;
+tests/desktop_tests.cpp:378:        QString followup_value;
+tests/desktop_tests.cpp:380:            timeout_code = reply.value("error").toObject().value("code").toString();
+tests/desktop_tests.cpp:382:                followup_value = next.value("data").toObject().value("value").toString();
+tests/desktop_tests.cpp:385:        QTRY_COMPARE(timeout_code, QString("TIMEOUT"));
+tests/desktop_tests.cpp:386:        QTRY_COMPARE(followup_value, QString("ok"));
+tests/desktop_tests.cpp:405:                        const auto id = request.value("request_id").toString();
+tests/desktop_tests.cpp:472:        const auto through_ids = picked.takeFirst().at(0).toStringList();
+tests/desktop_tests.cpp:482:        const auto visible_ids = picked.takeFirst().at(0).toStringList();
+tests/desktop_tests.cpp:531:        QCOMPARE(picked.takeFirst().at(0).toStringList(),
+tests/desktop_tests.cpp:532:                 QStringList({"line-behind", "line-front"}));
+tests/desktop_tests.cpp:538:        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"line-front"}));
+tests/desktop_tests.cpp:546:        QCOMPARE(picked.takeFirst().at(0).toStringList(),
+tests/desktop_tests.cpp:547:                 QStringList({"line-behind", "line-front"}));
+tests/desktop_tests.cpp:552:        QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+tests/desktop_tests.cpp:556:        QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+tests/desktop_tests.cpp:560:        QCOMPARE(picked.takeFirst().at(0).toStringList(),
+tests/desktop_tests.cpp:561:                 QStringList({"line-front", "line-to-hide"}));
+tests/desktop_tests.cpp:565:        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"line-front"}));
+tests/desktop_tests.cpp:572:        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"line-front"}));
+tests/desktop_tests.cpp:581:            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+tests/desktop_tests.cpp:620:            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+tests/desktop_tests.cpp:623:            QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"committed-line"}));
+tests/desktop_tests.cpp:626:            QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"committed-line"}));
+tests/desktop_tests.cpp:635:        QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"committed-line"}));
+tests/desktop_tests.cpp:651:            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+tests/desktop_tests.cpp:816:            QVERIFY(picked.takeFirst()[0].toStringList().isEmpty());
+tests/desktop_tests.cpp:827:        auto actual = picked.takeFirst()[0].toStringList();
+tests/desktop_tests.cpp:829:        QCOMPARE(actual, QStringList({"beam-0", "beam-1", "line", "node-0", "node-1", "node-2"}));
+tests/desktop_tests.cpp:917:            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+tests/desktop_tests.cpp:921:            QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"moving-line"}));
+tests/desktop_tests.cpp:925:            QVERIFY(picked.takeFirst().at(0).toStringList().isEmpty());
+features/analysis/src/analysis_checks.cpp:52:        throw RecordError(ErrorCode::schema_unsupported, "Unsupported analysis check row");
+features/analysis/src/analysis_checks.cpp:56:        throw RecordError(ErrorCode::schema_unsupported, "Check report identity mismatch");
+modules/document/src/record_model_bridge.cpp:1:#include "qcae/records_model_bridge.hpp"
+modules/document/src/record_model_bridge.cpp:34:DocumentView records_from_model(const Model& model,
+modules/document/src/record_model_bridge.cpp:178:RecordChangeSet record_changes_from_models(const Model& before,
+modules/document/src/record_model_bridge.cpp:182:    const auto old = records_from_model(before, registry, {}, stats);
+modules/document/src/record_model_bridge.cpp:183:    const auto current = records_from_model(after, std::move(registry), {}, stats);
+adapters/engine_api/src/nastran_contribution.cpp:35:        throw RecordError(ErrorCode::schema_unsupported, "Malformed artifact integer");
+adapters/engine_api/src/nastran_contribution.cpp:62:        throw RecordError(ErrorCode::schema_unsupported, "Invalid Nastran artifact row");
+adapters/engine_api/src/nastran_contribution.cpp:67:        throw RecordError(ErrorCode::schema_unsupported, "Malformed Nastran artifact fact");
+adapters/engine_api/src/nastran_contribution.cpp:70:        throw RecordError(ErrorCode::schema_unsupported, "Malformed artifact file manifest");
+adapters/engine_api/src/nastran_contribution.cpp:130:                   {"export_id_map", identifiers},
+adapters/engine_api/src/nastran_contribution.cpp:139:        throw RecordError(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:142:        task.operation != "model.export" || task.input.document.id != input.version.document.id ||
+adapters/engine_api/src/nastran_contribution.cpp:147:        throw RecordError(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:153:        throw RecordError(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:216:            ErrorCode::schema_unsupported, "Artifact task fact is missing");
+adapters/engine_api/src/nastran_contribution.cpp:236:                    throw RecordError(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:245:                    throw RecordError(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:260:        if (task.operation != "model.export" || previous)
+adapters/engine_api/src/nastran_contribution.cpp:305:                return bad<TaskRecord>(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:374:                return bad<Value>(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:409:                    return bad<Value>(ErrorCode::schema_unsupported,
+adapters/engine_api/src/nastran_contribution.cpp:423:                        if (previous.operation != "model.export" ||
+adapters/engine_api/src/nastran_contribution.cpp:446:                const auto plan = validate_nastran_export(
+adapters/engine_api/src/nastran_contribution.cpp:482:                    "model.export",
+adapters/engine_api/src/nastran_contribution.cpp:573:                            return bad<Value>(ErrorCode::schema_unsupported,
+modules/targets.json:291:        "qcae_mesh_editing",
+modules/targets.json:700:      "target": "qcae_mesh_editing",
+modules/targets.json:701:      "path": "features/mesh_editing",
+modules/targets.json:705:        "features/mesh_editing/include"
+modules/targets.json:709:        "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+modules/targets.json:713:        "features/mesh_editing/src/mesh_editing_operations.cpp"
+CMakeLists.txt:7:option(QCAE_BUILD_IPC "Build the optional Qt local engine and CLI" OFF)
+CMakeLists.txt:8:option(QCAE_BUILD_STORAGE "Build the optional SQLite persistence adapter" OFF)
+CMakeLists.txt:9:option(QCAE_BUILD_DESKTOP "Build the Qt/VTK desktop client" OFF)
+CMakeLists.txt:10:option(QCAE_BUILD_SOLVER_LOCAL "Build the local POSIX solver process adapter" ${UNIX})
+CMakeLists.txt:11:option(QCAE_ENABLE_NASTRAN_PACKAGE "Enable static Nastran engine contributions" ON)
+CMakeLists.txt:12:option(QCAE_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
+CMakeLists.txt:47:add_subdirectory(features/mesh_editing)
+CMakeLists.txt:87:  add_executable(qcae_model_operation_tests tests/model_operation_tests.cpp)
+CMakeLists.txt:88:  target_link_libraries(qcae_model_operation_tests PRIVATE qcae_material_features qcae_mesh_editing qcae_legacy_api)
+CMakeLists.txt:89:  qcae_warnings(qcae_model_operation_tests)
+CMakeLists.txt:90:  add_test(NAME model_operations COMMAND qcae_model_operation_tests)
+CMakeLists.txt:165:    add_executable(qcae_record_store_tests tests/record_store_tests.cpp)
+CMakeLists.txt:166:    target_link_libraries(qcae_record_store_tests PRIVATE qcae_sqlite ${QCAE_SQLITE_TARGET})
+CMakeLists.txt:167:    qcae_warnings(qcae_record_store_tests)
+CMakeLists.txt:168:    add_test(NAME record_store COMMAND qcae_record_store_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/legacy")
+CMakeLists.txt:404:    add_executable(qcae_desktop_tests tests/desktop_tests.cpp)
+CMakeLists.txt:405:    set_target_properties(qcae_desktop_tests PROPERTIES AUTOMOC ON)
+CMakeLists.txt:406:    target_link_libraries(qcae_desktop_tests PRIVATE qcae_desktop_client qcae_vtk_view Qt6::Test)
+CMakeLists.txt:407:    qcae_warnings(qcae_desktop_tests)
+CMakeLists.txt:408:    vtk_module_autoinit(TARGETS qcae_desktop_tests MODULES ${VTK_LIBRARIES})
+CMakeLists.txt:409:    add_test(NAME desktop COMMAND qcae_desktop_tests)

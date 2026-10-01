@@ -1,0 +1,60 @@
+65-FAILED: [code=1] CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o 
+66-/usr/bin/c++  -I/private/tmp/qcae-c4-ext03-41/features/mesh_editing/include -I/private/tmp/qcae-c4-ext03-41/modules/application/include -I/private/tmp/qcae-c4-ext03-41/modules/document/include -I/private/tmp/qcae-c4-ext03-41/modules/foundation/include -I/private/tmp/qcae-c4-ext03-41/modules/contracts/include -I/private/tmp/qcae-c4-ext03-41/build-ext03-core/generated -I/private/tmp/qcae-c4-ext03-41/modules/operations/include -I/private/tmp/qcae-c4-ext03-41/modules/parameters/include -I/private/tmp/qcae-c4-ext03-41/modules/query/include -I/private/tmp/qcae-c4-ext03-41/profiles/nastran/include -I/private/tmp/qcae-c4-ext03-41/features/analysis/include -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -Werror -MD -MT CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o -MF CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o.d -o CMakeFiles/qcae_tri3_tests.dir/tests/tri3_tests.cpp.o -c /private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp
+67:/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:73:78: error: chosen constructor is explicit in copy-initialization
+68-   73 |             Status::success, RecordPreparedOperation{edit.prepare(), "Seed", {}, "seed", 0, true}, {}};
+69-      |                                                                              ^~
+--
+71-   11 |     explicit Id(std::string text = {}) : value(std::move(text)) {}
+72-      |              ^
+73:/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:61:12: error: no viable conversion from returned value of type '(lambda at /private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:61:12)' to function return type 'RecordPrepare' (aka 'function<Result<RecordPreparedOperation> (const qcae::DocumentView &, const function<Id<EntityTag> ()> &)>')
+74-   61 |     return [](const DocumentView& view, const RecordIdentityAllocator&) {
+75-      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+112-  643 |   _LIBCPP_HIDE_FROM_ABI function(_Fp);
+113-      |                         ^
+114:/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:140:17: error: no member named 'version' in 'std::string'
+115-  140 |         encoded.version = 2;
+116-      |         ~~~~~~~ ^
+117:/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:174:74: error: chosen constructor is explicit in copy-initialization
+118-  174 |                         RecordPreparedOperation{edit.prepare(), "Erase", {}, key.identity, 0, false}, {}};
+119-      |                                                                          ^~
+--
+121-   11 |     explicit Id(std::string text = {}) : value(std::move(text)) {}
+122-      |              ^
+123:/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:170:17: error: no viable conversion from '(lambda at /private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:170:17)' to 'const RecordPrepare' (aka 'const function<Result<RecordPreparedOperation> (const qcae::DocumentView &, const function<Id<EntityTag> ()> &)>')
+124-  170 |                 [key](const DocumentView& view, const RecordIdentityAllocator&) {
+125-      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+149-  181 |                                   const RecordPrepare&,
+150-      |                                                       ^
+151:/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:167:30: error: loop variable 'key' creates a copy from type 'const RecordKey' [-Werror,-Wrange-loop-construct]
+152-  167 |         for (const RecordKey key : {RecordKey{RecordTraits<records::Node>::type_id, "a"},
+153-      |                              ^
+269-                                         coordinates(row.value("position")),
+270-                                         row.value("visible").toBool()});
+271-            }
+272:        } else if (pick_case.value("topology") == "line") {
+273-            for (const auto& value : fixture.value("lines").toArray()) {
+274-                const auto row = value.toObject();
+275-                packet.geometry_lines.push_back(
+--
+316-                QCOMPARE(camera->GetViewTransformMatrix()->GetElement(row, column),
+317-                         matrix[row * 4 + column].toDouble());
+318-        widget->renderWindow()->Render();
+319:        if (fixture.contains("device_pixel_ratio")) {
+320:            QCOMPARE(widget->devicePixelRatioF(), fixture.value("device_pixel_ratio").toDouble());
+321-            const auto pixels = fixture.value("framebuffer_pixels").toArray();
+322-            QCOMPARE(widget->renderWindow()->GetSize()[0], pixels[0].toInt());
+323-            QCOMPARE(widget->renderWindow()->GetSize()[1], pixels[1].toInt());
+324:            const auto projection = camera_fixture.value("projection_matrix").toArray();
+325-            auto* actual_projection = camera->GetProjectionTransformMatrix(
+326-                static_cast<double>(widget->width()) / widget->height(), -1, 1);
+327-            for (int row = 0; row < 4; ++row)
+--
+346-        expected.sort();
+347-        QCOMPARE(actual, expected);
+348-        qInfo().noquote() << pick_case.value("id").toString()
+349:                          << "device_pixel_ratio=" << widget->devicePixelRatioF()
+350-                          << "missed=0 extra=0";
+351-    }
+352-

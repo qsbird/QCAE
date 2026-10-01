@@ -1,0 +1,109 @@
+{
+  "task": "EXT-01",
+  "executor": "/root/c4_ext01_frozen41",
+  "baseline_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "extension_commit": "d85f7433e741eb7304bdeddd7d4ad0876dfe1f86",
+  "branch": "codex/c4-ext01-baseline41",
+  "working_directory": "/private/tmp/qcae-c4-ext01-41",
+  "diff_path": "/private/tmp/qcae-c4-ext01-delivery41/ext01-full.diff",
+  "diff_bytes": 38840,
+  "diff_sha256": "67b1cfe421d5bfd0a8089bdcfb0015b41f8773252c2ec5feb99689a9afb314f0",
+  "handwritten_product_file_count": 6,
+  "handwritten_product_files": [
+    "adapters/engine_api/src/ipc_model.cpp",
+    "features/materials/CMakeLists.txt",
+    "features/materials/include/qcae/material_operations.hpp",
+    "features/materials/src/material_operations.cpp",
+    "schemas/entities/entities.json",
+    "schemas/operations/basic.json"
+  ],
+  "protected_file_count": 39,
+  "protected_touch_count": 0,
+  "generators": [
+    {
+      "path": "tools/generate_entities.py",
+      "sha256": "a933e43099d3f192668afa744bb5417f6f6c1c5d9cf0289c247b0e7e87953831",
+      "unchanged": true
+    },
+    {
+      "path": "tools/generate_operation_contracts.py",
+      "sha256": "7220e3bc61dfd9ad56de5346501f8d0cd159d868745913d926885001f0c5e228",
+      "unchanged": true
+    },
+    {
+      "path": "tools/generate_operations.py",
+      "sha256": "792a7040f32d15221d8ccf5c2accc51a75be193cd088d4543c646413fc5081ae",
+      "unchanged": true
+    },
+    {
+      "path": "tools/generate_profile.py",
+      "sha256": "9acd657fd0f21ec3de9e76910e62d2a3074e2774ad5b7df373410ab6f5aa1619",
+      "unchanged": true
+    }
+  ],
+  "fixture_bytes": 109,
+  "fixture_sha256": "ae21094749106dfe32cdce3ce20e0a0a728c14de2894524c820f01cb341422ed",
+  "frozen_python_selection": {
+    "build-ext01-core": [
+      "Python3_EXECUTABLE:UNINITIALIZED=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "_Python3_EXECUTABLE:INTERNAL=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    ],
+    "build-ext01-local": [
+      "Python3_EXECUTABLE:UNINITIALIZED=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "_Python3_EXECUTABLE:INTERNAL=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    ],
+    "build-ext01-consumers": [
+      "Python3_EXECUTABLE:UNINITIALIZED=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "_Python3_EXECUTABLE:INTERNAL=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    ]
+  },
+  "validation": {
+    "baseline_relevant": {
+      "passed": 2,
+      "total": 2,
+      "log": "baseline-relevant-tests.log"
+    },
+    "frozen_core_sqlite_headless": {
+      "passed": 45,
+      "total": 45,
+      "log": "frozen-core-tests.log"
+    },
+    "frozen_affected_tool_ipc": {
+      "passed": 20,
+      "total": 20,
+      "log": "frozen-local-affected-tests.log"
+    },
+    "native_qt_vtk": {
+      "passed": 7,
+      "total": 7,
+      "log": "native-desktop-tests.log",
+      "gui_slot_released": true
+    },
+    "independent_public_headers": {
+      "count": 48,
+      "log": "frozen-consumers-build.log"
+    },
+    "production_ext01_ipc": {
+      "request_count": 211,
+      "log": "ext01-production-ipc.log",
+      "transcript": "ipc-transcript.json"
+    },
+    "design": "delivery-design-check.log",
+    "cpp_format_21": "delivery-format-check.log",
+    "diff_check": "delivery-diff-check.log",
+    "qg02": "root read-only review passed; exact message retained in additional-context.txt"
+  },
+  "raw_evidence_directory": "/private/tmp/qcae-c4-ext01-delivery41/evidence",
+  "complete_context_cost_verified": false,
+  "complete_actual_context_utf8_bytes": null,
+  "true_token_count": null,
+  "initial_context_content_utf8_bytes": 42078,
+  "second_initial_complete_delivery_utf8_bytes": 42601,
+  "failure_and_context_details": [
+    "failures-and-repairs.json",
+    "context-corrections.json",
+    "context-accounting-limitations.json"
+  ],
+  "final_release_integration_run": false,
+  "note": "Product behavior and QG checks pass; early actual context delivery is incomplete evidence. Original ledger/failed logs/fixture bytes preserved. Common frozen manifest not modified."
+}

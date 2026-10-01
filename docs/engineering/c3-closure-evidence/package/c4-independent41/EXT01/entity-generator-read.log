@@ -1,0 +1,242 @@
+38-            value = "records::" + value
+39-        if kind == "references":
+40-            value = f"std::array<{value}, {field['count']}>" if "count" in field else f"std::vector<{value}>"
+41-    else:
+42-        value = KINDS[kind]
+43:    return f"std::optional<{value}>" if field.get("optional") else value
+44-
+45-
+46-def canonical(schema: dict) -> dict:
+47-    schema = copy.deepcopy(schema)
+48:    if schema.get("schema_version") != 1:
+49:        raise ValueError("unsupported schema definition version")
+50-    seen_ids, seen_names = set(schema.get("reserved_type_ids", [])), set()
+51-    for entity in schema["entities"]:
+52-        if (entity["id"] in seen_ids or entity["name"] in seen_names or
+53-                not 0 < entity["id"] <= 0xFFFFFFFF or
+54-                not re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", entity["name"])):
+55-            raise ValueError("duplicate or missing entity identity")
+56-        seen_ids.add(entity["id"])
+57-        seen_names.add(entity["name"])
+58-        ids, names = {1, *entity.get("reserved_field_ids", [])}, {"id"}
+59-        for field in entity["fields"]:
+60-            if (field["id"] in ids or field["name"] in names or
+61-                    not 0 < field["id"] <= 0xFFFFFFFF or
+--
+63-                raise ValueError("duplicate or reserved field identity")
+64-            ids.add(field["id"])
+65-            names.add(field["name"])
+66-            cpp_type(field)
+67-            if field.get("default") is not None:
+68:                raise ValueError("optional fields currently support only the explicit null default")
+69-            if field["kind"] in ("reference", "references") and not field.get("targets"):
+70-                raise ValueError("reference field requires a declared target type")
+71-            if field["kind"] in ("real", "vector3") and "unit" not in field:
+72-                raise ValueError("numeric field requires an explicit unit")
+73-            if field.get("unit") not in (None, "1", "mm", "N", "MPa", "mm2", "mm4"):
+74-                raise ValueError("unknown schema unit")
+75:            if field.get("introduced_version", 1) > entity["version"]:
+76:                raise ValueError("field introduced after its record version")
+77-        entity["fields"].sort(key=lambda field: field["id"])
+78-    for entity in schema["entities"]:
+79-        for field in entity["fields"]:
+80-            if any(target not in seen_names for target in field.get("targets", [])):
+81-                raise ValueError("reference names an unknown entity type")
+82-    schema["entities"].sort(key=lambda entity: entity["id"])
+83-    return schema
+84-
+85-
+86-HELPERS = r'''
+87-namespace records_detail {
+88-inline void invalid(const char* message, const char* field) {
+--
+93-        std::any_of(value.begin(), value.end(), [](unsigned char ch) { return ch < 32 || ch == 127; }))
+94-        invalid("Record text is missing, too long, or contains controls", field);
+95-}
+96-inline void check_profile(const ProfileRef& value, const char* field) {
+97-    check_text(value.profile_id, true, field);
+98:    check_text(value.profile_version, true, field);
+99-    check_text(value.definition_digest, true, field);
+100-}
+101-template <class Range> void check_references(const Range& values, const char* field) {
+102-    std::set<std::string_view> seen;
+103-    for (const auto& value : values) {
+104-        check_text(value.value, true, field);
+105-        if (!seen.insert(value.value).second)
+106-            invalid("Duplicate record reference", field);
+107-    }
+108-}
+109-template <class Range> std::string pack_references(const Range& values) {
+110-    std::vector<std::string> result;
+--
+130-}
+131-template <class T> std::size_t dynamic_bytes(const T&) { return 0; }
+132-inline std::size_t dynamic_bytes(const std::string& value) { return value.size(); }
+133-template <class Tag> std::size_t dynamic_bytes(const Id<Tag>& value) { return value.value.size(); }
+134-inline std::size_t dynamic_bytes(const ProfileRef& value) {
+135:    return value.profile_id.size() + value.profile_version.size() + value.definition_digest.size();
+136-}
+137-inline std::size_t dynamic_bytes(const TargetBinding& value) {
+138-    return dynamic_bytes(value.profile) + value.analysis_kind.size();
+139-}
+140:template <class T> std::size_t dynamic_bytes(const std::optional<T>& value) {
+141-    return value ? dynamic_bytes(*value) : 0;
+142-}
+143-template <class T, std::size_t N> std::size_t dynamic_bytes(const std::array<T, N>& values) {
+144-    std::size_t result = 0;
+145-    for (const auto& value : values) result += dynamic_bytes(value);
+146-    return result;
+147-}
+148-template <class T> std::size_t dynamic_bytes(const std::vector<T>& values) {
+149-    std::size_t result = values.size() * sizeof(T);
+150-    for (const auto& value : values) result += dynamic_bytes(value);
+151-    return result;
+152-}
+--
+158-    lines = ["    static void validate_fields(const Value& value) {",
+159-             '        records_detail::check_text(value.id.value, true, "id");']
+160-    for field in entity["fields"]:
+161-        expression = f"value.{field['name']}"
+162-        indent = "        "
+163:        if field.get("optional"):
+164-            lines.append(f"        if ({expression}) {{")
+165-            expression = f"*{expression}"
+166-            indent += "    "
+167-        kind, name = field["kind"], field["name"]
+168-        if kind in ("text", "reference"):
+169-            actual = f"({expression}).value" if kind == "reference" else expression
+170-            required = "true" if field.get("nonempty") or kind == "reference" else "false"
+171-            lines.append(f'{indent}records_detail::check_text({actual}, {required}, "{name}");')
+172-        if kind == "real":
+173-            lines.append(f'{indent}if (!std::isfinite({expression})) records_detail::invalid("Number must be finite", "{name}");')
+174-        if kind == "vector3":
+175-            lines.append(f'{indent}for (double part : {expression}) if (!std::isfinite(part)) records_detail::invalid("Vector must be finite", "{name}");')
+--
+186-            if key in field:
+187-                lines.append(f'{indent}if ({expression} {comparison} {field[key]}) records_detail::invalid("Field is outside its allowed range", "{name}");')
+188-        if "choices" in field:
+189-            condition = " && ".join(f'{expression} != {json.dumps(choice)}' for choice in field["choices"])
+190-            lines.append(f'{indent}if ({condition}) records_detail::invalid("Unknown field value", "{name}");')
+191:        if field.get("optional"):
+192-            lines.append("        }")
+193-    lines.append("    }")
+194-    return lines
+195-
+196-
+197-def render(schema: dict) -> str:
+198-    schema = canonical(schema)
+199-    entities = schema["entities"]
+200-    by_name = {entity["name"]: entity["id"] for entity in entities}
+201-    digest = hashlib.sha256(json.dumps(schema, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+202-    lines = ["// Generated by tools/generate_entities.py; do not edit.",
+203-             f"// Semantic schema SHA-256: {digest}", "#pragma once", '#include "qcae/document_view.hpp"',
+--
+226-                  "        result.type = type_id;", f'        result.name = "{name}";',
+227-                  f'        result.query_kind = "{entity.get("query_kind", "")}";',
+228-                  (f'        result.display_name = [](const void* object) -> std::string_view {{ return static_cast<const Value*>(object)->{entity["display_field"]}; }};'
+229-                   if entity.get("display_field") else
+230-                   '        result.display_name = [](const void*) -> std::string_view { return {}; };'),
+231:                  f"        result.current_version = {entity['version']};", "        result.cpp_type_token = token();",
+232-                  f"        result.maximum_encoded_bytes = {entity.get('maximum_encoded_bytes', 16 * 1024 * 1024)};",
+233-                  "        result.fields = {"]
+234-        for field in fields:
+235-            targets = ", ".join(f"RecordTypeId{{{by_name[target]}}}" for target in field.get("targets", []))
+236-            lines.append(f'            {{RecordFieldId{{{field["id"]}}}, "{field["name"]}", RecordFieldKind::{field["kind"]}, '
+237:                         f'{str(field.get("optional", False)).lower()}, "{field.get("unit", "")}", '
+238:                         f'{{{targets}}}, {field.get("introduced_version", 1)}}},')
+239-        lines += ["        };", "        result.encode = [](const void* object) {",
+240-                  "            const auto& value = *static_cast<const Value*>(object);",
+241:                  "            validate_fields(value);", f"            RecordInput input{{{{type_id, value.id.value}}, {entity['version']}, {{}}}};"]
+242-        for field in fields:
+243-            expression = f"value.{field['name']}"
+244:            if field.get("optional"):
+245-                lines.append(f"            if ({expression}) {{")
+246-                expression = "*" + expression
+247-            kind = field["kind"]
+248-            if kind == "reference":
+249-                payload = f"record_wire::text(({expression}).value)"
+250-            elif kind == "references":
+251-                payload = f"records_detail::pack_references({expression})"
+252-            else:
+253-                payload = f"record_wire::{WIRE[kind]}({expression})"
+254-            lines.append(f'            input.fields.push_back({{RecordFieldId{{{field["id"]}}}, RecordFieldKind::{kind}, "{field.get("unit", "")}", {payload}}});')
+255:            if field.get("optional"):
+256-                lines.append("            }")
+257-        lines += ["            return input;", "        };", "        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {",
+258-                  "            Value value;", "            value.id = decltype(value.id)(input.key.identity);"]
+259-        for field in fields:
+260-            name = field["name"]
+261:            getter = "find" if field.get("optional") else "require"
+262:            if field.get("optional"):
+263-                lines.append(f"            if (const auto* field = record_wire::{getter}(input, RecordFieldId{{{field['id']}}})) {{")
+264-                payload = "field->payload"
+265-            else:
+266-                payload = f"record_wire::require(input, RecordFieldId{{{field['id']}}}).payload"
+267-            kind = field["kind"]
+268-            if kind == "reference":
+269-                id_type = field.get("id_type", "EntityId")
+270-                if id_type != "EntityId":
+271-                    id_type = "records::" + id_type
+272-                expression = f"{id_type}(record_wire::read_text({payload}))"
+273-            elif kind == "references":
+274:                value_field = {**field, "optional": False}
+275-                expression = f"records_detail::unpack_references<{cpp_type(value_field, True)}>({payload})"
+276-            else:
+277-                expression = f"record_wire::read_{WIRE[kind]}({payload})"
+278-            lines.append(f"            value.{name} = {expression};")
+279:            if field.get("optional"):
+280-                lines.append("            }")
+281-        lines += ["            validate_fields(value);", "            return std::make_shared<const Value>(std::move(value));", "        };",
+282:                  "        result.owned_bytes = [](const void* object) {", "            const auto& value = *static_cast<const Value*>(object);",
+283-                  "            return sizeof(Value) + records_detail::dynamic_bytes(value.id)"]
+284-        lines += [f"                + records_detail::dynamic_bytes(value.{field['name']})" for field in fields]
+285-        lines += ["                ;", "        };", "        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {"]
+286-        references = [field for field in fields if field.get("targets")]
+287-        if references:
+288-            lines.append("            const auto& value = *static_cast<const Value*>(object);")
+289-        else:
+290-            lines.append("            (void)object; (void)visitor;")
+291-        for field in references:
+292-            name, number = field["name"], field["id"]
+293-            targets = ", ".join(f"RecordTypeId{{{by_name[target]}}}" for target in field["targets"])
+294-            lines.append(f"            static constexpr std::array targets_{number}{{{targets}}};")
+295-            if field["kind"] == "references":
+296:                expression = f"*value.{name}" if field.get("optional") else f"value.{name}"
+297:                if field.get("optional"):
+298-                    lines.append(f"            if (value.{name}) {{")
+299-                lines.append(f"            for (const auto& item : {expression}) visitor(RecordFieldId{{{number}}}, item.value, targets_{number});")
+300:                if field.get("optional"):
+301-                    lines.append("            }")
+302:            elif field.get("optional"):
+303-                lines.append(f"            if (value.{name}) visitor(RecordFieldId{{{number}}}, value.{name}->value, targets_{number});")
+304-            else:
+305-                lines.append(f"            visitor(RecordFieldId{{{number}}}, value.{name}.value, targets_{number});")
+306-        lines += ["        };", "        result.validate = [](const void* object, const DocumentView& view) {",
+307-                  "            const auto& value = *static_cast<const Value*>(object);", "            validate_fields(value);"]
+308-        lines.append("            records::validate_record(value, view);" if entity.get("custom_rule") else "            (void)view;")
+309-        lines += ["        };", "        return result;", "    }", "};"]
+310-    lines += ["inline std::vector<RecordDescriptor> generated_record_descriptors() {", "    return {"]
+311-    lines += [f"        RecordTraits<records::{entity['name']}>::descriptor()," for entity in entities]
+312-    lines += ["    };", "}", "std::shared_ptr<const RecordRegistry> make_record_registry();", "} // namespace qcae", ""]
+313-    return "\n".join(lines)
+314-
+--
+318-    if not candidate:
+319-        result = subprocess.run(["xcrun", "--find", "clang-format"], capture_output=True, text=True, check=False)
+320-        candidate = result.stdout.strip() if result.returncode == 0 else shutil.which("clang-format")
+321-    if not candidate:
+322-        raise ValueError("clang-format 21 is required for deterministic generated formatting")
+323:    version = subprocess.check_output([candidate, "--version"], text=True)
+324:    if "clang-format version 21." not in version:
+325-        raise ValueError("clang-format 21 is required")
+326-    return candidate
+327-
+328-
+329-def main() -> int:
+330-    parser = argparse.ArgumentParser(description=__doc__)
+331-    parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)
+332-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+333-    parser.add_argument("--check", action="store_true")
+334-    parser.add_argument("--permutation-check", action="store_true")
+335-    args = parser.parse_args()
+336-    schema = json.loads(args.schema.read_text())

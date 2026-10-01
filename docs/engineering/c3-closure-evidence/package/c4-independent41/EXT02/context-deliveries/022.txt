@@ -1,0 +1,36 @@
+{"label": "desktop-configure", "command": ["cmake", "-S", ".", "-B", "build-ext02-desktop", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release", "-DQCAE_BUILD_IPC=ON", "-DQCAE_BUILD_STORAGE=ON", "-DQCAE_BUILD_DESKTOP=ON", "-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt;/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install", "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"], "cwd": "/private/tmp/qcae-c4-ext02-41", "exit_code": 0, "elapsed_seconds": 5.281952857971191, "raw_log_utf8_bytes": 1950, "raw_log": "/private/tmp/qcae-ext02-evidence41/desktop-configure.log", "diagnostic_delivery_utf8_bytes": 1950, "diagnostic_range": [0, 1950], "tokens": null}
+-- The CXX compiler identification is AppleClang 21.0.0.21000101
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Python3: /Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14 (found suitable version "3.14.0", minimum required is "3.10") found components: Interpreter
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found SQLite3: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libsqlite3.tbd (found version "3.51.0")
+-- Performing Test HAVE_STDATOMIC
+-- Performing Test HAVE_STDATOMIC - Success
+-- Found WrapAtomic: TRUE
+-- Found OpenGL: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/OpenGL.framework
+-- Found WrapOpenGL: TRUE
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at /opt/homebrew/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  /opt/homebrew/opt/qt/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  /opt/homebrew/opt/qt/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:341 (find_package)
+
+
+-- Configuring done (4.4s)
+-- Generating done (0.8s)
+-- Build files have been written to: /private/tmp/qcae-c4-ext02-41/build-ext02-desktop

@@ -1,0 +1,78 @@
+{
+  "cmake": {
+    "command": [
+      "cmake",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "cmake version 4.3.0\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+  },
+  "clang": {
+    "command": [
+      "clang++",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "qt": {
+    "command": [
+      "/opt/homebrew/opt/qt/bin/qmake",
+      "-query",
+      "QT_VERSION"
+    ],
+    "exit_code": 0,
+    "output": "6.11.1"
+  },
+  "sqlite": {
+    "command": [
+      "/opt/homebrew/opt/sqlite/bin/sqlite3",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "3.53.4 2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc (64-bit)"
+  },
+  "python": {
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "Python 3.14.0"
+  },
+  "format": {
+    "command": [
+      "/Library/Developer/CommandLineTools/usr/bin/clang-format",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "Apple clang-format version 21.0.0 (clang-2100.1.1.101)"
+  },
+  "cmake_cache_paths": {
+    "build-ext03-core": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+      "Python3_EXECUTABLE:UNINITIALIZED=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "_Python3_EXECUTABLE:INTERNAL=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    ],
+    "build-ext03-desktop": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+      "Python3_EXECUTABLE:UNINITIALIZED=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "Qt6_DIR:PATH=/opt/homebrew/opt/qt/lib/cmake/Qt6",
+      "SQLite3_INCLUDE_DIR:PATH=/opt/homebrew/opt/sqlite/include",
+      "SQLite3_LIBRARY:FILEPATH=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+      "VTK_DIR:UNINITIALIZED=/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/cmake/vtk-9.7",
+      "_Python3_EXECUTABLE:INTERNAL=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    ],
+    "build-ext03-consumers": [
+      "CMAKE_BUILD_TYPE:STRING=Release",
+      "CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++",
+      "Python3_EXECUTABLE:UNINITIALIZED=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "Qt6_DIR:PATH=/opt/homebrew/opt/qt/lib/cmake/Qt6",
+      "SQLite3_INCLUDE_DIR:PATH=/opt/homebrew/opt/sqlite/include",
+      "SQLite3_LIBRARY:FILEPATH=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+      "_Python3_EXECUTABLE:INTERNAL=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    ]
+  }
+}

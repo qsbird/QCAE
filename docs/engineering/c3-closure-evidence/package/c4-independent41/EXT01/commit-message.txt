@@ -1,0 +1,20 @@
+Extend Material with optional persisted descriptions
+
+Add a generated v2 Material field and a public typed edit operation through
+RecordApplication and EditSession. Expose absent new optional fields as null
+in real entity queries, and preserve existing engineering properties.
+
+Freeze a true baseline v1 record before editing its schema, then verify
+history, idempotency, normal open, SQLite recovery and invalid-input atomicity
+against the production engine. Preserve failed runs and disclose incomplete
+early context accounting in the separately delivered execution evidence.
+
+Constraint: 6 handwritten product files; 0 protected touches; 4 generator hashes unchanged
+Rejected: Explicit null and empty string edits; omit description to clear
+Confidence: Production feature behavior verified with real engine and storage
+Scope-risk: Descriptor-driven null mapping also applies to later-version optional fields
+Directive: Independent EXT-01 from frozen baseline b740b374c934f3b4624a21247b9a5deeb2ca6bf4
+Tested: Frozen headless core/SQLite 45/45; affected tools/IPC 20/20; native Qt/VTK 7/7
+Tested: 48 public header consumers; design; clang-format 21; git diff --check
+Not-tested: Common final Release integration, full C4/P0, real AI or solver acceptance
+Not-tested: Complete actual context cost, due to retained early truncation gaps

@@ -1,0 +1,15 @@
+PASS: typed entity generation
+usage: generate_operation_contracts.py [-h] [--check] schema_directory output
+
+Generate deterministic typed wire adapters/metadata from explicit operation
+schemas. This generator owns no document authority. IDs and field ordering
+come from the schema, not traversal or registration order. No external Python
+packages required.
+
+positional arguments:
+  schema_directory
+  output
+
+options:
+  -h, --help        show this help message and exit
+  --check

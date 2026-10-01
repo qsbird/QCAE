@@ -1,0 +1,2111 @@
+{
+  "schema": "qcae.independent-common-readability-execution/1",
+  "observed_utc": "2026-10-01T02:35:03.250807+00:00",
+  "passed": true,
+  "review_scope": "common bounded production/tool slice source and executed normal regression matrix; original excluded SDK and real solver/performance acceptances remain open",
+  "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+  "source_file_count": 399,
+  "actual_commands_path": "docs/engineering/c3-closure-evidence/package/common41-final/actual-commands.json",
+  "actual_commands_sha256": "d8638fe83b1d24bed272eb9626326798aff340e3cebab6620307fb748d6dcaa9",
+  "executed_record_count": 19,
+  "executed_records": [
+    {
+      "name": "core-configure",
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c3-closure-core",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=OFF",
+          "-DQCAE_BUILD_STORAGE=OFF",
+          "-DQCAE_BUILD_DESKTOP=OFF",
+          "-DQCAE_ENABLE_SANITIZERS=OFF"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.24842133396305144,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-configure.log",
+          "sha256": "5fc00c4d7537b4c6535f63ef1cff6000ad19d36cece7377c2efe74a69f9885a4"
+        }
+      ],
+      "observed_argv_sha256": "9691f1bbba5acd04b787200cdbf0272c26b9c2f4a795b683f1398a8961f98754",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-configure.log",
+          "sha256": "5fc00c4d7537b4c6535f63ef1cff6000ad19d36cece7377c2efe74a69f9885a4",
+          "bytes": 145
+        }
+      ]
+    },
+    {
+      "name": "core-build",
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "build-c3-closure-core",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.03531987499445677,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+        }
+      ],
+      "observed_argv_sha256": "a6f98869f6641b42ca71c9f196602f2fe35042dc6d07d83e56a66f90fa9a2c06",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e",
+          "bytes": 63
+        }
+      ]
+    },
+    {
+      "name": "core-tests",
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "build-c3-closure-core",
+          "--output-on-failure",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 35.86603745794855,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-tests.log",
+          "sha256": "fa5d9e8c914ab996e6815e1c5cd93fea5bfa55039ab91b23d83bf1e7b4c90b15"
+        }
+      ],
+      "observed_argv_sha256": "b2a456a8b16c429fe08eebbc4842cd03050027471795b3bce56b2f4a3be0eb5f",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/core-tests.log",
+          "sha256": "fa5d9e8c914ab996e6815e1c5cd93fea5bfa55039ab91b23d83bf1e7b4c90b15",
+          "bytes": 4196
+        }
+      ]
+    },
+    {
+      "name": "sqlite_headless-configure",
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c3-vtk-sqlite-release",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=OFF",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=OFF",
+          "-DQCAE_ENABLE_SANITIZERS=OFF",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.22829470899887383,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-configure.log",
+          "sha256": "408146df3a40701cc4aa41ff31a196e97d79253368197de4188988ea71e93d12"
+        }
+      ],
+      "observed_argv_sha256": "d87562381ae84b90784b26b1e9740dfa39a697592a5e28d8acf96b70d8575dc3",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-configure.log",
+          "sha256": "408146df3a40701cc4aa41ff31a196e97d79253368197de4188988ea71e93d12",
+          "bytes": 151
+        }
+      ]
+    },
+    {
+      "name": "sqlite_headless-build",
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "build-c3-vtk-sqlite-release",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.024584125028923154,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+        }
+      ],
+      "observed_argv_sha256": "35b954bd062749128df132675eee6916aeea0c7c579b68ff0125077f19eba021",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e",
+          "bytes": 63
+        }
+      ]
+    },
+    {
+      "name": "sqlite_headless-tests",
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "build-c3-vtk-sqlite-release",
+          "--output-on-failure",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 36.10028470796533,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-tests.log",
+          "sha256": "b4e7e966835793ae2704b82e9f197b89099098984490867d9e515281f7c2039a"
+        }
+      ],
+      "observed_argv_sha256": "7b2f53297a6f07c189766d967b2f14054b53a99a1de10e1a9e2919f42b22c950",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-tests.log",
+          "sha256": "b4e7e966835793ae2704b82e9f197b89099098984490867d9e515281f7c2039a",
+          "bytes": 4839
+        }
+      ]
+    },
+    {
+      "name": "asan_ubsan-configure",
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c4-baseline-sqlite-sanitizers40",
+          "-DCMAKE_BUILD_TYPE=Debug",
+          "-DQCAE_BUILD_IPC=OFF",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=OFF",
+          "-DQCAE_ENABLE_SANITIZERS=ON",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.2490668329410255,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-configure.log",
+          "sha256": "1e849869a4d02bd285a53f56b621b6a8f44d5918252ec9400f659ec86d69f019"
+        }
+      ],
+      "observed_argv_sha256": "ee85f57890e9c5e7a49b0990ca0bfd1b4a1a5a9a9c26efa98c8fa2ca215e86f5",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-configure.log",
+          "sha256": "1e849869a4d02bd285a53f56b621b6a8f44d5918252ec9400f659ec86d69f019",
+          "bytes": 161
+        }
+      ]
+    },
+    {
+      "name": "asan_ubsan-build",
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "build-c4-baseline-sqlite-sanitizers40",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.0281723749358207,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+        }
+      ],
+      "observed_argv_sha256": "9a11ccdecfeea546de525280e68314dae6cc2cad5c995662ca941b85a5146a81",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-build.log",
+          "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e",
+          "bytes": 63
+        }
+      ]
+    },
+    {
+      "name": "asan_ubsan-tests",
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "build-c4-baseline-sqlite-sanitizers40",
+          "--output-on-failure",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 108.63957516592927,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-tests.log",
+          "sha256": "c5a59219739b24b44b5c5c32c39da6128a5b4978d79424305d68fe7f7de72246"
+        }
+      ],
+      "observed_argv_sha256": "10ab663876386c02079b0cf07b8c45024f506ee6290065a526b745d5fd4cd7a5",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-tests.log",
+          "sha256": "c5a59219739b24b44b5c5c32c39da6128a5b4978d79424305d68fe7f7de72246",
+          "bytes": 4849
+        }
+      ]
+    },
+    {
+      "name": "desktop-configure",
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          ".",
+          "-G",
+          "Ninja",
+          "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-B",
+          "build-c3-closure-desktop",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=ON",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=ON",
+          "-DQCAE_ENABLE_SANITIZERS=OFF",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include",
+          "-DQt6_DIR=/opt/homebrew/opt/qt/lib/cmake/Qt6",
+          "-DVTK_DIR=/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/cmake/vtk-9.7"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 1.230450915871188,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-configure.log",
+          "sha256": "ebcfbc846b7551a242b527d3e1071ce08216079595da07e1a223ad12fa936447"
+        }
+      ],
+      "observed_argv_sha256": "4b7a1e168a0d662f3d515d5d78410b2fe3ed99f6fb4b49e5a3536d0ec028f0da",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-configure.log",
+          "sha256": "ebcfbc846b7551a242b527d3e1071ce08216079595da07e1a223ad12fa936447",
+          "bytes": 1028
+        }
+      ]
+    },
+    {
+      "name": "desktop-build",
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "build-c3-closure-desktop",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.16220845910720527,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-build.log",
+          "sha256": "7ff06cb05b1e9609245b9e5593c059777ed9414801d39f62c9087dd8b81c69a9"
+        }
+      ],
+      "observed_argv_sha256": "bc9f04fc7a226fe2dea42f185b526a8ed3324f85b1b158aa2e3d728f2d3de5b7",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-build.log",
+          "sha256": "7ff06cb05b1e9609245b9e5593c059777ed9414801d39f62c9087dd8b81c69a9",
+          "bytes": 390
+        }
+      ]
+    },
+    {
+      "name": "desktop-tests",
+      "commands": [
+        [
+          "ctest",
+          "--test-dir",
+          "build-c3-closure-desktop",
+          "--output-on-failure",
+          "-j",
+          "1"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 624.8922109170817,
+      "task_environment": {
+        "QCAE_AI_UNITS_SNAPSHOT": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-ai-units-snapshots/session5.qcae",
+        "QCAE_SOURCE_TREE_SHA256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff"
+      },
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-tests.log",
+          "sha256": "07a4c3c6d21bb2788feecdd37bb41e8c354083e2c3c901aa9af50629092d854f"
+        }
+      ],
+      "observed_argv_sha256": "4795209e7be5613f6234ffae865f75d8e1ea504a2e2201de2efea11a95a77e54",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/desktop-tests.log",
+          "sha256": "07a4c3c6d21bb2788feecdd37bb41e8c354083e2c3c901aa9af50629092d854f",
+          "bytes": 9097
+        }
+      ]
+    },
+    {
+      "name": "design",
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_design.py"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.33617420797236264,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/design.log",
+          "sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3"
+        }
+      ],
+      "observed_argv_sha256": "72e24aec55c9456fde2534b3660f6e8596da4c3d3b50fce7fddaabc4108735af",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/design.log",
+          "sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3",
+          "bytes": 249
+        }
+      ]
+    },
+    {
+      "name": "cpp-format",
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_cpp_format.py"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 1.1292785839177668,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/cpp-format.log",
+          "sha256": "334731a3def20b1bb267f752779a8fd7fc3b7133e7ede9c95d86bd12a4db40bc"
+        }
+      ],
+      "observed_argv_sha256": "30340990b9ef8f1f9294523802938bf95a26344304d95840668de35426d27769",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/cpp-format.log",
+          "sha256": "334731a3def20b1bb267f752779a8fd7fc3b7133e7ede9c95d86bd12a4db40bc",
+          "bytes": 42
+        }
+      ]
+    },
+    {
+      "name": "diff-check",
+      "commands": [
+        [
+          "git",
+          "diff",
+          "--check"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.014952375087887049,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/diff-check.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "observed_argv_sha256": "ac8b779026132afa3d23b4dfc739514ea8854a83d6d0f3167454379f0ad59ceb",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/diff-check.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ]
+    },
+    {
+      "name": "architecture",
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_architecture.py",
+          "--build-dir",
+          "build-c3-closure-desktop",
+          "--report",
+          "docs/engineering/c3-closure-evidence/package/common41-final/architecture.json"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 2.0485966252163053,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/architecture.log",
+          "sha256": "b8a96a06c49d9cc5d5acebff951d318c6bc980ae7fc0d29a9dd52bbbbbdeb621"
+        }
+      ],
+      "observed_argv_sha256": "9f7bbca194be1424e0af73d24a5e3ac189c4c79aa56ea54a9806415873daac4f",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/architecture.log",
+          "sha256": "b8a96a06c49d9cc5d5acebff951d318c6bc980ae7fc0d29a9dd52bbbbbdeb621",
+          "bytes": 87
+        }
+      ]
+    },
+    {
+      "name": "protected-ast",
+      "commands": [
+        [
+          "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "tools/check_protected_entity_ast.py",
+          "--build-dir",
+          "build-c3-closure-desktop",
+          "--libclang",
+          "/opt/homebrew/opt/llvm/lib/libclang.dylib",
+          "--bindings-dir",
+          "/opt/homebrew/opt/llvm/lib/python3.12/site-packages",
+          "--clang-argument=-resource-dir",
+          "--clang-argument=/Library/Developer/CommandLineTools/usr/lib/clang/21",
+          "--clang-argument=-isysroot",
+          "--clang-argument=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "--clang-argument=-isystem",
+          "--clang-argument=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1",
+          "--report",
+          "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.json",
+          "--self-test"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 11.760084792040288,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.log",
+          "sha256": "99359e82be4d09fa296f27f4129db7e3124dc575019455d08d6118bf02a2d4a7"
+        }
+      ],
+      "observed_argv_sha256": "0cbfc8ee885b6649ea9c6b657fb265e8def5aa671aa8cb2c71d2185a87ba2ae2",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.log",
+          "sha256": "99359e82be4d09fa296f27f4129db7e3124dc575019455d08d6118bf02a2d4a7",
+          "bytes": 92
+        }
+      ]
+    },
+    {
+      "name": "public-consumers-configure",
+      "commands": [
+        [
+          "cmake",
+          "-S",
+          "tests/public_api_consumers",
+          "-B",
+          "build-c3-public-consumers35",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DQCAE_BUILD_IPC=ON",
+          "-DQCAE_BUILD_STORAGE=ON",
+          "-DQCAE_BUILD_DESKTOP=ON",
+          "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+          "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+          "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include",
+          "-DQt6_DIR=/opt/homebrew/opt/qt/lib/cmake/Qt6",
+          "-DVTK_DIR=/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/cmake/vtk-9.7"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 0.5349151671398431,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-configure.log",
+          "sha256": "4d5b44732f39c06e3087b8fc7a7456ab96cf2b58a5ccef2fcceb954cebeb6dd5"
+        }
+      ],
+      "observed_argv_sha256": "3f1614300a4471fe1be1b4c99d6f59da4d285640f8a7476b384267d5b7a1361e",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-configure.log",
+          "sha256": "4d5b44732f39c06e3087b8fc7a7456ab96cf2b58a5ccef2fcceb954cebeb6dd5",
+          "bytes": 348
+        }
+      ]
+    },
+    {
+      "name": "public-consumers-build",
+      "commands": [
+        [
+          "cmake",
+          "--build",
+          "build-c3-public-consumers35",
+          "-j",
+          "2"
+        ]
+      ],
+      "exit_codes": [
+        0
+      ],
+      "source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "elapsed_seconds": 68.97228124993853,
+      "task_environment": {},
+      "logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-build.log",
+          "sha256": "51bbb2cf5c8015090a763ec3ad09f9b5b8e03cdc9e489ed16dc5c369a5ae667e"
+        }
+      ],
+      "observed_argv_sha256": "83b7b1b47459edd350f2d8e40a0ae7727d9f6859ef2138fe5b90ad8e3197ae38",
+      "verified_logs": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-build.log",
+          "sha256": "51bbb2cf5c8015090a763ec3ad09f9b5b8e03cdc9e489ed16dc5c369a5ae667e",
+          "bytes": 26910
+        }
+      ]
+    }
+  ],
+  "matrices": [
+    {
+      "name": "core",
+      "tests_passed": 39,
+      "tests_failed": 0,
+      "raw_elapsed_seconds": 35.83,
+      "tests": [
+        {
+          "name": "architecture_gate_unit",
+          "status": "Passed",
+          "seconds": 6.71
+        },
+        {
+          "name": "operation_generation",
+          "status": "Passed",
+          "seconds": 3.94
+        },
+        {
+          "name": "record_document",
+          "status": "Passed",
+          "seconds": 4.2
+        },
+        {
+          "name": "solver_local",
+          "status": "Passed",
+          "seconds": 2.01
+        },
+        {
+          "name": "cpp_format",
+          "status": "Passed",
+          "seconds": 1.22
+        },
+        {
+          "name": "line_mesh_regeneration",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "nastran_static_result",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "static_validation",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "entity_generation",
+          "status": "Passed",
+          "seconds": 0.82
+        },
+        {
+          "name": "model_operations",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "query",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "core",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "persistence",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "model",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "nastran",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "result_fixture",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "runtime",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "geometry_mesh",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "change_events",
+          "status": "Passed",
+          "seconds": 0.12
+        },
+        {
+          "name": "analysis_checks",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "contracts",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "allocation_atomicity",
+          "status": "Passed",
+          "seconds": 0.04
+        },
+        {
+          "name": "delta",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "quantity_entry_consistency",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "design",
+          "status": "Passed",
+          "seconds": 0.33
+        },
+        {
+          "name": "record_application",
+          "status": "Passed",
+          "seconds": 0.05
+        },
+        {
+          "name": "operation_registry",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "acceptance_checker",
+          "status": "Passed",
+          "seconds": 0.1
+        },
+        {
+          "name": "artifacts_local",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "record_query",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "render_projector",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "parameters",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "generated_entities",
+          "status": "Passed",
+          "seconds": 0.08
+        },
+        {
+          "name": "profile_identity",
+          "status": "Passed",
+          "seconds": 0.07
+        },
+        {
+          "name": "generated_operation_inputs",
+          "status": "Passed",
+          "seconds": 0.04
+        },
+        {
+          "name": "generated_profile",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "generated_contract",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "macos_package_preflight",
+          "status": "Passed",
+          "seconds": 0.08
+        },
+        {
+          "name": "c4_freeze_contract",
+          "status": "Passed",
+          "seconds": 35.82
+        }
+      ],
+      "build_warning_error_lines": [],
+      "cache_sha256": "6061279160f2c9925693b775a12b002283471021b197ea5ed3c36393d764820c",
+      "compile_commands_sha256": "1bc27cb27760ce937c6e60818159c2442576a3bac6cc15704948daec02741b7c"
+    },
+    {
+      "name": "sqlite_headless",
+      "tests_passed": 45,
+      "tests_failed": 0,
+      "raw_elapsed_seconds": 36.09,
+      "tests": [
+        {
+          "name": "architecture_gate_unit",
+          "status": "Passed",
+          "seconds": 6.87
+        },
+        {
+          "name": "record_document",
+          "status": "Passed",
+          "seconds": 4.03
+        },
+        {
+          "name": "operation_generation",
+          "status": "Passed",
+          "seconds": 3.79
+        },
+        {
+          "name": "solver_local",
+          "status": "Passed",
+          "seconds": 1.89
+        },
+        {
+          "name": "skeleton_fault_application",
+          "status": "Passed",
+          "seconds": 0.82
+        },
+        {
+          "name": "cpp_format",
+          "status": "Passed",
+          "seconds": 1.28
+        },
+        {
+          "name": "entity_generation",
+          "status": "Passed",
+          "seconds": 0.82
+        },
+        {
+          "name": "quantity_entry_consistency",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "record_query",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "skeleton_representatives",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "model_operations",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "model",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "geometry_mesh_sqlite",
+          "status": "Passed",
+          "seconds": 0.13
+        },
+        {
+          "name": "record_store",
+          "status": "Passed",
+          "seconds": 0.07
+        },
+        {
+          "name": "parameters",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "nastran_package",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "record_application",
+          "status": "Passed",
+          "seconds": 0.06
+        },
+        {
+          "name": "artifacts_local",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "render_projector",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "allocation_atomicity",
+          "status": "Passed",
+          "seconds": 0.04
+        },
+        {
+          "name": "operation_registry",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "design",
+          "status": "Passed",
+          "seconds": 0.46
+        },
+        {
+          "name": "runtime",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "query",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "line_mesh_regeneration",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "sqlite",
+          "status": "Passed",
+          "seconds": 0.06
+        },
+        {
+          "name": "nastran",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "geometry_mesh",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "analysis_checks",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "persistence",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "core",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "result_fixture",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "contracts",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "static_validation",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "change_events",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "nastran_static_result",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "delta",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "acceptance_checker",
+          "status": "Passed",
+          "seconds": 0.12
+        },
+        {
+          "name": "generated_entities",
+          "status": "Passed",
+          "seconds": 0.08
+        },
+        {
+          "name": "profile_identity",
+          "status": "Passed",
+          "seconds": 0.07
+        },
+        {
+          "name": "generated_operation_inputs",
+          "status": "Passed",
+          "seconds": 0.04
+        },
+        {
+          "name": "generated_profile",
+          "status": "Passed",
+          "seconds": 0.04
+        },
+        {
+          "name": "generated_contract",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "macos_package_preflight",
+          "status": "Passed",
+          "seconds": 0.09
+        },
+        {
+          "name": "c4_freeze_contract",
+          "status": "Passed",
+          "seconds": 36.09
+        }
+      ],
+      "build_warning_error_lines": [],
+      "cache_sha256": "7137cfd7d74da8b99652980cb4839e0de82f7b983229d5f53ad9af6f17854aa8",
+      "compile_commands_sha256": "a2e3c98a4eacc833874f245524a5e3131c08cf3096faf84e561b80c8923f20bd"
+    },
+    {
+      "name": "asan_ubsan",
+      "tests_passed": 45,
+      "tests_failed": 0,
+      "raw_elapsed_seconds": 108.63,
+      "tests": [
+        {
+          "name": "c4_freeze_contract",
+          "status": "Passed",
+          "seconds": 49.89
+        },
+        {
+          "name": "architecture_gate_unit",
+          "status": "Passed",
+          "seconds": 11.46
+        },
+        {
+          "name": "skeleton_fault_application",
+          "status": "Passed",
+          "seconds": 9.41
+        },
+        {
+          "name": "solver_local",
+          "status": "Passed",
+          "seconds": 5.83
+        },
+        {
+          "name": "operation_generation",
+          "status": "Passed",
+          "seconds": 6.57
+        },
+        {
+          "name": "record_application",
+          "status": "Passed",
+          "seconds": 1.95
+        },
+        {
+          "name": "allocation_atomicity",
+          "status": "Passed",
+          "seconds": 1.25
+        },
+        {
+          "name": "cpp_format",
+          "status": "Passed",
+          "seconds": 2.14
+        },
+        {
+          "name": "geometry_mesh_sqlite",
+          "status": "Passed",
+          "seconds": 0.74
+        },
+        {
+          "name": "sqlite",
+          "status": "Passed",
+          "seconds": 0.89
+        },
+        {
+          "name": "entity_generation",
+          "status": "Passed",
+          "seconds": 1.13
+        },
+        {
+          "name": "analysis_checks",
+          "status": "Passed",
+          "seconds": 0.32
+        },
+        {
+          "name": "geometry_mesh",
+          "status": "Passed",
+          "seconds": 0.49
+        },
+        {
+          "name": "artifacts_local",
+          "status": "Passed",
+          "seconds": 0.4
+        },
+        {
+          "name": "skeleton_representatives",
+          "status": "Passed",
+          "seconds": 0.29
+        },
+        {
+          "name": "record_store",
+          "status": "Passed",
+          "seconds": 0.57
+        },
+        {
+          "name": "result_fixture",
+          "status": "Passed",
+          "seconds": 0.2
+        },
+        {
+          "name": "query",
+          "status": "Passed",
+          "seconds": 0.25
+        },
+        {
+          "name": "core",
+          "status": "Passed",
+          "seconds": 0.12
+        },
+        {
+          "name": "change_events",
+          "status": "Passed",
+          "seconds": 0.21
+        },
+        {
+          "name": "model",
+          "status": "Passed",
+          "seconds": 0.15
+        },
+        {
+          "name": "static_validation",
+          "status": "Passed",
+          "seconds": 0.16
+        },
+        {
+          "name": "persistence",
+          "status": "Passed",
+          "seconds": 0.13
+        },
+        {
+          "name": "model_operations",
+          "status": "Passed",
+          "seconds": 0.16
+        },
+        {
+          "name": "nastran_package",
+          "status": "Passed",
+          "seconds": 0.16
+        },
+        {
+          "name": "runtime",
+          "status": "Passed",
+          "seconds": 0.15
+        },
+        {
+          "name": "line_mesh_regeneration",
+          "status": "Passed",
+          "seconds": 0.18
+        },
+        {
+          "name": "quantity_entry_consistency",
+          "status": "Passed",
+          "seconds": 0.14
+        },
+        {
+          "name": "delta",
+          "status": "Passed",
+          "seconds": 0.1
+        },
+        {
+          "name": "record_query",
+          "status": "Passed",
+          "seconds": 0.13
+        },
+        {
+          "name": "operation_registry",
+          "status": "Passed",
+          "seconds": 0.09
+        },
+        {
+          "name": "parameters",
+          "status": "Passed",
+          "seconds": 0.09
+        },
+        {
+          "name": "nastran_static_result",
+          "status": "Passed",
+          "seconds": 0.12
+        },
+        {
+          "name": "render_projector",
+          "status": "Passed",
+          "seconds": 0.12
+        },
+        {
+          "name": "nastran",
+          "status": "Passed",
+          "seconds": 0.13
+        },
+        {
+          "name": "contracts",
+          "status": "Passed",
+          "seconds": 0.09
+        },
+        {
+          "name": "design",
+          "status": "Passed",
+          "seconds": 0.53
+        },
+        {
+          "name": "acceptance_checker",
+          "status": "Passed",
+          "seconds": 0.2
+        },
+        {
+          "name": "generated_entities",
+          "status": "Passed",
+          "seconds": 0.14
+        },
+        {
+          "name": "profile_identity",
+          "status": "Passed",
+          "seconds": 0.12
+        },
+        {
+          "name": "generated_contract",
+          "status": "Passed",
+          "seconds": 0.05
+        },
+        {
+          "name": "generated_operation_inputs",
+          "status": "Passed",
+          "seconds": 0.06
+        },
+        {
+          "name": "generated_profile",
+          "status": "Passed",
+          "seconds": 0.05
+        },
+        {
+          "name": "macos_package_preflight",
+          "status": "Passed",
+          "seconds": 0.12
+        },
+        {
+          "name": "record_document",
+          "status": "Passed",
+          "seconds": 108.62
+        }
+      ],
+      "build_warning_error_lines": [],
+      "cache_sha256": "71ffe798139bf747d102158484a13857e961253da6a05393b168a230762054a8",
+      "compile_commands_sha256": "61239982f70bd8a31941c0ab38800b59785c7726940c6e9a8c169da7584aa6fd"
+    },
+    {
+      "name": "desktop",
+      "tests_passed": 86,
+      "tests_failed": 0,
+      "raw_elapsed_seconds": 624.88,
+      "tests": [
+        {
+          "name": "acceptance_checker",
+          "status": "Passed",
+          "seconds": 0.13
+        },
+        {
+          "name": "architecture_gate_unit",
+          "status": "Passed",
+          "seconds": 8.26
+        },
+        {
+          "name": "c4_freeze_contract",
+          "status": "Passed",
+          "seconds": 39.02
+        },
+        {
+          "name": "macos_package_preflight",
+          "status": "Passed",
+          "seconds": 0.09
+        },
+        {
+          "name": "record_application",
+          "status": "Passed",
+          "seconds": 0.06
+        },
+        {
+          "name": "operation_registry",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "generated_operation_inputs",
+          "status": "Passed",
+          "seconds": 0.04
+        },
+        {
+          "name": "operation_generation",
+          "status": "Passed",
+          "seconds": 4.34
+        },
+        {
+          "name": "parameters",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "model_operations",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "quantity_entry_consistency",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "record_query",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "cpp_format",
+          "status": "Passed",
+          "seconds": 1.35
+        },
+        {
+          "name": "model",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "nastran",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "delta",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "persistence",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "query",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "generated_profile",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "profile_identity",
+          "status": "Passed",
+          "seconds": 0.07
+        },
+        {
+          "name": "entity_generation",
+          "status": "Passed",
+          "seconds": 0.78
+        },
+        {
+          "name": "core",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "contracts",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "allocation_atomicity",
+          "status": "Passed",
+          "seconds": 0.04
+        },
+        {
+          "name": "design",
+          "status": "Passed",
+          "seconds": 0.34
+        },
+        {
+          "name": "generated_contract",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "sqlite",
+          "status": "Passed",
+          "seconds": 0.07
+        },
+        {
+          "name": "record_store",
+          "status": "Passed",
+          "seconds": 0.07
+        },
+        {
+          "name": "geometry_mesh_sqlite",
+          "status": "Passed",
+          "seconds": 0.14
+        },
+        {
+          "name": "nastran_package",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "skeleton_fault_application",
+          "status": "Passed",
+          "seconds": 0.93
+        },
+        {
+          "name": "skeleton_representatives",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "legacy_migration",
+          "status": "Passed",
+          "seconds": 0.07
+        },
+        {
+          "name": "json_ledger",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "render_service",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "engine_assembly",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "ipc",
+          "status": "Passed",
+          "seconds": 0.97
+        },
+        {
+          "name": "m1_ipc",
+          "status": "Passed",
+          "seconds": 0.63
+        },
+        {
+          "name": "mcp_bridge",
+          "status": "Passed",
+          "seconds": 0.18
+        },
+        {
+          "name": "mcp_protocol",
+          "status": "Passed",
+          "seconds": 2.02
+        },
+        {
+          "name": "mcp_bridge_durable",
+          "status": "Passed",
+          "seconds": 0.17
+        },
+        {
+          "name": "analysis_check_ipc",
+          "status": "Passed",
+          "seconds": 1.97
+        },
+        {
+          "name": "force_vector_ipc",
+          "status": "Passed",
+          "seconds": 2.23
+        },
+        {
+          "name": "skeleton_fault_client",
+          "status": "Passed",
+          "seconds": 5.8
+        },
+        {
+          "name": "geometry_binding_ipc",
+          "status": "Passed",
+          "seconds": 0.17
+        },
+        {
+          "name": "skeleton_workflow_cli",
+          "status": "Passed",
+          "seconds": 6.62
+        },
+        {
+          "name": "nastran_artifact_ipc",
+          "status": "Passed",
+          "seconds": 0.34
+        },
+        {
+          "name": "result_fixture_ipc",
+          "status": "Passed",
+          "seconds": 2.46
+        },
+        {
+          "name": "solver_run_ipc",
+          "status": "Passed",
+          "seconds": 10.54
+        },
+        {
+          "name": "c3_display_ipc",
+          "status": "Passed",
+          "seconds": 0.98
+        },
+        {
+          "name": "entity_query_ipc",
+          "status": "Passed",
+          "seconds": 3.38
+        },
+        {
+          "name": "engine_contributions_ipc",
+          "status": "Passed",
+          "seconds": 1.98
+        },
+        {
+          "name": "m23_ipc",
+          "status": "Passed",
+          "seconds": 0.65
+        },
+        {
+          "name": "c2_workflow",
+          "status": "Passed",
+          "seconds": 15.57
+        },
+        {
+          "name": "qt_text_ledger",
+          "status": "Passed",
+          "seconds": 0.32
+        },
+        {
+          "name": "qt_widget_copy",
+          "status": "Passed",
+          "seconds": 0.23
+        },
+        {
+          "name": "vtk_coordinate_ranges",
+          "status": "Passed",
+          "seconds": 0.29
+        },
+        {
+          "name": "vtk_shift_scale_copy",
+          "status": "Passed",
+          "seconds": 0.05
+        },
+        {
+          "name": "desktop",
+          "status": "Passed",
+          "seconds": 5.04
+        },
+        {
+          "name": "desktop_selection",
+          "status": "Passed",
+          "seconds": 95.88
+        },
+        {
+          "name": "c3_desktop_workflow",
+          "status": "Passed",
+          "seconds": 365.85
+        },
+        {
+          "name": "modeling_tools",
+          "status": "Passed",
+          "seconds": 5.95
+        },
+        {
+          "name": "desktop_smoke",
+          "status": "Passed",
+          "seconds": 5.73
+        },
+        {
+          "name": "change_events",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "render_projector",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "event_stream",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "render_wire",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "c3_sync_ipc",
+          "status": "Passed",
+          "seconds": 0.25
+        },
+        {
+          "name": "event_client",
+          "status": "Passed",
+          "seconds": 3.59
+        },
+        {
+          "name": "c3_tool_lifecycle",
+          "status": "Passed",
+          "seconds": 16.2
+        },
+        {
+          "name": "record_document",
+          "status": "Passed",
+          "seconds": 3.72
+        },
+        {
+          "name": "generated_entities",
+          "status": "Passed",
+          "seconds": 0.09
+        },
+        {
+          "name": "runtime",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "geometry_mesh",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "line_mesh_regeneration",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "analysis_checks",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "result_fixture",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "static_validation",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "nastran_static_result",
+          "status": "Passed",
+          "seconds": 0.0
+        },
+        {
+          "name": "artifacts_local",
+          "status": "Passed",
+          "seconds": 0.01
+        },
+        {
+          "name": "solver_local",
+          "status": "Passed",
+          "seconds": 1.81
+        },
+        {
+          "name": "typed_host",
+          "status": "Passed",
+          "seconds": 0.02
+        },
+        {
+          "name": "resources",
+          "status": "Passed",
+          "seconds": 0.58
+        },
+        {
+          "name": "solver_version_probe",
+          "status": "Passed",
+          "seconds": 5.87
+        },
+        {
+          "name": "solver_result_store",
+          "status": "Passed",
+          "seconds": 0.03
+        },
+        {
+          "name": "solver_numerical_validation",
+          "status": "Passed",
+          "seconds": 0.54
+        }
+      ],
+      "build_warning_error_lines": [],
+      "cache_sha256": "e84200c372efdb3b14689310217f4be22163a256d0bc539d5d3891503e310d9a",
+      "compile_commands_sha256": "9c7a39542503bd5d95777f4900182139f009909243a37058a1b2f0cc79e184cb"
+    }
+  ],
+  "json_quality_reports": [
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/common41-final/architecture.json",
+      "sha256": "fa3584fac48daba6df1b3939f88c6cad60451e80a0efdb75a015dbdadef42b33",
+      "value": {
+        "status": "passed",
+        "errors": [],
+        "registered_targets": 32,
+        "configured_targets": 32,
+        "production_units": 71,
+        "source": "/Users/qs/Documents/ChatGPT/QCAE",
+        "build": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-desktop",
+        "evidence": "CMake codemodel-v2/cache-v2 + expanded configure trace + actual source includes"
+      }
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.json",
+      "sha256": "b01b632a3b8d473362b6381c8346ffbc44b550bf8cfc227aa0d20e7c4c3223c6",
+      "value": {
+        "schema_version": 1,
+        "method": "libclang original source cursor TYPE_REF",
+        "template_policy": "Visit source children only; never follow referenced declarations or instantiated specializations.",
+        "protected_manifest_sha256": "d09950be90cb0a8db27acf0dd80e6405c9182d044a7c6e0f00fb34c1932d3173",
+        "entity_schema_sha256": {
+          "schemas/entities/entities.json": "46199749319ca49ae72397d13e1df951ec48d62e9e1c11bd725227cd905c9400"
+        },
+        "libclang_path": "/opt/homebrew/opt/llvm/lib/libclang.dylib",
+        "libclang_sha256": "03376a67c7f18c081dbfe03b52216eafbe1b05c8d21250623c298bfa7317b35e",
+        "extra_compiler_arguments": [
+          "-resource-dir",
+          "/Library/Developer/CommandLineTools/usr/lib/clang/21",
+          "-isysroot",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+          "-isystem",
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1"
+        ],
+        "persistent_type_count": 15,
+        "translation_units": [
+          {
+            "source": "modules/document/src/record_registry.cpp",
+            "sha256": "5b8585e15559e6f0948201289db071fcb129d0f1ddf3a894af853217f67ddb8c",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/document/src/document_view.cpp",
+            "sha256": "b8aa6515197470cae324f4aff944e4f6450b4838e3e4f1d4425309b9e811e586",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/document/src/edit_session.cpp",
+            "sha256": "833ac72ab87da72eaa76930afd25ea945ceda72867cf456d3934c1a45beb8133",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/application/src/core.cpp",
+            "sha256": "0247daf8e4b63822b9ed6e88f9fa84ccb2fc1a0f9d5878de5d7cb8f00525568c",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/application/src/application_state.cpp",
+            "sha256": "3e61c1aeaf0c98412d2967c485765e30157ec41f18bbcdfec6043e4e4a62b385",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/operations/src/operation_registry.cpp",
+            "sha256": "f79d29f3f40a976d5b03743041fd23d1b062936cbabdc0dedd016dacf86f4b9c",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/operations/src/canonical_value.cpp",
+            "sha256": "a38ec047e9f9f3415bc9f43ccd98dac8df24be4ccd3930f575bac2a3090682fc",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/operations/src/change_receipt_value.cpp",
+            "sha256": "9e11ed33d4e94272a37787cbccdd80ee9143c7faa72c6f26bc0fc9ac9e6a4d36",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/runtime/src/task_record.cpp",
+            "sha256": "7a1b4f20f5efe066352b2392ea033fdb43530169d89cfbfe3b80d7d0bc57d019",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/runtime/src/task_service.cpp",
+            "sha256": "fdab5461f46eb473797c5d7a3a90a6fcb0465da0281f0c4fb4a90e65ef30f58f",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/runtime/record_application/src/task_application.cpp",
+            "sha256": "76a70998c6ea91831c4f0ef5e1d4611e8c6e329bb65d52503f772667a8739e81",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "adapters/storage_sqlite/src/sqlite_store.cpp",
+            "sha256": "cb8ab1514f1cbcdf9d05c641a2ffc053b85b191fd039a5dd18eb17794fd2fadd",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "adapters/engine_api/src/typed_host.cpp",
+            "sha256": "39b7478957cd45f6f1d7593c0df83dda67a85f023eaaf445712a81ce32700c98",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "adapters/engine_api/src/render_service.cpp",
+            "sha256": "cb7437cbe243a0daa52c5e129d752f7f88060689c567fd902bd7aea51728eea9",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/clients/src/desktop_client.cpp",
+            "sha256": "801c804b3640027f96b3af0498f4b4f13098879717678cf3923c178917282913",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "modules/clients/src/resource_client.cpp",
+            "sha256": "e4c75d98302126e4ee393efd6e97972e86011ae4a4327134db3fa1451956d287",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          },
+          {
+            "source": "apps/engine/engine_host.cpp",
+            "sha256": "d58f6b62822dc42448845409364c61416fa7022d8a03cc8b854fce07b2b32087",
+            "diagnostics": [],
+            "type_reference_hits": 0
+          }
+        ],
+        "direct_entity_type_references": 0,
+        "hits": [],
+        "errors": [],
+        "self_test": {
+          "injected_type": "qcae::records::Node",
+          "source_file_modified": false,
+          "diagnostics": [],
+          "rejected": true
+        },
+        "passed": true
+      }
+    }
+  ],
+  "environment_manifest_path": "docs/engineering/c3-closure-evidence/package/c4-common40-environment.json",
+  "environment_manifest_sha256": "addb4aeb04ac3418e94bb859cd51adeff405b73b1025bb1146d1b2da00cddafa",
+  "verified_tool_images": [
+    {
+      "id": "compiler",
+      "path": "/Library/Developer/CommandLineTools/usr/bin/clang",
+      "sha256": "f30550eab15fdf5ab8c0dc54c52679711241e5d4b636b027e18c09fef531775d"
+    },
+    {
+      "id": "cmake",
+      "path": "/opt/homebrew/Cellar/cmake/4.3.0/bin/cmake",
+      "sha256": "766f9f2af9532c0faa17f3ee904e77c3edc501bd51ba8b10e6fd38c7666b9972"
+    },
+    {
+      "id": "clang_format",
+      "path": "/Library/Developer/CommandLineTools/usr/bin/clang-format",
+      "sha256": "6444c11612a0df0d81516f38b390429d533828fc9f1cb4b55438979e1dd04129"
+    },
+    {
+      "id": "python",
+      "path": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "sha256": "50298e5fa54e018a9950794d4625a82ba7f2b04a6ef272dc4d26f89a2176072b"
+    },
+    {
+      "id": "qt",
+      "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtCore.framework/Versions/A/QtCore",
+      "sha256": "79af90e17b1ebefb279d2d6ec3fa5054da1c86827ee6c78fd6fa2562b604aa31"
+    },
+    {
+      "id": "vtk",
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkRenderingOpenGL2-9.7.9.7.dylib",
+      "sha256": "854f59cfca828b1dfa3d442da95f41ddb346608596e12c486c0ebc5546d72a48"
+    },
+    {
+      "id": "sqlite",
+      "path": "/opt/homebrew/Cellar/sqlite/3.53.4/lib/libsqlite3.3.53.4.dylib",
+      "sha256": "6b8bb64feced74cd0766990ad5e089566be6fec655a6c96d4cc1358325afb35a"
+    },
+    {
+      "id": "qt_gui",
+      "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtGui.framework/Versions/A/QtGui",
+      "sha256": "19d5426d52d42c3d92c06fcef89adf07dd1a58394c5fff34566fbbb89d2cb7b0"
+    },
+    {
+      "id": "qt_cocoa_plugin",
+      "path": "/opt/homebrew/Cellar/qtbase/6.11.1/share/qt/plugins/platforms/libqcocoa.dylib",
+      "sha256": "dd5019779a8de766e4c604637f0f4d1d8c53c2401c3af87119bc7be5d572b703"
+    },
+    {
+      "id": "vtk_commoncore",
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkCommonCore-9.7.9.7.dylib",
+      "sha256": "f03b4b0a4dbac1ce77e0c98b49c6b2d36fdbc3ff884f3ab973a4b614c61178e5"
+    },
+    {
+      "id": "sqlite_header",
+      "path": "/opt/homebrew/Cellar/sqlite/3.53.4/include/sqlite3.h",
+      "sha256": "919e7f2e8ed1d8f56ac17b412b8971c76aa5d1a879752cc6058f75e7d5910e1d"
+    }
+  ],
+  "matching_historical_review_rows": 44,
+  "superseded_historical_rows": [
+    {
+      "manifest": "docs/engineering/c3-closure-evidence/numerical-persistence-review-build39/review-source-sha256.json",
+      "path": "adapters/engine_api/src/typed_host.cpp",
+      "reviewed_sha256": "df307e625268aaf6bec271e1cc071a858246a3d991f17026e93df25c437c38b9",
+      "current_sha256": "39b7478957cd45f6f1d7593c0df83dda67a85f023eaaf445712a81ce32700c98",
+      "status": "historical_mismatch",
+      "in_common_source_tree": true
+    },
+    {
+      "manifest": "docs/engineering/c3-closure-evidence/package/core-mcp-independent39/reviewed-source-sha256.json",
+      "path": "adapters/engine_api/src/typed_host.cpp",
+      "reviewed_sha256": "7ea0aa5c6f31ae5f9cce1a5fdf7452967f3a3aab0f6b7ba1a673cfb69600e7f3",
+      "current_sha256": "39b7478957cd45f6f1d7593c0df83dda67a85f023eaaf445712a81ce32700c98",
+      "status": "historical_mismatch",
+      "in_common_source_tree": true
+    },
+    {
+      "manifest": "docs/engineering/c3-closure-evidence/package/force-vector-independent40/reviewed-source-sha256.json",
+      "path": "CMakeLists.txt",
+      "reviewed_sha256": "5b435c4e545844f7f05a88a0a4b29c17b013d7a3dae35804e2f255f9288f9bbf",
+      "current_sha256": "3b10cc31560d76d9a554674e36e48a1aa312725b14985f2afe7efb30ccccdfcb",
+      "status": "historical_mismatch",
+      "in_common_source_tree": true
+    },
+    {
+      "manifest": "docs/engineering/c3-closure-evidence/package/gui-units-quota-independent40/reviewed-source-sha256.json",
+      "path": "ui/desktop/src/desktop.cpp",
+      "reviewed_sha256": "97e32b861812b0597713163301e1869e5cfed89fca52fd842da192df555a7dda",
+      "current_sha256": "08b152f7620aef5090770e66a5385082866ec484e3cbce52f77332a7d5f395c7",
+      "status": "historical_mismatch",
+      "in_common_source_tree": true
+    },
+    {
+      "manifest": "docs/engineering/c3-closure-evidence/package/gui-units-quota-independent40/reviewed-source-sha256.json",
+      "path": "tests/c3_desktop_workflow_tests.cpp",
+      "reviewed_sha256": "6296e834eb880a7f2b1eaf316784ed9de876e7fde8c92b81ea56463697047a83",
+      "current_sha256": "1a05cd8631a2df4d8a3435638d7a0f66de24addd49cbf8735987f41542129cd0",
+      "status": "historical_mismatch",
+      "in_common_source_tree": true
+    },
+    {
+      "manifest": "docs/engineering/c3-closure-evidence/package/gui-units-quota-independent40/reviewed-source-sha256.json",
+      "path": "tests/desktop_selection_tests.cpp",
+      "reviewed_sha256": "2301f8e5a70a864f61951338b1be3ea892298185efb2eb47b7391ff354b772a5",
+      "current_sha256": "652f906d29f8ae2739cc0af579886d621f6f47d49aca4609e008636a8b18f43a",
+      "status": "historical_mismatch",
+      "in_common_source_tree": true
+    }
+  ],
+  "missing_historical_review_sources": [],
+  "original_common40_red": {
+    "path": "docs/engineering/c3-closure-evidence/package/common40-final/desktop-tests.log",
+    "sha256": "5e143aa50d0ddb0210dce2e936f1624986e31011d3fd955e627f6319257c0a3b",
+    "actual_commands_sha256": "219186dbe1296717ccfa3923d794f64695abf9c52ae3ffac81355bc74d78de23"
+  },
+  "original_private_receipt_file_count": 42,
+  "old_private_receipts_unchanged": true,
+  "source_authority_review": {
+    "path": "/private/tmp/qcae-common40-readability-review/common41-qg02-review.md",
+    "sha256": "31595a6ceb0abaa3ba85b44e03a432cd65a8a395dc736d620c01cd5509a198bb"
+  },
+  "reviewer_ran_shared_build_or_native_gui": false,
+  "reviewer_edited_repo_in_this_turn": false,
+  "complete_c3_passed": false,
+  "complete_sk12_passed": false,
+  "complete_p0_passed": false,
+  "whole_pipeline_owned_copy_coverage": "unknown"
+}

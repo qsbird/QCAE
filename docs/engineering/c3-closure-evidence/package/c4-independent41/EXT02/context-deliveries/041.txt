@@ -1,0 +1,328 @@
+--- tests/test_c4_freeze.py (16696 UTF-8 bytes) ---
+#!/usr/bin/env python3
+"""Narrow isolated Git/evidence contract tests; never QCAE build acceptance."""
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location("c4_freeze", ROOT / "tools/freeze_c4_baseline.py")
+FREEZE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(FREEZE)
+ADDITIONAL_PROTECTED = "adapters/engine_api/src/typed_json.hpp"
+
+
+class FreezeContract(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory(prefix="qc4-freeze-", dir="/private/tmp")
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.git("init", "--quiet")
+        self.git("config", "user.email", "contract-fixture@example.invalid")
+        self.git("config", "user.name", "C4 tool contract fixture")
+        self.definition = json.loads((ROOT / FREEZE.PROTECTED).read_text())
+        # Preserve the original positive 38-file contract fixture when the
+        # workspace draft adds the private generic typed-writer declaration.
+        self.definition["paths"] = [name for name in self.definition["paths"] if name != ADDITIONAL_PROTECTED]
+        self.assertEqual(len(self.definition["paths"]), 38)
+        paths = set(FREEZE.INITIAL) | set(self.definition["paths"]) | set(self.definition["immutable_fixture_paths"])
+        paths |= {"CMakeLists.txt", "docs/non-source-fixture.md"}
+        for name in paths:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("Temporary tool-contract bytes, not QCAE source: " + name + "\n")
+        definition = self.root / FREEZE.PROTECTED
+        definition.parent.mkdir(parents=True, exist_ok=True)
+        definition.write_text(json.dumps(self.definition, indent=2) + "\n")
+        (self.root / FREEZE.TARGETS).write_bytes((ROOT / FREEZE.TARGETS).read_bytes())
+        self.commit()
+        repo = FREEZE.Repository(self.root, self.source)
+        names = [name for name in repo.entries if FREEZE.source_path(name)]
+        self.digest = FREEZE.source_digest([repo.fact(name) for name in names])
+        self.environment = self.environment_fixture()
+        self.execution = self.execution_fixture()
+        self.persist_evidence()
+
+    def git(self, *arguments):
+        return subprocess.check_output(["git", *arguments], cwd=self.root, stderr=subprocess.DEVNULL).decode().strip()
+
+    def commit(self):
+        self.git("add", ".")
+        self.git("commit", "--quiet", "-m", "Create isolated freeze-tool fixture\n\nConstraint: Not QCAE acceptance\nTested: Metadata integrity only")
+        self.source = self.git("rev-parse", "HEAD")
+
+    def raw_artifact(self, name, content):
+        path = self.root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        return {"path": name, "sha256": hashlib.sha256(content).hexdigest()}
+
+    def environment_fixture(self):
+        image = Path(sys.executable).resolve()
+        image_sha = FREEZE.file_sha(image)
+        return {
+            "schema": "qcae.c4-environment/1", "frozen": True,
+            "os": "tool-contract fixture OS", "cpu": "fixture CPU", "memory_bytes": 1024,
+            "gpu": "fixture GPU", "graphics_backend": "fixture; no QCAE/native run",
+            "compiler": "fixture compiler", "cmake": "fixture CMake", "clang_format": "21 fixture",
+            "python": sys.version.split()[0], "qt": "fixture Qt", "vtk": "fixture VTK", "sqlite": "fixture SQLite",
+            "build_type": "Release", "threads": 1, "device_pixel_ratio": 2,
+            "framebuffer_pixels": [1280, 720], "font_backend": "fixture, not a backend claim",
+            "tool_images": [{"id": role, "path": str(image), "sha256": image_sha} for role in sorted(FREEZE.TOOL_ROLES)],
+            "probe_evidence": [self.raw_artifact("runtime/environment.log", b"Synthetic tool-contract environment; no hardware acceptance\n")],
+        }
+
+    def executed_record(self, name, configuration=None):
+        # These commands actually run, but are only tiny tool-contract fixtures.
+        command = [sys.executable, "-c", "print('Executed tool-contract fixture, not QCAE build/test')"]
+        process = subprocess.run(command, capture_output=True, check=True)
+        record = {"passed": True, "commands": [command], "exit_codes": [process.returncode],
+                  "logs": [self.raw_artifact("runtime/" + name + ".log", process.stdout)]}
+        if configuration is not None:
+            record.update(configuration=configuration,
+                          artifacts=[self.raw_artifact("runtime/" + name + ".bin", b"non-QCAE fixture artifact\n")])
+        return record
+
+    def execution_fixture(self):
+        result = {
+            "schema": "qcae.c4-freeze-execution/1", "source_commit": self.source,
+            "source_tree_sha256": self.digest,
+            "environment_manifest_sha256": FREEZE.sha((json.dumps(self.environment, indent=2) + "\n").encode()),
+            "quality_gates": {name: self.executed_record(name) for name in FREEZE.QUALITY_GATES},
+            "build_matrix": {},
+        }
+        for name, flags in FREEZE.MATRICES.items():
+            configuration = dict(zip(FREEZE.CONFIG_FIELDS, flags))
+            configuration["build_type"] = "Debug" if name == "asan_ubsan" else "Release"
+            result["build_matrix"][name] = self.executed_record(name, configuration)
+        return result
+
+    def persist_evidence(self):
+        (self.root / "environment.json").write_text(json.dumps(self.environment, indent=2) + "\n")
+        (self.root / "execution.json").write_text(json.dumps(self.execution, indent=2) + "\n")
+
+    def run_tool(self, *, excluded=False, output="manifest.json", commit=None, environment="environment.json"):
+        command = [sys.executable, str(ROOT / "tools/freeze_c4_baseline.py"), "--root", str(self.root),
+                   "--source-commit", commit or self.source, "--environment", str(self.root / environment),
+                   "--evidence-spec", str(self.root / "execution.json"), "--output", str(self.root / output)]
+        if excluded:
+            command.append("--exclude-user-instructions-diff")
+        index_before = FREEZE.file_sha(self.root / ".git/index")
+        head_before = self.git("rev-parse", "HEAD")
+        process = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(index_before, FREEZE.file_sha(self.root / ".git/index"))
+        self.assertEqual(head_before, self.git("rev-parse", "HEAD"))
+        manifest = json.loads((self.root / output).read_text()) if (self.root / output).is_file() else None
+        return process, manifest
+
+    def rejected(self, **arguments):
+        process, report = self.run_tool(**arguments)
+        self.assertEqual(process.returncode, 1, process.stderr + process.stdout)
+        self.assertFalse(report["mechanism_frozen"])
+        self.assertFalse(report["complete_sk12_passed"])
+        self.assertEqual(report["whole_pipeline_owned_copy_coverage"], "unknown")
+        return report
+
+    def commit_one_fixture(self, name):
+        self.git("add", "--", name)
+        self.git("commit", "--quiet", "-m", "Alter isolated negative fixture\n\nConstraint: No QCAE changes")
+        self.source = self.git("rev-parse", "HEAD")
+
+    def test_commit_packet_and_protection_integrity(self):
+        process, report = self.run_tool()
+        self.assertEqual(process.returncode, 0, process.stderr + process.stdout)
+        self.assertTrue(report["mechanism_frozen"])
+        self.assertEqual(report["baseline_commit"], self.source)
+        self.assertEqual(report["initial_context"]["file_count"], 8)
+        self.assertEqual(report["protected_file_count"], 38)
+        self.assertEqual(report["generator_count"], 4)
+        self.assertFalse(report["complete_c3_passed"])
+        self.assertFalse(report["sk13_passed"])
+        for row in report["initial_context"]["files"]:
+            data = subprocess.check_output(["git", "show", self.source + ":" + row["path"]], cwd=self.root)
+            self.assertEqual(row["sha256"], FREEZE.sha(data))
+            heading = f"--- {row['path']} ({len(data)} UTF-8 bytes) ---\n".encode()
+            self.assertEqual(row["delivered_utf8_bytes"], len(heading + data + (b"" if data.endswith(b"\n") else b"\n")))
+
+    def test_committed_additional_generic_header_protected(self):
+        path = self.root / ADDITIONAL_PROTECTED
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("// Isolated private generic typed-writer declaration fixture.\n")
+        self.definition["paths"].append(ADDITIONAL_PROTECTED)
+        (self.root / FREEZE.PROTECTED).write_text(json.dumps(self.definition, indent=2) + "\n")
+        self.git("add", "--", ADDITIONAL_PROTECTED, FREEZE.PROTECTED)
+        self.git("commit", "--quiet", "-m", "Add isolated generic protection fixture\n\nConstraint: Not QCAE source or acceptance")
+        self.source = self.git("rev-parse", "HEAD")
+        repo = FREEZE.Repository(self.root, self.source)
+        self.execution["source_commit"] = self.source
+        self.execution["source_tree_sha256"] = FREEZE.source_digest(FREEZE.committed_source_facts(repo))
+        self.persist_evidence()
+        process, report = self.run_tool()
+        self.assertEqual(process.returncode, 0, process.stderr + process.stdout)
+        self.assertEqual(report["protected_file_count"], 39)
+        self.assertEqual(report["generator_count"], 4)
+        self.assertEqual({row["path"] for row in report["generators"]}, set(FREEZE.GENERATORS))
+        header = next(row for row in report["protected_files"] if row["path"] == ADDITIONAL_PROTECTED)
+        self.assertEqual(header["sha256"], FREEZE.file_sha(path))
+        self.assertEqual(header["bytes"], path.stat().st_size)
+
+    def test_agents_user_diff_only_explicitly_excluded(self):
+        path = self.root / "AGENTS.md"
+        path.write_text("Unknown working user instructions must never enter initial package\n")
+        process, report = self.run_tool(excluded=True)
+        self.assertEqual(process.returncode, 0, process.stderr + process.stdout)
+        self.assertFalse(report["working_tree"]["user_instructions_working_content_read"])
+        self.assertNotIn("Unknown working user instructions", json.dumps(report))
+        self.assertEqual(path.read_text(), "Unknown working user instructions must never enter initial package\n")
+
+    def test_agents_diff_without_optin_rejected(self):
+        (self.root / "AGENTS.md").write_text("User diff\n")
+        self.rejected()
+
+    def test_dirty_source_even_assume_unchanged_rejected(self):
+        name = FREEZE.GENERATORS[0]
+        self.git("update-index", "--assume-unchanged", name)
+        (self.root / name).write_text("Actual changed generator bytes\n")
+        self.rejected()
+
+    def test_dirty_nonsource_rejected(self):
+        (self.root / "docs/non-source-fixture.md").write_text("Unknown user documentation change\n")
+        self.rejected()
+
+    def test_untracked_source_rejected(self):
+        (self.root / "tools/untracked.py").write_text("No source exemption\n")
+        self.rejected()
+
+    def test_fixture_threshold_cannot_be_exempted_as_evidence(self):
+        name = "docs/baseline/skeleton-acceptance-targets.json"
+        changed = self.raw_artifact(name, b"Changed threshold, never external evidence\n")
+        self.execution["quality_gates"]["design"]["logs"] = [changed]
+        self.persist_evidence()
+        self.rejected()
+
+    def test_wrong_commit_and_null_rejected(self):
+        self.rejected(commit="f" * 40)
+        (self.root / "manifest.json").unlink()
+        self.rejected(commit="null")
+
+    def test_tree_and_environment_binding_rejected(self):
+        self.execution["source_tree_sha256"] = "0" * 64
+        self.persist_evidence()
+        self.rejected()
+
+    def test_wrong_environment_binding_rejected(self):
+        self.execution["environment_manifest_sha256"] = "0" * 64
+        self.persist_evidence()
+        self.rejected()
+
+    def test_wrong_sanitizer_configuration_rejected(self):
+        self.execution["build_matrix"]["asan_ubsan"]["configuration"]["ubsan_enabled"] = False
+        self.persist_evidence()
+        self.rejected()
+
+    def test_changed_raw_log_rejected(self):
+        (self.root / "runtime/desktop.log").write_text("Different bytes\n")
+        self.rejected()
+
+    def test_failed_quality_and_absent_matrix_rejected(self):
+        self.execution["quality_gates"]["protected_ast"]["exit_codes"] = [1]
+        self.persist_evidence()
+        self.rejected()
+
+    def test_missing_matrix_rejected(self):
+        del self.execution["build_matrix"]["core"]
+        self.persist_evidence()
+        self.rejected()
+
+    def test_packet_source_missing_rejected(self):
+        (self.root / FREEZE.INITIAL[-1]).unlink()
+        self.rejected()
+
+    def test_packet_file_missing_from_commit_rejected(self):
+        name = FREEZE.INITIAL[-1]
+        (self.root / name).unlink()
+        self.commit_one_fixture(name)
+        report = self.rejected()
+        self.assertIn("absent from the supplied commit", report["blocked_reason"])
+
+    def test_initial_delivery_byte_limit_rejected(self):
+        name = FREEZE.INITIAL[-1]
+        (self.root / name).write_text("x" * 65536)
+        self.commit_one_fixture(name)
+        report = self.rejected()
+        self.assertIn("65536", report["blocked_reason"])
+
+    def test_initial_utf8_invalid_rejected(self):
+        name = FREEZE.INITIAL[-1]
+        (self.root / name).write_bytes(b"\xff")
+        self.commit_one_fixture(name)
+        self.rejected()
+
+    def test_protection_denominator_rejected(self):
+        self.definition["paths"].pop()
+        (self.root / FREEZE.PROTECTED).write_text(json.dumps(self.definition))
+        self.commit_one_fixture(FREEZE.PROTECTED)
+        report = self.rejected()
+        self.assertIn("38-file", report["blocked_reason"])
+
+    def test_committed_lower_copy_threshold_rejected(self):
+        path = self.root / FREEZE.TARGETS
+        targets = json.loads(path.read_text())
+        targets["fixtures"]["material_edit_payload_bytes_max"] = 4096
+        path.write_text(json.dumps(targets))
+        self.commit_one_fixture(FREEZE.TARGETS)
+        report = self.rejected()
+        self.assertIn("copy thresholds", report["blocked_reason"])
+
+    def test_output_self_reference_rejected_without_write(self):
+        process, _ = self.run_tool(output="execution.json")
+        self.assertEqual(process.returncode, 2)
+        self.assertNotIn("schema", process.stderr)
+
+    def test_credential_path_rejected_before_read(self):
+        report = self.rejected(environment=".env.private")
+        self.assertIn("outside the freeze reader scope", report["blocked_reason"])
+
+    def test_malformed_tool_image_entries_produce_blocked_receipt(self):
+        for index, entry in enumerate(("malformed-image-entry", None, [], 1)):
+            with self.subTest(entry=entry):
+                self.environment["tool_images"] = [entry]
+                self.execution["environment_manifest_sha256"] = FREEZE.sha(
+                    (json.dumps(self.environment, indent=2) + "\n").encode())
+                self.persist_evidence()
+                process, report = self.run_tool(output=f"malformed-image-{index}.json")
+                self.assertEqual(process.returncode, 1, process.stderr)
+                self.assertIsNotNone(report, process.stderr)
+                self.assertFalse(report["mechanism_frozen"])
+                self.assertIn("lacks actual", report["blocked_reason"])
+                self.assertNotIn("Traceback", process.stderr)
+
+    def test_oversized_integer_pixel_ratio_produces_blocked_receipt(self):
+        self.environment["device_pixel_ratio"] = 10 ** 400
+        self.execution["environment_manifest_sha256"] = FREEZE.sha(
+            (json.dumps(self.environment, indent=2) + "\n").encode())
+        self.persist_evidence()
+        process, report = self.run_tool()
+        self.assertEqual(process.returncode, 1, process.stderr)
+        self.assertIsNotNone(report, process.stderr)
+        self.assertFalse(report["mechanism_frozen"])
+        self.assertEqual(report["blocked_reason"], "Invalid device pixel ratio")
+        self.assertNotIn("Traceback", process.stderr)
+
+    def test_symlink_source_rejected(self):
+        name = FREEZE.GENERATORS[0]
+        (self.root / name).unlink()
+        (self.root / name).symlink_to(self.root / "AGENTS.md")
+        self.rejected()
+
+
+if __name__ == "__main__":
+    unittest.main()

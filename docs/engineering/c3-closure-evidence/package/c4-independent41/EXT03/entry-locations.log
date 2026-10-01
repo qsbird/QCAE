@@ -1,0 +1,40 @@
+7:option(QCAE_BUILD_IPC "Build the optional Qt local engine and CLI" OFF)
+8:option(QCAE_BUILD_STORAGE "Build the optional SQLite persistence adapter" OFF)
+9:option(QCAE_BUILD_DESKTOP "Build the Qt/VTK desktop client" OFF)
+10:option(QCAE_BUILD_SOLVER_LOCAL "Build the local POSIX solver process adapter" ${UNIX})
+11:option(QCAE_ENABLE_NASTRAN_PACKAGE "Enable static Nastran engine contributions" ON)
+12:option(QCAE_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
+47:add_subdirectory(features/mesh_editing)
+87:  add_executable(qcae_model_operation_tests tests/model_operation_tests.cpp)
+88:  target_link_libraries(qcae_model_operation_tests PRIVATE qcae_material_features qcae_mesh_editing qcae_legacy_api)
+89:  qcae_warnings(qcae_model_operation_tests)
+90:  add_test(NAME model_operations COMMAND qcae_model_operation_tests)
+165:    add_executable(qcae_record_store_tests tests/record_store_tests.cpp)
+166:    target_link_libraries(qcae_record_store_tests PRIVATE qcae_sqlite ${QCAE_SQLITE_TARGET})
+167:    qcae_warnings(qcae_record_store_tests)
+168:    add_test(NAME record_store COMMAND qcae_record_store_tests "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/legacy")
+404:    add_executable(qcae_desktop_tests tests/desktop_tests.cpp)
+405:    set_target_properties(qcae_desktop_tests PROPERTIES AUTOMOC ON)
+406:    target_link_libraries(qcae_desktop_tests PRIVATE qcae_desktop_client qcae_vtk_view Qt6::Test)
+407:    qcae_warnings(qcae_desktop_tests)
+408:    vtk_module_autoinit(TARGETS qcae_desktop_tests MODULES ${VTK_LIBRARIES})
+409:    add_test(NAME desktop COMMAND qcae_desktop_tests)
+363:Result<bool> NastranArtifactCoordinator::register_operations(OperationRegistry& registry,
+368:    auto result = registry.register_typed<ProjectMigrateProfileInput>(
+403:    result = registry.register_typed<ModelExportInput>(
+451:                    features::analysis::freeze_analysis_input(snapshot.value->records,
+502:    result = registry.register_typed<ArtifactGetInput>(
+527:    result = registry.register_typed<ArtifactReconcileInput>(
+654:    return registry.register_typed<NastranUiInput>(
+681:            register_nastran_core_rules(registry, coordinator->codec().definition().reference);
+686:            const auto registered =
+687:                coordinator->register_operations(registry, app, std::move(tasks));
+688:            if (!registered.ok())
+689:                return registered;
+690:            return register_fixture_result_handlers(
+modules/document/src/record_model_bridge.cpp:99:    result.validate();
+modules/document/src/record_model_bridge.cpp:103:Model model_from_records(const DocumentView& view, RecordStats* stats) {
+144:| QG-01 自动格式 | `python3 tools/check_cpp_format.py`通过；手写C++文件使用同一`.clang-format`，且`git diff --check`通过 | 格式差异、缺少指定版本工具或空白错误均阻止完成 |
+145:| QG-02 可理解的代码 | 审查记录说明本切片的入口→业务状态→外部适配路径、主要不变量、错误处理和测试；审查者能定位权威状态与副作用 | 命名含糊、职责混杂、重复规则、压缩表达或无依据的复杂性作为阻塞项修复；记录具体文件与结论 |
+146:| QG-03 行为保持 | 对格式/整理前后的同一相关测试集留存结果；编译警告、生成契约/能力摘要与核心/IPC回归均按受影响范围检查 | 回归失败时不能仅称为“格式改动”，需修复或回退；未执行的环境验证仍列为未完成 |
+164:新增几何/网格工具尚无GUI入口；生产实体查询仍有旧投影分支，操作版本/Profile与静态贡献装配仍需补强，见[扩展审查](../engineering/extensibility-audit-c2.md)。后续按[接续计划](development-plan.md#c2之后的接续计划)推进，不据此将SK-04、SK-13或任何完整P0项自动标为通过。

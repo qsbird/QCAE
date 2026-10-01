@@ -1,0 +1,244 @@
+--- a/tests/c3_qt_source_bridge.hpp
++++ b/tests/c3_qt_source_bridge.hpp
+@@ -2,6 +2,7 @@
+ #ifdef QCAE_C3_QT_SDK_MANIFEST
+ #include "qcae/operation_ledger.hpp"
+ #include <QFile>
++#include <QCryptographicHash>
+ #include <QFileInfo>
+ #include <QJsonArray>
+ #include <QJsonDocument>
+@@ -18,6 +19,7 @@
+ #include <string>
+ #ifdef __APPLE__
+ #include <mach-o/dyld.h>
++#include <dlfcn.h>
+ #endif
+ 
+ namespace c3_qt_source {
+@@ -27,11 +29,20 @@
+     using Callback = void (*)(void*, const char*, unsigned, std::uint64_t);
+     using Install = void (*)(Callback, void*);
+     using Manifest = const char* (*)();
++    using Status = std::uint64_t (*)() noexcept;
++    using Loss = void (*)() noexcept;
++    using Depth = unsigned (*)() noexcept;
+     struct Fact {
+         std::uint64_t entries{}, copies{}, writes{}, unsupported{};
+     };
+     QLibrary core_;
+     Install install_{};
++    Status status_{};
++    Loss loss_{};
++    Depth depth_{};
++    bool failure_fence_v1_{};
++    bool ambiguous_failure_status_{};
++    QString failure_status_reason_{QStringLiteral("legacy_sdk_has_no_failure_status")};
+     QJsonObject manifest_;
+     bool qt_{};
+     std::set<std::string> sites_;
+@@ -41,18 +52,24 @@
+     std::mutex mutex_;
+     std::atomic<bool> exhausted_{};
+ 
++    void collectorLoss() noexcept {
++        exhausted_ = true;
++        if (failure_fence_v1_ && loss_)
++            loss_();
++    }
++
+     static void
+     observe(void* context, const char* site, unsigned kind, std::uint64_t bytes) noexcept {
+         auto& self = *static_cast<Bridge*>(context);
+-        const auto ledger = qcae::ledger::current();
+-        if (!ledger)
+-            return;
+         try {
++            const auto ledger = qcae::ledger::current();
++            if (!ledger)
++                return;
+             std::lock_guard lock(self.mutex_);
+             if (ledger->identity().run_id != self.run_)
+                 return;
+             if (!site || !self.sites_.contains(site) || kind > 3) {
+-                self.exhausted_ = true;
++                self.collectorLoss();
+                 if (site && self.unexpected_sites_.size() < 4096)
+                     self.unexpected_sites_.insert(site);
+                 return;
+@@ -64,12 +81,96 @@
+                                       : fact.unsupported;
+             const auto increment = kind == 0 || kind == 3 ? 1 : bytes;
+             if (increment > std::numeric_limits<std::uint64_t>::max() - total)
+-                self.exhausted_ = true;
++                self.collectorLoss();
+             else
+                 total += increment;
+         } catch (...) {
+-            self.exhausted_ = true;
+-        }
++            self.collectorLoss();
++        }
++    }
++
++    static QString fileDigest(const QString& path) {
++        QFile file(path);
++        QCryptographicHash hash(QCryptographicHash::Sha256);
++        if (!file.open(QIODevice::ReadOnly) || !hash.addData(&file))
++            throw std::runtime_error("SDK image/manifest SHA could not be read");
++        return QString::fromLatin1(hash.result().toHex());
++    }
++
++    void negotiateFailureFence(const QString& manifestPath) {
++        if (!qt_)
++            return; // HarfBuzz remains unchanged; no invented Qt status for it.
++        status_ = reinterpret_cast<Status>(core_.resolve("qcae_qt_sdk_observer_status"));
++        loss_ = reinterpret_cast<Loss>(core_.resolve("qcae_qt_sdk_observer_collector_loss"));
++        depth_ = reinterpret_cast<Depth>(core_.resolve("qcae_qt_sdk_observer_depth"));
++        const auto advertised = manifest_.value("observer_failure_fence");
++        if (advertised.isUndefined()) {
++            // Normal SDK7 stays usable. A status extension without matching
++            // manifest authorization is never invoked or treated as known.
++            ambiguous_failure_status_ = status_ || loss_ || depth_;
++            if (ambiguous_failure_status_)
++                failure_status_reason_ = QStringLiteral("symbols_without_manifest_fence");
++            status_ = nullptr;
++            loss_ = nullptr;
++            depth_ = nullptr;
++            return;
++        }
++        if (!advertised.isObject())
++            throw std::runtime_error("Malformed SDK exception fence manifest");
++        const auto fence = advertised.toObject();
++        if (fence.value("version") != QJsonValue(1) ||
++            fence.value("failure_is_unknown") != QJsonValue(true) ||
++            fence.value("callback_abi_unchanged") != QJsonValue(true) ||
++            fence.value("noexcept_callback_boundary") != QJsonValue(true) ||
++            fence.value("original_C_declarations_and_scope_layout_unchanged") != QJsonValue(true) ||
++            fence.value("balanced_admission_stack_capacity") != QJsonValue(1024) ||
++            fence.value("sticky_status_symbol") != QJsonValue("qcae_qt_sdk_observer_status") ||
++            fence.value("collector_loss_symbol") !=
++                QJsonValue("qcae_qt_sdk_observer_collector_loss") ||
++            fence.value("depth_symbol") != QJsonValue("qcae_qt_sdk_observer_depth"))
++            throw std::runtime_error("Unsupported SDK exception fence contract");
++        if (!status_ || !loss_ || !depth_)
++            throw std::runtime_error("Advertised SDK exception fence symbols are missing");
++#ifdef QCAE_C3_QT_SDK_IMAGE_BINDING
++        QFile expected(QString::fromUtf8(QCAE_C3_QT_SDK_IMAGE_BINDING));
++        if (!expected.open(QIODevice::ReadOnly))
++            throw std::runtime_error("SDK exception fence image binding is missing");
++        const auto document = QJsonDocument::fromJson(expected.readAll());
++        if (!document.isObject())
++            throw std::runtime_error("SDK exception fence image binding is malformed");
++        const auto binding = document.object();
++        const auto actualPath = QFileInfo(core_.fileName()).canonicalFilePath();
++        const auto image = binding.value("qt_core").toObject();
++        if (binding.value("schema") != QJsonValue("qcae.qt-sdk-observer-image-binding/1") ||
++            binding.value("observer_manifest_sha256") != QJsonValue(fileDigest(manifestPath)) ||
++            actualPath.isEmpty() || image.value("path") != QJsonValue(actualPath) ||
++            image.value("sha256") != QJsonValue(fileDigest(actualPath)))
++            throw std::runtime_error("SDK exception fence manifest/image SHA mismatch");
++#ifdef __APPLE__
++        const auto sameImage = [&](const void* symbol) {
++            Dl_info info{};
++            return dladdr(symbol, &info) != 0 && info.dli_fname &&
++                   QFileInfo(QString::fromLocal8Bit(info.dli_fname)).canonicalFilePath() ==
++                       actualPath;
++        };
++        if (!sameImage(reinterpret_cast<const void*>(install_)) ||
++            !sameImage(reinterpret_cast<const void*>(status_)) ||
++            !sameImage(reinterpret_cast<const void*>(loss_)) ||
++            !sameImage(reinterpret_cast<const void*>(depth_)))
++            throw std::runtime_error("SDK exception fence symbols resolve to another image");
++#else
++        throw std::runtime_error(
++            "SDK exception fence image-origin check has not been validated on this platform");
++#endif
++#else
++        (void)manifestPath;
++        throw std::runtime_error("SDK exception fence requires an external image binding");
++#endif
++        failure_fence_v1_ = true;
++        failure_status_reason_ = QStringLiteral("manifest_and_image_bound_v1");
++        if (depth_() != 0)
++            throw std::runtime_error(
++                "SDK collector installation occurred inside an active observer scope");
+     }
+ 
+     QJsonArray loaded_qt_images() const {
+@@ -138,6 +239,7 @@
+             actual.object() != expected_json.object())
+             throw std::runtime_error("The loaded SDK observer does not match its frozen manifest");
+         manifest_ = actual.object();
++        negotiateFailureFence(QString::fromUtf8(manifest_path));
+         for (const auto site : manifest_.value("sites").toArray())
+             sites_.insert(site.toObject().value("site").toString().toStdString());
+         if (sites_.empty())
+@@ -148,8 +250,13 @@
+             (void)loaded_harfbuzz_images();
+         install_(observe, this);
+     }
+-    ~Bridge() {
+-        install_(nullptr, nullptr);
++    ~Bridge() noexcept {
++        try {
++            if (install_)
++                install_(nullptr, nullptr);
++        } catch (...) {
++            collectorLoss();
++        }
+     }
+     void begin(const std::string& run) {
+         std::lock_guard lock(mutex_);
+@@ -157,12 +264,17 @@
+         facts_.clear();
+         unexpected_sites_.clear();
+         exhausted_ = false;
++        if (failure_fence_v1_ && depth_() != 0)
++            collectorLoss();
+     }
+     QJsonObject snapshot() {
+         if (qcae::ledger::current())
+             throw std::runtime_error(
+                 "Source observer report must be constructed outside the sample");
+         std::lock_guard lock(mutex_);
++        const auto status = failure_fence_v1_ ? status_() : 0;
++        const bool balanced = !failure_fence_v1_ || depth_() == 0;
++        const bool statusHealthy = !failure_fence_v1_ || (status == 0 && balanced);
+         QJsonArray facts;
+         QJsonArray unexpected;
+         for (const auto& site : unexpected_sites_)
+@@ -173,14 +285,25 @@
+                                      {"copy_upper_bound_bytes", QString::number(fact.copies)},
+                                      {"write_upper_bound_bytes", QString::number(fact.writes)},
+                                      {"unsupported_calls", QString::number(fact.unsupported)}});
+-        QJsonObject result{{"run_id", QString::fromStdString(run_)},
+-                           {"collector_complete", !exhausted_},
+-                           {"unexpected_sites", unexpected},
+-                           {"coverage_complete", false},
+-                           {"whole_pipeline_owned_copy_coverage", "unknown"},
+-                           {"included_in_contract_total", false},
+-                           {"observer_manifest", manifest_},
+-                           {"facts", facts}};
++        QJsonObject result{
++            {"run_id", QString::fromStdString(run_)},
++            {"collector_complete", !exhausted_ && !ambiguous_failure_status_ && statusHealthy},
++            {"observer_failure_fence_version", failure_fence_v1_ ? 1 : 0},
++            {"observer_failure_status_known", failure_fence_v1_},
++            {"observer_failure_status",
++             failure_fence_v1_ ? QJsonValue(QString::number(status))
++                               : QJsonValue(QJsonValue::Null)},
++            {"observer_failure_status_reason", failure_status_reason_},
++            {"exception_boundary_complete", failure_fence_v1_ && !exhausted_ && statusHealthy},
++            {"observer_scope_balanced",
++             failure_fence_v1_ ? QJsonValue(balanced) : QJsonValue(QJsonValue::Null)},
++            {"collector_loss_is_unknown", true},
++            {"unexpected_sites", unexpected},
++            {"coverage_complete", false},
++            {"whole_pipeline_owned_copy_coverage", "unknown"},
++            {"included_in_contract_total", false},
++            {"observer_manifest", manifest_},
++            {"facts", facts}};
+         result.insert(qt_ ? "qt_core_loaded_path" : "harfbuzz_loaded_path", core_.fileName());
+         result.insert(qt_ ? "loaded_qt_images" : "loaded_harfbuzz_images",
+                       qt_ ? loaded_qt_images() : loaded_harfbuzz_images());

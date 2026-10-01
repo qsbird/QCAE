@@ -1,0 +1,43 @@
+        return false;
+    if (value.isString())
+        return bounded_string(value.toStringView(), remaining);
+    if (value.isDouble())
+        return take_json_budget(64, remaining);
+    if (value.isBool())
+        return take_json_budget(5, remaining);
+    if (value.isArray()) {
+        const auto array = value.toArray();
+        if (!take_json_budget(2 + (array.isEmpty() ? 0 : array.size() - 1), remaining))
+            return false;
+        for (const auto& member : array)
+            if (!bounded_json(member, remaining, depth + 1))
+                return false;
+        return true;
+    }
+    if (value.isObject()) {
+        const auto object = value.toObject();
+        if (!take_json_budget(2 + (object.isEmpty() ? 0 : object.size() - 1), remaining))
+            return false;
+        for (auto it = object.constBegin(); it != object.constEnd(); ++it)
+            if (!bounded_string(it.keyView(), remaining) || !take_json_budget(1, remaining) ||
+                !bounded_json(it.value(), remaining, depth + 1))
+                return false;
+        return true;
+    }
+    return take_json_budget(4, remaining);
+}
+int page_index(const QJsonObject& parameters, const char* key, int fallback, int maximum) {
+    if (!parameters.contains(key))
+        return fallback;
+    const auto value = parameters.value(QLatin1String(key));
+    if (!value.isDouble() || value.toDouble() < 0 || value.toDouble() > maximum ||
+        std::floor(value.toDouble()) != value.toDouble())
+        throw BadInput("Invalid pagination");
+    return value.toInt();
+}
+QJsonObject
+entity_query(const QString& id, const QJsonObject& parameters, const RecordSnapshot& snapshot) {
+    fields(parameters, {"kind", "name_contains", "ids", "view", "owner_id", "offset", "limit"});
+    EntityFilter filter;
+    if (parameters.contains("kind"))
+        filter.kind = str(parameters, "kind");

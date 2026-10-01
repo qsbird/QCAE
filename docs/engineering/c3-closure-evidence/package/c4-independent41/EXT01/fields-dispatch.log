@@ -1,0 +1,25 @@
+adapters/engine_api/src/ipc_model.cpp-165-    }
+adapters/engine_api/src/ipc_model.cpp-166-    throw BadInput("Unsupported record field type");
+adapters/engine_api/src/ipc_model.cpp-167-}
+adapters/engine_api/src/ipc_model.cpp-168-QString entity_field_name(const RecordFieldDescriptor& field) {
+adapters/engine_api/src/ipc_model.cpp:169:    // Preserve the established entity.query wire names; entity.fields uses schema names.
+adapters/engine_api/src/ipc_model.cpp-170-    if (field.kind == RecordFieldKind::reference)
+adapters/engine_api/src/ipc_model.cpp-171-        return qs(field.name + "_id");
+adapters/engine_api/src/ipc_model.cpp-172-    if (field.kind == RecordFieldKind::vector3 && field.unit == "mm")
+adapters/engine_api/src/ipc_model.cpp-173-        return qs(field.name + "_mm");
+adapters/engine_api/src/ipc_model.cpp-174-    return qs(field.name);
+adapters/engine_api/src/ipc_model.cpp-175-}
+adapters/engine_api/src/ipc_model.cpp-176-} // namespace
+adapters/engine_api/src/ipc_model.cpp-177-QJsonObject record_entity_json(const EntitySummary& entity, const DocumentView& view) {
+adapters/engine_api/src/ipc_model.cpp-178-    QJsonObject result{
+adapters/engine_api/src/ipc_model.cpp-179-        {"entity_id", qs(entity.id.value)}, {"kind", qs(entity.kind)}, {"name", qs(entity.name)}};
+adapters/engine_api/src/ipc_model.cpp-180-    transport::json_ledger::ObjectCopies copies;
+adapters/engine_api/src/ipc_model.cpp-181-    copies.insert(QLatin1StringView("entity_id"), result.value("entity_id"));
+adapters/engine_api/src/ipc_model.cpp-182-    copies.insert(QLatin1StringView("kind"), result.value("kind"));
+adapters/engine_api/src/ipc_model.cpp-183-    copies.insert(QLatin1StringView("name"), result.value("name"));
+adapters/engine_api/src/ipc_model.cpp-184-    const auto record = view.find_identity(entity.id.value);
+adapters/engine_api/src/ipc_model.cpp-185-    const auto input = record_wire::decode(record->encoded());
+adapters/engine_api/src/ipc_model.cpp-186-    for (const auto& descriptor : record->descriptor().fields) {
+adapters/engine_api/src/ipc_model.cpp-187-        const auto* field = record_wire::find(input, descriptor.id);
+adapters/engine_api/src/ipc_model.cpp-188-        if (field) {
+adapters/engine_api/src/ipc_model.cpp-189-            const auto key = entity_field_name(descriptor);

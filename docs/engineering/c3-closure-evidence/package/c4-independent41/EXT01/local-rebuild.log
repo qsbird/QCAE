@@ -1,0 +1,47 @@
+[0/2] Re-checking globbed directories...
+[1/37] Generating ../../generated/qcae/operation_inputs.hpp
+[2/37] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/analysis_checks.cpp.o
+[3/37] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/analysis_operations.cpp.o
+[4/37] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/cantilever_checks.cpp.o
+[5/37] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/check_report.cpp.o
+[6/37] Building CXX object features/materials/CMakeFiles/qcae_material_features.dir/src/material_operations.cpp.o
+[7/37] Linking CXX static library features/analysis/libqcae_analysis_features.a
+[8/37] Linking CXX static library features/materials/libqcae_material_features.a
+[9/37] Building CXX object features/mesh_editing/CMakeFiles/qcae_mesh_editing.dir/src/mesh_editing_operations.cpp.o
+[10/37] Linking CXX static library features/mesh_editing/libqcae_mesh_editing.a
+[11/37] Building CXX object adapters/engine_api/CMakeFiles/qcae_engine_api.dir/src/result_api.cpp.o
+[12/37] Building CXX object adapters/engine_api/CMakeFiles/qcae_engine_api.dir/src/engine_contributions.cpp.o
+[13/37] Building CXX object adapters/engine_api/CMakeFiles/qcae_engine_api.dir/src/nastran_contribution.cpp.o
+[14/37] Building CXX object adapters/engine_api/CMakeFiles/qcae_engine_api.dir/src/solver_contribution.cpp.o
+[15/37] Linking CXX static library adapters/engine_api/libqcae_engine_api.a
+[16/37] Building CXX object CMakeFiles/qcae_operation_registry_tests.dir/tests/operation_registry_tests.cpp.o
+[17/37] Building CXX object CMakeFiles/qcae_model_operation_tests.dir/tests/model_operation_tests.cpp.o
+FAILED: [code=1] CMakeFiles/qcae_model_operation_tests.dir/tests/model_operation_tests.cpp.o 
+/usr/bin/c++  -I/private/tmp/qcae-c4-ext01-41/features/materials/include -I/private/tmp/qcae-c4-ext01-41/modules/application/include -I/private/tmp/qcae-c4-ext01-41/modules/document/include -I/private/tmp/qcae-c4-ext01-41/modules/foundation/include -I/private/tmp/qcae-c4-ext01-41/modules/contracts/include -I/private/tmp/qcae-c4-ext01-41/build-ext01-local/generated -I/private/tmp/qcae-c4-ext01-41/modules/operations/include -I/private/tmp/qcae-c4-ext01-41/modules/parameters/include -I/private/tmp/qcae-c4-ext01-41/features/mesh_editing/include -I/private/tmp/qcae-c4-ext01-41/features/legacy_api/include -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -Werror -MD -MT CMakeFiles/qcae_model_operation_tests.dir/tests/model_operation_tests.cpp.o -MF CMakeFiles/qcae_model_operation_tests.dir/tests/model_operation_tests.cpp.o.d -o CMakeFiles/qcae_model_operation_tests.dir/tests/model_operation_tests.cpp.o -c /private/tmp/qcae-c4-ext01-41/tests/model_operation_tests.cpp
+In file included from /private/tmp/qcae-c4-ext01-41/tests/model_operation_tests.cpp:1:
+In file included from /private/tmp/qcae-c4-ext01-41/features/materials/include/qcae/material_operations.hpp:2:
+In file included from /private/tmp/qcae-c4-ext01-41/build-ext01-local/generated/qcae/operation_inputs.hpp:3:
+In file included from /private/tmp/qcae-c4-ext01-41/modules/operations/include/qcae/operation_registry.hpp:2:
+In file included from /private/tmp/qcae-c4-ext01-41/modules/foundation/include/qcae/types.hpp:4:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/optional:1310:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/iterator:715:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/common_iterator.h:33:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/variant:230:
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__tuple/find_index.h:44:17: error: static assertion failed due to requirement 'value != __not_found': type not found in type list
+   44 |   static_assert(value != __not_found, "type not found in type list");
+      |                 ^~~~~~~~~~~~~~~~~~~~
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__tuple/find_index.h:56:38: note: in instantiation of template class 'std::__find_detail::__find_exactly_one_checked<std::monostate, bool, double, long long, std::string, std::vector<qcae::operations::Value>, std::map<std::string, qcae::operations::Value, std::less<void>>>' requested here
+   56 | struct __find_exactly_one_t : public __find_detail::__find_exactly_one_checked<_T1, _Args...> {};
+      |                                      ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/variant:1335:35: note: in instantiation of template class 'std::__find_exactly_one_t<std::monostate, bool, double, long long, std::string, std::vector<qcae::operations::Value>, std::map<std::string, qcae::operations::Value, std::less<void>>>' requested here
+ 1335 |   return std::__holds_alternative<__find_exactly_one_t<_Tp, _Types...>::value>(__v);
+      |                                   ^
+/private/tmp/qcae-c4-ext01-41/tests/model_operation_tests.cpp:396:16: note: in instantiation of function template specialization 'std::holds_alternative<std::monostate, bool, double, long long, std::string, std::vector<qcae::operations::Value>, std::map<std::string, qcae::operations::Value, std::less<void>>>' requested here
+  396 |     check(std::holds_alternative<std::monostate>(object(queried).at("description").data) &&
+      |                ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__tuple/find_index.h:44:23: note: expression evaluates to '18446744073709551615 != 18446744073709551615'
+   44 |   static_assert(value != __not_found, "type not found in type list");
+      |                 ~~~~~~^~~~~~~~~~~~~~
+1 error generated.
+[18/37] Building CXX object features/analysis/CMakeFiles/qcae_analysis_check_tests.dir/__/__/tests/analysis_check_tests.cpp.o
+ninja: build stopped: subcommand failed.

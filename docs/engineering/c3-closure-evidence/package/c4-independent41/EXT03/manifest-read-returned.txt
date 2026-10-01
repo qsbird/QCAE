@@ -1,0 +1,1692 @@
+Warning: truncated output (original token count: 62260)
+Total output lines: 6208
+
+{
+  "schema": "qcae.c4-baseline-freeze/1",
+  "mechanism_frozen": true,
+  "baseline_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "baseline_git_tree_oid": "18fc43f6df6b287b577e9f4d0c70fbe6770efdf1",
+  "source_tree_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+  "source_tree_hash_algorithm": "SHA256(b'QCAE-C4-SOURCE-SHA256-v1\\0' + UTF8-path-sorted records: uint64be(path bytes) + path + mode6 ASCII + raw32 SHA256(blob))",
+  "source_tree_roots": [
+    "CMakeLists.txt",
+    ".clang-format",
+    "cmake",
+    "modules",
+    "features",
+    "adapters",
+    "apps",
+    "ui",
+    "profiles",
+    "schemas",
+    "tests",
+    "tools"
+  ],
+  "committed_source_files": [
+    {
+      "path": ".clang-format",
+      "git_blob_oid": "e51935976c2c68e61fbaff04dfe94ae456516f9c",
+      "mode": "100644",
+      "bytes": 384,
+      "sha256": "49f13afb4d3ad2a3febb3b95bb6e1036ae57c0211544647008efcd93c1c0803f"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "git_blob_oid": "6ff0fa479f37c50402ad4726433274105ff91c0f",
+      "mode": "100644",
+      "bytes": 31551,
+      "sha256": "3b10cc31560d76d9a554674e36e48a1aa312725b14985f2afe7efb30ccccdfcb"
+    },
+    {
+      "path": "adapters/artifacts_local/CMakeLists.txt",
+      "git_blob_oid": "ef8aad228e95eab7684e73cac2f4f2575aa6d9a3",
+      "mode": "100644",
+      "bytes": 677,
+      "sha256": "142c9891273e5da559eeb9aa806950edd95abb31f2a7416c2b9c74f2992e4e8a"
+    },
+    {
+      "path": "adapters/artifacts_local/include/qcae/artifacts_local.hpp",
+      "git_blob_oid": "4abff94d626d9c2c67a075a61b4277cc2238ac17",
+      "mode": "100644",
+      "bytes": 1424,
+      "sha256": "071315133560350d2924cfcd79788a5f7a43e9d9cf8e30cae07a50d4d27cef93"
+    },
+    {
+      "path": "adapters/artifacts_local/src/artifacts_local.cpp",
+      "git_blob_oid": "55f5ec764e1ba9218e4d447e765d20d6ca59f212",
+      "mode": "100644",
+      "bytes": 12453,
+      "sha256": "6f79e078ec45edf97aec8d386a73c9817a9a3f467c52c7da3b2e663bae09ab5e"
+    },
+    {
+      "path": "adapters/engine_api/CMakeLists.txt",
+      "git_blob_oid": "e8301cb6487b7967aca3e354ad354ff2a14b7c2c",
+      "mode": "100644",
+      "bytes": 4516,
+      "sha256": "aa6775cc0d9ec1efe95ed13823e989183c849feb9b1bcc7db789ac6754ed7381"
+    },
+    {
+      "path": "adapters/engine_api/README.md",
+      "git_blob_oid": "4695c86dda97090f33feeb69e1c5eba17926071b",
+      "mode": "100644",
+      "bytes": 11758,
+      "sha256": "b9f795029a234ad358c15b926662247073f4f8ae3933dbada7d1b31e3e7d1c41"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/engine_contributions.hpp",
+      "git_blob_oid": "59e81a75a54fd354a956ea70748093b01fe1d2a0",
+      "mode": "100644",
+      "bytes": 1064,
+      "sha256": "594b341bb9a0d69dbf9a1c6176a7dbac0194d097786ec5d33807b6fdab04f02b"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/event_stream.hpp",
+      "git_blob_oid": "4df7b045c8c5d98d4db6da1d262d56a169b7ffe3",
+      "mode": "100644",
+      "bytes": 1631,
+      "sha256": "1c19fe25d8e5faa90ebcda846c23e0e6f642df53b877db8b41f2427f0a6eb1b9"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/ipc_api.hpp",
+      "git_blob_oid": "4f7a22082a73c5606e2388b17bd61e685f150284",
+      "mode": "100644",
+      "bytes": 1228,
+      "sha256": "57b0ea4252486a3fb1321df4abd717d1e8a9e021039a0c900a0080a298331d5d"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/ipc_model.hpp",
+      "git_blob_oid": "20972f2364fe7588ae39d2a01a37efe59585ae18",
+      "mode": "100644",
+      "bytes": 1035,
+      "sha256": "0a8cfa6e2f7da9eaea41728f6a6f91c5a1275745c4071d18730705bce1b593d3"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/ipc_selection.hpp",
+      "git_blob_oid": "b0928d0dc08a16ae48cfcd027341e4dad3006077",
+      "mode": "100644",
+      "bytes": 212,
+      "sha256": "6ec3836a9cb7162b4de14b8ac71c8147476f0c9fcfe1dc945602a0dbc6294ac3"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/nastran_contribution.hpp",
+      "git_blob_oid": "3ac211f26a5b73ec3369438ca71a20dd20a8109b",
+      "mode": "100644",
+      "bytes": 1770,
+      "sha256": "ed2a384997b46df51d03b0fa255bf6a24fe5aa224801a802241524c6907070e4"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/render_service.hpp",
+      "git_blob_oid": "141db319e1295db7c5c9ef80e020a06c7b4512c5",
+      "mode": "100644",
+      "bytes": 890,
+      "sha256": "0ab692826a9381c50b02a180dc92bba0884c0d7861e1a4e956f514fe457aed90"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/resource_store.hpp",
+      "git_blob_oid": "654467f59bfd4628009b4581b6aef7b7bb0f9b84",
+      "mode": "100644",
+      "bytes": 2193,
+      "sha256": "307e93c12243915096f609a4f395018f33a8fc35c4cb8cbb89b2a60edb21b136"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/result_api.hpp",
+      "git_blob_oid": "c22dfffd2d6e0b5382d046e7efb77e611f8df6e1",
+      "mode": "100644",
+      "bytes": 408,
+      "sha256": "ad7d2d2871f7eeb5dbb430c602f617558ad4274dd94d949aaa0b86ed45240132"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/solver_contribution.hpp",
+      "git_blob_oid": "d6c4cd74281c87a1568848efb3abc4b434b2e285",
+      "mode": "100644",
+      "bytes": 1965,
+      "sha256": "628ceb8ad875e5c832ab6b2050957ea87a726b7123cddc3ad3857c457954f15e"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/solver_result.hpp",
+      "git_blob_oid": "a69fe521b540349f24c541e9ce10a8f617b3abe9",
+      "mode": "100644",
+      "bytes": 1086,
+      "sha256": "41c68e6f2132f2cdfde0797eaeb3072f2b9696739817916ac178c629100ba359"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/solver_result_reader.hpp",
+      "git_blob_oid": "0a1d9aa916e2578c78fc8976a3f82902cbddd7e9",
+      "mode": "100644",
+      "bytes": 389,
+      "sha256": "3cfc1c07e5ac434c599eba6a84cbe43ee2238181de3ea7cd361f37d6b9de912c"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/solver_run_record.hpp",
+      "git_blob_oid": "fc4ffc84bc9abca6676e3682ada0a94e2ad763cc",
+      "mode": "100644",
+      "bytes": 1909,
+      "sha256": "0af77e4c1e73d96c8ca930500f957184ab8119b41e0f41f6f7b23fa35d475b14"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/solver_version.hpp",
+      "git_blob_oid": "9ec32f7e04857440fb16cf36ef7f50731a521f7a",
+      "mode": "100644",
+      "bytes": 1248,
+      "sha256": "a6e5aca448f9afc796db8a45c6e61e3b0f9d2bfbb09baeb74f06cc3f9aed4f5e"
+    },
+    {
+      "path": "adapters/engine_api/include/qcae/typed_host.hpp",
+      "git_blob_oid": "c13aaf3dc8fdbd380072e0164d65c977097c271f",
+      "mode": "100644",
+      "bytes": 1508,
+      "sha256": "ab68bdb6efeb173412461442a838035bed6a31f96d905cc443ddcc5666184ddc"
+    },
+    {
+      "path": "adapters/engine_api/src/engine_contributions.cpp",
+      "git_blob_oid": "ca9b84c3b4d31df6a439488eee4e839627cbbc21",
+      "mode": "100644",
+      "bytes": 13071,
+      "sha256": "98df8d7bdfd62c4fcbf3b94bb06241c850c22a9015da01ea221d660a90168a8c"
+    },
+    {
+      "path": "adapters/engine_api/src/event_stream.cpp",
+      "git_blob_oid": "f8ec8c158d02fdca1edb2f7b5dbb69f6cc9fd1b3",
+      "mode": "100644",
+      "bytes": 21977,
+      "sha256": "e0fe9164981218b0f1003d261c6a6a7243b5cdc43ede7aff0844f96758383064"
+    },
+    {
+      "path": "adapters/engine_api/src/ipc_api.cpp",
+      "git_blob_oid": "8038cdffb0cf9e5e03ffbbe164d4a0cd7d1ac4a8",
+      "mode": "100644",
+      "bytes": 27483,
+      "sha256": "dc50a970e588000e73dd2ac9b3bae0ab91b5e70a386226a06572d7da3192e1d4"
+    },
+    {
+      "path": "adapters/engine_api/src/ipc_model.cpp",
+      "git_blob_oid": "5e1b34f3b0d6a2b14a504ce6eff79c53fe9ec87e",
+      "mode": "100644",
+      "bytes": 28398,
+      "sha256": "90217bf48d31d0f39ee73016f632fccf05384301ec214adc76df40ae4543edeb"
+    },
+    {
+      "path": "adapters/engine_api/src/ipc_selection.cpp",
+      "git_blob_oid": "fdaa7eca4f27347e207d06edcb7d294a641130aa",
+      "mode": "100644",
+      "bytes": 17538,
+      "sha256": "2968f0d296b0555c3d8d8a94bf34a9196930fb034bc53dcd2b65ab4bea2ca85f"
+    },
+    {
+      "path": "adapters/engine_api/src/nastran_contribution.cpp",
+      "git_blob_oid": "47ba621d67eacc09b81dc05c645335c5842ce74c",
+      "mode": "100644",
+      "bytes": 41343,
+      "sha256": "30ea7e7abbc1c95837c71e32dfdc84aac98ca00a748fddb4006c195a054f7583"
+    },
+    {
+      "path": "adapters/engine_api/src/render_service.cpp",
+      "git_blob_oid": "d6503f01fba568825dd181cbcdbb5a8a5817e484",
+      "mode": "100644",
+      "bytes": 26184,
+      "sha256": "cb7437cbe243a0daa52c5e129d752f7f88060689c567fd902bd7aea51728eea9"
+    },
+    {
+      "path": "adapters/engine_api/src/resource_store.cpp",
+      "git_blob_oid": "61ca7f47e33a2620200a1a89ad70986e67ac02fd",
+      "mode": "100644",
+      "bytes": 12309,
+      "sha256": "56b2193239195af9f11c9e50cdc73f9d698dde8e89c9759d6024bee05e2f9c38"
+    },
+    {
+      "path": "adapters/engine_api/src/result_api.cpp",
+      "git_blob_oid": "afe1794b3cf6753e09fbcf51240e09fb5c385fc2",
+      "mode": "100644",
+      "bytes": 9431,
+      "sha256": "51c74f17097ebd0460d82d535b224c40cc5acb67aa5e3c144a236e3711139d92"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_contribution.cpp",
+      "git_blob_oid": "6305617167b08d2e24dfdd5888ba3d61ccef68bf",
+      "mode": "100644",
+      "bytes": 90325,
+      "sha256": "c2051c05a0d9c3b338a80c5c04d8297b64c819df06cee0b2ae9b4ea8a5345972"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_result_store.cpp",
+      "git_blob_oid": "7cedf9ab08c358bef306ca508326e8f390418693",
+      "mode": "100644",
+      "bytes": 29355,
+      "sha256": "ae3046142e9ca8decf542d562dcd80db9a2e16d25968bc2a96210f713ed6c56e"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_result_store.hpp",
+      "git_blob_oid": "6d5843cb11f73b6461ec3bfe90ea88175ef8b103",
+      "mode": "100644",
+      "bytes": 1888,
+      "sha256": "a3df5895002f6b57bf021e910e29036ec293633cdfdd5d234f9b95a9a8ae4226"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_run_record.cpp",
+      "git_blob_oid": "c02ebbddcadbee5dd84c0e1b9872e12826b41d9a",
+      "mode": "100644",
+      "bytes": 27354,
+      "sha256": "0eb01e34ccb56f2821cf8023086637106038d781868f14410d57d04459c21ac1"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_validation_store.cpp",
+      "git_blob_oid": "596b7f3e0603f8ff8420ef5ddbbeafc9b3e0b086",
+      "mode": "100644",
+      "bytes": 17558,
+      "sha256": "31bb94ebde44dd6bf0757fab35650f9e3f954286daeae94f95abb8375b15dcda"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_validation_store.hpp",
+      "git_blob_oid": "33417edd689469fc25ae954c34cba1070de583d7",
+      "mode": "100644",
+      "bytes": 2302,
+      "sha256": "b9a4fea8df833f94e973b44bf69660b7f0bedab1f5ecd95d6e4ba16a0b0d7b0a"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_version_probe.cpp",
+      "git_blob_oid": "4f028a05c7adc2c1d4c13459e46de03cfe218e3e",
+      "mode": "100644",
+      "bytes": 20725,
+      "sha256": "9f7be07145fde31d7625d553ab7dc803b78c92658a46257b491700efd0d2c49b"
+    },
+    {
+      "path": "adapters/engine_api/src/solver_version_probe.hpp",
+      "git_blob_oid": "1e7b5c8d1577d192978b01a035d6756ac52bd2c9",
+      "mode": "100644",
+      "bytes": 927,
+      "sha256": "a0709fc7ff6d46971c80a007c8fd647681eba2e6da96c3a94b12e2f931edfb38"
+    },
+    {
+      "path": "adapters/engine_api/src/typed_host.cpp",
+      "git_blob_oid": "f5b95f771aaa06afe1f66cf6a31ca76333dfeae9",
+      "mode": "100644",
+      "bytes": 21130,
+      "sha256": "39b7478957cd45f6f1d7593c0df83dda67a85f023eaaf445712a81ce32700c98"
+    },
+    {
+      "path": "adapters/engine_api/src/typed_json.hpp",
+      "git_blob_oid": "170952a008aa13a78fb6864668f687123ac5a50d",
+      "mode": "100644",
+      "bytes": 368,
+      "sha256": "930745c4d8de8d6e76ddc1d8ab694a4602a676bd59f710dafb951c6e7f376769"
+    },
+    {
+      "path": "adapters/engine_api/src/typed_values.hpp",
+      "git_blob_oid": "e4a6f8a9754a0f042a5c61637b3c52cdedbdf77f",
+      "mode": "100644",
+      "bytes": 2020,
+      "sha256": "336d93f2c957a4efa7b90a33ca1b2824f7a8746c603a945d5f192ea7196dcd5c"
+    },
+    {
+      "path": "adapters/rendering_vtk/CMakeLists.txt",
+      "git_blob_oid": "efede1a6857a6fc3d5e8010b8e3423a27b7b34a4",
+      "mode": "100644",
+      "bytes": 485,
+      "sha256": "45bb4cbef4bb9eb02a86ecd256ea07efbc3969b28a7230490225402bafb0f398"
+    },
+    {
+      "path": "adapters/rendering_vtk/README.md",
+      "git_blob_oid": "faf57930e0582733151f008535fc95c9f2240bc3",
+      "mode": "100644",
+      "bytes": 1338,
+      "sha256": "438b850025707b6af62ac0dc30aba926d1f95e6676afe6a78c1542fabe760b34"
+    },
+    {
+      "path": "adapters/rendering_vtk/include/qcae/sdk_copy_observation.hpp",
+      "git_blob_oid": "b04884aba3d18328e0240ffe642046c94bf682f5",
+      "mode": "100644",
+      "bytes": 551,
+      "sha256": "242b27e2e1c7001f00986d9cce716f8a79fb093e9983b88e16c3b4c5361debb7"
+    },
+    {
+      "path": "adapters/rendering_vtk/include/qcae/sdk_copy_tracker.hpp",
+      "git_blob_oid": "f65480d7df5ea1c6dfc3657db7a182d9793dcd85",
+      "mode": "100644",
+      "bytes": 4600,
+      "sha256": "49b7f8a670502239e0547e851475c373d1c67f5f4f25a1680cdfd3724352b7ba"
+    },
+    {
+      "path": "adapters/rendering_vtk/include/qcae/vtk_view.hpp",
+      "git_blob_oid": "a68e4fa9966f1784d9a592b846ed95425c285e0a",
+      "mode": "100644",
+      "bytes": 2076,
+      "sha256": "a5896ba32dc7a4ab7c64d8ec8b17692c738695565be1f2ef2a6b5e99e2af5046"
+    },
+    {
+      "path": "adapters/rendering_vtk/src/coordinate_range_observer.hpp",
+      "git_blob_oid": "a1b59bc8e31963366cc342799760ff90a5a4e878",
+      "mode": "100644",
+      "bytes": 4476,
+      "sha256": "f95cd40df54d70ab6c2ed424afcc8b24df323f9095194b7c2ea233ae64bc7f2f"
+    },
+    {
+      "path": "adapters/rendering_vtk/src/shift_scale_copy_observer.hpp",
+      "git_blob_oid": "e7642a7363f611d7ae78bd0ec3c9943977916f89",
+      "mode": "100644",
+      "bytes": 4001,
+      "sha256": "0f28dfcb789409a80f6dbb4acc4e59bc0d088544a4e3f580b1edddbb8b993aaf"
+    },
+    {
+      "path": "adapters/rendering_vtk/src/vtk_view.cpp",
+      "git_blob_oid": "a1464e3a710b12e1d6b7918b93832802bb308585",
+      "mode": "100644",
+      "bytes": 61896,
+      "sha256": "1257237acc76ff178873dbcb1e0c3ef047423dfbff1103be4284e66c1d8eb81f"
+    },
+    {
+      "path": "adapters/solver_local/CMakeLists.txt",
+      "git_blob_oid": "9aa9e24d1a366cb3aac2f98cc51a62c3bb290774",
+      "mode": "100644",
+      "bytes": 723,
+      "sha256": "e42610751a6ced958c4c011e804bfe5432705fb4d6bc33e934ed09d9c9c12193"
+    },
+    {
+      "path": "adapters/solver_local/include/qcae/solver_local.hpp",
+      "git_blob_oid": "cdf0c295efc88f6bdd199c97cc1b49d4404b1843",
+      "mode": "100644",
+      "bytes": 2005,
+      "sha256": "1ce3aa553e4cf077b64e09ad0093d7c273b74333c9c6a69fb34d96ac78782eab"
+    },
+    {
+      "path": "adapters/solver_local/src/solver_local.cpp",
+      "git_blob_oid": "d0bf492037f21e7b308a394896d60cfa9023742f",
+      "mode": "100644",
+      "bytes": 31189,
+      "sha256": "6c76e5b7ab89589d49f182844c90075b94816f7486ab360a19cb352df012905f"
+    },
+    {
+      "path": "adapters/storage_sqlite/CMakeLists.txt",
+      "git_blob_oid": "daebd96bf481f6a731cde8db6fed669c7ff6e3cc",
+      "mode": "100644",
+      "bytes": 372,
+      "sha256": "bbfde121865db30e7472572983774c34a7d8ea325ff46b06730319b7a15d6fac"
+    },
+    {
+      "path": "adapters/storage_sqlite/README.md",
+      "git_blob_oid": "d606b45ccd2b39c277973ebe4d7581d93475b0e5",
+      "mode": "100644",
+      "bytes": 2082,
+      "sha256": "1ed325ffcf43357811aacfd7135c49dc845131197470fbb580646e7a10e0fb17"
+    },
+    {
+      "path": "adapters/storage_sqlite/include/qcae/sqlite_store.hpp",
+      "git_blob_oid": "8deafc6db75fc9eb3dfe5d3209992f44f196e3d4",
+      "mode": "100644",
+      "bytes": 1795,
+      "sha256": "e384f1e267d4c6386f176178f97b9ca5175a123b603b9283f6371df74badf84f"
+    },
+    {
+      "path": "adapters/storage_sqlite/src/ledger_vfs.hpp",
+      "git_blob_oid": "76563fdb3d9c999e8e92d9f31b83a43990bef142",
+      "mode": "100644",
+      "bytes": 11055,
+      "sha256": "6f79bb370e7f6bd6b5297963ec7b90c0f08dfa4fe0c70b8a6c33656b22390370"
+    },
+    {
+      "path": "adapters/storage_sqlite/src/sqlite_store.cpp",
+      "git_blob_oid": "86d3eab8e82017a2507b50eb4f459f6e0ac1a818",
+      "mode": "100644",
+      "bytes": 45959,
+      "sha256": "cb8ab1514f1cbcdf9d05c641a2ffc053b85b191fd039a5dd18eb17794fd2fadd"
+    },
+    {
+      "path": "adapters/transport_local/CMakeLists.txt",
+      "git_blob_oid": "c0c37eaf57ef80c166b1294a5809ce21cf4c0b91",
+      "mode": "100644",
+      "bytes": 300,
+      "sha256": "608f3acb28e30c98aff468158f2b4e270ac0998214a4c14e5c4c54515e5b138b"
+    },
+    {
+      "path": "adapters/transport_local/README.md",
+      "git_blob_oid": "29f16535e20a64426132dc4da7e6d10abf0ea9b2",
+      "mode": "100644",
+      "bytes": 787,
+      "sha256": "16f1a49aae7acadd0e1d573c3055202ff0018fd82468f82741652e932e109278"
+    },
+    {
+      "path": "adapters/transport_local/include/qcae/json_ledger.hpp",
+      "git_blob_oid": "47edd499cec9041c261a1831f05823403580f823",
+      "mode": "100644",
+      "bytes": 39682,
+      "sha256": "1be8bb8aa463d4a6bef9addd5cddaeb69bf721c1e38dd712aefb823ec70161e9"
+    },
+    {
+      "path": "adapters/transport_local/include/qcae/local_endpoint.hpp",
+      "git_blob_oid": "0656798478687bb76fea46376946cf4510dbaf44",
+      "mode": "100644",
+      "bytes": 572,
+      "sha256": "371489d1efc24b836ad8f379cc2a0fc4bc540f37296922ad4203013b014d4a75"
+    },
+    {
+      "path": "adapters/transport_local/include/qcae/render_wire.hpp",
+      "git_blob_oid": "99609f914265777d3db9c2703bd2a5c58f312054",
+      "mode": "100644",
+      "bytes": 19598,
+      "sha256": "68c562d52e108e581a39016f31b57f76b88e13385dd4d8addf18d70c15b92a00"
+    },
+    {
+      "path": "apps/cli/CMakeLists.txt",
+      "git_blob_oid": "0849ebb067461f62be1a60252a27991f1d6eaaac",
+      "mode": "100644",
+      "bytes": 134,
+      "sha256": "836f5fb626f77cf1e60da3bff2c14b9142221ad1cd688e35130ced64517b3f98"
+    },
+    {
+      "path": "apps/cli/README.md",
+      "git_blob_oid": "56c96bf9ad417478afa818d7463f94afcf3c20dd",
+      "mode": "100644",
+      "bytes": 691,
+      "sha256": "da10e02c4adbed0184d443cdf15b515d2926e3be4e7399d7db456b6c32620cb9"
+    },
+    {
+      "path": "apps/cli/main.cpp",
+      "git_blob_oid": "a80f39edf454a57619008a406ade97dbe26d0d2c",
+      "mode": "100644",
+      "bytes": 5853,
+      "sha256": "3c048e2e69c02cb3647a0fb97b5ce011bf53afc3815f340bb8bd0cea4cf9150c"
+    },
+    {
+      "path": "apps/desktop/CMakeLists.txt",
+      "git_blob_oid": "10016db88d3e782b51a7baac92fa1bfa745a23e1",
+      "mode": "100644",
+      "bytes": 193,
+      "sha256": "aee50704b2feb34b80929223b374894d1d1d9925ea1caea1e530c473e4e6f130"
+    },
+    {
+      "path": "apps/desktop/README.md",
+      "git_blob_oid": "d80c3c37e37164f2c511549d50a8e3c1ef2c60d8",
+      "mode": "100644",
+      "bytes": 589,
+      "sha256": "97aff7bf9303ce44fd5ca7aaf7d617756b9e94731cca064a1eb6cd07d1dd1c77"
+    },
+    {
+      "path": "apps/desktop/main.cpp",
+      "git_blob_oid": "39ff01ee7b0022d11fbb05b0eea0827147e8b5e8",
+      "mode": "100644",
+      "bytes": 107,
+      "sha256": "bb465735a28147d8213d119adcc73daa94bc8fef0933fde09ef2aa3a0b984e9c"
+    },
+    {
+      "path": "apps/engine/CMakeLists.txt",
+      "git_blob_oid": "b6ed449157a654eace06172256a0d6b34469122e",
+      "mode": "100644",
+      "bytes": 710,
+      "sha256": "d6589a88e3ef2aad7aff9db3dd99b7a228ca4858e5ccc15dc5d17abb0b4474de"
+    },
+    {
+      "path": "apps/engine/README.md",
+      "git_blob_oid": "893a24b6f9f4c73e51ae022629c332b24612cc9b",
+      "mode": "100644",
+      "bytes": 1761,
+      "sha256": "466b098ab07b2fad7ef30fa3a511bdcc87374ef6354177e273471ee0962bfaac"
+    },
+    {
+      "path": "apps/engine/engine_host.cpp",
+      "git_blob_oid": "54a5f311f8677974b7098b07cfcd919c781c1093",
+      "mode": "100644",
+      "bytes": 24159,
+      "sha256": "d58f6b62822dc42448845409364c61416fa7022d8a03cc8b854fce07b2b32087"
+    },
+    {
+      "path": "apps/engine/include/qcae/engine_host.hpp",
+      "git_blob_oid": "6cc0673c9b31c26f29593fcccae9602ae3d46305",
+      "mode": "100644",
+      "bytes": 453,
+      "sha256": "36c1601eb40f2d1dea3d219a691ed1daafb2a011aceeaf9c890a4eed47da8dec"
+    },
+    {
+      "path": "apps/engine/main.cpp",
+      "git_blob_oid": "a99f02e687baf735bdb260b28d05103d89c6251a",
+      "mode": "100644",
+      "bytes": 109,
+      "sha256": "c5494712c8f0b35452501cb89aa6619922743cbf9f2fe293bac85f658d492ee1"
+    },
+    {
+      "path": "apps/mcp/CMakeLists.txt",
+      "git_blob_oid": "31a7e48cd6d7a3644a02048dc02a8aede9ec7f1d",
+      "mode": "100644",
+      "bytes": 283,
+      "sha256": "bc7766ac347c30df98149c2650d3eca27d9f67dbf74f18ba3c9288625fca8e8e"
+    },
+    {
+      "path": "apps/mcp/bridge.py",
+      "git_blob_oid": "25c36abc5bdbcaa31c287067c4d75f386d218d5d",
+      "mode": "100644",
+      "bytes": 19952,
+      "sha256": "59aa2c9bdf7c98384604db50b29ad6488fbc74bcbfe8058cadda5d33680d3d08"
+    },
+    {
+      "path": "apps/mcp/main.cpp",
+      "git_blob_oid": "9227ccba3ff7d4b32c69cb715f56a793a875b9a5",
+      "mode": "100644",
+      "bytes": 1409,
+      "sha256": "16be6b463c4cf995fb9eb387c204c641acefd499f5c50d569f188d1956e642e3"
+    },
+    {
+      "path": "features/analysis/CMakeLists.txt",
+      "git_blob_oid": "32465dbb858347b70a17f5e6b87474ad6e32e681",
+      "mode": "100644",
+      "bytes": 928,
+      "sha256": "89b897e2c37f543c7d86405e9a223687ace8ab607ba2a1ea043efa98c59a3f1c"
+    },
+    {
+      "path": "features/analysis/include/qcae/analysis_features.hpp",
+      "git_blob_oid": "420b69c1fc68e4b2f77c77b131f26d0f91ec757d",
+      "mode": "100644",
+      "bytes": 3295,
+      "sha256": "7d6d3dacbcca559af10df25c52dbab2874ea321b583025c86f73dc9af5baac1d"
+    },
+    {
+      "path": "features/analysis/include/qcae/analysis_input.hpp",
+      "git_blob_oid": "742cac43e0d9540cc4dc59b8039a1f8ca90ae386",
+      "mode": "100644",
+      "bytes": 1239,
+      "sha256": "f0bb522fdccf83347cdbee82568c84dc060a833820b2ab6a5f24105bc49684f7"
+    },
+    {
+      "path": "features/analysis/src/analysis_checks.cpp",
+      "git_blob_oid": "552022a150204d03f6a6011085d0edb5e0932c08",
+      "mode": "100644",
+      "bytes": 10557,
+      "sha256": "e51125c0b8c4430057590b5b77eb2b625f70fd5e8c667f7bc18903ba634f02b1"
+    },
+    {
+      "path": "features/analysis/src/analysis_input.cpp",
+      "git_blob_oid": "3fe2402d3c6de24032922a91c44dd9828bbf3413",
+      "mode": "100644",
+      "bytes": 8586,
+      "sha256": "574e94895e1471c194ec1aca7fa765228d97dcc4b2f6f3607295b8f5b3500840"
+    },
+    {
+      "path": "features/analysis/src/analysis_input_codec.cpp",
+      "git_blob_oid": "43e838e4c992f079baf243f889f967f58bde50c5",
+      "mode": "100644",
+      "bytes": 5673,
+      "sha256": "8e2e2dece43c85eff8b980f6a79eb7cca32a5a7b7190498e81887c1f40c9e2d2"
+    },
+    {
+      "path": "features/analysis/src/analysis_operations.cpp",
+      "git_blob_oid": "4b46308e87d5389f7dfc4175e4fee461e23144a3",
+      "mode": "100644",
+      "bytes": 11981,
+      "sha256": "4108d6ed4bedeefba33c389890d206b9980b2fb64dc0cbd00da6a3afc5d2720e"
+    },
+    {
+      "path": "features/analysis/src/cantilever_checks.cpp",
+      "git_blob_oid": "81aa4545fb2a8058bcd8d672af4dadb67685b407",
+      "mode": "100644",
+      "bytes": 18726,
+      "sha256": "d76dfbde8f479d71a00f8355286dc6bcd01d6da11541a0fe0ab2681327ead74e"
+    },
+    {
+      "path": "features/analysis/src/cantilever_checks.hpp",
+      "git_blob_oid": "9b18214e136e317aae9e47ffc2007ca9037db4eb",
+      "mode": "100644",
+      "bytes": 302,
+      "sha256": "b884fa47a23b6949a6d3dd00cc60ff894fa5a46be2ed127dd9fe66a194f0a554"
+    },
+    {
+      "path": "features/analysis/src/check_report.cpp",
+      "git_blob_oid": "91c61073599d87ae940c7e6cc85af7b119f2a679",
+      "mode": "100644",
+      "bytes": 9715,
+      "sha256": "79a0fbf93128fd8b615ecb3c4104745cd752f29d235fb3009cedaeaf22745fe4"
+    },
+    {
+      "path": "features/geometry/CMakeLists.txt",
+      "git_blob_oid": "98ad3a2e2906a9ba0e3a977c6951e48e089e5a49",
+      "mode": "100644",
+      "bytes": 339,
+      "sha256": "b18dbdc0a64221dba61266ef31213dafd3f104c984d257ab0d1e2fcffb167ee3"
+    },
+    {
+      "path": "features/geometry/README.md",
+      "git_blob_oid": "c9b44fa24d839e6a5a0dd2155d09b88dcf3c7db2",
+      "mode": "100644",
+      "bytes": 870,
+      "sha256": "f67bd241f956cdb98356fc7430c58f2db9a0553e596196c5ba92a151e1e5c6d2"
+    },
+    {
+      "path": "features/geometry/include/qcae/geometry_features.hpp",
+      "git_blob_oid": "64fbdd457a663c9e72aff370e015d90263c50e42",
+      "mode": "100644",
+      "bytes": 694,
+      "sha256": "eea1b1513c7eda174a0d740ccf721ac92790aa2fc1ba3d6492342b22c6eb3a3b"
+    },
+    {
+      "path": "features/geometry/src/geometry_features.cpp",
+      "git_blob_oid": "27ebecbfcdec7e776af06382a8345ecf302f0aac",
+      "mode": "100644",
+      "bytes": 3308,
+      "sha256": "eb57f64dad45e9913a2a6ceba4e33ae64cf76ad225801a0c502e861948b00525"
+    },
+    {
+      "path": "features/legacy_api/CMakeLists.txt",
+      "git_blob_oid": "b0198d632b8774f6b2b95bb0c42a0684f29e5bdf",
+      "mode": "100644",
+      "bytes": 450,
+      "sha256": "8068b62a7a4e37a53a5f66e4bd42c47ae212bd503ef0d0ea221a9d219714ba89"
+    },
+    {
+      "path": "features/legacy_api/README.md",
+      "git_blob_oid": "8263252cdb0933ce295e63a99eac1b2787cf0b22",
+      "mode": "100644",
+      "bytes": 3945,
+      "sha256": "e50122feed0c1fdc3d2948a0021ced2f01a36c13173ff008d6f326c4b9b18937"
+    },
+    {
+      "path": "features/legacy_api/include/qcae/core.hpp",
+      "git_blob_oid": "a47fe00bacab365a0a835ed19fdf2df5e10aa314",
+      "mode": "100644",
+      "bytes": 3762,
+      "sha256": "1edb20d34771e3f0394e4b0977010cd761c4ea7524d234169a09edf5d004b1af"
+    },
+    {
+      "path": "features/legacy_api/include/qcae/legacy_migration.hpp",
+      "git_blob_oid": "10b9cff9c57366089f1942b2218e4352e3cae55f",
+      "mode": "100644",
+      "bytes": 554,
+      "sha256": "b42f294fddb17212953379ce7ad2c32491caf1facd4f8fe8a9c973081112aa39"
+    },
+    {
+      "path": "features/legacy_api/src/core.cpp",
+      "git_blob_oid": "03d13a17d505599ee63591fce58080bac4f25dc9",
+      "mode": "100644",
+      "bytes": 23652,
+      "sha256": "47ccef1f9128a1e280b849410f675e1903bdc834b13ac360a5363b0b753fc9b2"
+    },
+    {
+      "path": "features/legacy_api/src/legacy_migration.cpp",
+      "git_blob_oid": "8cf2af8c20b58ddcbaf1e8505dfe9ea582ae4115",
+      "mode": "100644",
+      "bytes": 2630,
+      "sha256": "c1860f851cb735b73da6d45e62429990e0bf48ce34a367a79ff7643ca04a2a86"
+    },
+    {
+      "path": "features/legacy_api/src/legacy_state.cpp",
+      "git_blob_oid": "77c4a52ec2044efcdca6c055f0732392ae42621c",
+      "mode": "100644",
+      "bytes": 11692,
+      "sha256": "d3230d7c2945688b54eb9feeca29fd395f5495830335fbba3e13deaca5c3255c"
+    },
+    {
+      "path": "features/legacy_api/src/legacy_state.hpp",
+      "git_blob_oid": "f3a39a064a533fa8afa330132431e0d55e5d46d0",
+      "mode": "100644",
+      "bytes": 1455,
+      "sha256": "60bbbb6983685b8695daf343811a8495d3589d76847c8ae3235ae28628a06857"
+    },
+    {
+      "path": "features/materials/CMakeLists.txt",
+      "git_blob_oid": "16252e626a5d3efa750b3dc4c2a3038a6d5bdb1e",
+      "mode": "100644",
+      "bytes": 410,
+      "sha256": "674d77262f77656e0759869c045d27ee21cee528b5c15a6d0b3779e890f05d40"
+    },
+    {
+      "path": "features/materials/include/qcae/material_operations.hpp",
+      "git_blob_oid": "99026cf13c2cc1e0a1409c44803063a648e77131",
+      "mode": "100644",
+      "bytes": 659,
+      "sha256": "bb6fdc8175c620bd7a33b1a40e89c0ab9d6a9dc012f5550a1c6b7caa2175bd76"
+    },
+    {
+      "path": "features/materials/src/material_operations.cpp",
+      "git_blob_oid": "6984472483487ce20671a3f62edbd9ffc01eb388",
+      "mode": "100644",
+      "bytes": 14086,
+      "sha256": "08ee01299150ef8676151f4d1368d3911cbfd5448042b480576b9806028ac217"
+    },
+    {
+      "path": "features/mesh_editing/CMakeLists.txt",
+      "git_blob_oid": "a0794ea6f1e91c41552f38070a824d8316dd4678",
+      "mode": "100644",
+      "bytes": 393,
+      "sha256": "7d2d9eb77946b9390a723548fb1320453a235eb7840b70f5df0aecb5cf23e97d"
+    },
+    {
+      "path": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
+      "git_blob_oid": "7155869b35cf5ec9f7ea4c598d754edbf0739c33",
+      "mode": "100644",
+      "bytes": 545,
+      "sha256": "806a4b08b71584bf366687304f7a3a474054fc71370f1cae39b2067bc9a84846"
+    },
+    {
+      "path": "features/mesh_editing/src/mesh_editing_operations.cpp",
+      "git_blob_oid": "3e1ea2466face4559dd828aca67c7e0495ab4678",
+      "mode": "100644",
+      "bytes": 5475,
+      "sha256": "0a75646d53ce8aedcf1f511bff2ef82792e8b8e2422c25be4879f32934bf26b2"
+    },
+    {
+      "path": "features/mesh_generation/CMakeLists.txt",
+      "git_blob_oid": "b905ae0410a1544036e76f3e07454c74b423e5cb",
+      "mode": "100644",
+      "bytes": 1021,
+      "sha256": "65a763d3fafdbd9802e7b595834c4b24b120e4640913cb0c72f887d0be5648cb"
+    },
+    {
+      "path": "features/mesh_generation/README.md",
+      "git_blob_oid": "2b3cd3118838e8b700ae6208523ee47ddf52d0f3",
+      "mode": "100644",
+      "bytes": 2458,
+      "sha256": "b76504ed7b51dae34112c15fa95967da143cbee91d6074bc4818e3b410919b5d"
+    },
+    {
+      "path": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+      "git_blob_oid": "bb20e881ef70c0ca041cb807af0d55ac6a0795a0",
+      "mode": "100644",
+      "bytes": 944,
+      "sha256": "bd472f8b5966fbb7fa71982b5edaad97714755fcb3ce88123eee724b14f6ea0c"
+    },
+    {
+      "path": "features/mesh_generation/src/line_mesh_task.cpp",
+      "git_blob_oid": "8a51ff609badfc83b3246447d79b1620879434a8",
+      "mode": "100644",
+      "bytes": 14898,
+      "sha256": "342d10f67e78ad375c7162373db0ac1ee02ee88ab0f162cabc3dba856abdac70"
+    },
+    {
+      "path": "features/results/CMakeLists.txt",
+      "git_blob_oid": "9ab890fa180b20fe79a14d40fba2b1fd972141d8",
+      "mode": "100644",
+      "bytes": 1245,
+      "sha256": "5754d7ae5f994b8b2d2571c9298da5e1b24e447f6df8d5397cd424844e807f67"
+    },
+    {
+      "path": "features/results/include/qcae/result_fixture.hpp",
+      "git_blob_oid": "c9cf5e69449ec13d0d811408d0202197786941e6",
+      "mode": "100644",
+      "bytes": 1903,
+      "sha256": "103b61fe2ba096ac0a8ae1857685db622dbbf9948889d855439f3cb5ce5359c2"
+    },
+    {
+      "path": "features/results/include/qcae/result_service.hpp",
+      "git_blob_oid": "8b5118eea78030db8198f58ad512ddbd5b40093e",
+      "mode": "100644",
+      "bytes": 1189,
+      "sha256": "56e1e2c46e789a73e2977bee3776a297c2933676d8a90af0b152176b1f040403"
+    },
+    {
+      "path": "features/results/include/qcae/static_validation.hpp",
+      "git_blob_oid": "742f3c7c1d6c80de2b9f510ed2ea927c48a432b5",
+      "mode": "100644",
+      "bytes": 1422,
+      "sha256": "e9069e30266adeb5fb92920e7161ced088c513033d197a454e8f0f7f9a92d2c9"
+    },
+    {
+      "path": "features/results/src/result_codec.cpp",
+      "git_blob_oid": "a4018200d8361c0919a155b19780725fd8562bd2",
+      "mode": "100644",
+      "bytes": 3914,
+      "sha256": "6b7e6ca50cc7332fafbf3d62c1709c072164814c7ee5d64fd89cb67355c9d8ae"
+    },
+    {
+      "path": "features/results/src/result_fixture.cpp",
+      "git_blob_oid": "2f3377c540c5ab5e6429cce4cff0a3f48ae842fa",
+      "mode": "100644",
+      "bytes": 5375,
+      "sha256": "82ea13c2e60f8730695c93463a263f002673bb667d5da7df7a4a90dd1d673789"
+    },
+    {
+      "path": "features/results/src/result_service.cpp",
+      "git_blob_oid": "b8c2b0f3956af7fcb28b0355e8e7fdec891d889a",
+      "mode": "100644",
+      "bytes": 9369,
+      "sha256": "001bb759e4d09beb09afaf310d1f8715ef3caafd5074afabf1a2920b9df19d20"
+    },
+    {
+      "path": "features/results/src/static_validation.cpp",
+      "git_blob_oid": "aca0ee16c992753124ca168b57ff4572c77401b5",
+      "mode": "100644",
+      "bytes": 8800,
+      "sha256": "28de0cd0d0f60637ecea709f7e1bd8b2f53ab43dcd869a7a1c117aaaba9a2066"
+    },
+    {
+      "path": "modules/application/CMakeLists.txt",
+      "git_blob_oid": "bdf8b44551cf65cef10074c9df2f811ca2dfb860",
+      "mode": "100644",
+      "bytes": 435,
+      "sha256": "6864aefe4b12c33d359d3528ea5df8b1ec9c1c86e07e89d6d76c2b54ba38df24"
+    },
+    {
+      "path": "modules/application/README.md",
+      "git_blob_oid": "052e9bf3d91f1172295ced8c67f044cc04ba195d",
+      "mode": "100644",
+      "bytes": 1972,
+      "sha256": "cdf208073725fac369ed54ab4bd94f8c50514e7fe79e436a526eeb5feddbe14c"
+    },
+    {
+      "path": "modules/application/include/qcae/immutable_fact_map.hpp",
+      "git_blob_oid": "bbbfa06e64d204252e7d5562189b1703be9602b7",
+      "mode": "100644",
+      "bytes": 6375,
+      "sha256": "2b717b2d28a88d0835933963331c692d03aeba1a26a790f5a446eea735f0cba5"
+    },
+    {
+      "path": "modules/application/include/qcae/record_application.hpp",
+      "git_blob_oid": "a671e438846d248a1a2dd11c1f7d36d76e68dbdf",
+      "mode": "100644",
+      "bytes": 10170,
+      "sha256": "0c1f61d99d8c2799a9b9efd9197386bfaed0afab002ddcf9bf46a4d8e5e117e3"
+    },
+    {
+      "path": "modules/application/src/application_state.cpp",
+      "git_blob_oid": "ba316a46dfe7fd7b42a5182f37a143e40469ad6a",
+      "mode": "100644",
+      "bytes": 37958,
+      "sha256": "3e61c1aeaf0c98412d2967c485765e30157ec41f18bbcdfec6043e4e4a62b385"
+    },
+    {
+      "path": "modules/application/src/application_state.hpp",
+      "git_blob_oid": "1282d21b1af09fcbfce4cf129628038bd1a0951a",
+      "mode": "100644",
+      "bytes": 2132,
+      "sha256": "6eeecb984f58fa77929c4a055c48b1f1f5979b1835babb9e6f9e4babb9d3216d"
+    },
+    {
+      "path": "modules/application/src/core.cpp",
+      "git_blob_oid": "9304927ffdfb04956ffccc3e6aaf70016a0b8035",
+      "mode": "100644",
+      "bytes": 72000,
+      "sha256": "0247daf8e4b63822b9ed6e88f9fa84ccb2fc1a0f9d5878de5d7cb8f00525568c"
+    },
+    {
+      "path": "modules/clients/CMakeLists.txt",
+      "git_blob_oid": "f3140435600d7aae9d073b23e94365cdf9c53d21",
+      "mode": "100644",
+      "bytes": 494,
+      "sha256": "c96fdbf2fd91b8534c4a7f4af5665ce2d3a86f445d87be8342caf903c062379d"
+    },
+    {
+      "path": "modules/clients/README.md",
+      "git_blob_oid": "09ea6a576fd6bb77cc670f98824f36a83be79163",
+      "mode": "100644",
+      "bytes": 805,
+      "sha256": "e3167f43bfccaafacaff7b794daea0c8e35fd3a89e8561ac2a3a46029a674907"
+    },
+    {
+      "path": "modules/clients/include/qcae/desktop_client.hpp",
+      "git_blob_oid": "7b043662531665b007d20b36b0545c379734db1d",
+      "mode": "100644",
+      "bytes": 3997,
+      "sha256": "71a523643a8fb615be2d40a4ea3100122d4720fe17da615d8995df437ca3ae8f"
+    },
+    {
+      "path": "modules/clients/include/qcae/resource_client.hpp",
+      "git_blob_oid": "f7189c7926e4b6fd2679e454797bec4d75079824",
+      "mode": "100644",
+      "bytes": 1271,
+      "sha256": "8e8d485b1ab28d1b1005013f3aa128f26ea5e4528a91cc98260d54cac8119c69"
+    },
+    {
+      "path": "modules/clients/src/desktop_client.cpp",
+      "git_blob_oid": "4dde773d23d8386cd907c112ab9fd1157dff1cd2",
+      "mode": "100644",
+      "bytes": 17871,
+      "sha256": "801c804b3640027f96b3af0498f4b4f13098879717678cf3923c178917282913"
+    },
+    {
+      "path": "modules/clients/src/resource_client.cpp",
+      "git_blob_oid": "20e2b0273809ef12dd517baf13b427928542574a",
+      "mode": "100644",
+      "bytes": 16222,
+      "sha256": "e4c75d98302126e4ee393efd6e97972e86011ae4a4327134db3fa1451956d287"
+    },
+    {
+      "path": "modules/contracts/CMakeLists.txt",
+      "git_blob_oid": "949e2a678dd51626b3d4fcc310ba2d0f1aaf316b",
+      "mode": "100644",
+      "bytes": 881,
+      "sha256": "7fb2d9c674b3bdeebe28b78b2dee82ad5d43738bb576e93136cb1d3841935b7f"
+    },
+    {
+      "path": "modules/contracts/README.md",
+      "git_blob_oid": "afd87166a0f71d93350b9093b5106ea22ea42cf1",
+      "mode": "100644",
+      "bytes": 794,
+      "sha256": "ae06906bff72a1af54858c9555db3a68d8946bdebcdd4e7e7326d92fba1c4f8a"
+    },
+    {
+      "path": "modules/contracts/include/qcae/application_types.hpp",
+      "git_blob_oid": "e2e30a43b6d8dd73b979e670a5390955e9defe58",
+      "mode": "100644",
+      "byt…44260 tokens truncated…251eaec",
+      "bytes": 1206872
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_contract_tests",
+      "sha256": "0231225ba34d5e03e20b6e029e72a23a60e713bac9b17172b190233d03c73b7d",
+      "bytes": 55472
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_contributed_engine",
+      "sha256": "647a6864a1b3a6d087fe365aa2ff02bb2db36eaea35bf0c552f4fb788725304b",
+      "bytes": 4905800
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_core_tests",
+      "sha256": "83bbcbbc76bb1c01136c00794059e979e46ab0727d978608e09efbedfe6ee0f5",
+      "bytes": 1547104
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_delta_tests",
+      "sha256": "e394ec8ce490b5fa7e5ddc3d376f93b8497e3315ae713e0ad9514bcabc9520b0",
+      "bytes": 222752
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_desktop_selection_tests",
+      "sha256": "c165f0379b565c50e421a17c3832304c92430f186d8064c0c39c044c52bebf2e",
+      "bytes": 1570752
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_desktop_tests",
+      "sha256": "e0058e3eef979b6905302fd318fcc8ea7beb4d1b70bbe4ab4cb96e39bcd57387",
+      "bytes": 556480
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_engine_assembly_tests",
+      "sha256": "aca5d1152d394a1c8e949e1ed20d439d22f52ab1793176102737409d932f2c47",
+      "bytes": 4574760
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_event_client_tests",
+      "sha256": "36f49b2e6fab329160ee2ac308e0a32b8b621810a432c440c8cd4e6a9e36da85",
+      "bytes": 310136
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_event_stream_tests",
+      "sha256": "c69dbb0d69bc353982043ae779bb9fd298e16087d8f019b9cf68a835ff22f899",
+      "bytes": 4703224
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_geometry_mesh_sqlite_tests",
+      "sha256": "7753b7a9fcdda2996cb3e61ce22786d419d8db686c726d3d67504a4354f2d82b",
+      "bytes": 1539072
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_geometry_mesh_tests",
+      "sha256": "6a278b2ee13059a5616968deedac8ef733962b885f31fd08dd3f384c53186b26",
+      "bytes": 1466776
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_json_ledger_tests",
+      "sha256": "1784ffe265781410bc459a97e83b8f39805cd2f64dc3fe8a988bc7d7d8c7cd23",
+      "bytes": 158392
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_legacy_migration_tests",
+      "sha256": "29a4aaf4d056a258c3329525e839639f23d80d889b29fc3429ea7901a9f91270",
+      "bytes": 1764440
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_line_mesh_regeneration_tests",
+      "sha256": "5b55ec933d7a0f623688370c6591eb02a4b329aacc33b21a0517c466c757daf9",
+      "bytes": 1309456
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_model_operation_tests",
+      "sha256": "19b5f7ed282db8d1630e7ab69d67a9ce7ac57d63945ac5a83906ffbe814e22be",
+      "bytes": 1893096
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_model_tests",
+      "sha256": "58b1f51cf7a38a87067dcbf2498b84c0079faf5a4172ed417ba5d64da47f54df",
+      "bytes": 1550592
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_modeling_tools_tests",
+      "sha256": "475e589f764db10d280be60a26de96451c0c9965f173845b4d69627c1b5c06c3",
+      "bytes": 421336
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_nastran_package_tests",
+      "sha256": "0f42f7794a91966e33c97925226ae495b2288045b2dec07e076d5f771bafa185",
+      "bytes": 1486568
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_nastran_static_result_tests",
+      "sha256": "e5b62abb9b1af4d2cf4c490fba61a6a9c847ea7a5c8eef10669574c2950b06d4",
+      "bytes": 288112
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_nastran_tests",
+      "sha256": "6c7e1fbbcc1d41bfe8339f3098c1a88d94292be28dd2db240273ea9974ac35a3",
+      "bytes": 330368
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_operation_registry_tests",
+      "sha256": "d9af2d5a7646dfadbf0968900e4116863d39d5bf64372361426726a4f59ff08e",
+      "bytes": 466000
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_parameter_tests",
+      "sha256": "3bdb09db0b2acd991a7fd11af5b2b61ed6960ab1f979eedc7f4eae2368b0ad6a",
+      "bytes": 109944
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_persistence_tests",
+      "sha256": "2c49b9319a9bbb180561fa47b19b397a735d44a266f26054cef67b5c9e1f7058",
+      "bytes": 1536232
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_qt_text_ledger_probe",
+      "sha256": "efacb306c607b63f386fce66699f55aa52190b5e28abf5f920ff51433f179413",
+      "bytes": 77128
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_qt_widget_copy_probe",
+      "sha256": "8fb69922132699b475bfa803525deef2da2d562c04fa3049c56ff8d34c99ca18",
+      "bytes": 114552
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_quantity_entry_consistency_tests",
+      "sha256": "cdbc592416d259e49bf9d09da1c75fb19e263b677c7871486ac6a8daa5abdbe9",
+      "bytes": 1478712
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_query_tests",
+      "sha256": "ce1b9c1e73a3bb7ef93dcceab0b35bbaa54e81de4e31ff912321731a3f1529b6",
+      "bytes": 1073680
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_record_application_tests",
+      "sha256": "32e883da487f280252fc915166013a705539ba8302b12d030a9bf5e2b5ab281d",
+      "bytes": 1105344
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_record_document_tests",
+      "sha256": "3899684268dbe386d5f444467b2e5e1ebb2484e8279ca9b432178282ba0bae17",
+      "bytes": 935640
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_record_query_tests",
+      "sha256": "d63e9644d54ba069f1f3fe2f3e7312dd554c2340e0f7f00323be98d49913cb1f",
+      "bytes": 1183752
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_record_store_tests",
+      "sha256": "282c0a7ad2352eca134a712c085c4fcdf6800a404986795ec699fdc95493033d",
+      "bytes": 245368
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_render_projector_tests",
+      "sha256": "d6617ced634e13e9cf00aa21a1b245b11d19c276a720e2614e2b5216722ee435",
+      "bytes": 767336
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_render_service_tests",
+      "sha256": "78618a678b7ae1ca7dbe1bf3afa316862f34b46f6dad8c531ea6b2b6ff56d718",
+      "bytes": 4709688
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_render_wire_tests",
+      "sha256": "071641c515afe5d3b25fa821df9ad5fdb86476e320e880142a3ca59026697f24",
+      "bytes": 135512
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_resource_tests",
+      "sha256": "0d030e410551777247c0f0ae04f3eeccd57608c322f2d41a1092ac9d208fe08a",
+      "bytes": 336400
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_result_fixture_tests",
+      "sha256": "c52ed9b50e040ff1e48bebea21285eaf5f5675e69ecb155e7f2566f6cd345ca2",
+      "bytes": 1373736
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_runtime_tests",
+      "sha256": "946d8954867f379b366526f6d7f36d5118c3315265c7b89bdaeac5f644714d8f",
+      "bytes": 1253392
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_skeleton_fault_client_tests",
+      "sha256": "36d60c0e6be4db87bbce709400ffd39a121075bee7695e9f4d1e9e7532c4b9ed",
+      "bytes": 244432
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_skeleton_fault_tests",
+      "sha256": "600834c10c74ac88bbf2b6c1485dc85fcc707849e0400dffe4499e34ad5ac501",
+      "bytes": 1599064
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_skeleton_representative_tests",
+      "sha256": "33c8cf239f1e48ba877c197881a39d7e16eacef03dec6e18d34029acf00216ba",
+      "bytes": 1842512
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_solver_local_tests",
+      "sha256": "2a8bc80d6729e2a2b14a90fdfae9503331450a810976fcb4fb1c434a0986d276",
+      "bytes": 236328
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_solver_numerical_validation_tests",
+      "sha256": "57bc31095e5a400200cb4146ab546f9a3c2ca4614bed1e702775762cdc3f1c04",
+      "bytes": 4561944
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_solver_result_store_tests",
+      "sha256": "d4ed92c9a57ebe88b5b16ae0d8799b45b27ed46996a4585d1b743b738872f795",
+      "bytes": 1457952
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_solver_version_probe_tests",
+      "sha256": "f963f20c031e05854f893465520dfbe361e9aa626c77485ba1625ea1f2813f8b",
+      "bytes": 207440
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_sqlite_tests",
+      "sha256": "26c7d6d52ed8c29aa790f337cb8bdac9ef0747f703090109ea44d60fa0060df1",
+      "bytes": 241536
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_static_validation_tests",
+      "sha256": "c3a50fd2da21a7f4b9c683fbd87486a92470716fc523c4d3da056a8ca69ed0db",
+      "bytes": 1087024
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_typed_host_tests",
+      "sha256": "a00241b7c55bbd832d1ed1628da7448e48301eeebb1de1e494615129179cadbb",
+      "bytes": 4686152
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_vtk_coordinate_range_tests",
+      "sha256": "b57636b575f70fba0d0e52dd90ca8a338ba662a00625ae524dc91b5bf3543a73",
+      "bytes": 164752
+    },
+    {
+      "path": "build-c3-closure-desktop/qcae_vtk_shift_scale_copy_tests",
+      "sha256": "e0e027bd1752c516eec66544c5d7f75c078dcfbb0f0413acabfb23709195656e",
+      "bytes": 87920
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-configure.log",
+      "sha256": "1e849869a4d02bd285a53f56b621b6a8f44d5918252ec9400f659ec86d69f019",
+      "bytes": 161
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-build.log",
+      "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e",
+      "bytes": 63
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-tests.log",
+      "sha256": "c5a59219739b24b44b5c5c32c39da6128a5b4978d79424305d68fe7f7de72246",
+      "bytes": 4849
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/CMakeCache.txt",
+      "sha256": "71ffe798139bf747d102158484a13857e961253da6a05393b168a230762054a8",
+      "bytes": 18417
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/compile_commands.json",
+      "sha256": "61239982f70bd8a31941c0ab38800b59785c7726940c6e9a8c169da7584aa6fd",
+      "bytes": 80432
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/generated/qcae/operation_inputs.hpp",
+      "sha256": "7ebd3af3b08c4818d46bc1bde69552f27c54ad1294adadb28d0c97e6d49daba9",
+      "bytes": 73336
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/generated/qcae/operations.hpp",
+      "sha256": "a7c06a45e20841e04be122369751d08034d3aa056eee6b4d181adc8cdc21b3fc",
+      "bytes": 7746
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/profiles/nastran/generated/qcae/nastran_digest.hpp",
+      "sha256": "f22f9a190057c50530ef4b4278caaa3b3b9674d6abf7915aabdbd01b56118507",
+      "bytes": 338
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_allocation_tests",
+      "sha256": "1de2d09487b9383dccbab00b98da02d99dc9a2e41fc81ed61ad08c47556593d9",
+      "bytes": 17385000
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_analysis_check_tests",
+      "sha256": "2f5648eb23b7efc27d965822310a4139747c50c92e8ee12c66a97e483ae613da",
+      "bytes": 23560472
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_artifacts_local_tests",
+      "sha256": "17134b7bb0e5e8c6a31823cf128fd8760cc1f95ea2ce63b70d88b13ed92d216a",
+      "bytes": 725864
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_change_event_tests",
+      "sha256": "7a4162cd6825ed3f0bb82a7a415a43a52aa4d654c5a849ecbc03aaf7ecc8d2a0",
+      "bytes": 13255112
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_contract_tests",
+      "sha256": "c157b8c255e8ea4cf32d2c0ef25e794177d5f33baaea6842c31d31b47b0ecb0e",
+      "bytes": 237680
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_core_tests",
+      "sha256": "55e511301aa81a98243e27a2c1026ee9eef6c96a16f51ab81825682396cfbe92",
+      "bytes": 17512288
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_delta_tests",
+      "sha256": "0aecb264f64eb6e9684e95f0cd0a2471d8dce4b0f6b21e7a8582c26681870aec",
+      "bytes": 2875536
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_geometry_mesh_sqlite_tests",
+      "sha256": "23f0decc6ec7c2e6346890bef26b4350a103d1f13a5b95a01dafc6f681dbba20",
+      "bytes": 17109568
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_geometry_mesh_tests",
+      "sha256": "73be03003f4c4aa4476619a42ceaac16df1324aa2733def2f016c7c21eccbc49",
+      "bytes": 16519864
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_line_mesh_regeneration_tests",
+      "sha256": "0034fc61dfa844cc79a6727c26195207467ba31f00e9931d9b783798a8104630",
+      "bytes": 14253136
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_model_operation_tests",
+      "sha256": "540283ec9ffe7fb64ad13e4a76683f602e1a27c17bf4f2b13058e07e106b92f1",
+      "bytes": 21207000
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_model_tests",
+      "sha256": "594dd597b7cc548c39002cd9d9931c747b4f7444507418de87d031f126d49d95",
+      "bytes": 17791088
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_package_tests",
+      "sha256": "7c27a838435dbed43ea2a018c04025f2629e093bdf50911ccdd6b8103b787e60",
+      "bytes": 16999064
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_static_result_tests",
+      "sha256": "8d9f06b3d2883f41c09d01d2967253fd5aaf6d7955c09260b185e3f4f06e006b",
+      "bytes": 4249472
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_tests",
+      "sha256": "205c85f9316b84a193d73c3c3d3978edbe442dbb0d7ae8075622e6e124d59bfb",
+      "bytes": 4655440
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_operation_registry_tests",
+      "sha256": "9ba3acf4714b6661d8d64bdb8271027b4669bcf6d9b3599a74af2ba12ce2f93f",
+      "bytes": 4007616
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_parameter_tests",
+      "sha256": "d45f4fbc943e53d8305cfddb9b103f1e9d41906888fdc4dd2debd36a1b889f1a",
+      "bytes": 658872
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_persistence_tests",
+      "sha256": "8820067c70d0557b93a5b063a28f04ad7a0c1bd450b586cbcf807f6fe6ae83ae",
+      "bytes": 17682392
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_quantity_entry_consistency_tests",
+      "sha256": "649b105c695df88d438b54dd346da05eedeb82f397de9c86ef59ec3f5b0f831b",
+      "bytes": 17261656
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_query_tests",
+      "sha256": "5417c02898d35c092f8c82b2d7d1b1c77da76212a67dce1bf686ad071547546a",
+      "bytes": 12113856
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_application_tests",
+      "sha256": "b47ee82dd5a3c257e14d7dc53e553c6eecae093e4fb4c4eec958ff703b49d8c1",
+      "bytes": 11986608
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_document_tests",
+      "sha256": "6dd1996f66141f5e93110d08840aec9fba681feaf659882e3bc487c071194a14",
+      "bytes": 10767288
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_query_tests",
+      "sha256": "e8d6c587fb00864da6d6bc01f9d2fc0a4de09d946fb6ea338254ec24a1744f5e",
+      "bytes": 13270056
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_record_store_tests",
+      "sha256": "3f22f3b8c700413c6be703fa456a73c11c422ab25c46478d4193964ff19561f8",
+      "bytes": 1685864
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_render_projector_tests",
+      "sha256": "34fc251669f41d2e2a8dfb6c12d81abe05d02a852205d2b69b52742074afe998",
+      "bytes": 8950632
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_result_fixture_tests",
+      "sha256": "a2decdd4e7d0a56f38cb79f0e50c47704794a20e3ef118d6a45a24647c1889da",
+      "bytes": 15525464
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_runtime_tests",
+      "sha256": "04e3fd78806545b54872ce7ecd4cc2cc4a36986c710cebc9b7a33f31fb43fc60",
+      "bytes": 13654480
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_skeleton_fault_tests",
+      "sha256": "f901d8ab727c941e357153b4fa74f7d14df987931ce737dbaa1b6d94d79d7a09",
+      "bytes": 16237864
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_skeleton_representative_tests",
+      "sha256": "4dd37db515b8d196c47d9ce4793e5ef495de3c069814f59ee44cf3b55ba3505a",
+      "bytes": 20624480
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_solver_local_tests",
+      "sha256": "76606c951dd01100741362e1480c8086dea960781375e0cf2f3ca6b4d70edfac",
+      "bytes": 2148872
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_sqlite_tests",
+      "sha256": "0ab8ec827ae68dc1087df78c26192f18b87de7c49378072a37c14dc93a215ecf",
+      "bytes": 1731312
+    },
+    {
+      "path": "build-c4-baseline-sqlite-sanitizers40/qcae_static_validation_tests",
+      "sha256": "6cfdd0db8fc5ef231c8067347663e8a6743d0580cf46c89a5bba4c3f893afbc2",
+      "bytes": 12683872
+    }
+  ],
+  "working_tree": {
+    "all_nonexcluded_commit_files_exact": true,
+    "untracked_nonartifact_files": [],
+    "user_instructions_working_content_read": false,
+    "excluded_user_instruction_path": "AGENTS.md",
+    "initial_AGENTS_source": "committed blob; working user diff never substitutes initial context",
+    "external_evidence_paths": [
+      "build-c3-closure-core/CMakeCache.txt",
+      "build-c3-closure-core/compile_commands.json",
+      "build-c3-closure-core/generated/qcae/operation_inputs.hpp",
+      "build-c3-closure-core/generated/qcae/operations.hpp",
+      "build-c3-closure-core/profiles/nastran/generated/qcae/nastran_digest.hpp",
+      "build-c3-closure-core/qcae_allocation_tests",
+      "build-c3-closure-core/qcae_analysis_check_tests",
+      "build-c3-closure-core/qcae_artifacts_local_tests",
+      "build-c3-closure-core/qcae_change_event_tests",
+      "build-c3-closure-core/qcae_contract_tests",
+      "build-c3-closure-core/qcae_core_tests",
+      "build-c3-closure-core/qcae_delta_tests",
+      "build-c3-closure-core/qcae_geometry_mesh_tests",
+      "build-c3-closure-core/qcae_line_mesh_regeneration_tests",
+      "build-c3-closure-core/qcae_model_operation_tests",
+      "build-c3-closure-core/qcae_model_tests",
+      "build-c3-closure-core/qcae_nastran_static_result_tests",
+      "build-c3-closure-core/qcae_nastran_tests",
+      "build-c3-closure-core/qcae_operation_registry_tests",
+      "build-c3-closure-core/qcae_parameter_tests",
+      "build-c3-closure-core/qcae_persistence_tests",
+      "build-c3-closure-core/qcae_quantity_entry_consistency_tests",
+      "build-c3-closure-core/qcae_query_tests",
+      "build-c3-closure-core/qcae_record_application_tests",
+      "build-c3-closure-core/qcae_record_document_tests",
+      "build-c3-closure-core/qcae_record_query_tests",
+      "build-c3-closure-core/qcae_render_projector_tests",
+      "build-c3-closure-core/qcae_result_fixture_tests",
+      "build-c3-closure-core/qcae_runtime_tests",
+      "build-c3-closure-core/qcae_solver_local_tests",
+      "build-c3-closure-core/qcae_static_validation_tests",
+      "build-c3-closure-desktop/CMakeCache.txt",
+      "build-c3-closure-desktop/compile_commands.json",
+      "build-c3-closure-desktop/desktop-smoke.png",
+      "build-c3-closure-desktop/generated/qcae/operation_inputs.hpp",
+      "build-c3-closure-desktop/generated/qcae/operations.hpp",
+      "build-c3-closure-desktop/profiles/nastran/generated/qcae/nastran_digest.hpp",
+      "build-c3-closure-desktop/qcae-cli",
+      "build-c3-closure-desktop/qcae-desktop",
+      "build-c3-closure-desktop/qcae-engine",
+      "build-c3-closure-desktop/qcae-mcp",
+      "build-c3-closure-desktop/qcae_allocation_tests",
+      "build-c3-closure-desktop/qcae_analysis_check_tests",
+      "build-c3-closure-desktop/qcae_artifacts_local_tests",
+      "build-c3-closure-desktop/qcae_c3_desktop_workflow_tests",
+      "build-c3-closure-desktop/qcae_c3_tool_lifecycle_tests",
+      "build-c3-closure-desktop/qcae_change_event_tests",
+      "build-c3-closure-desktop/qcae_contract_tests",
+      "build-c3-closure-desktop/qcae_contributed_engine",
+      "build-c3-closure-desktop/qcae_core_tests",
+      "build-c3-closure-desktop/qcae_delta_tests",
+      "build-c3-closure-desktop/qcae_desktop_selection_tests",
+      "build-c3-closure-desktop/qcae_desktop_tests",
+      "build-c3-closure-desktop/qcae_engine_assembly_tests",
+      "build-c3-closure-desktop/qcae_event_client_tests",
+      "build-c3-closure-desktop/qcae_event_stream_tests",
+      "build-c3-closure-desktop/qcae_geometry_mesh_sqlite_tests",
+      "build-c3-closure-desktop/qcae_geometry_mesh_tests",
+      "build-c3-closure-desktop/qcae_json_ledger_tests",
+      "build-c3-closure-desktop/qcae_legacy_migration_tests",
+      "build-c3-closure-desktop/qcae_line_mesh_regeneration_tests",
+      "build-c3-closure-desktop/qcae_model_operation_tests",
+      "build-c3-closure-desktop/qcae_model_tests",
+      "build-c3-closure-desktop/qcae_modeling_tools_tests",
+      "build-c3-closure-desktop/qcae_nastran_package_tests",
+      "build-c3-closure-desktop/qcae_nastran_static_result_tests",
+      "build-c3-closure-desktop/qcae_nastran_tests",
+      "build-c3-closure-desktop/qcae_operation_registry_tests",
+      "build-c3-closure-desktop/qcae_parameter_tests",
+      "build-c3-closure-desktop/qcae_persistence_tests",
+      "build-c3-closure-desktop/qcae_qt_text_ledger_probe",
+      "build-c3-closure-desktop/qcae_qt_widget_copy_probe",
+      "build-c3-closure-desktop/qcae_quantity_entry_consistency_tests",
+      "build-c3-closure-desktop/qcae_query_tests",
+      "build-c3-closure-desktop/qcae_record_application_tests",
+      "build-c3-closure-desktop/qcae_record_document_tests",
+      "build-c3-closure-desktop/qcae_record_query_tests",
+      "build-c3-closure-desktop/qcae_record_store_tests",
+      "build-c3-closure-desktop/qcae_render_projector_tests",
+      "build-c3-closure-desktop/qcae_render_service_tests",
+      "build-c3-closure-desktop/qcae_render_wire_tests",
+      "build-c3-closure-desktop/qcae_resource_tests",
+      "build-c3-closure-desktop/qcae_result_fixture_tests",
+      "build-c3-closure-desktop/qcae_runtime_tests",
+      "build-c3-closure-desktop/qcae_skeleton_fault_client_tests",
+      "build-c3-closure-desktop/qcae_skeleton_fault_tests",
+      "build-c3-closure-desktop/qcae_skeleton_representative_tests",
+      "build-c3-closure-desktop/qcae_solver_local_tests",
+      "build-c3-closure-desktop/qcae_solver_numerical_validation_tests",
+      "build-c3-closure-desktop/qcae_solver_result_store_tests",
+      "build-c3-closure-desktop/qcae_solver_version_probe_tests",
+      "build-c3-closure-desktop/qcae_sqlite_tests",
+      "build-c3-closure-desktop/qcae_static_validation_tests",
+      "build-c3-closure-desktop/qcae_typed_host_tests",
+      "build-c3-closure-desktop/qcae_vtk_coordinate_range_tests",
+      "build-c3-closure-desktop/qcae_vtk_shift_scale_copy_tests",
+      "build-c3-vtk-sqlite-release/CMakeCache.txt",
+      "build-c3-vtk-sqlite-release/compile_commands.json",
+      "build-c3-vtk-sqlite-release/generated/qcae/operation_inputs.hpp",
+      "build-c3-vtk-sqlite-release/generated/qcae/operations.hpp",
+      "build-c3-vtk-sqlite-release/profiles/nastran/generated/qcae/nastran_digest.hpp",
+      "build-c3-vtk-sqlite-release/qcae_allocation_tests",
+      "build-c3-vtk-sqlite-release/qcae_analysis_check_tests",
+      "build-c3-vtk-sqlite-release/qcae_artifacts_local_tests",
+      "build-c3-vtk-sqlite-release/qcae_change_event_tests",
+      "build-c3-vtk-sqlite-release/qcae_contract_tests",
+      "build-c3-vtk-sqlite-release/qcae_core_tests",
+      "build-c3-vtk-sqlite-release/qcae_delta_tests",
+      "build-c3-vtk-sqlite-release/qcae_geometry_mesh_sqlite_tests",
+      "build-c3-vtk-sqlite-release/qcae_geometry_mesh_tests",
+      "build-c3-vtk-sqlite-release/qcae_line_mesh_regeneration_tests",
+      "build-c3-vtk-sqlite-release/qcae_model_operation_tests",
+      "build-c3-vtk-sqlite-release/qcae_model_tests",
+      "build-c3-vtk-sqlite-release/qcae_nastran_package_tests",
+      "build-c3-vtk-sqlite-release/qcae_nastran_static_result_tests",
+      "build-c3-vtk-sqlite-release/qcae_nastran_tests",
+      "build-c3-vtk-sqlite-release/qcae_operation_registry_tests",
+      "build-c3-vtk-sqlite-release/qcae_parameter_tests",
+      "build-c3-vtk-sqlite-release/qcae_persistence_tests",
+      "build-c3-vtk-sqlite-release/qcae_quantity_entry_consistency_tests",
+      "build-c3-vtk-sqlite-release/qcae_query_tests",
+      "build-c3-vtk-sqlite-release/qcae_record_application_tests",
+      "build-c3-vtk-sqlite-release/qcae_record_document_tests",
+      "build-c3-vtk-sqlite-release/qcae_record_query_tests",
+      "build-c3-vtk-sqlite-release/qcae_record_store_tests",
+      "build-c3-vtk-sqlite-release/qcae_render_projector_tests",
+      "build-c3-vtk-sqlite-release/qcae_result_fixture_tests",
+      "build-c3-vtk-sqlite-release/qcae_runtime_tests",
+      "build-c3-vtk-sqlite-release/qcae_skeleton_fault_tests",
+      "build-c3-vtk-sqlite-release/qcae_skeleton_representative_tests",
+      "build-c3-vtk-sqlite-release/qcae_solver_local_tests",
+      "build-c3-vtk-sqlite-release/qcae_sqlite_tests",
+      "build-c3-vtk-sqlite-release/qcae_static_validation_tests",
+      "build-c4-baseline-sqlite-sanitizers40/CMakeCache.txt",
+      "build-c4-baseline-sqlite-sanitizers40/compile_commands.json",
+      "build-c4-baseline-sqlite-sanitizers40/generated/qcae/operation_inputs.hpp",
+      "build-c4-baseline-sqlite-sanitizers40/generated/qcae/operations.hpp",
+      "build-c4-baseline-sqlite-sanitizers40/profiles/nastran/generated/qcae/nastran_digest.hpp",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_allocation_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_analysis_check_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_artifacts_local_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_change_event_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_contract_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_core_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_delta_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_geometry_mesh_sqlite_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_geometry_mesh_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_line_mesh_regeneration_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_model_operation_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_model_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_package_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_static_result_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_nastran_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_operation_registry_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_parameter_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_persistence_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_quantity_entry_consistency_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_query_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_record_application_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_record_document_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_record_query_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_record_store_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_render_projector_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_result_fixture_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_runtime_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_skeleton_fault_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_skeleton_representative_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_solver_local_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_sqlite_tests",
+      "build-c4-baseline-sqlite-sanitizers40/qcae_static_validation_tests",
+      "docs/engineering/c3-closure-evidence/graphics-environment-probe.json",
+      "docs/engineering/c3-closure-evidence/graphics-environment-probe.log",
+      "docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json",
+      "docs/engineering/c3-closure-evidence/package/c4-common40-environment-sampling.log",
+      "docs/engineering/c3-closure-evidence/package/c4-common40-environment.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/actual-commands.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/architecture.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/architecture.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-build.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-configure.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/asan_ubsan-tests.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/core-build.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/core-configure.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/core-tests.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/cpp-format.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/design.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/desktop-build.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/desktop-configure.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/desktop-tests.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/diff-check.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/freeze-execution-spec-root-validation-draft.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/freeze-execution-spec.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/protected-ast.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-build.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/public-consumers-configure.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability-record.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability-root-record.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/changed-source-inventory.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-archive-map.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-execution-validation.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-precommit-reviewed-evidence.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-qg02-review.md",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-qg03-final-review.md",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-readability-record.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-review-hash-bindings.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-source-binding.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/common41-validation.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/copy-receipt.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/final-artifact-sha256.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/freeze-metadata-final-fence.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/historical-gui-presentation-diff.patch",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/post-repair-supplement.md",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/prepare-review.md",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/root-evidence-review-check.original.py",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/sdk8-private-archive-validation.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/slice-source-coverage.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/stage-root-independent-green41.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/readability/validate-common41-readability.py",
+      "docs/engineering/c3-closure-evidence/package/common41-final/root-evidence-review-command.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/root-evidence-review-validation.json",
+      "docs/engineering/c3-closure-evidence/package/common41-final/root-evidence-review-validation.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-build.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-configure.log",
+      "docs/engineering/c3-closure-evidence/package/common41-final/sqlite_headless-tests.log",
+      "docs/engineering/c3-closure-evidence/package/font-backend-mac-build36.json"
+    ],
+    "global_worktree_clean_claimed": false
+  },
+  "complete_sk12_passed": false,
+  "complete_c3_passed": false,
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "sk13_passed": false,
+  "extensions_executed_by_tool": 0,
+  "p0_passed": false,
+  "validation_scope": "Git/blob/evidence byte integrity and provided executed-record conditions; independent review still owns execution provenance"
+}
+#!/usr/bin/env python3
+"""Deliver source text while recording actual UTF-8 context bytes for C4 runs."""
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--log", type=Path, required=True)
+    parser.add_argument("--phase", choices=("initial", "subsequent"), required=True)
+    parser.add_argument("paths", nargs="+")
+    args = parser.parse_args()
+    root = args.root.resolve(strict=True)
+    # Read everything first: an invalid path or non-text file delivers no partial packet.
+    texts = []
+    for name in args.paths:
+        path = (root / name).resolve(strict=True)
+        relative = path.relative_to(root).as_posix()
+        content = path.read_bytes()
+        value = content.decode("utf-8")
+        texts.append((relative, content, value))
+    args.log.parent.mkdir(parents=True, exist_ok=True)
+    with args.log.open("a", encoding="utf-8") as log:
+        for name, content, value in texts:
+            heading = f"--- {name} ({len(content)} UTF-8 bytes) ---\n"
+            trailing = "" if value.endswith("\n") else "\n"
+            log.write(json.dumps({
+                "phase": args.phase,
+                "path": name,
+                "utf8_bytes": len(content),
+                "delivered_utf8_bytes": len(heading.encode("utf-8")) + len(content) + len(trailing),
+                "sha256": hashlib.sha256(content).hexdigest(),
+                "delivered_complete_file": True,
+            }, sort_keys=True) + "\n")
+            sys.stdout.write(heading)
+            sys.stdout.write(value)
+            sys.stdout.write(trailing)
+
+
+if __name__ == "__main__":
+    main()

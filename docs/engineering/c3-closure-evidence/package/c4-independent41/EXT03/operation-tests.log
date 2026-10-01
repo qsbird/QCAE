@@ -1,0 +1,1150 @@
+--- tests/model_operation_tests.cpp (30245 UTF-8 bytes) ---
+#include "qcae/material_operations.hpp"
+#include "qcae/mesh_editing_operations.hpp"
+#include "qcae/records.hpp"
+#include "qcae/core.hpp"
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+
+using namespace qcae;
+using namespace qcae::operations;
+namespace material_features = qcae::features::materials;
+namespace mesh_features = qcae::features::mesh_editing;
+
+namespace {
+void check(bool value, const std::string& message) {
+    if (!value)
+        throw std::runtime_error(message);
+}
+template <class T> T good(Result<T> value, const std::string& message) {
+    check(value.ok(), message + (value.error ? ": " + value.error->message : ""));
+    return std::move(*value.value);
+}
+template <class T> void bad(const Result<T>& result, ErrorCode code, const std::string& message) {
+    const auto status = code == ErrorCode::missing_input ? Status::needs_input
+                        : code == ErrorCode::idempotency_key_conflict ||
+                                code == ErrorCode::revision_conflict ||
+                                code == ErrorCode::document_epoch_expired
+                            ? Status::conflict
+                            : Status::failed;
+    check(!result.ok() && !result.value && result.status == status && result.error &&
+              result.error->code == code,
+          message);
+}
+struct MemoryRows final : IRecordStore {
+    std::uint64_t generation{};
+    std::map<StoreKey, SharedStoreBytes> rows;
+    LoadedRows load_rows() override {
+        LoadedRows loaded;
+        loaded.generation = generation;
+        for (const auto& [key, value] : rows)
+            loaded.rows.push_back({key, value});
+        return loaded;
+    }
+    BatchReceipt commit_rows(const StoreBatch& batch) override {
+        check(batch.expected_generation == generation, "row generation agrees with coordinator");
+        auto candidate = rows;
+        std::uint64_t bytes{};
+        for (const auto& row : batch.mutations) {
+            if (row.after) {
+                candidate[row.key] = row.after;
+                bytes += row.after->size();
+            } else
+                candidate.erase(row.key);
+        }
+        rows.swap(candidate);
+        return {++generation, batch.mutations.size(), bytes};
+    }
+};
+RecordApplicationOptions options(const std::shared_ptr<MemoryRows>& rows) {
+    RecordApplicationOptions options;
+    options.registry = make_record_registry();
+    options.records = rows;
+    return options;
+}
+struct Fixture {
+    std::shared_ptr<MemoryRows> rows = std::make_shared<MemoryRows>();
+    RecordApplication app{options(rows)};
+    OperationRegistry registry;
+    Caller caller{"model-operation-tests"};
+    DocumentInfo initial;
+    Fixture() {
+        initial = good(app.create_document(caller, "Typed feature operations", "create-doc"),
+                       "create document");
+        good(material_features::register_handlers(registry, app),
+             "register material/section handlers");
+        good(mesh_features::register_handlers(registry, app), "register node/beam handlers");
+    }
+    OperationContext context(std::string key) {
+        const auto info = good(app.current_document(), "current document");
+        return {caller, info.document, info.revision, std::move(key), std::nullopt, "request-1"};
+    }
+    RecordSnapshot snapshot() {
+        return good(app.snapshot(initial.document), "record snapshot");
+    }
+    Value invoke(std::string_view name, const OperationContext& context, Value input) {
+        return good(registry.invoke(name, 1, context, input), "invoke " + std::string(name));
+    }
+};
+const Value::Object& object(const Value& value) {
+    return std::get<Value::Object>(value.data);
+}
+std::string transaction(const Value& value) {
+    return std::get<std::string>(object(value).at("transaction_id").data);
+}
+Revision revision(const Value& value, std::string_view field) {
+    return std::stoull(std::get<std::string>(object(value).at(std::string(field)).data));
+}
+bool replayed(const Value& value) {
+    return std::get<bool>(object(value).at("replayed").data);
+}
+template <class T> EntityId only_id(const DocumentView& view) {
+    EntityId id;
+    std::size_t count{};
+    view.visit(RecordTraits<T>::type_id, [&](const auto& record) {
+        id = record->template get<T>().id;
+        ++count;
+    });
+    check(count == 1, "query exactly one created record instead of fabricating a replay ID");
+    return id;
+}
+void canonical_signatures() {
+    Value::Object first;
+    first.emplace("b", Value(1.25));
+    first.emplace("a", Value(1));
+    Value::Object second;
+    second.emplace("a", Value(1.0));
+    second.emplace("b", Value(1.25));
+    check(good(canonical_value(Value(first)), "canonical object") ==
+              good(canonical_value(Value(second)), "canonical reordered object"),
+          "object insertion order and equivalent int/double do not change signature");
+    check(good(canonical_value(Value(-0.0)), "negative zero") ==
+              good(canonical_value(Value(0)), "zero"),
+          "signed zero normalizes");
+    check(good(canonical_value(Value(true)), "boolean") !=
+              good(canonical_value(Value(1)), "integer"),
+          "boolean is distinct from a numeric one");
+    check(good(canonical_value(Value(std::int64_t{9007199254740993})), "large exact integer") !=
+              good(canonical_value(Value(9007199254740992.0)), "rounded double"),
+          "int64 identity is not lost through double conversion");
+    check(
+        good(canonical_value(Value(std::numeric_limits<std::int64_t>::max())), "maximum integer") !=
+            good(canonical_value(Value(9223372036854775808.0)), "outside signed range"),
+        "double boundary conversion does not overflow int64");
+    check(good(canonical_value(Value(Value::Array{Value("a"), Value("bc")})), "array strings") !=
+              good(canonical_value(Value(Value::Array{Value("ab"), Value("c")})), "other strings"),
+          "length prefixes prevent concatenation collisions");
+    check(good(canonical_value(Value(Value::Array{Value(1), Value(2)})), "ordered array") !=
+              good(canonical_value(Value(Value::Array{Value(2), Value(1)})), "reversed array"),
+          "generic array ordering remains semantic");
+    bad(canonical_value(Value(std::numeric_limits<double>::infinity())),
+        ErrorCode::invalid_input,
+        "nonfinite canonical value rejected");
+    Value nested(1);
+    for (int i = 0; i < 66; ++i)
+        nested = Value(Value::Array{std::move(nested)});
+    bad(canonical_value(nested),
+        ErrorCode::resource_limit,
+        "bounded recursive encoding rejects excessive nesting");
+}
+void canonical_owned_boundaries() {
+    Value::Object fields;
+    fields.emplace("a", Value(std::int64_t{-9223372036854775807LL - 1}));
+    fields.emplace("b", Value(1.25));
+    fields.emplace("c", Value(std::string("x\0y", 3)));
+    const Value input(std::move(fields));
+    const auto operation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"canonical-builder-copies", {}, {}, 0});
+    Result<std::string> encoded;
+    {
+        ledger::Scope scope(operation);
+        encoded = canonical_value(input);
+    }
+    std::string expected = "QCV1:o3:s1:an20:-9223372036854775808s1:bn4:1.25s1:cs3:";
+    expected.append("x\0y", 3);
+    check(
+        encoded.ok() && *encoded.value == expected,
+        "Canonical builder preserves exact old tags, sorted fields, int64 and embedded NUL bytes");
+    const auto snapshot = operation->snapshot();
+    const auto& measured = snapshot.values[static_cast<std::size_t>(ledger::Stage::application)];
+    check(!measured[static_cast<std::size_t>(ledger::Metric::model_copy_bytes)] &&
+              measured[static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)].value_or(0) >=
+                  expected.size() + 64,
+          "Builder borrows the existing input and counts its own output/numeric scratch as H");
+
+    const auto registry = make_record_registry();
+    const DocumentView base(registry);
+    MaterialCreateInput original{std::string(80, 's'), {210, "GPa"}, .3};
+    auto plan = good(material_features::prepare_create_material(original), "owned material plan");
+    original.name.assign("changed");
+    original.young_modulus = {1, "MPa"};
+    const auto prepared =
+        good(plan.prepare(base, [] { return EntityId("material"); }), "owned material callback");
+    const auto material = prepared.change.candidate.find<records::Material>(EntityId("material"));
+    check(material && material->get<records::Material>().name == std::string(80, 's') &&
+              material->get<records::Material>().young_modulus_mpa == 210000 &&
+              prepared.signature == plan.signature,
+          "Moving canonical storage into the callback retains independent input and identical "
+          "signature");
+}
+void normalizers_and_optional_fields() {
+    const auto canonical =
+        good(material_features::prepare_create_material({"Steel", {210000, "MPa"}, std::nullopt}),
+             "canonical material");
+    for (const auto& quantity :
+         std::vector<Quantity>{{210, "GPa"}, {210000000, "kPa"}, {210000000000, "Pa"}}) {
+        check(good(material_features::prepare_create_material({"Steel", quantity, std::nullopt}),
+                   "pressure normalization")
+                      .signature == canonical.signature,
+              "equivalent pressure units have one canonical operation signature");
+    }
+    const auto explicit_nu =
+        good(material_features::prepare_create_material({"Steel", {210000, "MPa"}, .3}),
+             "explicit Poisson ratio");
+    check(explicit_nu.signature != canonical.signature,
+          "omitted Poisson ratio is not silently defaulted");
+    const auto omitted =
+        good(InputTraits<MaterialCreateInput>::from_value(
+                 InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, std::nullopt})),
+             "optional field omission");
+    check(!omitted.poisson_ratio, "generated adapter preserves optional absence");
+    const auto supplied =
+        good(InputTraits<MaterialCreateInput>::from_value(
+                 InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, .3})),
+             "optional field presence");
+    check(supplied.poisson_ratio == .3, "generated adapter preserves explicit value");
+    auto bad_nu =
+        object(InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, std::nullopt}));
+    bad_nu.emplace("poisson_ratio", Value(true));
+    bad(InputTraits<MaterialCreateInput>::from_value(Value(bad_nu)),
+        ErrorCode::invalid_input,
+        "optional number rejects a bool");
+    bad(material_features::prepare_create_material({"Steel", {1, "N"}, {}}),
+        ErrorCode::invalid_unit,
+        "wrong material dimension");
+    bad(material_features::prepare_create_material({"Steel", {1, ""}, {}}),
+        ErrorCode::missing_input,
+        "material unit required");
+    bad(material_features::prepare_create_material({"Steel", {-1, "MPa"}, {}}),
+        ErrorCode::invalid_input,
+        "generated material positive rule reused");
+    bad(material_features::prepare_create_material({"Steel", {210000, "MPa"}, .5}),
+        ErrorCode::invalid_input,
+        "generated Poisson range rule reused");
+    bad(material_features::prepare_create_material({"", {210000, "MPa"}, {}}),
+        ErrorCode::invalid_input,
+        "generated material name rule reused");
+    bad(material_features::prepare_create_section({"Section", EntityId("material"), 0, 1, 1, 1}),
+        ErrorCode::invalid_input,
+        "generated section positive rule reused");
+    bad(material_features::prepare_create_section(
+            {"Section", EntityId("material"), 1, 1, 1, std::numeric_limits<double>::infinity()}),
+        ErrorCode::invalid_input,
+        "section numeric range validated before staging");
+    bad(mesh_features::prepare_move_node(
+            {EntityId("node"), {std::numeric_limits<double>::denorm_min(), 0, 0}}),
+        ErrorCode::invalid_input,
+        "node canonical position rejects underflow");
+    bad(mesh_features::prepare_assign_section({{}, EntityId("section")}),
+        ErrorCode::invalid_input,
+        "empty beam selection rejected");
+    bad(mesh_features::prepare_assign_section(
+            {{EntityId("beam"), EntityId("beam")}, EntityId("section")}),
+        ErrorCode::invalid_input,
+        "duplicate beam IDs rejected");
+    const auto order_a = good(
+        mesh_features::prepare_assign_section({{EntityId("b0"), EntityId("b1")}, EntityId("s")}),
+        "selected beams");
+    const auto order_b = good(
+        mesh_features::prepare_assign_section({{EntityId("b1"), EntityId("b0")}, EntityId("s")}),
+        "reordered selected beams");
+    check(order_a.signature == order_b.signature, "beam assignment normalizes set ordering");
+}
+void material_entry_boundary_consistency() {
+    for (const auto& quantity :
+         std::vector<Quantity>{{210, "GPa"},
+                               {210000, "MPa"},
+                               {210000000, "kPa"},
+                               {210000000000, "Pa"},
+                               {std::numeric_limits<double>::min(), "MPa"},
+                               {std::numeric_limits<double>::max(), "MPa"},
+                               {1e-307, "Pa"},
+                               {std::numeric_limits<double>::min() / 2, "GPa"},
+                               {std::numeric_limits<double>::max(), "GPa"},
+                               {0, "MPa"},
+                               {-1, "MPa"},
+                               {210000, ""},
+                               {210000, "N"}}) {
+        MemoryApplication legacy;
+        const Caller caller{"entry-consistency"};
+        const auto initial = good(legacy.create_document(caller, "Units", "create"), "create");
+        const auto compatible = legacy.preview(
+            caller, {initial.document, initial.revision}, CreateMaterial{"Steel", quantity});
+        Fixture typed;
+        const auto result = typed.registry.invoke(
+            "material.create",
+            typed.context("typed-create"),
+            InputTraits<MaterialCreateInput>::to_value({"Steel", quantity, std::nullopt}));
+        check(compatible.ok() == result.ok(),
+              "legacy and typed entry must agree on numeric bounds");
+        if (!compatible.ok()) {
+            check(compatible.status == result.status && compatible.error && result.error &&
+                      compatible.error->code == result.error->code,
+                  "legacy and typed entry must agree on quantity rejection");
+            check(good(legacy.current_document(), "unchanged legacy").revision == 0 &&
+                      typed.snapshot().info.revision == 0,
+                  "rejected quantities must not publish either model");
+            continue;
+        }
+        good(legacy.commit(caller,
+                           {initial.document, initial.revision},
+                           compatible.value->id,
+                           "legacy-commit"),
+             "legacy material commit");
+        const auto id = only_id<records::Material>(typed.snapshot().records);
+        const auto canonical = typed.snapshot().records.find<records::Material>(id);
+        check(good(legacy.snapshot(initial.document), "legacy material")
+                      .materials.front()
+                      .young_modulus_mpa == canonical->get<records::Material>().young_modulus_mpa,
+              "both entries must commit the same canonical engineering value");
+    }
+}
+void direct_retry_and_history() {
+    Fixture fixture;
+    const auto context = fixture.context("material-key");
+    const auto original = fixture.invoke(
+        "material.create",
+        context,
+        InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, std::nullopt}));
+    const auto material = only_id<records::Material>(fixture.snapshot().records);
+    check(!fixture.snapshot()
+               .records.find<records::Material>(material)
+               ->get<records::Material>()
+               .poisson_ratio,
+          "authoritative material retains absent Nu");
+    check(!replayed(original) && revision(original, "committed_revision") == 1,
+          "first direct request commits once");
+    check(std::get<std::string>(object(original).at("entity_id").data) == material.value,
+          "created ID comes from the persisted application receipt");
+    const auto generation = fixture.rows->generation;
+    auto retry_context = context;
+    retry_context.request_id = "network-retry";
+    const auto retry = fixture.invoke(
+        "material.create",
+        retry_context,
+        InputTraits<MaterialCreateInput>::to_value({"Steel", {210000, "MPa"}, std::nullopt}));
+    check(std::get<std::string>(object(original).at("entity_id").data) ==
+              std::get<std::string>(object(retry).at("entity_id").data),
+          "F05 replay preserves the original created entity ID");
+    check(transaction(original) == transaction(retry) && replayed(retry),
+          "F05 same canonical parameters return original transaction");
+    check(fixture.rows->generation == generation && fixture.snapshot().info.revision == 1 &&
+              fixture.snapshot().records.count(RecordTraits<records::Material>::type_id) == 1,
+          "F05 performs no extra persistent or model commit");
+    bad(fixture.registry.invoke(
+            "material.create",
+            1,
+            context,
+            InputTraits<MaterialCreateInput>::to_value({"Steel", {200000, "MPa"}, std::nullopt})),
+        ErrorCode::idempotency_key_conflict,
+        "F06 same key/different canonical parameters conflict");
+    check(fixture.rows->generation == generation && fixture.snapshot().info.revision == 1,
+          "F06 leaves model/history/store unchanged");
+    const auto fact =
+        good(fixture.app.action_outcome(
+                 fixture.caller, fixture.initial.document, "material.create", "material-key"),
+             "query direct persisted fact");
+    check(fact.transaction.value == transaction(original),
+          "generic application owns direct operation ledger");
+    const auto current = fixture.snapshot().info;
+    good(fixture.app.undo(fixture.caller, {current.document, current.revision}, "undo-material"),
+         "undo direct material create");
+    check(fixture.snapshot().records.count(RecordTraits<records::Material>::type_id) == 0,
+          "undo removes created record");
+    const auto replay_after_undo = fixture.invoke(
+        "material.create",
+        retry_context,
+        InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, std::nullopt}));
+    check(transaction(replay_after_undo) == transaction(original) &&
+              fixture.snapshot().records.count(RecordTraits<records::Material>::type_id) == 0,
+          "F07 original direct fact replay does not reapply an undone create");
+    check(std::get<std::string>(object(replay_after_undo).at("entity_id").data) == material.value,
+          "replay after undo still identifies the originally created entity");
+    const auto undone = fixture.snapshot().info;
+    good(fixture.app.redo(fixture.caller, {undone.document, undone.revision}, "redo-material"),
+         "redo typed record create");
+    check(fixture.snapshot().records.find<records::Material>(material) != nullptr,
+          "redo restores original identity");
+}
+void retained_create_identity() {
+    const auto rows = std::make_shared<MemoryRows>();
+    const Caller caller{"recover-feature-test"};
+    OperationContext original_context;
+    Value original;
+    {
+        RecordApplication app{options(rows)};
+        OperationRegistry registry;
+        good(material_features::register_handlers(registry, app), "register original handlers");
+        const auto document =
+            good(app.create_document(caller, "Recovery", "document"), "create retained document");
+        original_context = {
+            caller, document.document, document.revision, "material", {}, "first-request"};
+        original = good(registry.invoke("material.create",
+                                        original_context,
+                                        InputTraits<MaterialCreateInput>::to_value(
+                                            {"Steel", {210, "GPa"}, .3})),
+                        "create retained material");
+    }
+    RecordApplication restored{options(rows)};
+    const auto document =
+        good(restored.recover_document(caller, "recover"), "recover retained rows");
+    const auto receipt =
+        good(restored.action_outcome(
+                 caller, document.document, "material.create", original_context.idempotency_key),
+             "query restored create fact");
+    const EntityId material(std::get<std::string>(object(original).at("entity_id").data));
+    check(receipt.primary_entity == material && receipt.transaction.value == transaction(original),
+          "retained operation receipt preserves the original stable entity and transaction");
+    check(good(restored.snapshot(document.document), "restored snapshot")
+                  .records.find<records::Material>(material) != nullptr,
+          "receipt identity refers to the retained material record");
+    OperationRegistry registry;
+    good(material_features::register_handlers(registry, restored), "register restored handlers");
+    bad(registry.invoke("material.create",
+                        original_context,
+                        InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, .3})),
+        ErrorCode::document_epoch_expired,
+        "recovery expires the previous document epoch before a handler can replay");
+}
+void edits_sections_and_reference_failures() {
+    Fixture fixture;
+    fixture.invoke("material.create",
+                   fixture.context("material"),
+                   InputTraits<MaterialCreateInput>::to_value({"Steel", {210, "GPa"}, .3}));
+    const auto material = only_id<records::Material>(fixture.snapshot().records);
+    fixture.invoke("material.set_young_modulus",
+                   fixture.context("set-material"),
+                   InputTraits<MaterialSetYoungModulusInput>::to_value({material, {200, "GPa"}}));
+    check(fixture.snapshot()
+                  .records.find<records::Material>(material)
+                  ->get<records::Material>()
+                  .young_modulus_mpa == 200000,
+          "setter normalizes pressure through shared parameters");
+    const auto seed_context = fixture.context("seed");
+    good(fixture.app.execute(
+             fixture.caller,
+             {*seed_context.document, *seed_context.expected_revision},
+             "test.seed",
+             "seed",
+             [](const DocumentView& view,
+                const RecordIdentityAllocator&) -> Result<RecordPreparedOperation> {
+                 EditSession edit(view);
+                 edit.put(records::Node{EntityId("n0"), {0, 0, 0}, std::nullopt});
+                 edit.put(records::Node{EntityId("n1"), {1, 0, 0}, std::nullopt});
+                 edit.put(records::Node{EntityId("n2"), {2, 0, 0}, std::nullopt});
+                 edit.put(records::Beam{EntityId("b0"),
+                                        std::nullopt,
+                                        {EntityId("n0"), EntityId("n1")},
+                                        {0, 1, 0},
+                                        std::nullopt});
+                 edit.put(records::Beam{EntityId("b1"),
+                                        std::nullopt,
+                                        {EntityId("n1"), EntityId("n2")},
+                                        {0, 1, 0},
+                                        std::nullopt});
+                 return {Status::success,
+                         RecordPreparedOperation{edit.prepare(),
+                                                 "Seed nodes and unassigned beams",
+                                                 EntityId("n0"),
+                                                 "seed",
+                                                 0,
+                                                 false},
+                         std::nullopt};
+             },
+             "seed"),
+         "seed representative mesh");
+    fixture.invoke("node.move",
+                   fixture.context("move"),
+                   InputTraits<NodeMoveInput>::to_value({EntityId("n1"), {1, 1, 0}}));
+    check(fixture.snapshot()
+                  .records.find<records::Node>(EntityId("n1"))
+                  ->get<records::Node>()
+                  .position == std::array<double, 3>{1, 1, 0},
+          "node move updates typed record");
+    const auto section_context = fixture.context("section");
+    const auto section_input = InputTraits<SectionCreateInput>::to_value(
+        {"Beam section", material, 100, 833.333, 833.333, 1400});
+    const auto created_section = fixture.invoke("section.create", section_context, section_input);
+    const auto section = only_id<records::BeamSection>(fixture.snapshot().records);
+    const auto section_retry = fixture.invoke("section.create", section_context, section_input);
+    check(transaction(section_retry) == transaction(created_section) && replayed(section_retry) &&
+              std::get<std::string>(object(section_retry).at("entity_id").data) == section.value,
+          "section create retry retains its original transaction and stable identity");
+    const auto before_assignment = fixture.snapshot();
+    check(!before_assignment.records.find<records::Beam>(EntityId("b0"))
+               ->get<records::Beam>()
+               .section,
+          "unassigned beam has no implicit section");
+    const auto assignment_context = fixture.context("assign");
+    const auto assignment = fixture.invoke(
+        "beam.assign_section",
+        assignment_context,
+        InputTraits<BeamAssignSectionInput>::to_value({{EntityId("b1"), EntityId("b0")}, section}));
+    const auto after_assignment = fixture.snapshot();
+    const auto generation_after_assignment = fixture.rows->generation;
+    const auto assignment_retry = fixture.invoke(
+        "beam.assign_section",
+        assignment_context,
+        InputTraits<BeamAssignSectionInput>::to_value({{EntityId("b0"), EntityId("b1")}, section}));
+    check(transaction(assignment_retry) == transaction(assignment) && replayed(assignment_retry) &&
+              fixture.rows->generation == generation_after_assignment,
+          "reordered beam IDs replay the same compound assignment without another commit");
+    check(after_assignment.records.find<records::Beam>(EntityId("b0"))
+                      ->get<records::Beam>()
+                      .section == section &&
+              after_assignment.records.find<records::Beam>(EntityId("b1"))
+                      ->get<records::Beam>()
+                      .section == section,
+          "both beams reference the existing section");
+    check(after_assignment.records.count(RecordTraits<records::Node>::type_id) == 3 &&
+              after_assignment.records.count(RecordTraits<records::BeamSection>::type_id) == 1,
+          "assignment creates no duplicate nodes or properties");
+    for (const auto id : {"n0", "n1", "n2"})
+        check(before_assignment.records.find<records::Node>(EntityId(id)) ==
+                  after_assignment.records.find<records::Node>(EntityId(id)),
+              "assignment preserves immutable node allocations");
+    const auto revision_before = after_assignment.info.revision;
+    const auto generation_before = fixture.rows->generation;
+    bad(fixture.registry.invoke("node.move",
+                                fixture.context("wrong-node-type"),
+                                InputTraits<NodeMoveInput>::to_value({material, {1, 2, 3}})),
+        ErrorCode::entity_not_found,
+        "wrong node record type rejected");
+    bad(fixture.registry.invoke("section.create",
+                                fixture.context("wrong-material-ref"),
+                                InputTraits<SectionCreateInput>::to_value(
+                                    {"Invalid section", EntityId("n0"), 1, 1, 1, 1})),
+        ErrorCode::invalid_input,
+        "wrong material reference type rejected by generated reference rules");
+    bad(fixture.registry.invoke("beam.assign_section",
+                                fixture.context("wrong-section-ref"),
+                                InputTraits<BeamAssignSectionInput>::to_value(
+                                    {{EntityId("b0"), EntityId("b1")}, material})),
+        ErrorCode::invalid_input,
+        "wrong section reference rejects complete assignment");
+    bad(fixture.registry.invoke("beam.assign_section",
+                                fixture.context("missing-beam"),
+                                InputTraits<BeamAssignSectionInput>::to_value(
+                                    {{EntityId("b0"), EntityId("missing")}, section})),
+        ErrorCode::entity_not_found,
+        "missing second beam rejects entire edit");
+    check(fixture.snapshot().info.revision == revision_before &&
+              fixture.rows->generation == generation_before,
+          "invalid references change no revision or persistent rows");
+    check(fixture.snapshot().records.find<records::Beam>(EntityId("b0")) ==
+              after_assignment.records.find<records::Beam>(EntityId("b0")),
+          "failed compound assignment does not partially publish first beam");
+    auto stale = fixture.context("stale-move");
+    --*stale.expected_revision;
+    bad(fixture.registry.invoke(
+            "node.move", stale, InputTraits<NodeMoveInput>::to_value({EntityId("n0"), {-1, 0, 0}})),
+        ErrorCode::revision_conflict,
+        "actual expected revision is checked by application");
+}
+} // namespace
+int main() {
+    try {
+        canonical_signatures();
+        canonical_owned_boundaries();
+        normalizers_and_optional_fields();
+        material_entry_boundary_consistency();
+        direct_retry_and_history();
+        retained_create_identity();
+        edits_sections_and_reference_failures();
+        std::cout << "PASS: reusable record feature operations, normalization, references and "
+                     "direct retries\n";
+    } catch (const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}
+--- tests/record_store_tests.cpp (25746 UTF-8 bytes) ---
+#include "qcae/sqlite_store.hpp"
+#ifdef QCAE_C3_SQLITE_INSTRUMENTED
+#include "c3_sqlite_copy_bridge.h"
+#include "qcae/operation_ledger.hpp"
+#endif
+
+#include <sqlite3.h>
+
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <array>
+#include <cassert>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <iterator>
+#include <spawn.h>
+#include <stdexcept>
+#include <string>
+#include <sys/wait.h>
+#include <unistd.h>
+
+extern char** environ;
+
+namespace {
+using namespace qcae;
+namespace fs = std::filesystem;
+
+struct Sandbox {
+    fs::path path;
+    Sandbox() {
+        std::string pattern = (fs::temp_directory_path() / "qcae-record-store-XXXXXX").string();
+        const char* directory = ::mkdtemp(pattern.data());
+        assert(directory);
+        path = directory;
+    }
+    ~Sandbox() {
+        fs::remove_all(path);
+    }
+    std::string database(const std::string& name = "working.sqlite") const {
+        return (path / name).string();
+    }
+};
+
+SharedStoreBytes bytes(std::string value) {
+    return std::make_shared<const std::string>(std::move(value));
+}
+
+RowMutation row(StoreSpace space, std::string identity, std::string value) {
+    return {{space, std::move(identity)}, bytes(std::move(value))};
+}
+
+bool fails(const std::function<void()>& action, bool expected_uncertain = false) {
+    try {
+        action();
+    } catch (const StorageError& error) {
+        return error.uncertain() == expected_uncertain;
+    }
+    return false;
+}
+
+std::string read_file(const std::string& path) {
+    std::ifstream file(path, std::ios::binary);
+    return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+}
+
+std::string scalar_text(const std::string& path, const char* sql) {
+    sqlite3* db = nullptr;
+    assert(sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READONLY, nullptr) == SQLITE_OK);
+    sqlite3_stmt* statement = nullptr;
+    assert(sqlite3_prepare_v2(db, sql, -1, &statement, nullptr) == SQLITE_OK);
+    assert(sqlite3_step(statement) == SQLITE_ROW);
+    const auto* text = sqlite3_column_text(statement, 0);
+    assert(text);
+    std::string result(reinterpret_cast<const char*>(text));
+    sqlite3_finalize(statement);
+    sqlite3_close(db);
+    return result;
+}
+
+void test_rows_and_generation() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    SharedStoreBytes retained;
+    {
+        SqliteWorkspaceStore store(path);
+        assert(!store.load());
+        const auto empty = store.load_rows();
+        assert(empty.generation == 0 && empty.rows.empty() && !empty.legacy);
+        assert(scalar_text(path, "PRAGMA user_version") == "1");
+        StoreBatch initial{0,
+                           "initial",
+                           {row(StoreSpace::document_record, "node/1", std::string("a\0b", 3)),
+                            row(StoreSpace::history_entry, "1", "history"),
+                            row(StoreSpace::operation_fact, "edit/1", "receipt"),
+                            row(StoreSpace::host_operation_fact, "create", "host"),
+                            row(StoreSpace::document_metadata, "document", "metadata"),
+                            row(StoreSpace::task_record, "task/1", ""),
+                            row(StoreSpace::artifact_record, "artifact/1", "artifact")}};
+        const auto receipt = store.commit_rows(initial);
+        assert(receipt.generation == 1 && receipt.rows_written == 7 && receipt.payload_bytes == 37);
+        assert(scalar_text(path, "PRAGMA user_version") == "2");
+        assert(scalar_text(path, "SELECT magic FROM record_state") == "QCAE-ROWS");
+        const auto loaded = store.load_rows();
+        assert(loaded.generation == 1 && loaded.rows.size() == 7 && !loaded.legacy);
+        retained = loaded.rows[0].value;
+        assert(*retained == std::string("a\0b", 3));
+        assert(loaded.rows[5].value && loaded.rows[5].value->empty());
+        assert(fails([&] { store.load(); }));
+        assert(fails([&] { store.commit(0, "must not write stale legacy data"); }));
+        assert(fails([&] { store.commit_rows(initial); }));
+        StoreBatch changed{1,
+                           "change",
+                           {row(StoreSpace::document_record, "node/1", "replacement"),
+                            {{StoreSpace::history_entry, "1"}, nullptr},
+                            {{StoreSpace::history_entry, "absent"}, nullptr},
+                            row(StoreSpace::operation_fact, "edit/2", "new fact")}};
+        const auto updated = store.commit_rows(changed);
+        assert(updated.generation == 2 && updated.rows_written == 3 && updated.payload_bytes == 19);
+        assert(*retained == std::string("a\0b", 3));
+        assert(store.load_rows().rows.size() == 7);
+        assert(scalar_text(path, "SELECT transaction_id FROM record_state") == "change");
+    }
+    SqliteWorkspaceStore reopened(path);
+    assert(reopened.load_rows().generation == 2);
+    assert(*reopened.load_rows().rows[0].value == "replacement");
+    assert(fails([&] { reopened.load(); }));
+}
+
+void test_large_history_is_not_a_search_key() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    const std::string history(2 * 1024 * 1024, 'h');
+    SqliteWorkspaceStore store(path);
+    store.commit_rows({0,
+                       "seed",
+                       {row(StoreSpace::history_entry, "old-seed", history),
+                        row(StoreSpace::document_record, "node/1", "before")}});
+    // Warm the exact prepared statements and cursor paths before observation.
+    store.commit_rows({1, "warm", {row(StoreSpace::document_record, "node/1", "warm")}});
+#ifdef QCAE_C3_SQLITE_INSTRUMENTED
+    auto operation = std::make_shared<qcae::ledger::OperationLedger>(
+        qcae::ledger::Identity{"large-history-key", {}, {}, 0});
+    qcae::ledger::activate(operation);
+    assert(qcae_c3_sqlite_observer_begin());
+#endif
+    const auto receipt =
+        store.commit_rows({2,
+                           "local",
+                           {row(StoreSpace::document_record, "node/1", "after"),
+                            row(StoreSpace::operation_fact, "new-fact", "receipt")}});
+    assert(receipt.rows_written == 2 && receipt.payload_bytes == 12);
+#ifdef QCAE_C3_SQLITE_INSTRUMENTED
+    qcae::ledger::activate({});
+    const auto copied =
+        operation->snapshot()
+            .values[static_cast<std::size_t>(qcae::ledger::Stage::sqlite)]
+                   [static_cast<std::size_t>(qcae::ledger::Metric::driver_internal_copy_bytes)];
+    assert(copied && *copied < history.size() / 2);
+    std::cout << "Observed local-store driver copies with retained 2MiB history: " << *copied
+              << " bytes\n";
+#endif
+    const auto loaded = store.load_rows();
+    assert(loaded.rows.size() == 3 && loaded.generation == 3);
+    for (const auto& item : loaded.rows)
+        if (item.key.space == StoreSpace::history_entry)
+            assert(item.key.identity == "old-seed" && *item.value == history);
+}
+
+void test_without_rowid_store_remains_supported() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    {
+        SqliteWorkspaceStore store(path);
+        store.commit_rows({0,
+                           "old-physical-layout",
+                           {row(StoreSpace::document_record, "node/1", "old bytes"),
+                            row(StoreSpace::history_entry, "1", "unchanged history")}});
+    }
+    // This unit fixture exercises both supported physical table layouts; it
+    // is not represented as a frozen legacy-encoder acceptance fixture.
+    sqlite3* database{};
+    assert(sqlite3_open(path.c_str(), &database) == SQLITE_OK);
+    assert(sqlite3_exec(database,
+                        "BEGIN;ALTER TABLE store_rows RENAME TO original_rows;"
+                        "CREATE TABLE store_rows(space INTEGER NOT NULL CHECK(space BETWEEN 1 AND "
+                        "7),identity TEXT NOT NULL CHECK(length(identity)>0),value BLOB NOT NULL,"
+                        "PRIMARY KEY(space,identity)) WITHOUT ROWID;"
+                        "INSERT INTO store_rows SELECT space,identity,value FROM original_rows;"
+                        "DROP TABLE original_rows;COMMIT",
+                        nullptr,
+                        nullptr,
+                        nullptr) == SQLITE_OK);
+    sqlite3_close(database);
+    SqliteWorkspaceStore reopened(path);
+    const auto loaded = reopened.load_rows();
+    assert(loaded.generation == 1 && loaded.rows.size() == 2);
+    assert(*loaded.rows[0].value == "old bytes" && *loaded.rows[1].value == "unchanged history");
+    reopened.commit_rows(
+        {1, "old-layout-edit", {row(StoreSpace::document_record, "node/1", "new bytes")}});
+    const auto updated = reopened.load_rows();
+    assert(updated.generation == 2 && updated.rows.size() == 2);
+    assert(*updated.rows[0].value == "new bytes" && *updated.rows[1].value == "unchanged history");
+}
+
+void test_legacy_detection_is_read_only() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    const std::string payload("QCAE-WORKSPACE\0legacy-exact-bytes", 33);
+    {
+        SqliteWorkspaceStore legacy(path);
+        assert(legacy.commit(0, payload) == 1);
+    }
+    const auto original = read_file(path);
+    {
+        SqliteWorkspaceStore legacy(path);
+        const auto loaded = legacy.load_rows();
+        assert(loaded.generation == 1 && loaded.rows.empty() && loaded.legacy);
+        assert(loaded.legacy->payload == payload && loaded.legacy->generation == 1);
+        assert(fails([&] {
+            legacy.commit_rows(
+                {1, "implicit-migration", {row(StoreSpace::document_record, "1", "x")}});
+        }));
+        assert(legacy.load()->payload == payload);
+        assert(scalar_text(path, "PRAGMA user_version") == "1");
+        assert(scalar_text(path,
+                           "SELECT count(*) FROM sqlite_master WHERE name IN "
+                           "('record_state','store_rows')") == "0");
+    }
+    assert(read_file(path) == original);
+}
+
+void test_invalid_batches_and_quotas() {
+    Sandbox sandbox;
+    StoreOptions options;
+    options.max_rows = 2;
+    options.max_batch_rows = 3;
+    options.max_payload_bytes = 8;
+    options.max_key_bytes = 8;
+    SqliteWorkspaceStore store(sandbox.database(), options);
+    auto invalid = [&](StoreBatch batch) {
+        assert(fails([&] { store.commit_rows(batch); }));
+        assert(store.load_rows().generation == 0);
+        assert(scalar_text(sandbox.database(), "PRAGMA user_version") == "1");
+    };
+    invalid({0,
+             "dup",
+             {row(StoreSpace::document_record, "same", "a"),
+              row(StoreSpace::document_record, "same", "b")}});
+    invalid({0, "badkey", {row(StoreSpace::document_record, "", "a")}});
+    invalid({0, "badspace", {row(static_cast<StoreSpace>(0), "key", "a")}});
+    invalid({0, "badspace", {row(static_cast<StoreSpace>(8), "key", "a")}});
+    invalid({0, "nulkey", {row(StoreSpace::document_record, std::string("a\0b", 3), "a")}});
+    invalid({0, "longkey", {row(StoreSpace::document_record, "123456789", "a")}});
+    invalid({0, "", {row(StoreSpace::document_record, "key", "a")}});
+    invalid({1, "stale", {row(StoreSpace::document_record, "key", "a")}});
+    invalid({0, "bytes", {row(StoreSpace::document_record, "key", "123456789")}});
+    invalid({0,
+             "rows",
+             {row(StoreSpace::document_record, "a", "1"),
+              row(StoreSpace::document_record, "b", "2"),
+              row(StoreSpace::document_record, "c", "3")}});
+    invalid({0,
+             "batch",
+             {{{StoreSpace::document_record, "a"}, nullptr},
+              {{StoreSpace::document_record, "b"}, nullptr},
+              {{StoreSpace::document_record, "c"}, nullptr},
+              {{StoreSpace::document_record, "d"}, nullptr}}});
+    assert(store
+               .commit_rows({0,
+                             "valid",
+                             {row(StoreSpace::document_record, "a", "1234"),
+                              row(StoreSpace::document_record, "b", "5678")}})
+               .generation == 1);
+    assert(fails([&] {
+        store.commit_rows({1, "overflow", {row(StoreSpace::document_record, "a", "12345")}});
+    }));
+    assert(store.load_rows().generation == 1);
+    assert(*store.load_rows().rows[0].value == "1234");
+    const auto replaced = store.commit_rows({1,
+                                             "replace",
+                                             {row(StoreSpace::document_record, "c", "ABCD"),
+                                              {{StoreSpace::document_record, "a"}, nullptr}}});
+    assert(replaced.generation == 2 && replaced.rows_written == 2 && replaced.payload_bytes == 4);
+    const auto namespaces = store.commit_rows({2,
+                                               "spaces",
+                                               {{{StoreSpace::document_record, "b"}, nullptr},
+                                                row(StoreSpace::history_entry, "c", "EFGH")}});
+    assert(namespaces.generation == 3 && store.load_rows().rows.size() == 2);
+}
+
+void test_failure_windows() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    std::string fault;
+    StoreOptions options;
+    options.fault = [&](const std::string& point) {
+        if (point == fault) {
+            fault.clear();
+            throw std::runtime_error("injected " + point);
+        }
+    };
+    {
+        SqliteWorkspaceStore store(path, options);
+        const StoreBatch initial{0, "initial", {row(StoreSpace::document_record, "a", "before")}};
+        fault = "before_db_commit";
+        assert(fails([&] { store.commit_rows(initial); }));
+        assert(store.load_rows().generation == 0 && !store.load());
+        assert(scalar_text(path, "PRAGMA user_version") == "1");
+        assert(store.commit_rows(initial).generation == 1);
+        const StoreBatch changed{1,
+                                 "atomic",
+                                 {row(StoreSpace::document_record, "a", "after"),
+                                  row(StoreSpace::history_entry, "1", "delta"),
+                                  row(StoreSpace::document_metadata, "revision", "2"),
+                                  row(StoreSpace::operation_fact, "atomic", "receipt")}};
+        fault = "before_db_commit";
+        assert(fails([&] { store.commit_rows(changed); }));
+        assert(store.load_rows().generation == 1 && store.load_rows().rows.size() == 1);
+        assert(*store.load_rows().rows[0].value == "before");
+        fault = "after_db_commit";
+        assert(fails([&] { store.commit_rows(changed); }, true));
+    }
+    SqliteWorkspaceStore recovered(path);
+    const auto loaded = recovered.load_rows();
+    assert(loaded.generation == 2 && loaded.rows.size() == 4);
+    assert(*loaded.rows[0].value == "after");
+    assert(*loaded.rows[1].value == "delta");
+    assert(*loaded.rows[2].value == "receipt");
+    assert(*loaded.rows[3].value == "2");
+}
+
+void test_one_row_update_has_bounded_payload() {
+    for (std::uint64_t count : {1000, 10000}) {
+        Sandbox sandbox;
+        SqliteWorkspaceStore store(sandbox.database());
+        StoreBatch initial{0, "seed", {}};
+        const auto shared = bytes(std::string(128, 'x'));
+        for (std::uint64_t index = 0; index < count; ++index)
+            initial.mutations.push_back(
+                {{StoreSpace::document_record, std::to_string(index)}, shared});
+        const auto seeded = store.commit_rows(initial);
+        assert(seeded.rows_written == count && seeded.payload_bytes == count * 128);
+        const auto updated = store.commit_rows(
+            {1, "one-row", {row(StoreSpace::document_record, "500", std::string(128, 'y'))}});
+        assert(updated.rows_written == 1 && updated.payload_bytes == 128 &&
+               updated.generation == 2);
+        assert(store.load_rows().rows.size() == count);
+    }
+}
+void test_unsupported_record_version() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    {
+        SqliteWorkspaceStore store(path);
+        store.commit_rows({0, "initial", {row(StoreSpace::document_record, "a", "value")}});
+    }
+    sqlite3* db = nullptr;
+    assert(sqlite3_open(path.c_str(), &db) == SQLITE_OK);
+    assert(
+        sqlite3_exec(
+            db, "UPDATE record_state SET record_version=4294967297", nullptr, nullptr, nullptr) ==
+        SQLITE_OK);
+    sqlite3_close(db);
+    assert(fails([&] { SqliteWorkspaceStore rejected(path); }));
+}
+
+int child_commit(const std::string& path, const std::string& milestone) {
+    try {
+        if (milestone == "recent_wal") {
+            SqliteWorkspaceStore writer(path);
+            writer.commit(1, "recent WAL payload");
+            ::_exit(23); // Preserve the committed WAL without a SQLite close/checkpoint.
+        }
+        if (milestone != "before_db_commit" && milestone != "after_db_commit")
+            throw std::invalid_argument("Unknown child commit milestone");
+        StoreOptions options;
+        options.fault = [&](const std::string& point) {
+            if (point == milestone)
+                ::_exit(17);
+        };
+        SqliteWorkspaceStore store(path, options);
+        store.commit_rows({1,
+                           "crash",
+                           {row(StoreSpace::document_record, "a", "after"),
+                            row(StoreSpace::history_entry, "1", "delta"),
+                            row(StoreSpace::operation_fact, "crash", "receipt")}});
+        ::_exit(18); // Reaching normal completion means the requested crash window was missed.
+    } catch (const std::exception& error) {
+        std::cerr << "Store child " << milestone << ": " << error.what() << '\n';
+        return 19;
+    }
+}
+
+void run_child_commit(const std::string& executable,
+                      const std::string& path,
+                      const std::string& milestone,
+                      int expected_exit) {
+    // Start a fresh process image: system SQLite/logging state is unsafe to reuse in a
+    // forked child before exec. The child still terminates abruptly at the exact fault hook.
+    std::array<std::string, 4> values{executable, "--store-child", path, milestone};
+    std::array<char*, 5> arguments{
+        values[0].data(), values[1].data(), values[2].data(), values[3].data(), nullptr};
+    pid_t child{};
+    const auto spawned =
+        ::posix_spawnp(&child, executable.c_str(), nullptr, nullptr, arguments.data(), environ);
+    if (spawned != 0)
+        throw std::runtime_error("Cannot spawn store child: " +
+                                 std::string(std::strerror(spawned)));
+    int status{};
+    pid_t waited{};
+    do {
+        waited = ::waitpid(child, &status, 0);
+    } while (waited < 0 && errno == EINTR);
+    if (waited != child)
+        throw std::runtime_error("Cannot wait for store child: " +
+                                 std::string(std::strerror(errno)));
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != expected_exit) {
+        std::cerr << "Store child " << child << " milestone=" << milestone
+                  << " expected_exit=" << expected_exit << " status=" << status;
+        if (WIFEXITED(status))
+            std::cerr << " exit=" << WEXITSTATUS(status);
+        if (WIFSIGNALED(status))
+            std::cerr << " signal=" << WTERMSIG(status);
+        std::cerr << '\n';
+    }
+    assert(WIFEXITED(status) && WEXITSTATUS(status) == expected_exit);
+}
+
+void test_process_termination_windows(const std::string& executable) {
+    for (const std::string milestone : {"before_db_commit", "after_db_commit"}) {
+        Sandbox sandbox;
+        const auto path = sandbox.database();
+        {
+            SqliteWorkspaceStore initial(path);
+            initial.commit_rows({0, "initial", {row(StoreSpace::document_record, "a", "before")}});
+        }
+        run_child_commit(executable, path, milestone, 17);
+        SqliteWorkspaceStore recovered(path);
+        const auto loaded = recovered.load_rows();
+        const bool committed = milestone == "after_db_commit";
+        assert(loaded.generation == (committed ? 2 : 1));
+        assert(loaded.rows.size() == (committed ? 3 : 1));
+        assert(*loaded.rows[0].value == (committed ? "after" : "before"));
+    }
+}
+
+void test_delete_mode_detection_preserves_source() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    {
+        SqliteWorkspaceStore initial(path);
+        initial.commit(0, "legacy DELETE source");
+    }
+    sqlite3* db = nullptr;
+    assert(sqlite3_open(path.c_str(), &db) == SQLITE_OK);
+    assert(sqlite3_exec(db, "PRAGMA journal_mode=DELETE", nullptr, nullptr, nullptr) == SQLITE_OK);
+    sqlite3_close(db);
+    const auto original = read_file(path);
+    {
+        SqliteWorkspaceStore probe(path);
+        const auto loaded = probe.load_rows();
+        assert(loaded.legacy && loaded.legacy->payload == "legacy DELETE source");
+        assert(fails([&] {
+            probe.commit_rows({1, "no-migrate", {row(StoreSpace::document_record, "a", "x")}});
+        }));
+        assert(scalar_text(path, "PRAGMA journal_mode") == "delete");
+    }
+    assert(read_file(path) == original);
+    const auto source = read_legacy_workspace_readonly(path);
+    assert(source.generation == 1 && source.payload == "legacy DELETE source");
+    assert(read_file(path) == original);
+    {
+        SqliteWorkspaceStore writer(path);
+        writer.commit(1, "authorized legacy edit");
+        assert(scalar_text(path, "PRAGMA journal_mode") == "wal");
+    }
+}
+
+void test_readonly_source_with_recent_wal_commit(const std::string& executable) {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    {
+        SqliteWorkspaceStore initial(path);
+        initial.commit(0, "prior payload");
+    }
+    run_child_commit(executable, path, "recent_wal", 23);
+    assert(fs::exists(path + "-wal") && fs::file_size(path + "-wal") > 0);
+    const auto original = read_file(path);
+    const auto wal = read_file(path + "-wal");
+    const auto shm = read_file(path + "-shm");
+    const auto source = read_legacy_workspace_readonly(path);
+    assert(source.generation == 2 && source.payload == "recent WAL payload");
+    assert(read_file(path) == original);
+    assert(read_file(path + "-wal") == wal);
+    assert(read_file(path + "-shm") == shm);
+
+    // SQLite must recover the copied WAL even when its source has no SHM.
+    assert(fs::remove(path + "-shm"));
+    const auto no_shm = read_legacy_workspace_readonly(path);
+    assert(no_shm.generation == 2 && no_shm.payload == "recent WAL payload");
+    assert(!fs::exists(path + "-shm"));
+    assert(read_file(path) == original && read_file(path + "-wal") == wal);
+}
+
+void test_readonly_permissions_without_sidecars() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    {
+        SqliteWorkspaceStore initial(path);
+        initial.commit(0, "protected source");
+    }
+    // Some SQLite builds retain an empty WAL and SHM after the final close.
+    // Establish this fixture's no-sidecar condition explicitly, after verifying
+    // there are no uncheckpointed frames to discard. Only our temporary source
+    // is changed here; the read-only migration call below must preserve it.
+    if (fs::exists(path + "-wal")) {
+        assert(fs::file_size(path + "-wal") == 0);
+        assert(fs::remove(path + "-wal"));
+    }
+    if (fs::exists(path + "-shm"))
+        assert(fs::remove(path + "-shm"));
+    assert(!fs::exists(path + "-wal") && !fs::exists(path + "-shm"));
+    fs::permissions(path, fs::perms::owner_read);
+    const auto permissions = fs::status(path).permissions();
+    const auto original = read_file(path);
+    const auto source = read_legacy_workspace_readonly(path);
+    assert(source.generation == 1 && source.payload == "protected source");
+    assert(read_file(path) == original && fs::status(path).permissions() == permissions);
+    assert(!fs::exists(path + "-wal") && !fs::exists(path + "-shm"));
+}
+
+void test_frozen_sources_unchanged(const fs::path& directory) {
+    for (const char* name : {"saved-empty.qcae",
+                             "saved-beam.qcae",
+                             "saved-organization.qcae",
+                             "all-supported-entities.qcae",
+                             "unsaved-workspace.sqlite",
+                             "redo-workspace.sqlite"}) {
+        const auto path = (directory / name).string();
+        const auto original = read_file(path);
+        const bool had_lock = fs::exists(path + ".lock");
+        try {
+            const auto source = read_legacy_workspace_readonly(path);
+            assert(fs::path(path).extension() == ".sqlite");
+            assert(source.generation > 0 && !source.payload.empty());
+        } catch (const StorageError& error) {
+            assert(std::string(error.what()).starts_with("legacy_readonly_unavailable:"));
+        }
+        assert(read_file(path) == original);
+        assert(fs::exists(path + ".lock") == had_lock);
+    }
+}
+} // namespace
+
+int main(int argc, char** argv) {
+    if (argc == 4 && std::string(argv[1]) == "--store-child")
+        return child_commit(argv[2], argv[3]);
+    test_rows_and_generation();
+    test_large_history_is_not_a_search_key();
+    test_without_rowid_store_remains_supported();
+    test_legacy_detection_is_read_only();
+    test_invalid_batches_and_quotas();
+    test_failure_windows();
+    test_one_row_update_has_bounded_payload();
+    test_unsupported_record_version();
+    test_process_termination_windows(argv[0]);
+    test_delete_mode_detection_preserves_source();
+    test_readonly_source_with_recent_wal_commit(argv[0]);
+    test_readonly_permissions_without_sidecars();
+    if (argc == 2)
+        test_frozen_sources_unchanged(argv[1]);
+}

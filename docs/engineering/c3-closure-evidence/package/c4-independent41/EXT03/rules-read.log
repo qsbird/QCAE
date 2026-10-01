@@ -1,0 +1,2354 @@
+--- modules/document/src/records_rules.cpp (9082 UTF-8 bytes) ---
+#include "qcae/records.hpp"
+
+#include <map>
+#include <tuple>
+
+namespace qcae::records {
+namespace {
+template <class T, class Visitor> void visit(const DocumentView& view, Visitor visitor) {
+    view.visit(RecordTraits<T>::type_id, [&](const Record& record) { visitor(record->get<T>()); });
+}
+[[noreturn]] void invalid(const char* message, std::string_view field) {
+    throw RecordError(ErrorCode::invalid_input, message, std::string(field));
+}
+double length_squared(const std::array<double, 3>& value) {
+    return value[0] * value[0] + value[1] * value[1] + value[2] * value[2];
+}
+using Graph = std::map<std::string_view, std::vector<std::string_view>, std::less<>>;
+void require_acyclic(const Graph& graph, const char* field) {
+    std::map<std::string_view, unsigned, std::less<>> colors;
+    for (const auto& [root, unused] : graph) {
+        (void)unused;
+        if (colors[root])
+            continue;
+        std::vector<std::pair<std::string_view, std::size_t>> stack{{root, 0}};
+        colors[root] = 1;
+        while (!stack.empty()) {
+            auto& [identity, next] = stack.back();
+            const auto found = graph.find(identity);
+            if (found == graph.end() || next == found->second.size()) {
+                colors[identity] = 2;
+                stack.pop_back();
+                continue;
+            }
+            const auto child = found->second[next++];
+            if (colors[child] == 1)
+                invalid("Reference graph contains a cycle", field);
+            if (!colors[child]) {
+                colors[child] = 1;
+                stack.emplace_back(child, 0);
+            }
+        }
+    }
+}
+} // namespace
+
+void validate_record(const Beam& value, const DocumentView& view) {
+    const auto a = view.find<Node>(value.nodes[0]);
+    const auto b = view.find<Node>(value.nodes[1]);
+    if (!a || !b)
+        invalid("Beam nodes are missing", value.id.value);
+    const auto& left = a->get<Node>();
+    const auto& right = b->get<Node>();
+    std::array<double, 3> axis{};
+    for (std::size_t index = 0; index < axis.size(); ++index)
+        axis[index] = right.position[index] - left.position[index];
+    const auto& orientation = value.orientation;
+    const std::array<double, 3> normal{axis[1] * orientation[2] - axis[2] * orientation[1],
+                                       axis[2] * orientation[0] - axis[0] * orientation[2],
+                                       axis[0] * orientation[1] - axis[1] * orientation[0]};
+    const double axis2 = length_squared(axis);
+    const double orientation2 = length_squared(orientation);
+    const double normal2 = length_squared(normal);
+    if (!std::isfinite(axis2) || axis2 <= 0 || !std::isfinite(orientation2) || orientation2 <= 0 ||
+        !std::isfinite(normal2) || normal2 <= 1e-24 * axis2 * orientation2)
+        invalid("Beam requires finite length and nonparallel orientation", value.id.value);
+    if (left.mesh != right.mesh || value.mesh != left.mesh)
+        invalid("Beam and its nodes must belong to the same mesh", value.id.value);
+}
+void validate_record(const Constraint& value, const DocumentView&) {
+    if (value.dofs.find_first_not_of("123456") != std::string::npos ||
+        std::set<char>(value.dofs.begin(), value.dofs.end()).size() != value.dofs.size())
+        invalid("Constraint DOFs must be unique digits 1 through 6", value.id.value);
+}
+void validate_record(const AnalysisDefinition& value, const DocumentView&) {
+    // An absent field denotes the historical direct-reference representation.
+    // A present field is authoritative even when empty: completeness is a check,
+    // while mixing two reference paths would make the physical input ambiguous.
+    if (value.load_cases && (!value.forces.empty() || !value.constraints.empty()))
+        invalid("Analysis cannot mix load cases with historical direct references", value.id.value);
+    if (value.load_cases && value.load_cases->size() > 1)
+        invalid("The controlled static subset supports at most one load case", value.id.value);
+}
+void validate_record(const GeometryLine& value, const DocumentView&) {
+    std::array<double, 3> axis{};
+    for (std::size_t index = 0; index < axis.size(); ++index)
+        axis[index] = value.end[index] - value.start[index];
+    const double length2 = length_squared(axis);
+    if (!std::isfinite(length2) || length2 <= 0)
+        invalid("Geometry line requires two distinct finite endpoints", value.id.value);
+}
+void validate_record(const Mesh& value, const DocumentView& view) {
+    if (value.origin == "geometry") {
+        if (!value.geometry || !value.geometry_revision)
+            invalid("Derived mesh requires geometry provenance", value.id.value);
+        const auto geometry = view.find<GeometryLine>(*value.geometry);
+        if (!geometry)
+            invalid("Mesh geometry is missing", value.id.value);
+        if (!value.stale &&
+            geometry->get<GeometryLine>().geometry_revision != value.geometry_revision)
+            invalid("Outdated geometry binding must be marked stale", value.id.value);
+    } else if (value.geometry || value.geometry_revision || value.stale) {
+        invalid("Non-derived mesh cannot claim geometry provenance", value.id.value);
+    }
+}
+
+void validate_relations(const DocumentView& view) {
+    // These indexes borrow strings from the immutable view; they do not copy model records.
+    std::map<std::string_view, std::string_view, std::less<>> beam_owners;
+    visit<Part>(view, [&](const auto& part) {
+        for (const auto& member : part.members) {
+            const auto record = view.find_identity(member.value);
+            if (record && record->key().type == RecordTraits<Beam>::type_id &&
+                !beam_owners.emplace(member.value, part.id.value).second)
+                invalid("Beam belongs to more than one part", member.value);
+        }
+    });
+    Graph assemblies;
+    std::set<std::string_view> assembly_children;
+    visit<Assembly>(view, [&](const auto& assembly) {
+        for (const auto& child : assembly.children) {
+            if (!assembly_children.insert(child.value).second)
+                invalid("Assembly child has more than one parent", child.value);
+            const auto record = view.find_identity(child.value);
+            if (record && record->key().type == RecordTraits<Assembly>::type_id)
+                assemblies[assembly.id.value].push_back(child.value);
+        }
+    });
+    require_acyclic(assemblies, "assemblies");
+    visit<EntitySet>(view, [&](const auto& set) {
+        std::optional<RecordTypeId> member_type;
+        for (const auto& member : set.members) {
+            const auto record = view.find_identity(member.value);
+            if (!record)
+                invalid("Set member is missing", member.value);
+            if (member_type && *member_type != record->key().type)
+                invalid("Entity set mixes record types", set.id.value);
+            member_type = record->key().type;
+        }
+    });
+    Graph includes;
+    std::set<std::string_view> paths;
+    std::map<std::string_view, std::string_view, std::less<>> include_owners;
+    std::size_t roots = 0;
+    visit<IncludeDocument>(view, [&](const auto& include) {
+        if (!paths.insert(include.path).second)
+            invalid("Include path is duplicated", include.id.value);
+        if (include.parent)
+            includes[include.parent->value].push_back(include.id.value);
+        else
+            ++roots;
+        for (const auto& member : include.members)
+            if (!include_owners.emplace(member.value, include.id.value).second)
+                invalid("Entity belongs to more than one include", member.value);
+    });
+    if (view.count(RecordTraits<IncludeDocument>::type_id) && roots != 1)
+        invalid("Include tree requires exactly one root", "includes");
+    require_acyclic(includes, "includes");
+    std::set<std::tuple<std::string_view, std::string_view, std::uint64_t>> source_numbers;
+    std::set<std::pair<std::string_view, std::string_view>> source_entities;
+    visit<SourceIdentifier>(view, [&](const auto& source) {
+        if (!source_numbers.emplace(source.source_model_id, source.name_space, source.number)
+                 .second)
+            invalid("Duplicate source number within namespace", source.id.value);
+        if (!source_entities.emplace(source.source_model_id, source.entity.value).second)
+            invalid("Entity has duplicate source identifiers", source.id.value);
+        const auto owner = include_owners.find(source.entity.value);
+        if (owner == include_owners.end() || owner->second != source.include.value)
+            invalid("Source include does not own the entity", source.id.value);
+    });
+}
+} // namespace qcae::records
+
+namespace qcae {
+std::shared_ptr<const RecordRegistry> make_record_registry() {
+    auto registry = std::make_shared<RecordRegistry>();
+    for (auto descriptor : generated_record_descriptors())
+        registry->add(std::move(descriptor));
+    registry->add_rule(records::validate_relations);
+    registry->freeze();
+    return registry;
+}
+} // namespace qcae
+--- modules/document/include/qcae/records.hpp (79244 UTF-8 bytes) ---
+// Generated by tools/generate_entities.py; do not edit.
+// Semantic schema SHA-256: f7c767ece357330c8aee791f5c4be41e4c18d7721b420dbfa562a15712dd4155
+#pragma once
+#include "qcae/document_view.hpp"
+#include <algorithm>
+#include <cmath>
+#include <set>
+#include <type_traits>
+namespace qcae {
+namespace records {
+struct GeometryTag;
+struct MeshTag;
+using GeometryId = Id<GeometryTag>;
+using MeshId = Id<MeshTag>;
+struct Material {
+    EntityId id{};
+    std::string name{};
+    double young_modulus_mpa{};
+    std::optional<double> poisson_ratio{};
+    bool operator==(const Material&) const = default;
+};
+struct Node {
+    EntityId id{};
+    std::array<double, 3> position{};
+    std::optional<MeshId> mesh{};
+    bool operator==(const Node&) const = default;
+};
+struct BeamSection {
+    EntityId id{};
+    std::string name{};
+    EntityId material{};
+    double area_mm2{};
+    double i1_mm4{};
+    double i2_mm4{};
+    double torsion_mm4{};
+    bool operator==(const BeamSection&) const = default;
+};
+struct Beam {
+    EntityId id{};
+    std::optional<EntityId> section{};
+    std::array<EntityId, 2> nodes;
+    std::array<double, 3> orientation{};
+    std::optional<MeshId> mesh{};
+    bool operator==(const Beam&) const = default;
+};
+void validate_record(const Beam&, const DocumentView&);
+struct Part {
+    EntityId id{};
+    std::string name{};
+    std::vector<EntityId> members{};
+    bool operator==(const Part&) const = default;
+};
+struct Assembly {
+    EntityId id{};
+    std::string name{};
+    std::vector<EntityId> children{};
+    bool operator==(const Assembly&) const = default;
+};
+struct EntitySet {
+    EntityId id{};
+    std::string name{};
+    std::vector<EntityId> members{};
+    bool operator==(const EntitySet&) const = default;
+};
+struct IncludeDocument {
+    EntityId id{};
+    std::string path{};
+    std::optional<EntityId> parent{};
+    std::vector<EntityId> members{};
+    bool operator==(const IncludeDocument&) const = default;
+};
+struct NodalForce {
+    EntityId id{};
+    EntityId node{};
+    std::array<double, 3> force_n{};
+    bool operator==(const NodalForce&) const = default;
+};
+struct Constraint {
+    EntityId id{};
+    std::vector<EntityId> nodes{};
+    std::string dofs{};
+    bool operator==(const Constraint&) const = default;
+};
+void validate_record(const Constraint&, const DocumentView&);
+struct AnalysisDefinition {
+    EntityId id{};
+    std::string name{};
+    TargetBinding target{};
+    std::vector<EntityId> forces{};
+    std::vector<EntityId> constraints{};
+    std::optional<std::vector<EntityId>> load_cases{};
+    bool operator==(const AnalysisDefinition&) const = default;
+};
+void validate_record(const AnalysisDefinition&, const DocumentView&);
+struct SourceIdentifier {
+    EntityId id{};
+    EntityId entity{};
+    std::string source_model_id{};
+    EntityId include{};
+    ProfileRef profile{};
+    std::string name_space{};
+    std::uint64_t number{};
+    bool operator==(const SourceIdentifier&) const = default;
+};
+struct GeometryLine {
+    GeometryId id{};
+    std::array<double, 3> start{};
+    std::array<double, 3> end{};
+    std::uint64_t geometry_revision{};
+    bool operator==(const GeometryLine&) const = default;
+};
+void validate_record(const GeometryLine&, const DocumentView&);
+struct Mesh {
+    MeshId id{};
+    std::string name{};
+    std::string origin{};
+    std::optional<GeometryId> geometry{};
+    std::uint64_t geometry_revision{};
+    bool stale{};
+    bool operator==(const Mesh&) const = default;
+};
+void validate_record(const Mesh&, const DocumentView&);
+struct LoadCase {
+    EntityId id{};
+    std::string name{};
+    std::vector<EntityId> forces{};
+    std::vector<EntityId> constraints{};
+    bool operator==(const LoadCase&) const = default;
+};
+void validate_relations(const DocumentView&);
+} // namespace records
+
+namespace records_detail {
+inline void invalid(const char* message, const char* field) {
+    throw RecordError(ErrorCode::invalid_input, message, field);
+}
+inline void check_text(std::string_view value, bool required, const char* field) {
+    if ((required && value.empty()) || value.size() > 1024 ||
+        std::any_of(
+            value.begin(), value.end(), [](unsigned char ch) { return ch < 32 || ch == 127; }))
+        invalid("Record text is missing, too long, or contains controls", field);
+}
+inline void check_profile(const ProfileRef& value, const char* field) {
+    check_text(value.profile_id, true, field);
+    check_text(value.profile_version, true, field);
+    check_text(value.definition_digest, true, field);
+}
+template <class Range> void check_references(const Range& values, const char* field) {
+    std::set<std::string_view> seen;
+    for (const auto& value : values) {
+        check_text(value.value, true, field);
+        if (!seen.insert(value.value).second)
+            invalid("Duplicate record reference", field);
+    }
+}
+template <class Range> std::string pack_references(const Range& values) {
+    std::vector<std::string> result;
+    result.reserve(values.size());
+    for (const auto& value : values)
+        result.push_back(value.value);
+    return record_wire::strings(result);
+}
+template <class Range> Range unpack_references(std::string_view bytes) {
+    const auto values = record_wire::read_strings(bytes);
+    Range result;
+    if constexpr (requires { result.reserve(values.size()); }) {
+        result.reserve(values.size());
+        for (const auto& value : values)
+            result.emplace_back(value);
+    } else {
+        if (result.size() != values.size())
+            invalid("Wrong reference cardinality", "references");
+        for (std::size_t index = 0; index < values.size(); ++index)
+            result[index] = typename Range::value_type(values[index]);
+    }
+    return result;
+}
+template <class T> std::size_t dynamic_bytes(const T&) {
+    return 0;
+}
+inline std::size_t dynamic_bytes(const std::string& value) {
+    return value.size();
+}
+template <class Tag> std::size_t dynamic_bytes(const Id<Tag>& value) {
+    return value.value.size();
+}
+inline std::size_t dynamic_bytes(const ProfileRef& value) {
+    return value.profile_id.size() + value.profile_version.size() + value.definition_digest.size();
+}
+inline std::size_t dynamic_bytes(const TargetBinding& value) {
+    return dynamic_bytes(value.profile) + value.analysis_kind.size();
+}
+template <class T> std::size_t dynamic_bytes(const std::optional<T>& value) {
+    return value ? dynamic_bytes(*value) : 0;
+}
+template <class T, std::size_t N> std::size_t dynamic_bytes(const std::array<T, N>& values) {
+    std::size_t result = 0;
+    for (const auto& value : values)
+        result += dynamic_bytes(value);
+    return result;
+}
+template <class T> std::size_t dynamic_bytes(const std::vector<T>& values) {
+    std::size_t result = values.size() * sizeof(T);
+    for (const auto& value : values)
+        result += dynamic_bytes(value);
+    return result;
+}
+} // namespace records_detail
+
+template <> struct RecordTraits<records::Material> {
+    using Value = records::Material;
+    static constexpr RecordTypeId type_id{4097};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, true, "name");
+        if (!std::isfinite(value.young_modulus_mpa))
+            records_detail::invalid("Number must be finite", "young_modulus_mpa");
+        if (value.young_modulus_mpa <= 0)
+            records_detail::invalid("Field is outside its allowed range", "young_modulus_mpa");
+        if (value.poisson_ratio) {
+            if (!std::isfinite(*value.poisson_ratio))
+                records_detail::invalid("Number must be finite", "poisson_ratio");
+            if (*value.poisson_ratio <= -1)
+                records_detail::invalid("Field is outside its allowed range", "poisson_ratio");
+            if (*value.poisson_ratio >= 0.5)
+                records_detail::invalid("Field is outside its allowed range", "poisson_ratio");
+        }
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "Material";
+        result.query_kind = "material";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 4096;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3}, "young_modulus_mpa", RecordFieldKind::real, false, "MPa", {}, 1},
+            {RecordFieldId{4}, "poisson_ratio", RecordFieldKind::real, true, "1", {}, 1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::real,
+                                    "MPa",
+                                    record_wire::real(value.young_modulus_mpa)});
+            if (value.poisson_ratio) {
+                input.fields.push_back({RecordFieldId{4},
+                                        RecordFieldKind::real,
+                                        "1",
+                                        record_wire::real(*value.poisson_ratio)});
+            }
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.young_modulus_mpa =
+                record_wire::read_real(record_wire::require(input, RecordFieldId{3}).payload);
+            if (const auto* field = record_wire::find(input, RecordFieldId{4})) {
+                value.poisson_ratio = record_wire::read_real(field->payload);
+            }
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.young_modulus_mpa) +
+                   records_detail::dynamic_bytes(value.poisson_ratio);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            (void)object;
+            (void)visitor;
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::Node> {
+    using Value = records::Node;
+    static constexpr RecordTypeId type_id{4098};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        for (double part : value.position)
+            if (!std::isfinite(part))
+                records_detail::invalid("Vector must be finite", "position");
+        if (value.mesh) {
+            records_detail::check_text((*value.mesh).value, true, "mesh");
+        }
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "Node";
+        result.query_kind = "node";
+        result.display_name = [](const void*) -> std::string_view { return {}; };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 256;
+        result.fields = {
+            {RecordFieldId{2}, "position", RecordFieldKind::vector3, false, "mm", {}, 1},
+            {RecordFieldId{3},
+             "mesh",
+             RecordFieldKind::reference,
+             true,
+             "",
+             {RecordTypeId{4110}},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back({RecordFieldId{2},
+                                    RecordFieldKind::vector3,
+                                    "mm",
+                                    record_wire::vector3(value.position)});
+            if (value.mesh) {
+                input.fields.push_back({RecordFieldId{3},
+                                        RecordFieldKind::reference,
+                                        "",
+                                        record_wire::text((*value.mesh).value)});
+            }
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.position =
+                record_wire::read_vector3(record_wire::require(input, RecordFieldId{2}).payload);
+            if (const auto* field = record_wire::find(input, RecordFieldId{3})) {
+                value.mesh = records::MeshId(record_wire::read_text(field->payload));
+            }
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.position) +
+                   records_detail::dynamic_bytes(value.mesh);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_3{RecordTypeId{4110}};
+            if (value.mesh)
+                visitor(RecordFieldId{3}, value.mesh->value, targets_3);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::BeamSection> {
+    using Value = records::BeamSection;
+    static constexpr RecordTypeId type_id{4099};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, true, "name");
+        records_detail::check_text((value.material).value, true, "material");
+        if (!std::isfinite(value.area_mm2))
+            records_detail::invalid("Number must be finite", "area_mm2");
+        if (value.area_mm2 <= 0)
+            records_detail::invalid("Field is outside its allowed range", "area_mm2");
+        if (!std::isfinite(value.i1_mm4))
+            records_detail::invalid("Number must be finite", "i1_mm4");
+        if (value.i1_mm4 <= 0)
+            records_detail::invalid("Field is outside its allowed range", "i1_mm4");
+        if (!std::isfinite(value.i2_mm4))
+            records_detail::invalid("Number must be finite", "i2_mm4");
+        if (value.i2_mm4 <= 0)
+            records_detail::invalid("Field is outside its allowed range", "i2_mm4");
+        if (!std::isfinite(value.torsion_mm4))
+            records_detail::invalid("Number must be finite", "torsion_mm4");
+        if (value.torsion_mm4 <= 0)
+            records_detail::invalid("Field is outside its allowed range", "torsion_mm4");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "BeamSection";
+        result.query_kind = "section";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3},
+             "material",
+             RecordFieldKind::reference,
+             false,
+             "",
+             {RecordTypeId{4097}},
+             1},
+            {RecordFieldId{4}, "area_mm2", RecordFieldKind::real, false, "mm2", {}, 1},
+            {RecordFieldId{5}, "i1_mm4", RecordFieldKind::real, false, "mm4", {}, 1},
+            {RecordFieldId{6}, "i2_mm4", RecordFieldKind::real, false, "mm4", {}, 1},
+            {RecordFieldId{7}, "torsion_mm4", RecordFieldKind::real, false, "mm4", {}, 1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::reference,
+                                    "",
+                                    record_wire::text((value.material).value)});
+            input.fields.push_back({RecordFieldId{4},
+                                    RecordFieldKind::real,
+                                    "mm2",
+                                    record_wire::real(value.area_mm2)});
+            input.fields.push_back(
+                {RecordFieldId{5}, RecordFieldKind::real, "mm4", record_wire::real(value.i1_mm4)});
+            input.fields.push_back(
+                {RecordFieldId{6}, RecordFieldKind::real, "mm4", record_wire::real(value.i2_mm4)});
+            input.fields.push_back({RecordFieldId{7},
+                                    RecordFieldKind::real,
+                                    "mm4",
+                                    record_wire::real(value.torsion_mm4)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.material = EntityId(
+                record_wire::read_text(record_wire::require(input, RecordFieldId{3}).payload));
+            value.area_mm2 =
+                record_wire::read_real(record_wire::require(input, RecordFieldId{4}).payload);
+            value.i1_mm4 =
+                record_wire::read_real(record_wire::require(input, RecordFieldId{5}).payload);
+            value.i2_mm4 =
+                record_wire::read_real(record_wire::require(input, RecordFieldId{6}).payload);
+            value.torsion_mm4 =
+                record_wire::read_real(record_wire::require(input, RecordFieldId{7}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.material) +
+                   records_detail::dynamic_bytes(value.area_mm2) +
+                   records_detail::dynamic_bytes(value.i1_mm4) +
+                   records_detail::dynamic_bytes(value.i2_mm4) +
+                   records_detail::dynamic_bytes(value.torsion_mm4);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_3{RecordTypeId{4097}};
+            visitor(RecordFieldId{3}, value.material.value, targets_3);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::Beam> {
+    using Value = records::Beam;
+    static constexpr RecordTypeId type_id{4100};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        if (value.section) {
+            records_detail::check_text((*value.section).value, true, "section");
+        }
+        records_detail::check_references(value.nodes, "nodes");
+        for (double part : value.orientation)
+            if (!std::isfinite(part))
+                records_detail::invalid("Vector must be finite", "orientation");
+        if (value.mesh) {
+            records_detail::check_text((*value.mesh).value, true, "mesh");
+        }
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "Beam";
+        result.query_kind = "beam";
+        result.display_name = [](const void*) -> std::string_view { return {}; };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2},
+             "section",
+             RecordFieldKind::reference,
+             true,
+             "",
+             {RecordTypeId{4099}},
+             1},
+            {RecordFieldId{3},
+             "nodes",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4098}},
+             1},
+            {RecordFieldId{4}, "orientation", RecordFieldKind::vector3, false, "1", {}, 1},
+            {RecordFieldId{5},
+             "mesh",
+             RecordFieldKind::reference,
+             true,
+             "",
+             {RecordTypeId{4110}},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            if (value.section) {
+                input.fields.push_back({RecordFieldId{2},
+                                        RecordFieldKind::reference,
+                                        "",
+                                        record_wire::text((*value.section).value)});
+            }
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.nodes)});
+            input.fields.push_back({RecordFieldId{4},
+                                    RecordFieldKind::vector3,
+                                    "1",
+                                    record_wire::vector3(value.orientation)});
+            if (value.mesh) {
+                input.fields.push_back({RecordFieldId{5},
+                                        RecordFieldKind::reference,
+                                        "",
+                                        record_wire::text((*value.mesh).value)});
+            }
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            if (const auto* field = record_wire::find(input, RecordFieldId{2})) {
+                value.section = EntityId(record_wire::read_text(field->payload));
+            }
+            value.nodes = records_detail::unpack_references<std::array<EntityId, 2>>(
+                record_wire::require(input, RecordFieldId{3}).payload);
+            value.orientation =
+                record_wire::read_vector3(record_wire::require(input, RecordFieldId{4}).payload);
+            if (const auto* field = record_wire::find(input, RecordFieldId{5})) {
+                value.mesh = records::MeshId(record_wire::read_text(field->payload));
+            }
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.section) +
+                   records_detail::dynamic_bytes(value.nodes) +
+                   records_detail::dynamic_bytes(value.orientation) +
+                   records_detail::dynamic_bytes(value.mesh);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_2{RecordTypeId{4099}};
+            if (value.section)
+                visitor(RecordFieldId{2}, value.section->value, targets_2);
+            static constexpr std::array targets_3{RecordTypeId{4098}};
+            for (const auto& item : value.nodes)
+                visitor(RecordFieldId{3}, item.value, targets_3);
+            static constexpr std::array targets_5{RecordTypeId{4110}};
+            if (value.mesh)
+                visitor(RecordFieldId{5}, value.mesh->value, targets_5);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            records::validate_record(value, view);
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::Part> {
+    using Value = records::Part;
+    static constexpr RecordTypeId type_id{4101};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, false, "name");
+        records_detail::check_references(value.members, "members");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "Part";
+        result.query_kind = "part";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3},
+             "members",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4098}, RecordTypeId{4100}},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.members)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.members = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{3}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.members);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_3{RecordTypeId{4098}, RecordTypeId{4100}};
+            for (const auto& item : value.members)
+                visitor(RecordFieldId{3}, item.value, targets_3);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::Assembly> {
+    using Value = records::Assembly;
+    static constexpr RecordTypeId type_id{4102};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, false, "name");
+        records_detail::check_references(value.children, "children");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "Assembly";
+        result.query_kind = "assembly";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3},
+             "children",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4101}, RecordTypeId{4102}},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.children)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.children = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{3}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.children);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_3{RecordTypeId{4101}, RecordTypeId{4102}};
+            for (const auto& item : value.children)
+                visitor(RecordFieldId{3}, item.value, targets_3);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::EntitySet> {
+    using Value = records::EntitySet;
+    static constexpr RecordTypeId type_id{4103};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, false, "name");
+        records_detail::check_references(value.members, "members");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "EntitySet";
+        result.query_kind = "set";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3},
+             "members",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4098}, RecordTypeId{4100}},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.members)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.members = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{3}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.members);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_3{RecordTypeId{4098}, RecordTypeId{4100}};
+            for (const auto& item : value.members)
+                visitor(RecordFieldId{3}, item.value, targets_3);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::IncludeDocument> {
+    using Value = records::IncludeDocument;
+    static constexpr RecordTypeId type_id{4104};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.path, true, "path");
+        if (value.parent) {
+            records_detail::check_text((*value.parent).value, true, "parent");
+        }
+        records_detail::check_references(value.members, "members");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "IncludeDocument";
+        result.query_kind = "include";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->path;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "path", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3},
+             "parent",
+             RecordFieldKind::reference,
+             true,
+             "",
+             {RecordTypeId{4104}},
+             1},
+            {RecordFieldId{4},
+             "members",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4097},
+              RecordTypeId{4098},
+              RecordTypeId{4099},
+              RecordTypeId{4100},
+              RecordTypeId{4101},
+              RecordTypeId{4102},
+              RecordTypeId{4103},
+              RecordTypeId{4105},
+              RecordTypeId{4106},
+              RecordTypeId{4107},
+              RecordTypeId{4111}},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.path)});
+            if (value.parent) {
+                input.fields.push_back({RecordFieldId{3},
+                                        RecordFieldKind::reference,
+                                        "",
+                                        record_wire::text((*value.parent).value)});
+            }
+            input.fields.push_back({RecordFieldId{4},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.members)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.path =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            if (const auto* field = record_wire::find(input, RecordFieldId{3})) {
+                value.parent = EntityId(record_wire::read_text(field->payload));
+            }
+            value.members = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{4}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.path) +
+                   records_detail::dynamic_bytes(value.parent) +
+                   records_detail::dynamic_bytes(value.members);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_3{RecordTypeId{4104}};
+            if (value.parent)
+                visitor(RecordFieldId{3}, value.parent->value, targets_3);
+            static constexpr std::array targets_4{RecordTypeId{4097},
+                                                  RecordTypeId{4098},
+                                                  RecordTypeId{4099},
+                                                  RecordTypeId{4100},
+                                                  RecordTypeId{4101},
+                                                  RecordTypeId{4102},
+                                                  RecordTypeId{4103},
+                                                  RecordTypeId{4105},
+                                                  RecordTypeId{4106},
+                                                  RecordTypeId{4107},
+                                                  RecordTypeId{4111}};
+            for (const auto& item : value.members)
+                visitor(RecordFieldId{4}, item.value, targets_4);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::NodalForce> {
+    using Value = records::NodalForce;
+    static constexpr RecordTypeId type_id{4105};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text((value.node).value, true, "node");
+        for (double part : value.force_n)
+            if (!std::isfinite(part))
+                records_detail::invalid("Vector must be finite", "force_n");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "NodalForce";
+        result.query_kind = "force";
+        result.display_name = [](const void*) -> std::string_view { return {}; };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2},
+             "node",
+             RecordFieldKind::reference,
+             false,
+             "",
+             {RecordTypeId{4098}},
+             1},
+            {RecordFieldId{3}, "force_n", RecordFieldKind::vector3, false, "N", {}, 1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back({RecordFieldId{2},
+                                    RecordFieldKind::reference,
+                                    "",
+                                    record_wire::text((value.node).value)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::vector3,
+                                    "N",
+                                    record_wire::vector3(value.force_n)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.node = EntityId(
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload));
+            value.force_n =
+                record_wire::read_vector3(record_wire::require(input, RecordFieldId{3}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.node) +
+                   records_detail::dynamic_bytes(value.force_n);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_2{RecordTypeId{4098}};
+            visitor(RecordFieldId{2}, value.node.value, targets_2);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::Constraint> {
+    using Value = records::Constraint;
+    static constexpr RecordTypeId type_id{4106};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_references(value.nodes, "nodes");
+        if ((value.nodes).empty())
+            records_detail::invalid("References are required", "nodes");
+        records_detail::check_text(value.dofs, true, "dofs");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "Constraint";
+        result.query_kind = "constraint";
+        result.display_name = [](const void*) -> std::string_view { return {}; };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2},
+             "nodes",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4098}},
+             1},
+            {RecordFieldId{3}, "dofs", RecordFieldKind::text, false, "", {}, 1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back({RecordFieldId{2},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.nodes)});
+            input.fields.push_back(
+                {RecordFieldId{3}, RecordFieldKind::text, "", record_wire::text(value.dofs)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.nodes = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{2}).payload);
+            value.dofs =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{3}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.nodes) +
+                   records_detail::dynamic_bytes(value.dofs);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_2{RecordTypeId{4098}};
+            for (const auto& item : value.nodes)
+                visitor(RecordFieldId{2}, item.value, targets_2);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            records::validate_record(value, view);
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::AnalysisDefinition> {
+    using Value = records::AnalysisDefinition;
+    static constexpr RecordTypeId type_id{4107};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, true, "name");
+        records_detail::check_profile((value.target).profile, "target");
+        records_detail::check_text((value.target).analysis_kind, true, "target");
+        records_detail::check_references(value.forces, "forces");
+        records_detail::check_references(value.constraints, "constraints");
+        if (value.load_cases) {
+            records_detail::check_references(*value.load_cases, "load_cases");
+        }
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "AnalysisDefinition";
+        result.query_kind = "analysis";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 2;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3}, "target", RecordFieldKind::target, false, "", {}, 1},
+            {RecordFieldId{4},
+             "forces",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4105}},
+             1},
+            {RecordFieldId{5},
+             "constraints",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4106}},
+             1},
+            {RecordFieldId{6},
+             "load_cases",
+             RecordFieldKind::references,
+             true,
+             "",
+             {RecordTypeId{4111}},
+             2},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 2, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back(
+                {RecordFieldId{3}, RecordFieldKind::target, "", record_wire::target(value.target)});
+            input.fields.push_back({RecordFieldId{4},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.forces)});
+            input.fields.push_back({RecordFieldId{5},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.constraints)});
+            if (value.load_cases) {
+                input.fields.push_back({RecordFieldId{6},
+                                        RecordFieldKind::references,
+                                        "",
+                                        records_detail::pack_references(*value.load_cases)});
+            }
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.target =
+                record_wire::read_target(record_wire::require(input, RecordFieldId{3}).payload);
+            value.forces = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{4}).payload);
+            value.constraints = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{5}).payload);
+            if (const auto* field = record_wire::find(input, RecordFieldId{6})) {
+                value.load_cases =
+                    records_detail::unpack_references<std::vector<EntityId>>(field->payload);
+            }
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.target) +
+                   records_detail::dynamic_bytes(value.forces) +
+                   records_detail::dynamic_bytes(value.constraints) +
+                   records_detail::dynamic_bytes(value.load_cases);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_4{RecordTypeId{4105}};
+            for (const auto& item : value.forces)
+                visitor(RecordFieldId{4}, item.value, targets_4);
+            static constexpr std::array targets_5{RecordTypeId{4106}};
+            for (const auto& item : value.constraints)
+                visitor(RecordFieldId{5}, item.value, targets_5);
+            static constexpr std::array targets_6{RecordTypeId{4111}};
+            if (value.load_cases) {
+                for (const auto& item : *value.load_cases)
+                    visitor(RecordFieldId{6}, item.value, targets_6);
+            }
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            records::validate_record(value, view);
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::SourceIdentifier> {
+    using Value = records::SourceIdentifier;
+    static constexpr RecordTypeId type_id{4108};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text((value.entity).value, true, "entity");
+        records_detail::check_text(value.source_model_id, true, "source_model_id");
+        records_detail::check_text((value.include).value, true, "include");
+        records_detail::check_profile(value.profile, "profile");
+        records_detail::check_text(value.name_space, true, "name_space");
+        if (value.number < 1)
+            records_detail::invalid("Field is outside its allowed range", "number");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "SourceIdentifier";
+        result.query_kind = "";
+        result.display_name = [](const void*) -> std::string_view { return {}; };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2},
+             "entity",
+             RecordFieldKind::reference,
+             false,
+             "",
+             {RecordTypeId{4097},
+              RecordTypeId{4098},
+              RecordTypeId{4099},
+              RecordTypeId{4100},
+              RecordTypeId{4101},
+              RecordTypeId{4102},
+              RecordTypeId{4103},
+              RecordTypeId{4105},
+              RecordTypeId{4106},
+              RecordTypeId{4107},
+              RecordTypeId{4111}},
+             1},
+            {RecordFieldId{3}, "source_model_id", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{4},
+             "include",
+             RecordFieldKind::reference,
+             false,
+             "",
+             {RecordTypeId{4104}},
+             1},
+            {RecordFieldId{5}, "profile", RecordFieldKind::profile, false, "", {}, 1},
+            {RecordFieldId{6}, "name_space", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{7}, "number", RecordFieldKind::unsigned_integer, false, "", {}, 1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back({RecordFieldId{2},
+                                    RecordFieldKind::reference,
+                                    "",
+                                    record_wire::text((value.entity).value)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::text,
+                                    "",
+                                    record_wire::text(value.source_model_id)});
+            input.fields.push_back({RecordFieldId{4},
+                                    RecordFieldKind::reference,
+                                    "",
+                                    record_wire::text((value.include).value)});
+            input.fields.push_back({RecordFieldId{5},
+                                    RecordFieldKind::profile,
+                                    "",
+                                    record_wire::profile(value.profile)});
+            input.fields.push_back(
+                {RecordFieldId{6}, RecordFieldKind::text, "", record_wire::text(value.name_space)});
+            input.fields.push_back({RecordFieldId{7},
+                                    RecordFieldKind::unsigned_integer,
+                                    "",
+                                    record_wire::number(value.number)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.entity = EntityId(
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload));
+            value.source_model_id =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{3}).payload);
+            value.include = EntityId(
+                record_wire::read_text(record_wire::require(input, RecordFieldId{4}).payload));
+            value.profile =
+                record_wire::read_profile(record_wire::require(input, RecordFieldId{5}).payload);
+            value.name_space =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{6}).payload);
+            value.number =
+                record_wire::read_number(record_wire::require(input, RecordFieldId{7}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.entity) +
+                   records_detail::dynamic_bytes(value.source_model_id) +
+                   records_detail::dynamic_bytes(value.include) +
+                   records_detail::dynamic_bytes(value.profile) +
+                   records_detail::dynamic_bytes(value.name_space) +
+                   records_detail::dynamic_bytes(value.number);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_2{RecordTypeId{4097},
+                                                  RecordTypeId{4098},
+                                                  RecordTypeId{4099},
+                                                  RecordTypeId{4100},
+                                                  RecordTypeId{4101},
+                                                  RecordTypeId{4102},
+                                                  RecordTypeId{4103},
+                                                  RecordTypeId{4105},
+                                                  RecordTypeId{4106},
+                                                  RecordTypeId{4107},
+                                                  RecordTypeId{4111}};
+            visitor(RecordFieldId{2}, value.entity.value, targets_2);
+            static constexpr std::array targets_4{RecordTypeId{4104}};
+            visitor(RecordFieldId{4}, value.include.value, targets_4);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::GeometryLine> {
+    using Value = records::GeometryLine;
+    static constexpr RecordTypeId type_id{4109};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        for (double part : value.start)
+            if (!std::isfinite(part))
+                records_detail::invalid("Vector must be finite", "start");
+        for (double part : value.end)
+            if (!std::isfinite(part))
+                records_detail::invalid("Vector must be finite", "end");
+        if (value.geometry_revision < 1)
+            records_detail::invalid("Field is outside its allowed range", "geometry_revision");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "GeometryLine";
+        result.query_kind = "geometry";
+        result.display_name = [](const void*) -> std::string_view { return {}; };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "start", RecordFieldKind::vector3, false, "mm", {}, 1},
+            {RecordFieldId{3}, "end", RecordFieldKind::vector3, false, "mm", {}, 1},
+            {RecordFieldId{4},
+             "geometry_revision",
+             RecordFieldKind::unsigned_integer,
+             false,
+             "",
+             {},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back({RecordFieldId{2},
+                                    RecordFieldKind::vector3,
+                                    "mm",
+                                    record_wire::vector3(value.start)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::vector3,
+                                    "mm",
+                                    record_wire::vector3(value.end)});
+            input.fields.push_back({RecordFieldId{4},
+                                    RecordFieldKind::unsigned_integer,
+                                    "",
+                                    record_wire::number(value.geometry_revision)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.start =
+                record_wire::read_vector3(record_wire::require(input, RecordFieldId{2}).payload);
+            value.end =
+                record_wire::read_vector3(record_wire::require(input, RecordFieldId{3}).payload);
+            value.geometry_revision =
+                record_wire::read_number(record_wire::require(input, RecordFieldId{4}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.start) +
+                   records_detail::dynamic_bytes(value.end) +
+                   records_detail::dynamic_bytes(value.geometry_revision);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            (void)object;
+            (void)visitor;
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            records::validate_record(value, view);
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::Mesh> {
+    using Value = records::Mesh;
+    static constexpr RecordTypeId type_id{4110};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, false, "name");
+        records_detail::check_text(value.origin, false, "origin");
+        if (value.origin != "imported" && value.origin != "manual" && value.origin != "geometry")
+            records_detail::invalid("Unknown field value", "origin");
+        if (value.geometry) {
+            records_detail::check_text((*value.geometry).value, true, "geometry");
+        }
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "Mesh";
+        result.query_kind = "mesh";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3}, "origin", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{4},
+             "geometry",
+             RecordFieldKind::reference,
+             true,
+             "",
+             {RecordTypeId{4109}},
+             1},
+            {RecordFieldId{5},
+             "geometry_revision",
+             RecordFieldKind::unsigned_integer,
+             false,
+             "",
+             {},
+             1},
+            {RecordFieldId{6}, "stale", RecordFieldKind::boolean, false, "", {}, 1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back(
+                {RecordFieldId{3}, RecordFieldKind::text, "", record_wire::text(value.origin)});
+            if (value.geometry) {
+                input.fields.push_back({RecordFieldId{4},
+                                        RecordFieldKind::reference,
+                                        "",
+                                        record_wire::text((*value.geometry).value)});
+            }
+            input.fields.push_back({RecordFieldId{5},
+                                    RecordFieldKind::unsigned_integer,
+                                    "",
+                                    record_wire::number(value.geometry_revision)});
+            input.fields.push_back({RecordFieldId{6},
+                                    RecordFieldKind::boolean,
+                                    "",
+                                    record_wire::boolean(value.stale)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.origin =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{3}).payload);
+            if (const auto* field = record_wire::find(input, RecordFieldId{4})) {
+                value.geometry = records::GeometryId(record_wire::read_text(field->payload));
+            }
+            value.geometry_revision =
+                record_wire::read_number(record_wire::require(input, RecordFieldId{5}).payload);
+            value.stale =
+                record_wire::read_boolean(record_wire::require(input, RecordFieldId{6}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.origin) +
+                   records_detail::dynamic_bytes(value.geometry) +
+                   records_detail::dynamic_bytes(value.geometry_revision) +
+                   records_detail::dynamic_bytes(value.stale);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_4{RecordTypeId{4109}};
+            if (value.geometry)
+                visitor(RecordFieldId{4}, value.geometry->value, targets_4);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            records::validate_record(value, view);
+        };
+        return result;
+    }
+};
+template <> struct RecordTraits<records::LoadCase> {
+    using Value = records::LoadCase;
+    static constexpr RecordTypeId type_id{4111};
+    inline static const unsigned char token_value{};
+    static const void* token() noexcept {
+        return &token_value;
+    }
+    static const std::string& identity(const Value& value) noexcept {
+        return value.id.value;
+    }
+    static void validate_fields(const Value& value) {
+        records_detail::check_text(value.id.value, true, "id");
+        records_detail::check_text(value.name, true, "name");
+        records_detail::check_references(value.forces, "forces");
+        records_detail::check_references(value.constraints, "constraints");
+    }
+    static RecordDescriptor descriptor() {
+        RecordDescriptor result;
+        result.type = type_id;
+        result.name = "LoadCase";
+        result.query_kind = "load_case";
+        result.display_name = [](const void* object) -> std::string_view {
+            return static_cast<const Value*>(object)->name;
+        };
+        result.current_version = 1;
+        result.cpp_type_token = token();
+        result.maximum_encoded_bytes = 16777216;
+        result.fields = {
+            {RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}, 1},
+            {RecordFieldId{3},
+             "forces",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4105}},
+             1},
+            {RecordFieldId{4},
+             "constraints",
+             RecordFieldKind::references,
+             false,
+             "",
+             {RecordTypeId{4106}},
+             1},
+        };
+        result.encode = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            RecordInput input{{type_id, value.id.value}, 1, {}};
+            input.fields.push_back(
+                {RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)});
+            input.fields.push_back({RecordFieldId{3},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.forces)});
+            input.fields.push_back({RecordFieldId{4},
+                                    RecordFieldKind::references,
+                                    "",
+                                    records_detail::pack_references(value.constraints)});
+            return input;
+        };
+        result.decode = [](const RecordInput& input) -> std::shared_ptr<const void> {
+            Value value;
+            value.id = decltype(value.id)(input.key.identity);
+            value.name =
+                record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload);
+            value.forces = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{3}).payload);
+            value.constraints = records_detail::unpack_references<std::vector<EntityId>>(
+                record_wire::require(input, RecordFieldId{4}).payload);
+            validate_fields(value);
+            return std::make_shared<const Value>(std::move(value));
+        };
+        result.owned_bytes = [](const void* object) {
+            const auto& value = *static_cast<const Value*>(object);
+            return sizeof(Value) + records_detail::dynamic_bytes(value.id) +
+                   records_detail::dynamic_bytes(value.name) +
+                   records_detail::dynamic_bytes(value.forces) +
+                   records_detail::dynamic_bytes(value.constraints);
+        };
+        result.references = [](const void* object, const RecordReferenceVisitor& visitor) {
+            const auto& value = *static_cast<const Value*>(object);
+            static constexpr std::array targets_3{RecordTypeId{4105}};
+            for (const auto& item : value.forces)
+                visitor(RecordFieldId{3}, item.value, targets_3);
+            static constexpr std::array targets_4{RecordTypeId{4106}};
+            for (const auto& item : value.constraints)
+                visitor(RecordFieldId{4}, item.value, targets_4);
+        };
+        result.validate = [](const void* object, const DocumentView& view) {
+            const auto& value = *static_cast<const Value*>(object);
+            validate_fields(value);
+            (void)view;
+        };
+        return result;
+    }
+};
+inline std::vector<RecordDescriptor> generated_record_descriptors() {
+    return {
+        RecordTraits<records::Material>::descriptor(),
+        RecordTraits<records::Node>::descriptor(),
+        RecordTraits<records::BeamSection>::descriptor(),
+        RecordTraits<records::Beam>::descriptor(),
+        RecordTraits<records::Part>::descriptor(),
+        RecordTraits<records::Assembly>::descriptor(),
+        RecordTraits<records::EntitySet>::descriptor(),
+        RecordTraits<records::IncludeDocument>::descriptor(),
+        RecordTraits<records::NodalForce>::descriptor(),
+        RecordTraits<records::Constraint>::descriptor(),
+        RecordTraits<records::AnalysisDefinition>::descriptor(),
+        RecordTraits<records::SourceIdentifier>::descriptor(),
+        RecordTraits<records::GeometryLine>::descriptor(),
+        RecordTraits<records::Mesh>::descriptor(),
+        RecordTraits<records::LoadCase>::descriptor(),
+    };
+}
+std::shared_ptr<const RecordRegistry> make_record_registry();
+} // namespace qcae
+--- modules/document/CMakeLists.txt (1256 UTF-8 bytes) ---
+add_library(qcae_document STATIC src/model.cpp src/model_delta.cpp src/state_codec.cpp include/qcae/model.hpp include/qcae/model_codec.hpp include/qcae/model_delta.hpp include/qcae/state_codec.hpp include/qcae/read_view.hpp)
+target_sources(qcae_document PRIVATE
+  src/record_registry.cpp src/document_view.cpp src/edit_session.cpp
+  src/record_model_bridge.cpp src/records_rules.cpp
+  include/qcae/record_registry.hpp include/qcae/document_view.hpp
+  include/qcae/edit_session.hpp include/qcae/records.hpp
+  include/qcae/records_model_bridge.hpp)
+target_include_directories(qcae_document PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_document PUBLIC cxx_std_20)
+target_link_libraries(qcae_document PUBLIC qcae_foundation qcae_contracts)
+qcae_warnings(qcae_document)
+if(BUILD_TESTING)
+  add_executable(qcae_record_document_tests "${PROJECT_SOURCE_DIR}/tests/record_document_tests.cpp")
+  target_link_libraries(qcae_record_document_tests PRIVATE qcae_document)
+  qcae_warnings(qcae_record_document_tests)
+  add_test(NAME record_document COMMAND qcae_record_document_tests)
+  add_test(NAME generated_entities COMMAND Python3::Interpreter
+    "${PROJECT_SOURCE_DIR}/tools/generate_entities.py" --check --permutation-check)
+endif()
+--- features/mesh_editing/include/qcae/mesh_editing_operations.hpp (545 UTF-8 bytes) ---
+#pragma once
+#include "qcae/operation_inputs.hpp"
+#include "qcae/record_application.hpp"
+
+namespace qcae::features::mesh_editing {
+struct OperationPlan {
+    std::string signature;
+    RecordPrepare prepare;
+};
+[[nodiscard]] Result<OperationPlan> prepare_move_node(const operations::NodeMoveInput&);
+[[nodiscard]] Result<OperationPlan>
+prepare_assign_section(const operations::BeamAssignSectionInput&);
+[[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
+} // namespace qcae::features::mesh_editing
+--- modules/query/src/render_projector.cpp (20973 UTF-8 bytes) ---
+#include "qcae/render_projector.hpp"
+#include "qcae/records.hpp"
+#include "qcae/operation_ledger.hpp"
+#include <iterator>
+#include <algorithm>
+#include <set>
+
+namespace qcae {
+namespace {
+template <class T> Result<T> success(T value) {
+    return {Status::success, std::move(value), std::nullopt};
+}
+template <class T> Result<T> failure(ErrorCode code, std::string message) {
+    return {Status::failed, std::nullopt, Diagnostic{code, std::move(message), "render"}};
+}
+bool same_document(const DocumentRef& a, const DocumentRef& b) {
+    return a.id == b.id && a.epoch == b.epoch;
+}
+void accumulate(RenderProjectionStats& total, const RenderProjectionStats& work) {
+    total.full_rebuilds += work.full_rebuilds;
+    total.projected_records += work.projected_records;
+    total.model_bytes_copied += work.model_bytes_copied;
+    total.dirty_blocks += work.dirty_blocks;
+}
+std::size_t copied_bytes(const RenderItem& item) {
+    return std::visit(
+        [](const auto& value) {
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, RenderPoint>)
+                return value.entity.value.size() + sizeof(value.position_mm);
+            else if constexpr (std::is_same_v<T, RenderLine2>)
+                return value.entity.value.size() + value.nodes[0].value.size() +
+                       value.nodes[1].value.size();
+            else if constexpr (std::is_same_v<T, RenderCellSource>) {
+                auto bytes = value.entity.value.size() + sizeof(value.kind);
+                for (const auto& node : value.nodes)
+                    bytes += node.value.size();
+                return bytes;
+            } else
+                return value.entity.value.size() + sizeof(value.start_mm) + sizeof(value.end_mm);
+        },
+        item);
+}
+RenderItem project(const RenderContribution& contribution,
+                   const Record& record,
+                   RenderProjectionStats& stats) {
+    auto item = contribution.project(record);
+    if (auto* line = std::get_if<RenderLine2>(&item))
+        item = RenderCellSource{
+            line->entity, RenderCellKind::polyline, {line->nodes.begin(), line->nodes.end()}};
+    if (std::visit([](const auto& value) -> const std::string& { return value.entity.value; },
+                   item) != record->key().identity)
+        throw RecordError(ErrorCode::invalid_input, "Display contribution changed entity identity");
+    ++stats.projected_records;
+    stats.model_bytes_copied += copied_bytes(item);
+    // Source extraction plus a conservative allowance for variant/SSO payload moves.
+    ledger::add(
+        ledger::Stage::projection, ledger::Metric::model_copy_bytes, 4 * copied_bytes(item));
+    ledger::add(ledger::Stage::projection, ledger::Metric::scanned_records, 1);
+    return item;
+}
+} // namespace
+void RenderContributions::add(RenderContribution contribution) {
+    if (frozen_ || !contribution.project || contribution.topology.empty() ||
+        !entries_.emplace(contribution.record_type, std::move(contribution)).second)
+        throw RecordError(ErrorCode::invalid_input,
+                          "Invalid, duplicate or frozen render contribution");
+}
+void RenderContributions::freeze() {
+    frozen_ = true;
+}
+bool RenderContributions::frozen() const noexcept {
+    return frozen_;
+}
+const RenderContribution* RenderContributions::find(RecordTypeId type) const {
+    const auto it = entries_.find(type);
+    return it == entries_.end() ? nullptr : &it->second;
+}
+const std::map<RecordTypeId, RenderContribution>& RenderContributions::entries() const {
+    return entries_;
+}
+RenderContributions default_render_contributions() {
+    RenderContributions result;
+    result.add(
+        {RecordTraits<records::Node>::type_id, "point", [](const Record& record) -> RenderItem {
+             const auto& node = record->get<records::Node>();
+             return RenderPoint{node.id, node.position, true};
+         }});
+    result.add(
+        {RecordTraits<records::Beam>::type_id, "line2", [](const Record& record) -> RenderItem {
+             const auto& beam = record->get<records::Beam>();
+             return RenderCellSource{
+                 beam.id, RenderCellKind::polyline, {beam.nodes.begin(), beam.nodes.end()}};
+         }});
+    result.add({RecordTraits<records::GeometryLine>::type_id,
+                "geometry_line",
+                [](const Record& record) -> RenderItem {
+                    const auto& line = record->get<records::GeometryLine>();
+                    return RenderGeometryLine{EntityId(line.id.value), line.start, line.end};
+                }});
+    result.freeze();
+    return result;
+}
+RenderProjector::RenderProjector(RenderContributions contributions, std::size_t max_entities)
+    : contributions_(std::move(contributions)), max_entities_(max_entities) {
+    if (!contributions_.frozen())
+        throw RecordError(ErrorCode::invalid_input, "Render contributions must be frozen");
+}
+void RenderProjector::clear() {
+    view_.reset();
+    point_indices_.clear();
+    cell_indices_.clear();
+    geometry_indices_.clear();
+    legacy_line2_compatible_ = true;
+}
+std::optional<RecordVersion> RenderProjector::version() const {
+    if (!view_)
+        return std::nullopt;
+    try {
+        RecordVersion result{view_->document, view_->model_revision};
+        ledger::add(ledger::Stage::projection,
+                    ledger::Metric::metadata_copy_bytes,
+                    sizeof(RecordVersion) + result.document.id.value.size() +
+                        result.document.epoch.value.size());
+        return result;
+    } catch (...) {
+        ledger::unknown(ledger::Stage::projection, ledger::Metric::metadata_copy_bytes);
+        throw;
+    }
+}
+RenderProjectionStats RenderProjector::stats() const noexcept {
+    return stats_;
+}
+Result<RenderUpdate> RenderProjector::rebuild(const DocumentView& snapshot,
+                                              const ViewSession& view) {
+    RenderUpdate result;
+    result.full.emplace();
+    result.work.full_rebuilds = 1;
+    auto& packet = *result.full;
+    packet.document = view.document;
+    packet.revision = view.model_revision;
+    packet.view_session_id = view.id;
+    packet.view_revision = view.view_revision;
+    const std::set<EntityId> hidden(view.hidden_ids.begin(), view.hidden_ids.end());
+    for (const auto& id : hidden)
+        if (!snapshot.find_identity(id.value))
+            return failure<RenderUpdate>(ErrorCode::entity_not_found,
+                                         "Hidden display entity does not exist");
+    ledger::unknown(ledger::Stage::projection, ledger::Metric::metadata_copy_bytes);
+    std::map<EntityId, RenderPoint> points;
+    std::vector<RenderCellSource> cells;
+
+    for (const auto& [type, contribution] : contributions_.entries()) {
+        snapshot.visit(type, [&](const Record& record) {
+            auto item = project(contribution, record, result.work);
+            std::visit(
+                [&](auto&& value) {
+                    using T = std::decay_t<decltype(value)>;
+                    if constexpr (std::is_same_v<T, RenderPoint>) {
+                        value.visible = !hidden.contains(value.entity);
+                        points.emplace(value.entity, std::move(value));
+                    } else if constexpr (std::is_same_v<T, RenderCellSource>) {
+                        cells.push_back(std::move(value));
+                    } else if constexpr (std::is_same_v<T, RenderGeometryLine>) {
+                        value.visible = !hidden.contains(value.entity);
+                        packet.geometry_lines.push_back(std::move(value));
+                    }
+                },
+                std::move(item));
+        });
+    }
+    if (points.size() + cells.size() + packet.geometry_lines.size() > max_entities_)
+        return failure<RenderUpdate>(ErrorCode::resource_limit, "Render entity limit exceeded");
+    std::map<std::string, std::size_t> point_indices, cell_indices, geometry_indices;
+    for (auto& [id, point] : points) {
+        point_indices.emplace(id.value, packet.points.size());
+        packet.points.push_back(std::move(point));
+    }
+    for (auto& source : cells) {
+        const auto minimum = source.kind == RenderCellKind::polyline ? 2U : 3U;
+        if ((source.kind != RenderCellKind::polyline && source.kind != RenderCellKind::polygon) ||
+            source.nodes.size() < minimum || source.nodes.size() > render_cell_point_limit)
+            return failure<RenderUpdate>(ErrorCode::invalid_input, "Invalid display cell topology");
+        RenderCell cell{source.entity, source.kind, {}, !hidden.contains(source.entity)};
+        cell.points.reserve(source.nodes.size());
+        std::set<std::size_t> unique;
+        for (const auto& node : source.nodes) {
+            const auto found = point_indices.find(node.value);
+            if (found == point_indices.end())
+                return failure<RenderUpdate>(ErrorCode::entity_not_found,
+                                             "Cell endpoint is not a display point");
+            if (!unique.insert(found->second).second)
+                return failure<RenderUpdate>(ErrorCode::invalid_input,
+                                             "Repeated display cell point");
+            cell.points.push_back(found->second);
+        }
+        cell_indices.emplace(cell.entity.value, packet.cells.size());
+        packet.cells.push_back(std::move(cell));
+    }
+    for (std::size_t i = 0; i < packet.geometry_lines.size(); ++i)
+        geometry_indices.emplace(packet.geometry_lines[i].entity.value, i);
+    result.legacy_line2_compatible =
+        std::all_of(packet.cells.begin(), packet.cells.end(), [](const auto& cell) {
+            return cell.kind == RenderCellKind::polyline && cell.points.size() == 2;
+        });
+    result.work.dirty_blocks =
+        (packet.points.size() + record_page_capacity - 1) / record_page_capacity;
+    auto next_view = view;
+    point_indices_.swap(point_indices);
+    cell_indices_.swap(cell_indices);
+    geometry_indices_.swap(geometry_indices);
+    view_ = std::move(next_view);
+    legacy_line2_compatible_ = result.legacy_line2_compatible;
+    accumulate(stats_, result.work);
+    ledger::cover(ledger::Stage::projection);
+    return success(std::move(result));
+}
+Result<RenderUpdate> RenderProjector::update(const DocumentView& snapshot,
+                                             const ViewSession& view,
+                                             std::span<const DirectedRenderChange> changes,
+                                             bool force_full) {
+    try {
+        if (!same_document(snapshot.version().document, view.document))
+            return failure<RenderUpdate>(ErrorCode::document_epoch_expired,
+                                         "Display view belongs to another document");
+        if (snapshot.version().revision != view.model_revision)
+            return failure<RenderUpdate>(ErrorCode::revision_conflict,
+                                         "Display view model revision is stale");
+        if (force_full || !view_ || !same_document(view_->document, view.document) ||
+            view_->id != view.id)
+            return rebuild(snapshot, view);
+        if (view.model_revision < view_->model_revision ||
+            view.view_revision < view_->view_revision)
+            return failure<RenderUpdate>(ErrorCode::revision_conflict,
+                                         "Cannot rewind the installed display");
+        auto next_revision = view_->model_revision;
+        for (const auto& change : changes) {
+            if (!change.changes || change.base_revision != next_revision ||
+                change.revision != next_revision + 1)
+                return failure<RenderUpdate>(ErrorCode::revision_conflict,
+                                             "Display change history is not contiguous");
+            next_revision = change.revision;
+        }
+        if (next_revision != view.model_revision)
+            return failure<RenderUpdate>(ErrorCode::revision_conflict,
+                                         "Display change history is incomplete");
+        RenderUpdate result;
+        result.legacy_line2_compatible = legacy_line2_compatible_;
+        ledger::add(ledger::Stage::projection,
+                    ledger::Metric::metadata_copy_bytes,
+                    2 * (view.document.id.value.size() + view.document.epoch.value.size()) +
+                        4 * view.id.size() + 4 * sizeof(std::uint64_t));
+        result.delta = {view.document,
+                        view_->model_revision,
+                        view.model_revision,
+                        view.id,
+                        view_->view_revision,
+                        view.view_revision,
+                        {},
+                        {},
+                        {}};
+        const auto rebuild_after_projection = [&]() {
+            auto rebuilt = rebuild(snapshot, view);
+            if (rebuilt.ok()) {
+                accumulate(stats_, result.work);
+                accumulate(rebuilt.value->work, result.work);
+            }
+            return rebuilt;
+        };
+        std::map<std::size_t, RenderPoint> point_updates;
+        std::map<std::size_t, RenderGeometryLine> geometry_updates;
+        std::set<std::size_t> dirty_blocks;
+        for (const auto& batch : changes) {
+            for (const auto& change : batch.changes->records) {
+                const auto* contribution = contributions_.find(change.key.type);
+                if (!contribution)
+                    continue;
+                const auto& before =
+                    batch.direction == RecordDirection::forward ? change.before : change.after;
+                const auto& after =
+                    batch.direction == RecordDirection::forward ? change.after : change.before;
+                if (!before || !after)
+                    return rebuild_after_projection();
+                const auto old_item = project(*contribution, *before, result.work);
+                auto item = project(*contribution, *after, result.work);
+                if (old_item.index() != item.index())
+                    return rebuild_after_projection();
+                if (auto* point = std::get_if<RenderPoint>(&item)) {
+                    if (point->position_mm == std::get<RenderPoint>(old_item).position_mm)
+                        continue;
+                    const auto it = point_indices_.find(point->entity.value);
+                    if (it == point_indices_.end())
+                        continue;
+                    point->visible = std::find(view_->hidden_ids.begin(),
+                                               view_->hidden_ids.end(),
+                                               point->entity) == view_->hidden_ids.end();
+                    point_updates.insert_or_assign(it->second, std::move(*point));
+                    dirty_blocks.insert(it->second / record_page_capacity);
+                } else if (const auto* cell = std::get_if<RenderCellSource>(&item)) {
+                    const auto& old_cell = std::get<RenderCellSource>(old_item);
+                    if (cell->nodes != old_cell.nodes || cell->kind != old_cell.kind)
+                        return rebuild_after_projection();
+                } else {
+                    auto& geometry = std::get<RenderGeometryLine>(item);
+                    const auto& old_geometry = std::get<RenderGeometryLine>(old_item);
+                    if (geometry.start_mm == old_geometry.start_mm &&
+                        geometry.end_mm == old_geometry.end_mm)
+                        continue;
+                    geometry.visible = std::find(view_->hidden_ids.begin(),
+                                                 view_->hidden_ids.end(),
+                                                 geometry.entity) == view_->hidden_ids.end();
+                    const auto it = geometry_indices_.find(geometry.entity.value);
+                    if (it != geometry_indices_.end())
+                        geometry_updates.insert_or_assign(it->second, std::move(geometry));
+                }
+            }
+        }
+        result.delta.points.reserve(point_updates.size());
+        result.delta.geometry_lines.reserve(geometry_updates.size());
+        for (auto& [index, point] : point_updates) {
+            // Map insertion, aggregate construction and vector insertion each may move SSO data.
+            ledger::add(ledger::Stage::projection,
+                        ledger::Metric::model_copy_bytes,
+                        3 * (point.entity.value.size() + sizeof(point.position_mm)));
+            result.delta.points.push_back({index, std::move(point)});
+        }
+        for (auto& [index, line] : geometry_updates) {
+            ledger::add(
+                ledger::Stage::projection,
+                ledger::Metric::model_copy_bytes,
+                3 * (line.entity.value.size() + sizeof(line.start_mm) + sizeof(line.end_mm)));
+            result.delta.geometry_lines.push_back({index, std::move(line)});
+        }
+        ledger::add(ledger::Stage::projection,
+                    ledger::Metric::metadata_copy_bytes,
+                    (point_updates.size() + geometry_updates.size()) * 8 * sizeof(std::size_t));
+        if (view.hidden_ids != view_->hidden_ids) {
+            if (view.view_revision == view_->view_revision)
+                return failure<RenderUpdate>(ErrorCode::revision_conflict,
+                                             "Visibility changed without a new view revision");
+            const std::set<EntityId> before(view_->hidden_ids.begin(), view_->hidden_ids.end());
+            const std::set<EntityId> after(view.hidden_ids.begin(), view.hidden_ids.end());
+            std::vector<EntityId> changed;
+            changed.reserve(before.size() + after.size());
+            std::set_symmetric_difference(before.begin(),
+                                          before.end(),
+                                          after.begin(),
+                                          after.end(),
+                                          std::back_inserter(changed));
+            result.delta.visibility.reserve(changed.size());
+            for (const auto* ids :
+                 std::array<const std::vector<EntityId>*, 2>{&view_->hidden_ids, &view.hidden_ids})
+                for (const auto& id : *ids)
+                    ledger::add(ledger::Stage::projection,
+                                ledger::Metric::metadata_copy_bytes,
+                                4 * (id.value.size() + sizeof(std::size_t)));
+            for (const auto& id : changed) {
+                if (!snapshot.find_identity(id.value))
+                    return failure<RenderUpdate>(ErrorCode::entity_not_found,
+                                                 "Hidden display entity does not exist");
+                const auto add = [&](const auto& indices, RenderPrimitive primitive) {
+                    const auto found = indices.find(id.value);
+                    if (found == indices.end())
+                        return;
+                    result.delta.visibility.push_back(
+                        {primitive, found->second, id, !after.contains(id)});
+                    result.work.model_bytes_copied += id.value.size() + sizeof(bool);
+                    ledger::add(ledger::Stage::projection,
+                                ledger::Metric::model_copy_bytes,
+                                3 * (id.value.size() + sizeof(bool)));
+                    dirty_blocks.insert(found->second / record_page_capacity);
+                };
+                add(point_indices_, RenderPrimitive::point);
+                add(cell_indices_, RenderPrimitive::cell);
+                add(geometry_indices_, RenderPrimitive::geometry_line);
+            }
+            // Allocate the new view metadata before publishing the projection version.
+            auto hidden = view.hidden_ids;
+            view_->hidden_ids.swap(hidden);
+        }
+        result.work.dirty_blocks = dirty_blocks.size();
+        // Camera-only and model changes preserve the existing visibility metadata.
+        view_->model_revision = view.model_revision;
+        view_->view_revision = view.view_revision;
+        accumulate(stats_, result.work);
+        // Immutable snapshots are shared; container/allocator metadata is kept separate.
+        ledger::add(ledger::Stage::projection, ledger::Metric::model_copy_bytes, 0);
+        ledger::add(ledger::Stage::projection, ledger::Metric::full_model_serializations, 0);
+        ledger::add(ledger::Stage::projection, ledger::Metric::full_model_materializations, 0);
+        // Container bookkeeping/allocator footprint is not copied model/metadata payload.
+        // The counted bounds above cover all declared local payload-bearing moves.
+        ledger::cover(ledger::Stage::projection);
+        return success(std::move(result));
+    } catch (const RecordError& error) {
+        return failure<RenderUpdate>(error.code(), error.what());
+    }
+}
+} // namespace qcae

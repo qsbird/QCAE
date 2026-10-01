@@ -1,0 +1,1754 @@
+{
+  "task_id": "EXT-02",
+  "executor": "/root/c4_ext02_frozen41",
+  "workdir": "/private/tmp/qcae-c4-ext02-41",
+  "branch": "codex/c4-ext02-baseline41",
+  "baseline_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+  "extension_commit": "4629a9084c86b244b0c08af03082c5092cd872d7",
+  "diff": "extension.diff",
+  "diff_utf8_bytes": 35691,
+  "diff_sha256": "be05757eee8c18e4d78e5fe5e4d1eaeebe83955744daac248824e915f076118e",
+  "changed_paths": [
+    "docs/engineering/c4-ext02-validation.md",
+    "features/mesh_editing/CMakeLists.txt",
+    "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
+    "features/mesh_editing/src/mesh_editing_operations.cpp",
+    "schemas/operations/mesh_editing.json",
+    "tests/batch_translation_ipc_tests.py",
+    "tests/model_operation_tests.cpp",
+    "tests/public_api_consumers/CMakeLists.txt",
+    "tests/public_api_consumers/batch_translation.cpp"
+  ],
+  "product_paths": [
+    "features/mesh_editing/CMakeLists.txt",
+    "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
+    "features/mesh_editing/src/mesh_editing_operations.cpp",
+    "schemas/operations/mesh_editing.json"
+  ],
+  "product_file_count": 4,
+  "protected_touch_count": 0,
+  "protected_touched_paths": [],
+  "unknown_untracked_preserved": [
+    "?? docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json"
+  ],
+  "handwritten_product_limit": 6,
+  "protected_file_count": 39,
+  "protected_files_unchanged": true,
+  "generator_file_count": 4,
+  "generators_unchanged": true,
+  "tool_images_unchanged": true,
+  "no_dependencies_added": true,
+  "generated_contracts_check": "passed byte-identical generator --check, no generated hand edits",
+  "core_release_ctest": {
+    "passed": 39,
+    "failed": 0,
+    "command_label": "core-final-tests"
+  },
+  "local_sqlite_ipc_regression": {
+    "passed": 13,
+    "failed": 0,
+    "command_label": "local-regressions"
+  },
+  "new_batch_translation_ipc": {
+    "modes": [
+      "cli",
+      "script"
+    ],
+    "nodes": 11,
+    "line2": 10,
+    "rejections_each_mode": 10,
+    "one_transaction": true,
+    "undo_redo": true,
+    "retry_after_undo": true,
+    "preview_cancel": true,
+    "preview_commit_and_undo": true,
+    "legacy_node_move": true,
+    "command_label": "ext02-preview-apply-ctest",
+    "evidence": "ipc-ctest-final"
+  },
+  "public_consumers": {
+    "compiled": 48,
+    "new_consumer_run_exit": 0,
+    "command_label": "consumers-build",
+    "new_contract": "consumer_batch_translation"
+  },
+  "native_gui": {
+    "passed": 5,
+    "failed": 0,
+    "exclusive_slot": true,
+    "released": true,
+    "environment": {
+      "QT_QPA_PLATFORM": "cocoa"
+    },
+    "tests": [
+      "desktop",
+      "desktop_selection",
+      "modeling_tools",
+      "desktop_smoke",
+      "c3_tool_lifecycle"
+    ],
+    "command_label": "native-desktop-tests"
+  },
+  "independent_readability_review": {
+    "gate": "QG-02",
+    "reviewer": "/root",
+    "result": "pass",
+    "product_repairs_requested": 0,
+    "message_retained": "context-index-final.json extra_messages"
+  },
+  "failures": {
+    "product_test_compile_failures": 1,
+    "product_test_compile_repairs": 1,
+    "validation_timeout_failures": 2,
+    "validation_tool_or_threshold_changes": 0,
+    "unchanged_successful_freeze_retries": 2,
+    "resolved_setup_failures": [
+      "clang-format default command unavailable; used frozen absolute tool",
+      "git staging index sandbox denied; authorized isolated-worktree escalation",
+      "context reader missing required CLI arguments; rerun correct argv"
+    ],
+    "frozen_environment_config_selections_corrected_before_build": [
+      "Python 3.14.7 -> explicit frozen Python 3.14.0",
+      "SDK SQLite 3.51.0 -> frozen Homebrew SQLite 3.53.4"
+    ],
+    "raw_failed_command_labels": [
+      "core-build",
+      "core-tests",
+      "core-freeze-retry"
+    ]
+  },
+  "context": {
+    "cutoff": "delivery-diff-receipt; subsequent evidence packaging stdout is tracked separately if delivered",
+    "initial_file_count": 8,
+    "initial_content_utf8_bytes": 42078,
+    "initial_full_packet_stdout_utf8_bytes": 42601,
+    "first_nested_return_complete": true,
+    "first_nested_return_utf8_bytes": 42601,
+    "first_outer_display_complete": false,
+    "first_outer_display_utf8_bytes": null,
+    "first_outer_display_reason": "functions default output clipping reported 651 tokens truncated; exact outer displayed bytes unavailable",
+    "redelivery_before_product_edit_complete": true,
+    "redelivery_nested_return_utf8_bytes": 42601,
+    "redelivery_outer_output_budget_tokens": 16000,
+    "duplicate_initial_packet_count": 2,
+    "initial_location_duplicate_utf8_bytes": 6843,
+    "initial_location_scope": "exact text transparently reconstructed from known original path/status prefix and unchanged task bytes; retained as record 000",
+    "measured_nested_return_records": 76,
+    "measured_nested_return_utf8_bytes": 501173,
+    "followup_measured_nested_return_records": 74,
+    "followup_measured_nested_return_utf8_bytes": 415971,
+    "extra_messages_count": 6,
+    "extra_messages_utf8_bytes": 2217,
+    "unknown_early_observations": {
+      "phase": "retained-command-receipt-reconstruction",
+      "command": "Initial core-configure and core-build-repair1 completion receipts; formatter setup error",
+      "actual_delivered_utf8_bytes": null,
+      "token_count": null,
+      "output": "",
+      "note": "Two early command output observations were not serialized into contextRecords at execution time. Their deterministic harness stdout is retained separately as reconstructed-early-command-output.txt. Exact original outer delivery bytes and any intervening clipping are unknown; these reconstructions are not included as measured delivery. Formatter setup error was observed as 'zsh:10: command not found: clang-format'; original tool envelope bytes unknown."
+    },
+    "token_usage": null,
+    "actual_total_model_context_utf8_bytes": null,
+    "total_context_cost_gate": "not evaluated: outer clipping and early observation gaps make actual total unknown",
+    "producer_claims_are_actual_delivery": false,
+    "raw_logs_are_actual_delivery": false,
+    "inherited_system_user_developer_instructions_scope": "outside frozen source-package byte measurement; real complete model-context/token cost unavailable",
+    "packaging_output_tail": "context-packaging-tail.json",
+    "packaging_measured_nested_utf8_bytes": 437,
+    "final_package_verification_stdout_utf8_bytes": 0
+  },
+  "command_evidence": [
+    {
+      "label": "core-configure",
+      "command": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "build-ext02-core",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=OFF",
+        "-DQCAE_BUILD_STORAGE=OFF",
+        "-DQCAE_BUILD_DESKTOP=OFF"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.8392088413238525,
+      "raw_log_utf8_bytes": 712,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-configure.log",
+      "diagnostic_delivery_utf8_bytes": 712,
+      "diagnostic_range": [
+        0,
+        712
+      ],
+      "tokens": null,
+      "raw_log_sha256": "612e8ae84a279201599dccdd2ff9bc4d85f8eab534cc7a9397842bae4864796e",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "core-configure-frozen",
+      "command": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "build-ext02-core",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=OFF",
+        "-DQCAE_BUILD_STORAGE=OFF",
+        "-DQCAE_BUILD_DESKTOP=OFF",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.4872729778289795,
+      "raw_log_utf8_bytes": 313,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-configure-frozen.log",
+      "diagnostic_delivery_utf8_bytes": 313,
+      "diagnostic_range": [
+        0,
+        313
+      ],
+      "tokens": null,
+      "raw_log_sha256": "ec7ac85b2a04270d500133db188380c45a5bbb0a433077e634c7793637d1d7c5",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "desktop-configure",
+      "command": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "build-ext02-desktop",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=ON",
+        "-DQCAE_BUILD_STORAGE=ON",
+        "-DQCAE_BUILD_DESKTOP=ON",
+        "-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt;/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 5.281952857971191,
+      "raw_log_utf8_bytes": 1950,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/desktop-configure.log",
+      "diagnostic_delivery_utf8_bytes": 1950,
+      "diagnostic_range": [
+        0,
+        1950
+      ],
+      "tokens": null,
+      "raw_log_sha256": "ed7f6d15d396233abca5a11b4fba2c2d1209ed115573c35bf5d26ece3d2040a8",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "core-build",
+      "command": [
+        "cmake",
+        "--build",
+        "build-ext02-core",
+        "--parallel",
+        "2"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 1,
+      "elapsed_seconds": 73.33241605758667,
+      "raw_log_utf8_bytes": 7523,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-build.log",
+      "diagnostic_delivery_utf8_bytes": 7523,
+      "diagnostic_range": [
+        0,
+        7523
+      ],
+      "tokens": null,
+      "raw_log_sha256": "e33e80128fc920de32992dfba567670b5848761640105c946b41613bdcd6e619",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "desktop-configure-frozen",
+      "command": [
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "build-ext02-desktop",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=ON",
+        "-DQCAE_BUILD_STORAGE=ON",
+        "-DQCAE_BUILD_DESKTOP=ON",
+        "-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt;/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include",
+        "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 1.7274689674377441,
+      "raw_log_utf8_bytes": 1109,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/desktop-configure-frozen.log",
+      "diagnostic_delivery_utf8_bytes": 1109,
+      "diagnostic_range": [
+        0,
+        1109
+      ],
+      "tokens": null,
+      "raw_log_sha256": "f88f78fcc42e8a2df9641092ebd3dc3165540c6df5bc8fd2ade436f4dd401431",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "design",
+      "command": [
+        "python3",
+        "tools/check_design.py"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.6606647968292236,
+      "raw_log_utf8_bytes": 249,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/design.log",
+      "diagnostic_delivery_utf8_bytes": 249,
+      "diagnostic_range": [
+        0,
+        249
+      ],
+      "tokens": null,
+      "raw_log_sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "cpp-format",
+      "command": [
+        "python3",
+        "tools/check_cpp_format.py"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 2.473029851913452,
+      "raw_log_utf8_bytes": 42,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/cpp-format.log",
+      "diagnostic_delivery_utf8_bytes": 42,
+      "diagnostic_range": [
+        0,
+        42
+      ],
+      "tokens": null,
+      "raw_log_sha256": "a41e72770b642d649127c2bc1db3e2e42afe18468727488801b9ceb0a3f82fd0",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.4523427486419678,
+      "raw_log_utf8_bytes": 0,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/diff-check.log",
+      "diagnostic_delivery_utf8_bytes": 0,
+      "diagnostic_range": [
+        0,
+        0
+      ],
+      "tokens": null,
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "core-build-repair1",
+      "command": [
+        "cmake",
+        "--build",
+        "build-ext02-core",
+        "--parallel",
+        "2"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 27.091372966766357,
+      "raw_log_utf8_bytes": 4586,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-build-repair1.log",
+      "diagnostic_delivery_utf8_bytes": 4586,
+      "diagnostic_range": [
+        0,
+        4586
+      ],
+      "tokens": null,
+      "raw_log_sha256": "87a5b9a28bb1cc07ff4f5596a3ecb66e02eea8aa9c799780e2acc739757380ba",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "consumers-configure",
+      "command": [
+        "cmake",
+        "-S",
+        "tests/public_api_consumers",
+        "-B",
+        "build-ext02-consumers",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=OFF",
+        "-DQCAE_BUILD_STORAGE=OFF",
+        "-DQCAE_BUILD_DESKTOP=OFF",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.559561014175415,
+      "raw_log_utf8_bytes": 775,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/consumers-configure.log",
+      "diagnostic_delivery_utf8_bytes": 775,
+      "diagnostic_range": [
+        0,
+        775
+      ],
+      "tokens": null,
+      "raw_log_sha256": "85713ff4c6d022b4757453f4f90c38d3b733d09ce69f27f309eb1ca20d2af49e",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "generated-contracts",
+      "command": [
+        "python3",
+        "tools/generate_operation_contracts.py",
+        "schemas/operations",
+        "build-ext02-core/generated/qcae/operation_inputs.hpp",
+        "--check"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.14083409309387207,
+      "raw_log_utf8_bytes": 55,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/generated-contracts.log",
+      "diagnostic_delivery_utf8_bytes": 55,
+      "diagnostic_range": [
+        0,
+        55
+      ],
+      "tokens": null,
+      "raw_log_sha256": "44f5ea9fd0329ad537fbf7d03d812e6df55fdb351f9c3a6491c1d5c8a49016f8",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "core-tests",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-core",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 8,
+      "elapsed_seconds": 146.66592121124268,
+      "raw_log_utf8_bytes": 4317,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-tests.log",
+      "diagnostic_delivery_utf8_bytes": 4317,
+      "diagnostic_range": [
+        0,
+        4317
+      ],
+      "tokens": null,
+      "raw_log_sha256": "a8c49018e5c4449036dba6564a861f61d51da377ab5f1c0518c148637422bc11",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "desktop-build",
+      "command": [
+        "cmake",
+        "--build",
+        "build-ext02-desktop",
+        "--parallel",
+        "2"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 296.6679902076721,
+      "raw_log_utf8_bytes": 21279,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/desktop-build.log",
+      "diagnostic_delivery_utf8_bytes": 10000,
+      "diagnostic_range": [
+        11279,
+        21279
+      ],
+      "tokens": null,
+      "raw_log_sha256": "8061041786e0f10b0dc4e158410880db89883dd7c3cda0b1748ada1d5c918798",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "core-freeze-retry",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-core",
+        "-R",
+        "^c4_freeze_contract$",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 8,
+      "elapsed_seconds": 90.14734888076782,
+      "raw_log_utf8_bytes": 333,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-freeze-retry.log",
+      "diagnostic_delivery_utf8_bytes": 333,
+      "diagnostic_range": [
+        0,
+        333
+      ],
+      "tokens": null,
+      "raw_log_sha256": "be652a6bb2e3d5692fb40d362d7034febb7ee075cbe6aac8e045a1992d3b5617",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "ext02-ipc",
+      "command": [
+        "python3",
+        "tests/batch_translation_ipc_tests.py",
+        "--engine",
+        "build-ext02-desktop/qcae-engine",
+        "--cli",
+        "build-ext02-desktop/qcae-cli",
+        "--evidence-dir",
+        "/private/tmp/qcae-ext02-evidence41/ipc"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 8.70155119895935,
+      "raw_log_utf8_bytes": 742,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/ext02-ipc.log",
+      "diagnostic_delivery_utf8_bytes": 742,
+      "diagnostic_range": [
+        0,
+        742
+      ],
+      "tokens": null,
+      "raw_log_sha256": "b4a7012e176cbd655733955edaba49d7b0f76e03a723fa013a9db19c104b19f4",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "consumers-build",
+      "command": [
+        "cmake",
+        "--build",
+        "build-ext02-consumers",
+        "--target",
+        "qcae_public_consumers",
+        "--parallel",
+        "2"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 74.35637092590332,
+      "raw_log_utf8_bytes": 17176,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/consumers-build.log",
+      "diagnostic_delivery_utf8_bytes": 10000,
+      "diagnostic_range": [
+        7176,
+        17176
+      ],
+      "tokens": null,
+      "raw_log_sha256": "1e92c3eb7430d6892b2b4ee40df700d6d7ff3a143eb7156a4afdc17e91f92af6",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "freeze-onecase",
+      "command": [
+        "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "-u",
+        "-c",
+        "import faulthandler,runpy,sys; faulthandler.dump_traceback_later(20); sys.argv=[\"tests/test_c4_freeze.py\",\"-v\",\"FreezeContract.test_commit_packet_and_protection_integrity\"]; runpy.run_path(\"tests/test_c4_freeze.py\",run_name=\"__main__\")"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 2.804973840713501,
+      "raw_log_utf8_bytes": 218,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/freeze-onecase.log",
+      "diagnostic_delivery_utf8_bytes": 218,
+      "diagnostic_range": [
+        0,
+        218
+      ],
+      "tokens": null,
+      "raw_log_sha256": "3a776e98f332586bba959c90830645aa48e6bed22d0ceaf674c0253595a8e239",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "local-regressions",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-desktop",
+        "-R",
+        "^(typed_host|engine_assembly|render_service|render_wire|render_projector|geometry_mesh_sqlite|engine_contributions_ipc|c3_display_ipc|entity_query_ipc|c3_sync_ipc|m1_ipc|ipc|m23_ipc)$",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 18.22986912727356,
+      "raw_log_utf8_bytes": 1469,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/local-regressions.log",
+      "diagnostic_delivery_utf8_bytes": 1469,
+      "diagnostic_range": [
+        0,
+        1469
+      ],
+      "tokens": null,
+      "raw_log_sha256": "f9b9a826008fafd05516ab9af0c7f4675e63f4bad241eaebf76c35358e403def",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "core-config-refresh",
+      "command": [
+        "cmake",
+        "--build",
+        "build-ext02-core",
+        "--parallel",
+        "2"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.23770689964294434,
+      "raw_log_utf8_bytes": 267,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-config-refresh.log",
+      "diagnostic_delivery_utf8_bytes": 267,
+      "diagnostic_range": [
+        0,
+        267
+      ],
+      "tokens": null,
+      "raw_log_sha256": "d4ee9218d43b6b471d144e7f491a215ebc9819e1e4f6306450cf16a8a9c79e16",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "desktop-config-refresh",
+      "command": [
+        "cmake",
+        "--build",
+        "build-ext02-desktop",
+        "--parallel",
+        "2"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.8544938564300537,
+      "raw_log_utf8_bytes": 1150,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/desktop-config-refresh.log",
+      "diagnostic_delivery_utf8_bytes": 1150,
+      "diagnostic_range": [
+        0,
+        1150
+      ],
+      "tokens": null,
+      "raw_log_sha256": "86e36557d2cf1f9bcc16ddfb8d9cdc5284c93da2f846b91402816d2844ec88bc",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "consumers-config-refresh",
+      "command": [
+        "cmake",
+        "--build",
+        "build-ext02-consumers",
+        "--target",
+        "qcae_public_consumers",
+        "--parallel",
+        "2"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 14.633461952209473,
+      "raw_log_utf8_bytes": 10844,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/consumers-config-refresh.log",
+      "diagnostic_delivery_utf8_bytes": 10000,
+      "diagnostic_range": [
+        844,
+        10844
+      ],
+      "tokens": null,
+      "raw_log_sha256": "5a8bb9220ed2261bd3390b349dc89151dcaff680130e5778566a627e95335267",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "batch-consumer",
+      "command": [
+        "./build-ext02-consumers/consumer_batch_translation"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.624316930770874,
+      "raw_log_utf8_bytes": 0,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/batch-consumer.log",
+      "diagnostic_delivery_utf8_bytes": 0,
+      "diagnostic_range": [
+        0,
+        0
+      ],
+      "tokens": null,
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "ext02-ctest",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-desktop",
+        "-R",
+        "^batch_translation_ipc$",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 4.342222213745117,
+      "raw_log_utf8_bytes": 250,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/ext02-ctest.log",
+      "diagnostic_delivery_utf8_bytes": 250,
+      "diagnostic_range": [
+        0,
+        250
+      ],
+      "tokens": null,
+      "raw_log_sha256": "5b137e3d383fae19053c1b93cc0986d1147cf713760254c9c65c75e938345cbd",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "freeze-idle-retry",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-core",
+        "-R",
+        "^c4_freeze_contract$",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 50.663933992385864,
+      "raw_log_utf8_bytes": 242,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/freeze-idle-retry.log",
+      "diagnostic_delivery_utf8_bytes": 242,
+      "diagnostic_range": [
+        0,
+        242
+      ],
+      "tokens": null,
+      "raw_log_sha256": "d184017c73a8966d2cf1b93bfdfcce239038f28aacbb34b632cdc1303e3ed012",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "ext02-preview-apply-ctest",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-desktop",
+        "-R",
+        "^batch_translation_ipc$",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 2.389197826385498,
+      "raw_log_utf8_bytes": 250,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/ext02-preview-apply-ctest.log",
+      "diagnostic_delivery_utf8_bytes": 250,
+      "diagnostic_range": [
+        0,
+        250
+      ],
+      "tokens": null,
+      "raw_log_sha256": "ce0a5ef0f551813cb6b7b31869d5514e115de4513bfd2aa3bddb46c33e15db5a",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "core-final-tests",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-core",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 55.94150495529175,
+      "raw_log_utf8_bytes": 4188,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/core-final-tests.log",
+      "diagnostic_delivery_utf8_bytes": 4188,
+      "diagnostic_range": [
+        0,
+        4188
+      ],
+      "tokens": null,
+      "raw_log_sha256": "80b51583f8c0cdb3ab7a23ffe60ba74aa1c42e7c07e90855bbe553dd4054e775",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "design-final",
+      "command": [
+        "python3",
+        "tools/check_design.py"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.41124868392944336,
+      "raw_log_utf8_bytes": 249,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/design-final.log",
+      "diagnostic_delivery_utf8_bytes": 249,
+      "diagnostic_range": [
+        0,
+        249
+      ],
+      "tokens": null,
+      "raw_log_sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "cpp-format-final",
+      "command": [
+        "python3",
+        "tools/check_cpp_format.py"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 1.7190988063812256,
+      "raw_log_utf8_bytes": 42,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/cpp-format-final.log",
+      "diagnostic_delivery_utf8_bytes": 42,
+      "diagnostic_range": [
+        0,
+        42
+      ],
+      "tokens": null,
+      "raw_log_sha256": "a41e72770b642d649127c2bc1db3e2e42afe18468727488801b9ceb0a3f82fd0",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "diff-check-final",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.24367499351501465,
+      "raw_log_utf8_bytes": 0,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/diff-check-final.log",
+      "diagnostic_delivery_utf8_bytes": 0,
+      "diagnostic_range": [
+        0,
+        0
+      ],
+      "tokens": null,
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "native-desktop-tests",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build-ext02-desktop",
+        "-R",
+        "^(desktop|desktop_selection|modeling_tools|c3_tool_lifecycle|desktop_smoke)$",
+        "-j",
+        "1",
+        "--verbose",
+        "--output-on-failure"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 130.04095220565796,
+      "raw_log_utf8_bytes": 35082,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/native-desktop-tests.log",
+      "diagnostic_delivery_utf8_bytes": 10000,
+      "diagnostic_range": [
+        25082,
+        35082
+      ],
+      "tokens": null,
+      "raw_log_sha256": "e2d2641ff6ca4c23e5beeca89636511b7f70fd2515694c2b5bc3124106791003",
+      "raw_log_size_verified": true,
+      "environment": {
+        "QT_QPA_PLATFORM": "cocoa"
+      },
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "design-delivery",
+      "command": [
+        "python3",
+        "tools/check_design.py"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.3048989772796631,
+      "raw_log_utf8_bytes": 249,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/design-delivery.log",
+      "diagnostic_delivery_utf8_bytes": 249,
+      "diagnostic_range": [
+        0,
+        249
+      ],
+      "tokens": null,
+      "raw_log_sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    },
+    {
+      "label": "diff-delivery",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/private/tmp/qcae-c4-ext02-41",
+      "exit_code": 0,
+      "elapsed_seconds": 0.015188217163085938,
+      "raw_log_utf8_bytes": 0,
+      "raw_log": "/private/tmp/qcae-ext02-evidence41/diff-delivery.log",
+      "diagnostic_delivery_utf8_bytes": 0,
+      "diagnostic_range": [
+        0,
+        0
+      ],
+      "tokens": null,
+      "raw_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "raw_log_size_verified": true,
+      "environment": {},
+      "diagnostic_delivery_scope": "harness print range before nested tool clipping; exact actual returned strings in context index"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "batch-consumer.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "commands.jsonl",
+      "bytes": 14273,
+      "sha256": "261e109c54ea5d7feb138158fbbfd8ca0a7259f8ef6880a7904c89427150e9cf"
+    },
+    {
+      "path": "commit-message.txt",
+      "bytes": 1151,
+      "sha256": "f3c80a1b32a54986fe0bccc58aaeb22ab853bac786f02badf88f70845f4bbd39"
+    },
+    {
+      "path": "consumers-build.log",
+      "bytes": 17176,
+      "sha256": "1e92c3eb7430d6892b2b4ee40df700d6d7ff3a143eb7156a4afdc17e91f92af6"
+    },
+    {
+      "path": "consumers-config-refresh.log",
+      "bytes": 10844,
+      "sha256": "5a8bb9220ed2261bd3390b349dc89151dcaff680130e5778566a627e95335267"
+    },
+    {
+      "path": "consumers-configure.log",
+      "bytes": 775,
+      "sha256": "85713ff4c6d022b4757453f4f90c38d3b733d09ce69f27f309eb1ca20d2af49e"
+    },
+    {
+      "path": "context-deliveries/000.txt",
+      "bytes": 6843,
+      "sha256": "4babff723315392968abb7d0cec48c8cf1040bd7e202e09a683c304d8821ade8"
+    },
+    {
+      "path": "context-deliveries/001.txt",
+      "bytes": 42601,
+      "sha256": "fa04bba25fc7f7bb1af3bf7c61edf7efef4eb4c183a90a9b4d878475047b538b"
+    },
+    {
+      "path": "context-deliveries/002.txt",
+      "bytes": 32110,
+      "sha256": "92709bcbeb80a79a860bec554d64a1a586092cdbb858ece9b9ad93d01a463b6e"
+    },
+    {
+      "path": "context-deliveries/003.txt",
+      "bytes": 32104,
+      "sha256": "163e2c085362487c52fcd1470d39e59f2498e4cfd73f6335ac6e29625f3eb532"
+    },
+    {
+      "path": "context-deliveries/004.txt",
+      "bytes": 22106,
+      "sha256": "71ce952e94558f894fd51d3c438ca66418be6f165103541aaf5878cedb84432b"
+    },
+    {
+      "path": "context-deliveries/005.txt",
+      "bytes": 10761,
+      "sha256": "16490c3a05a3f893ed7e6c67fdf3afe7ef235f09361f508ddf220cba8581ed14"
+    },
+    {
+      "path": "context-deliveries/006.txt",
+      "bytes": 8509,
+      "sha256": "5634e0f9e9ea81f5cd65fc145ebf136d58648d3927a5d7f4f405b3d907ea8218"
+    },
+    {
+      "path": "context-deliveries/007.txt",
+      "bytes": 14833,
+      "sha256": "30d78797a00e84ae59c7422de6f4f69a58dab0b54de0fa1485fc8d59fcbb036b"
+    },
+    {
+      "path": "context-deliveries/008.txt",
+      "bytes": 30305,
+      "sha256": "749be93f592d33ab350d21d3d0583f84c0e4f0a1d68633367e0e14d9451389e8"
+    },
+    {
+      "path": "context-deliveries/009.txt",
+      "bytes": 6273,
+      "sha256": "eea830717a716f3c484ae47b37cc6c63ef6c68ea5cc25e6fc527b786b8a14478"
+    },
+    {
+      "path": "context-deliveries/010.txt",
+      "bytes": 34106,
+      "sha256": "61315fd4ee3447dfef3e76a5caa8d78c08a25a7d5772cbcc37ff20e72557f58a"
+    },
+    {
+      "path": "context-deliveries/011.txt",
+      "bytes": 32013,
+      "sha256": "8e5a1863f54285f86f3e0c477fe552fc7851819941dd21904d8daa8924a27acc"
+    },
+    {
+      "path": "context-deliveries/012.txt",
+      "bytes": 24106,
+      "sha256": "f571deb6de8141570d08b1450c7d53a84cbf719cc1ec462c243979b5d91112d1"
+    },
+    {
+      "path": "context-deliveries/013.txt",
+      "bytes": 7273,
+      "sha256": "28c254a0f4b76826cd2b4e273331b21fbfbd186fd160ea024baab0aa8c0e57e2"
+    },
+    {
+      "path": "context-deliveries/014.txt",
+      "bytes": 8014,
+      "sha256": "d473debdc82772d4b19c87ac8b97a863b56ca7b49768a790ae1f5dae39b65872"
+    },
+    {
+      "path": "context-deliveries/015.txt",
+      "bytes": 13430,
+      "sha256": "02fc6853f05ba3ee320f62083bf3cfd778f03606061d0bacbfe83a7a2948a523"
+    },
+    {
+      "path": "context-deliveries/016.txt",
+      "bytes": 42601,
+      "sha256": "fa04bba25fc7f7bb1af3bf7c61edf7efef4eb4c183a90a9b4d878475047b538b"
+    },
+    {
+      "path": "context-deliveries/017.txt",
+      "bytes": 2760,
+      "sha256": "ae6cc43a4dfde203ee94cce6050e48459df68d5c22f519c73bb5289ae0f9669c"
+    },
+    {
+      "path": "context-deliveries/018.txt",
+      "bytes": 904,
+      "sha256": "2b8a5418a1c3fe8334fb34525e531c7b17e5ccf7ca9cb214ae7a47d8140ec602"
+    },
+    {
+      "path": "context-deliveries/019.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/020.txt",
+      "bytes": 93,
+      "sha256": "31b076fb753051872a1046b3be990cd0ae96cd1605c8d6fd05e190c35a890d79"
+    },
+    {
+      "path": "context-deliveries/021.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/022.txt",
+      "bytes": 2635,
+      "sha256": "cf7607ed4272150bac95585dd8aa3925e976400b8d2d1d22eb3438a8ad4e7e8f"
+    },
+    {
+      "path": "context-deliveries/023.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/024.txt",
+      "bytes": 7892,
+      "sha256": "e10e87459eb80c26f61a68600f1958a415108385eafcecd68f8e6c3265b6c1af"
+    },
+    {
+      "path": "context-deliveries/025.txt",
+      "bytes": 585,
+      "sha256": "ad1460b0fac2bbecd942fad700b21a302992000c036105be13b2f18a78e05a03"
+    },
+    {
+      "path": "context-deliveries/026.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/027.txt",
+      "bytes": 1934,
+      "sha256": "e93fb59c8a41a166b2ed28d6bb832e0707eca5e317267694db2099e82d46bf1f"
+    },
+    {
+      "path": "context-deliveries/028.txt",
+      "bytes": 714,
+      "sha256": "a60554747d7e9d505fc777f5aa3de7c367f1f03ab3a53bf81899cf351e599e1f"
+    },
+    {
+      "path": "context-deliveries/029.txt",
+      "bytes": 1391,
+      "sha256": "7566a97cb1328ec02372242243ca3c3b2e3ffb1dedfbba4d3736260c6e97366e"
+    },
+    {
+      "path": "context-deliveries/030.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/031.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/032.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/033.txt",
+      "bytes": 527,
+      "sha256": "40709ec0d23e923f8386324144aceffb55d99b2fbe9bcb83bb0b39a7fe59c61c"
+    },
+    {
+      "path": "context-deliveries/034.txt",
+      "bytes": 520,
+      "sha256": "4ffbb6b65b8881906bbd99680798e45778d08be5e7254ad60feb61c40c0bea60"
+    },
+    {
+      "path": "context-deliveries/035.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/036.txt",
+      "bytes": 1526,
+      "sha256": "fdb649431a3c7bf47dbb5b053542c241aefdb1e4b523649fa8de7f2895f72724"
+    },
+    {
+      "path": "context-deliveries/037.txt",
+      "bytes": 4694,
+      "sha256": "3521276c073a132804ce13ead645e986e0c872c723123c15dbed5b5fa9966920"
+    },
+    {
+      "path": "context-deliveries/038.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/039.txt",
+      "bytes": 3700,
+      "sha256": "cc7361dd86ecec3b40e7d48791a44009b29dc58f726378e1d0bc62b1e2a70a5d"
+    },
+    {
+      "path": "context-deliveries/040.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/041.txt",
+      "bytes": 16748,
+      "sha256": "3b9edd5abd19534eb939aa57ac949eea7c99bd74235eae47e666105344f35951"
+    },
+    {
+      "path": "context-deliveries/042.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/043.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/044.txt",
+      "bytes": 416,
+      "sha256": "be76609b3b2d59c4a1c55fc0555373007024ae4696096aa514d9147ba82b070c"
+    },
+    {
+      "path": "context-deliveries/045.txt",
+      "bytes": 10385,
+      "sha256": "ef62c623c50ebae1a543b460e456ddb4cc57efc094ed62a6c88928cd5f80d02e"
+    },
+    {
+      "path": "context-deliveries/046.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/047.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/048.txt",
+      "bytes": 2488,
+      "sha256": "928c6779f3e9dd9bfb324089a7d65aacf0292de64615b390b72bb55208160589"
+    },
+    {
+      "path": "context-deliveries/049.txt",
+      "bytes": 1245,
+      "sha256": "f2dd3a75f02023041ea806091ba6433f7169e6df5aae7bd07765295579aa2998"
+    },
+    {
+      "path": "context-deliveries/050.txt",
+      "bytes": 750,
+      "sha256": "4fa01f1525bdda9fce95712b90f31c2868b7972e3420bb865252d0f53d30984b"
+    },
+    {
+      "path": "context-deliveries/051.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/052.txt",
+      "bytes": 10427,
+      "sha256": "2790876f139922114a19619217ac0975d92beee8199787ff5b14eceaf8db47a4"
+    },
+    {
+      "path": "context-deliveries/053.txt",
+      "bytes": 2918,
+      "sha256": "f603b16809b8c8566b7921c589bc88397492425403061852b1fe0cf958033575"
+    },
+    {
+      "path": "context-deliveries/054.txt",
+      "bytes": 653,
+      "sha256": "7a4f0ed1a9c92e5d8afb6aed99a22c1cf2f5f7ac04ede543893b68e53330693d"
+    },
+    {
+      "path": "context-deliveries/055.txt",
+      "bytes": 11306,
+      "sha256": "e1da735eebe6e1165e05671baaebf1edc66162d12a3ed5ba5191331a1f2d26df"
+    },
+    {
+      "path": "context-deliveries/056.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/057.txt",
+      "bytes": 1321,
+      "sha256": "e3c0a39bffcb91f94022bd910b186cc90017f47249354e38b20e6b4edd56e460"
+    },
+    {
+      "path": "context-deliveries/058.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/059.txt",
+      "bytes": 12824,
+      "sha256": "6c72a860824b6603d9583c907508786f5cb84b5e6c6303b6dd623a30652162ee"
+    },
+    {
+      "path": "context-deliveries/060.txt",
+      "bytes": 1099,
+      "sha256": "6292f732a011fb61960d6e3e4189c881e0185c46642a87c1d5f4452c8bf0ee0c"
+    },
+    {
+      "path": "context-deliveries/061.txt",
+      "bytes": 5265,
+      "sha256": "fabc92ef56ca672b2a2951992519b80e724009776e18a91c5426a716f49b0c26"
+    },
+    {
+      "path": "context-deliveries/062.txt",
+      "bytes": 740,
+      "sha256": "16661e8ca187dab29452a9dbd197fabe59ce215a5e38fa7564def159daa60a05"
+    },
+    {
+      "path": "context-deliveries/063.txt",
+      "bytes": 30,
+      "sha256": "8ac46a2920631b09421170e6726d3589c19ed4cd7c3b525e1d43dad3682c6145"
+    },
+    {
+      "path": "context-deliveries/064.txt",
+      "bytes": 316,
+      "sha256": "7f375286111694ef4519194f313bd39097cab0196f49cd507c77266d8ebc8884"
+    },
+    {
+      "path": "context-deliveries/065.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/066.txt",
+      "bytes": 866,
+      "sha256": "60b20fbc164d4200e059ff30314465f8cf3fd351ddc244205167ba6634e6c6ee"
+    },
+    {
+      "path": "context-deliveries/067.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/068.txt",
+      "bytes": 10517,
+      "sha256": "1774baaeff7d27a127ae74fe32be490b2e87a66fd01d590b12dee2a2c9d3d188"
+    },
+    {
+      "path": "context-deliveries/069.txt",
+      "bytes": 240,
+      "sha256": "603fad2a162a3da3ef8edf2db2cc60277ee7ea1e0162e94aadb54cf99f2f3332"
+    },
+    {
+      "path": "context-deliveries/070.txt",
+      "bytes": 11365,
+      "sha256": "d5356c1155ad498ec58c3c848392db9fa4f4e8ed6d7528bdcd517ed1a74ffe9d"
+    },
+    {
+      "path": "context-deliveries/071.txt",
+      "bytes": 644,
+      "sha256": "29c16430d576f7486e2b55b4f6a81f45a27dffa1f2e964e72aa34b0fa16ab03e"
+    },
+    {
+      "path": "context-deliveries/072.txt",
+      "bytes": 4538,
+      "sha256": "29607fe54fbc5301b96086f4d8fb89cad693b5f43a433bfd0656525fe095544e"
+    },
+    {
+      "path": "context-deliveries/073.txt",
+      "bytes": 939,
+      "sha256": "c252bbd53803afb2c99705ea972acd8f07fee9eb28e622cd3a427bb8ab61a2d7"
+    },
+    {
+      "path": "context-deliveries/074.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "context-deliveries/075.txt",
+      "bytes": 855,
+      "sha256": "9c67176bc0c967808e93a65483bb676b591e227139981641ceab30126f780ab6"
+    },
+    {
+      "path": "context-deliveries/076.txt",
+      "bytes": 1258,
+      "sha256": "e5694bc51313d008503c969933bdef1f2ba23f485ad310113ec3b54c9f2afe15"
+    },
+    {
+      "path": "context-index-final.json",
+      "bytes": 85528,
+      "sha256": "e0184e20ee6040e7141155bb56cbe9af5a29c8d64a9a1cc9b84518c03642a229"
+    },
+    {
+      "path": "context-observations.json",
+      "bytes": 29969,
+      "sha256": "3abaad5fe3fd082633d7e4738a82887ed6dff14f04bec530f8494a41aca2d742"
+    },
+    {
+      "path": "context-producer-claims.jsonl",
+      "bytes": 8668,
+      "sha256": "f7ba037d970850f8b1e8ec92d95caf7df03d3b2b6c7173adddb223791204c63a"
+    },
+    {
+      "path": "context-source-accesses.json",
+      "bytes": 13011,
+      "sha256": "929fc7a0441538ffd37e89d6f67134251cdc8542662d052d52a59478a532047d"
+    },
+    {
+      "path": "context-summary.json",
+      "bytes": 2378,
+      "sha256": "a35cc3a5f1310e227803fc0ce86afd11a08e87f7c173d6834a3f0d6ea583686f"
+    },
+    {
+      "path": "core-build-repair1.log",
+      "bytes": 4586,
+      "sha256": "87a5b9a28bb1cc07ff4f5596a3ecb66e02eea8aa9c799780e2acc739757380ba"
+    },
+    {
+      "path": "core-build.log",
+      "bytes": 7523,
+      "sha256": "e33e80128fc920de32992dfba567670b5848761640105c946b41613bdcd6e619"
+    },
+    {
+      "path": "core-config-refresh.log",
+      "bytes": 267,
+      "sha256": "d4ee9218d43b6b471d144e7f491a215ebc9819e1e4f6306450cf16a8a9c79e16"
+    },
+    {
+      "path": "core-configure-frozen.log",
+      "bytes": 313,
+      "sha256": "ec7ac85b2a04270d500133db188380c45a5bbb0a433077e634c7793637d1d7c5"
+    },
+    {
+      "path": "core-configure.log",
+      "bytes": 712,
+      "sha256": "612e8ae84a279201599dccdd2ff9bc4d85f8eab534cc7a9397842bae4864796e"
+    },
+    {
+      "path": "core-final-tests.log",
+      "bytes": 4188,
+      "sha256": "80b51583f8c0cdb3ab7a23ffe60ba74aa1c42e7c07e90855bbe553dd4054e775"
+    },
+    {
+      "path": "core-freeze-retry.log",
+      "bytes": 333,
+      "sha256": "be652a6bb2e3d5692fb40d362d7034febb7ee075cbe6aac8e045a1992d3b5617"
+    },
+    {
+      "path": "core-tests.log",
+      "bytes": 4317,
+      "sha256": "a8c49018e5c4449036dba6564a861f61d51da377ab5f1c0518c148637422bc11"
+    },
+    {
+      "path": "cpp-format-final.log",
+      "bytes": 42,
+      "sha256": "a41e72770b642d649127c2bc1db3e2e42afe18468727488801b9ceb0a3f82fd0"
+    },
+    {
+      "path": "cpp-format.log",
+      "bytes": 42,
+      "sha256": "a41e72770b642d649127c2bc1db3e2e42afe18468727488801b9ceb0a3f82fd0"
+    },
+    {
+      "path": "design-delivery.log",
+      "bytes": 249,
+      "sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3"
+    },
+    {
+      "path": "design-final.log",
+      "bytes": 249,
+      "sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3"
+    },
+    {
+      "path": "design.log",
+      "bytes": 249,
+      "sha256": "8a45de69a23de91d981108f69c388eb68f12a2274928c6278c9a1bbb951a11b3"
+    },
+    {
+      "path": "desktop-build.log",
+      "bytes": 21279,
+      "sha256": "8061041786e0f10b0dc4e158410880db89883dd7c3cda0b1748ada1d5c918798"
+    },
+    {
+      "path": "desktop-config-refresh.log",
+      "bytes": 1150,
+      "sha256": "86e36557d2cf1f9bcc16ddfb8d9cdc5284c93da2f846b91402816d2844ec88bc"
+    },
+    {
+      "path": "desktop-configure-frozen.log",
+      "bytes": 1109,
+      "sha256": "f88f78fcc42e8a2df9641092ebd3dc3165540c6df5bc8fd2ade436f4dd401431"
+    },
+    {
+      "path": "desktop-configure.log",
+      "bytes": 1950,
+      "sha256": "ed7f6d15d396233abca5a11b4fba2c2d1209ed115573c35bf5d26ece3d2040a8"
+    },
+    {
+      "path": "diff-check-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "diff-delivery.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "ext02-ctest.log",
+      "bytes": 250,
+      "sha256": "5b137e3d383fae19053c1b93cc0986d1147cf713760254c9c65c75e938345cbd"
+    },
+    {
+      "path": "ext02-ipc.log",
+      "bytes": 742,
+      "sha256": "b4a7012e176cbd655733955edaba49d7b0f76e03a723fa013a9db19c104b19f4"
+    },
+    {
+      "path": "ext02-preview-apply-ctest.log",
+      "bytes": 250,
+      "sha256": "ce0a5ef0f551813cb6b7b31869d5514e115de4513bfd2aa3bddb46c33e15db5a"
+    },
+    {
+      "path": "extension-receipt.json",
+      "bytes": 1258,
+      "sha256": "e5694bc51313d008503c969933bdef1f2ba23f485ad310113ec3b54c9f2afe15"
+    },
+    {
+      "path": "extension.diff",
+      "bytes": 35691,
+      "sha256": "be05757eee8c18e4d78e5fe5e4d1eaeebe83955744daac248824e915f076118e"
+    },
+    {
+      "path": "freeze-idle-retry.log",
+      "bytes": 242,
+      "sha256": "d184017c73a8966d2cf1b93bfdfcce239038f28aacbb34b632cdc1303e3ed012"
+    },
+    {
+      "path": "freeze-onecase.log",
+      "bytes": 218,
+      "sha256": "3a776e98f332586bba959c90830645aa48e6bed22d0ceaf674c0253595a8e239"
+    },
+    {
+      "path": "frozen-integrity.json",
+      "bytes": 18850,
+      "sha256": "8b2666fc0767c6472bc6babbeec273b641279fe64b5f39104cea68cff7f42507"
+    },
+    {
+      "path": "generated-contracts.log",
+      "bytes": 55,
+      "sha256": "44f5ea9fd0329ad537fbf7d03d812e6df55fdb351f9c3a6491c1d5c8a49016f8"
+    },
+    {
+      "path": "ipc/cli-M-original.json",
+      "bytes": 9847,
+      "sha256": "4597ca5344a071dccd01fe64eb05cb4c39602d5e098042c96b0acfe982877cd1"
+    },
+    {
+      "path": "ipc/cli-M-translated.json",
+      "bytes": 9847,
+      "sha256": "90d1891a788590d79f6376204eec2272da502da734cc06ebf6d84c549c1572d9"
+    },
+    {
+      "path": "ipc/cli-cancel.json",
+      "bytes": 161,
+      "sha256": "77e33efff9a8b9afe68b38ea7311913c98290bc4d6abfc6e96d08e6145d3dc08"
+    },
+    {
+      "path": "ipc/cli-engine.log",
+      "bytes": 103,
+      "sha256": "66df2d4cd5973dd07fdb38825ea8527aeabea239526afbfb051d851a72d10469"
+    },
+    {
+      "path": "ipc/cli-report.json",
+      "bytes": 374,
+      "sha256": "be655599db465c9d00e034a5467a95ab94d03d2ee0ebe03c46a85af109ed1745"
+    },
+    {
+      "path": "ipc/cli-transcript.json",
+      "bytes": 491595,
+      "sha256": "0ebb502aeca73bab71275bc476e07136165b97e05963962e3dd8e6f2202af400"
+    },
+    {
+      "path": "ipc/report.json",
+      "bytes": 929,
+      "sha256": "8d2a7a0a925ae52e51a392c1ea6a96f70d224d57fde1fcf7517430c931c3275a"
+    },
+    {
+      "path": "ipc/script-M-original.json",
+      "bytes": 9847,
+      "sha256": "59b171643f608f5a99ff79bc542277c501516c234bbedcb389338bb69469b3b0"
+    },
+    {
+      "path": "ipc/script-M-translated.json",
+      "bytes": 9847,
+      "sha256": "3fdeb32a1ea19f11695a25669d05255b809828a74582019f9f2e23200a0305ba"
+    },
+    {
+      "path": "ipc/script-cancel.json",
+      "bytes": 161,
+      "sha256": "c871729ddbc26641cc09bf87cf4158eb6ea8a8792aa42c8837ac5510845c8279"
+    },
+    {
+      "path": "ipc/script-engine.log",
+      "bytes": 103,
+      "sha256": "8c5a94dec2df5a2e29c1579f9fb728dba2ad8dab60f33f9ca9042da4d6cd8730"
+    },
+    {
+      "path": "ipc/script-report.json",
+      "bytes": 377,
+      "sha256": "a9749f5eb7581f5daf467061017214f4cc05bc556a76110332223a36d663322b"
+    },
+    {
+      "path": "ipc/script-transcript.json",
+      "bytes": 491599,
+      "sha256": "129da69cccf3f1aed1fc905b1f467d86aea6f5b035a1644e9e8ce358191b3a06"
+    },
+    {
+      "path": "ipc-ctest-final/cli-M-original.json",
+      "bytes": 9847,
+      "sha256": "d824176c0791bf81d2efdd64d719dc770c3f8e860b9d7c53ead815ac794f775a"
+    },
+    {
+      "path": "ipc-ctest-final/cli-M-translated.json",
+      "bytes": 9847,
+      "sha256": "5a42c5044c9f87829b69440ffa5dcaa1f9af1b257a907f285575b7868ae12a7b"
+    },
+    {
+      "path": "ipc-ctest-final/cli-cancel.json",
+      "bytes": 161,
+      "sha256": "8283a3c14143d59cbd193eb9cb43ca4c93fe69c015c83d7a772cd6c8b6a73381"
+    },
+    {
+      "path": "ipc-ctest-final/cli-engine.log",
+      "bytes": 103,
+      "sha256": "34c72ba3e5886ddba394feadbe325e0bee738213b66f3f91440bb6ed66283235"
+    },
+    {
+      "path": "ipc-ctest-final/cli-report.json",
+      "bytes": 408,
+      "sha256": "4d0895885376533ae8ea0bc690372687f9c577836f4c7c760de7766456ee21ed"
+    },
+    {
+      "path": "ipc-ctest-final/cli-transcript.json",
+      "bytes": 525174,
+      "sha256": "934a182f22450c373e18782ec6dd2b0a74271855fae67dfc5290f7e703c8d301"
+    },
+    {
+      "path": "ipc-ctest-final/report.json",
+      "bytes": 1005,
+      "sha256": "4a652a921df64d3120f3e93d2dd9893cf97f517dd75e29e7619a79e7e5f66d8d"
+    },
+    {
+      "path": "ipc-ctest-final/script-M-original.json",
+      "bytes": 9847,
+      "sha256": "4af19ac2c8d293afba9c504b14526a919e53af3f3cf7adb5f83a284322c2c56c"
+    },
+    {
+      "path": "ipc-ctest-final/script-M-translated.json",
+      "bytes": 9847,
+      "sha256": "93ba2985864305fd4b6d5d9b8dfee74bbc25d3bd92292f614d4293a3b3a86adc"
+    },
+    {
+      "path": "ipc-ctest-final/script-cancel.json",
+      "bytes": 161,
+      "sha256": "6ab177638c10b867261dc4e876eb7e7b9393ddc1cd439c774a7a7f6ad16f0575"
+    },
+    {
+      "path": "ipc-ctest-final/script-engine.log",
+      "bytes": 103,
+      "sha256": "30b353616e09282b69a68c4877f55fe2227356ceed22553a87a21c7db2a27ead"
+    },
+    {
+      "path": "ipc-ctest-final/script-report.json",
+      "bytes": 411,
+      "sha256": "3cf4c0bf23c66f4e65a0d45f752915f85889a45e95a824fb821c3e8fb541dbde"
+    },
+    {
+      "path": "ipc-ctest-final/script-transcript.json",
+      "bytes": 525174,
+      "sha256": "8dadd43c8d1b737f4b39eea3e6d5430064be73f8fc6a51ab5c77e801240587bc"
+    },
+    {
+      "path": "local-regressions.log",
+      "bytes": 1469,
+      "sha256": "f9b9a826008fafd05516ab9af0c7f4675e63f4bad241eaebf76c35358e403def"
+    },
+    {
+      "path": "native/c3_tool_lifecycle_evidence/tool-lifecycle.json",
+      "bytes": 20431,
+      "sha256": "0f23eb3a4faee8968cdd5e39b1d1318826db725b661d6f262f1431fe30263ba0"
+    },
+    {
+      "path": "native/desktop-smoke.png",
+      "bytes": 1181754,
+      "sha256": "f5b6506023b6b9cc5d2038189711793cc87cd75d5e2ce9b5795e5bc627ae4662"
+    },
+    {
+      "path": "native-desktop-tests.log",
+      "bytes": 35082,
+      "sha256": "e2d2641ff6ca4c23e5beeca89636511b7f70fd2515694c2b5bc3124106791003"
+    },
+    {
+      "path": "package_evidence.py",
+      "bytes": 9518,
+      "sha256": "531013d7a8ee9e1987bc40db79e83d5dc2cd85c2bc4e80a1d15d686e741037f8"
+    },
+    {
+      "path": "precommit.diff",
+      "bytes": 35154,
+      "sha256": "8ae18920bf8ed034bc14eef9680b44a2f5fdd1dc1c3ad4494462d1a8332651cc"
+    },
+    {
+      "path": "reconstructed-early-command-output.json",
+      "bytes": 6907,
+      "sha256": "dc2240d428bc379c26ffcca423ae5dd0f40813b92f7214e7b291bdba69455977"
+    },
+    {
+      "path": "run.py",
+      "bytes": 1010,
+      "sha256": "8c62de60c55dbb8f5bc208f9b8292400938cd9cd194d6173ef6222567196c339"
+    },
+    {
+      "path": "context-packaging-tail.json",
+      "bytes": 865,
+      "sha256": "d82a05875402515384dc8e2dfb4cf579ab5abf64419f5c7f312250b61c22a8f2"
+    }
+  ],
+  "final_common_release_integration": false,
+  "complete_c4_or_p0_acceptance_claimed": false
+}

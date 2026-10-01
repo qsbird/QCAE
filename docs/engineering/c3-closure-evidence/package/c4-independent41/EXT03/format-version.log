@@ -1,0 +1,190 @@
+/bin/sh: clang-format: command not found
+/private/tmp/qcae-c4-ext03-41/features/mesh_editing/src/mesh_editing_operations.cpp:113:17: error: code should be clang-formatted [-Wclang-format-violations]
+        return {Status::failed,
+                ^
+/private/tmp/qcae-c4-ext03-41/features/mesh_editing/src/mesh_editing_operations.cpp:113:32: error: code should be clang-formatted [-Wclang-format-violations]
+        return {Status::failed,
+                               ^
+/private/tmp/qcae-c4-ext03-41/features/mesh_editing/src/mesh_editing_operations.cpp:114:30: error: code should be clang-formatted [-Wclang-format-violations]
+                std::nullopt,
+                             ^
+/private/tmp/qcae-c4-ext03-41/modules/document/src/records_rules.cpp:86:30: error: code should be clang-formatted [-Wclang-format-violations]
+    const auto doubled_area = std::hypot(a[1] * b[2] - a[2] * b[1],
+                             ^
+/private/tmp/qcae-c4-ext03-41/modules/document/src/records_rules.cpp:86:68: error: code should be clang-formatted [-Wclang-format-violations]
+    const auto doubled_area = std::hypot(a[1] * b[2] - a[2] * b[1],
+                                                                   ^
+/private/tmp/qcae-c4-ext03-41/modules/document/src/records_rules.cpp:87:67: error: code should be clang-formatted [-Wclang-format-violations]
+                                        a[2] * b[0] - a[0] * b[2],
+                                                                  ^
+/private/tmp/qcae-c4-ext03-41/profiles/nastran/src/nastran_package.cpp:65:34: error: code should be clang-formatted [-Wclang-format-violations]
+        return bad<ArtifactPlan>(ErrorCode::unsupported_capability,
+                                 ^
+/private/tmp/qcae-c4-ext03-41/profiles/nastran/src/nastran_package.cpp:65:68: error: code should be clang-formatted [-Wclang-format-violations]
+        return bad<ArtifactPlan>(ErrorCode::unsupported_capability,
+                                                                   ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:240:37: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto triangle_digest = QCryptographicHash::hash(triangle_bytes, QCryptographicHash::Sha256).toHex();
+                                    ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:241:34: error: code should be clang-formatted [-Wclang-format-violations]
+        QCOMPARE(triangle_digest, QByteArray("3cf184545acdf140d28718f5b1cc8fd525c93a136a7137105cc3032695d27ac3"));
+                                 ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:247:72: error: code should be clang-formatted [-Wclang-format-violations]
+            QTest::newRow(qPrintable(pick_case.value("id").toString())) << triangle_fixture << pick_case;
+                                                                       ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:287:45: error: code should be clang-formatted [-Wclang-format-violations]
+                    packet.points.push_back({qcae::EntityId((id + "-node-" + QString::number(packet.points.size())).toStdString()),
+                                            ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:287:61: error: code should be clang-formatted [-Wclang-format-violations]
+                    packet.points.push_back({qcae::EntityId((id + "-node-" + QString::number(packet.points.size())).toStdString()),
+                                                            ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:287:132: error: code should be clang-formatted [-Wclang-format-violations]
+                    packet.points.push_back({qcae::EntityId((id + "-node-" + QString::number(packet.points.size())).toStdString()),
+                                                                                                                                   ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:288:65: error: code should be clang-formatted [-Wclang-format-violations]
+                                             coordinates(point), false});
+                                                                ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:290:74: error: code should be clang-formatted [-Wclang-format-violations]
+                packet.cells.push_back({qcae::EntityId(id.toStdString()), qcae::RenderCellKind::polygon,
+                                                                         ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:291:68: error: code should be clang-formatted [-Wclang-format-violations]
+                                        {base, base + 1, base + 2}, row.value("visible").toBool()});
+                                                                   ^
+/private/tmp/qcae-c4-ext03-41/tests/desktop_tests.cpp:329:82: error: code should be clang-formatted [-Wclang-format-violations]
+                    QVERIFY(std::abs(actual_projection->GetElement(row, column) - projection[row * 4 + column].toDouble()) < 1e-12);
+                                                                                 ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:73:29: error: code should be clang-formatted [-Wclang-format-violations]
+            Status::success, RecordPreparedOperation{edit.prepare(), "Seed", EntityId{}, "seed", 0, true}, {}};
+                            ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:73:107: error: code should be clang-formatted [-Wclang-format-violations]
+            Status::success, RecordPreparedOperation{edit.prepare(), "Seed", EntityId{}, "seed", 0, true}, {}};
+                                                                                                          ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:82:21: error: code should be clang-formatted [-Wclang-format-violations]
+        ~Cleanup() { std::filesystem::remove_all(path); }
+                    ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:82:56: error: code should be clang-formatted [-Wclang-format-violations]
+        ~Cleanup() { std::filesystem::remove_all(path); }
+                                                       ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:104:36: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto snapshot = [&] { return good(app.snapshot(good(app.current_document()).document)); };
+                                   ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:104:102: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto snapshot = [&] { return good(app.snapshot(good(app.current_document()).document)); };
+                                                                                                     ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:105:27: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto input = MeshCreateTri3Input{{EntityId("a"), EntityId("b"), EntityId("c")},
+                          ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:105:94: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto input = MeshCreateTri3Input{{EntityId("a"), EntityId("b"), EntityId("c")},
+                                                                                             ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:110:28: error: code should be clang-formatted [-Wclang-format-violations]
+            check(!registry.invoke("mesh.create_tri3", context(app, key),
+                           ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:110:55: error: code should be clang-formatted [-Wclang-format-violations]
+            check(!registry.invoke("mesh.create_tri3", context(app, key),
+                                                      ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:110:74: error: code should be clang-formatted [-Wclang-format-violations]
+            check(!registry.invoke("mesh.create_tri3", context(app, key),
+                                                                         ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:111:88: error: code should be clang-formatted [-Wclang-format-violations]
+                                   InputTraits<MeshCreateTri3Input>::to_value(invalid)).ok(),
+                                                                                       ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:128:29: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto created = good(registry.invoke("mesh.create_tri3", original_context,
+                            ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:128:70: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto created = good(registry.invoke("mesh.create_tri3", original_context,
+                                                                     ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:128:88: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto created = good(registry.invoke("mesh.create_tri3", original_context,
+                                                                                       ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:130:29: error: code should be clang-formatted [-Wclang-format-violations]
+        triangle = EntityId(std::get<std::string>(std::get<Value::Object>(created.data).at("entity_id").data));
+                            ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:148:28: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto replay = good(registry.invoke("mesh.create_tri3", original_context,
+                           ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:148:69: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto replay = good(registry.invoke("mesh.create_tri3", original_context,
+                                                                    ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:148:87: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto replay = good(registry.invoke("mesh.create_tri3", original_context,
+                                                                                      ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:150:75: error: code should be clang-formatted [-Wclang-format-violations]
+        check(std::get<Value::Object>(replay.data).at("transaction_id") ==
+                                                                          ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:156:48: error: code should be clang-formatted [-Wclang-format-violations]
+        bad(registry.invoke("mesh.create_tri3", original_context,
+                                               ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:161:29: error: code should be clang-formatted [-Wclang-format-violations]
+        bad(registry.invoke("mesh.create_tri3", stale, InputTraits<MeshCreateTri3Input>::to_value(input)),
+                            ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:165:29: error: code should be clang-formatted [-Wclang-format-violations]
+        bad(registry.invoke("mesh.create_tri3", stale, InputTraits<MeshCreateTri3Input>::to_value(input)),
+                            ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:167:91: error: code should be clang-formatted [-Wclang-format-violations]
+        for (const RecordKey& key : {RecordKey{RecordTraits<records::Node>::type_id, "a"},
+                                                                                          ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:169:46: error: code should be clang-formatted [-Wclang-format-violations]
+            const auto removed = app.execute(caller, at(after.info), "test.erase", key.identity,
+                                             ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:169:53: error: code should be clang-formatted [-Wclang-format-violations]
+            const auto removed = app.execute(caller, at(after.info), "test.erase", key.identity,
+                                                    ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:169:69: error: code should be clang-formatted [-Wclang-format-violations]
+            const auto removed = app.execute(caller, at(after.info), "test.erase", key.identity,
+                                                                    ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:169:83: error: code should be clang-formatted [-Wclang-format-violations]
+            const auto removed = app.execute(caller, at(after.info), "test.erase", key.identity,
+                                                                                  ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:173:60: error: code should be clang-formatted [-Wclang-format-violations]
+                    return Result<RecordPreparedOperation>{Status::success,
+                                                           ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:174:49: error: code should be clang-formatted [-Wclang-format-violations]
+                        RecordPreparedOperation{edit.prepare(), "Erase", EntityId{}, key.identity, 0, false}, {}};
+                                                ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:174:110: error: code should be clang-formatted [-Wclang-format-violations]
+                        RecordPreparedOperation{edit.prepare(), "Erase", EntityId{}, key.identity, 0, false}, {}};
+                                                                                                             ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:175:19: error: code should be clang-formatted [-Wclang-format-violations]
+                }, "erase-" + key.identity);
+                  ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:179:41: error: code should be clang-formatted [-Wclang-format-violations]
+        bad(registry.invoke("node.move", context(app, "collapse"),
+                                        ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:199:55: error: code should be clang-formatted [-Wclang-format-violations]
+        bad(features::analysis::freeze_analysis_input(after.records, EntityId("analysis"), ProfileRef{}, {}),
+                                                      ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:204:77: error: code should be clang-formatted [-Wclang-format-violations]
+        check(diff_record_views(before.records, snapshot().records).empty(), "Undo removes only Tri3");
+                                                                            ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:205:49: error: code should be clang-formatted [-Wclang-format-violations]
+        good(registry.invoke("mesh.create_tri3", original_context,
+                                                ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:210:76: error: code should be clang-formatted [-Wclang-format-violations]
+        check(diff_record_views(after.records, snapshot().records).empty(), "Redo restores all records");
+                                                                           ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:212:39: error: code should be clang-formatted [-Wclang-format-violations]
+        info = good(app.save_document(caller, at(snapshot().info), (directory / "tri3.qcae").string(), false, "save"));
+                                      ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:214:28: error: code should be clang-formatted [-Wclang-format-violations]
+        const auto opened = good(app.open_document(caller, (directory / "tri3.qcae").string(), "open"));
+                           ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:245:10: error: code should be clang-formatted [-Wclang-format-violations]
+    try { run(); }
+         ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:245:17: error: code should be clang-formatted [-Wclang-format-violations]
+    try { run(); }
+                ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:245:19: error: code should be clang-formatted [-Wclang-format-violations]
+    try { run(); }
+                  ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:246:42: error: code should be clang-formatted [-Wclang-format-violations]
+    catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
+                                         ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:246:77: error: code should be clang-formatted [-Wclang-format-violations]
+    catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
+                                                                            ^
+/private/tmp/qcae-c4-ext03-41/tests/tri3_tests.cpp:246:87: error: code should be clang-formatted [-Wclang-format-violations]
+    catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
+                                                                                      ^

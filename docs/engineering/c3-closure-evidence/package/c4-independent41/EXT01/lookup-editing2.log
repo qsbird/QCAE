@@ -1,0 +1,115 @@
+rg: modules/entities: No such file or directory (os error 2)
+schemas/operations/basic.json:46:      "operation_id": "material.set_young_modulus",
+schemas/operations/basic.json:48:      "schema_id": "qcae.operation.material.set_young_modulus.v1",
+tests/record_document_tests.cpp:182:    std::erase_if(prior.fields, [](const auto& field) { return field.id == RecordFieldId{4}; });
+tests/record_document_tests.cpp:202:    wrong_type.fields[0].kind = RecordFieldKind::text;
+tests/record_document_tests.cpp:212:        if (field.id == RecordFieldId{3})
+tests/record_document_tests.cpp:259:    check(prepared.changes.records[0].fields == std::vector<RecordFieldId>{{2}},
+tests/test_entity_generation.py:52:        for change in (lambda field: field.update(targets=["Missing"]),
+tests/test_entity_generation.py:53:                       lambda field: field.update(targets=[]),
+tests/test_entity_generation.py:54:                       lambda field: field.update(introduced_version=3)):
+tests/model_operation_tests.cpp:139:          "generic array ordering remains semantic");
+tests/model_operation_tests.cpp:358:          "generic application owns direct operation ledger");
+tests/model_operation_tests.cpp:425:    fixture.invoke("material.set_young_modulus",
+tests/skeleton_fault_tests.cpp:272:        audit.input = "material.set_young_modulus; value=70; unit omitted";
+tests/skeleton_fault_tests.cpp:900:    // Supplementary coordinator probe rejects a deliberately incomplete generic candidate.
+tests/skeleton_fault_tests.cpp:901:    const auto generic = app.execute(
+tests/skeleton_fault_tests.cpp:913:                                        "Unmapped generic candidate",
+tests/skeleton_fault_tests.cpp:920:        "generic-unmapped");
+tests/skeleton_fault_tests.cpp:921:    audit.require(!generic.ok(), "Supplementary generic unmapped candidate is rejected atomically");
+tests/c3_sync_ipc_tests.py:216:                  "invalid generic cell topology")
+tests/c3_sync_ipc_tests.py:220:                  "invalid generic cell point")
+tests/c3_sync_ipc_tests.py:222:            check(visible in (0, 1), "invalid generic cell visibility")
+tests/c3_sync_ipc_tests.py:355:    client.call("material.set_young_modulus", {
+tests/c3_sync_ipc_tests.py:668:                                                       "generic_line_cells": len(structural_packet["cells"]),
+tests/c3_sync_ipc_tests.py:712:                host.client.call("material.set_young_modulus",
+tests/c3_sync_ipc_tests.py:850:                    host.client.call("material.set_young_modulus",
+tests/engine_contributions_ipc_tests.py:187:          f"generic relation JSON summary is incomplete: {summary}")
+tests/skeleton_fault_ipc_tests.py:73:                                   "operation": "material.set_young_modulus", "parameters": parameters,
+tests/skeleton_fault_ipc_tests.py:101:                        retry = client.call("material.set_young_modulus", parameters, before, key)
+tests/render_service_tests.cpp:91:    check(response.value("status") == "success", "Negotiated generic cell request failed");
+tests/c2_workflow_tests.py:173:                client.call("material.set_young_modulus",
+features/legacy_api/src/core.cpp:95:            [&](RecordFieldId, std::string_view, std::span<const RecordTypeId>) { ++relations; });
+features/legacy_api/src/core.cpp:431:                                                            [&](RecordFieldId,
+tests/c3_locality_bench.cpp:281:                 "material.set_young_modulus",
+tests/engine_test_contribution.hpp:71:    descriptor.fields = {{RecordFieldId{2}, "from", RecordFieldKind::reference, false, "", nodes},
+tests/engine_test_contribution.hpp:72:                         {RecordFieldId{3}, "to", RecordFieldKind::reference, false, "", nodes},
+tests/engine_test_contribution.hpp:73:                         {RecordFieldId{4}, "name", RecordFieldKind::text, false, "", {}}};
+tests/engine_test_contribution.hpp:79:            {{RecordFieldId{2},
+tests/engine_test_contribution.hpp:80:              RecordFieldKind::reference,
+tests/engine_test_contribution.hpp:83:             {RecordFieldId{3}, RecordFieldKind::reference, "", record_wire::text(value.to.value)},
+tests/engine_test_contribution.hpp:84:             {RecordFieldId{4}, RecordFieldKind::text, "", record_wire::text(value.name)}}};
+tests/engine_test_contribution.hpp:89:            EntityId(record_wire::read_text(record_wire::require(input, RecordFieldId{2}).payload)),
+tests/engine_test_contribution.hpp:90:            EntityId(record_wire::read_text(record_wire::require(input, RecordFieldId{3}).payload)),
+tests/engine_test_contribution.hpp:91:            record_wire::read_text(record_wire::require(input, RecordFieldId{4}).payload)});
+tests/engine_test_contribution.hpp:101:        visitor(RecordFieldId{2}, value.from.value, targets);
+tests/engine_test_contribution.hpp:102:        visitor(RecordFieldId{3}, value.to.value, targets);
+tests/render_projector_tests.cpp:86:          "Line2 visibility uses the generic cell carrier");
+tests/render_projector_tests.cpp:137:          "independent variable-arity contribution reaches a generic area cell");
+tests/render_wire_tests.cpp:78:        auto generic = packet;
+tests/render_wire_tests.cpp:79:        generic.points.push_back({EntityId("n3"), {2, 0, 0}, true});
+tests/render_wire_tests.cpp:80:        generic.points.push_back({EntityId("n4"), {2, 2, 0}, true});
+tests/render_wire_tests.cpp:81:        generic.points.push_back({EntityId("n5"), {0, 2, 0}, true});
+tests/render_wire_tests.cpp:82:        generic.cells = {{EntityId("area"), RenderCellKind::polygon, {0, 2, 3, 4}, true},
+tests/render_wire_tests.cpp:84:        const auto generic_bytes = transport::encode_render_packet(generic);
+tests/render_wire_tests.cpp:85:        const auto generic_result = transport::decode_render_packet(generic_bytes);
+tests/render_wire_tests.cpp:86:        check(transport::render_resource_version(generic_bytes) == 3 && generic_result.ok() &&
+tests/render_wire_tests.cpp:87:                  generic_result.value->cells[0].points.size() == 4 &&
+tests/render_wire_tests.cpp:88:                  generic_result.value->cells[1].points.size() == 5 &&
+tests/render_wire_tests.cpp:89:                  !generic_result.value->cells[1].visible &&
+tests/render_wire_tests.cpp:90:                  transport::encode_render_packet(*generic_result.value) == generic_bytes,
+tests/render_wire_tests.cpp:91:              "generic variable-arity cell roundtrip");
+tests/render_wire_tests.cpp:92:        for (qsizetype size = 0; size < generic_bytes.size(); ++size)
+tests/render_wire_tests.cpp:93:            check(!transport::decode_render_packet(generic_bytes.left(size)).ok(),
+tests/render_wire_tests.cpp:94:                  "truncated generic packet accepted");
+tests/render_wire_tests.cpp:98:            generic.cells[0].points = bad_points;
+tests/render_wire_tests.cpp:99:            check(!transport::decode_render_packet(transport::encode_render_packet(generic)).ok(),
+tests/render_wire_tests.cpp:100:                  "invalid generic topology accepted");
+tests/render_wire_tests.cpp:102:        generic.cells[0].points = {0, 2, 3, 4};
+tests/render_wire_tests.cpp:103:        generic.cells[0].kind = static_cast<RenderCellKind>(9);
+tests/render_wire_tests.cpp:104:        check(!transport::decode_render_packet(transport::encode_render_packet(generic)).ok(),
+tests/render_wire_tests.cpp:105:              "unknown generic topology accepted");
+tests/render_wire_tests.cpp:106:        generic.cells[0].kind = RenderCellKind::polygon;
+tests/render_wire_tests.cpp:107:        generic.cells[0].entity = EntityId("n1");
+tests/render_wire_tests.cpp:108:        check(!transport::decode_render_packet(transport::encode_render_packet(generic)).ok(),
+tests/render_wire_tests.cpp:109:              "generic cross-kind identity alias accepted");
+tests/render_wire_tests.cpp:120:              "generic cell visibility delta");
+tests/test_c4_freeze.py:32:        # workspace draft adds the private generic typed-writer declaration.
+tests/test_c4_freeze.py:154:    def test_committed_additional_generic_header_protected(self):
+tests/test_c4_freeze.py:157:        path.write_text("// Isolated private generic typed-writer declaration fixture.\n")
+tests/test_c4_freeze.py:161:        self.git("commit", "--quiet", "-m", "Add isolated generic protection fixture\n\nConstraint: Not QCAE source or acceptance")
+tests/m23_ipc_tests.py:76:                doc, changed = commit(saved, 'material.set_young_modulus', {'entity_id': material, 'young_modulus': {'value': 200, 'unit': 'GPa'}}, 'material-change')
+tests/operation_registry_tests.cpp:265:    good(registry.invoke("material.set_young_modulus",
+tests/ipc_tests.py:313:            {"command": "material.set_young_modulus", "entity_id": affected_entity_id,
+tests/ipc_tests.py:318:        set_preview_id = string_field(set_preview_data, "preview_id", "set modulus changes.preview.data")
+tests/c3_ledger_contribution.hpp:79:        if (*operation.value != "node.move" && *operation.value != "material.set_young_modulus" &&
+tests/solver_run_ipc_tests.py:390:                client.call("material.set_young_modulus", {"entity_id": material,
+tests/solver_run_ipc_tests.py:645:                client.call("material.set_young_modulus", {"entity_id": material,
+tests/solver_run_ipc_tests.py:941:                client.call("material.set_young_modulus", {"entity_id": material,
+tests/skeleton_workflow_ipc_tests.py:203:                client.call("material.set_young_modulus", {"entity_id": material, "young_modulus": {"value": 200, "unit": "GPa"}}, client.current(), "change-result-input")
+tests/result_fixture_ipc_tests.py:174:                client.call("material.set_young_modulus", {"entity_id": material, "young_modulus": {"value": 200, "unit": "GPa"}},
+tests/test_acceptance_checker.py:32:            ('protected_paths_manifest', {'paths':['generic/']})):
+tests/real_ai_mcp_physics_scenarios.py:21:         "material.set_young_modulus", "section.create", "beam.assign_section", "force.create",
+tests/real_ai_mcp_physics_scenarios.py:89:    writes = {"changes.commit", "material.create", "material.set_young_modulus", "section.create",
+tests/real_ai_mcp_physics_scenarios.py:165:        prompt = "仅预览，不执行：以下10梁要求E=220 GPa，剩余梁保持原值。先读取真实material→section→beam引用；调用changes.preview对该共享材料set_young_modulus=220 GPa，不能commit。把真实preview结果和读取的完整引用范围一起说明：共享材料预览究竟会影响哪些梁，不能把preview的affected_entity_id冒充完整梁清单。JSON status=preview、preview_id、selected_count、affected_count、affected_beam_ids。" + scope
+tests/real_ai_mcp_physics_scenarios.py:168:            "command": "material.set_young_modulus", "entity_id": fixture["material"],
+tests/record_query_tests.cpp:48:    descriptor.fields = {{RecordFieldId{2}, "name", RecordFieldKind::text, false, "", {}},
+tests/record_query_tests.cpp:49:                         {RecordFieldId{3}, "from", RecordFieldKind::reference, false, "", targets},
+tests/record_query_tests.cpp:50:                         {RecordFieldId{4}, "to", RecordFieldKind::reference, false, "", targets}};
+tests/record_query_tests.cpp:56:            {{RecordFieldId{2}, RecordFieldKind::text, "", record_wire::text(value.name)},
+tests/record_query_tests.cpp:57:             {RecordFieldId{3},
+tests/record_query_tests.cpp:58:              RecordFieldKind::reference,
+tests/record_query_tests.cpp:61:             {RecordFieldId{4},
+tests/record_query_tests.cpp:62:              RecordFieldKind::reference,
+tests/record_query_tests.cpp:68:            return record_wire::read_text(record_wire::require(input, RecordFieldId{id}).payload);
+tests/record_query_tests.cpp:81:        visitor(RecordFieldId{3}, value.from.value, targets);
+tests/record_query_tests.cpp:82:        visitor(RecordFieldId{4}, value.to.value, targets);
+tests/record_query_tests.cpp:588:                                   [&](RecordFieldId field,
+tests/record_query_tests.cpp:615:              "Shared query-kind label must still allow generic filtering");
+features/materials/src/material_operations.cpp:172:prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput& input) {
+features/materials/src/material_operations.cpp:287:            return execute(app, context, input, prepare_set_young_modulus);
+tests/c3_end_to_end_bench.cpp:262:        {{"run_id", run_id}, {"operation", node_edit ? "node.move" : "material.set_young_modulus"}},
+tests/c3_end_to_end_bench.cpp:288:        operation = transport::json_ledger::from_utf8("material.set_young_modulus");
+features/materials/include/qcae/material_operations.hpp:12:prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput&);
+tests/fixtures/legacy/unsaved-workspace.ipc.json:184:      "command": "material.set_young_modulus",
+tests/fixtures/legacy/redo-workspace.ipc.json:184:      "command": "material.set_young_modulus",

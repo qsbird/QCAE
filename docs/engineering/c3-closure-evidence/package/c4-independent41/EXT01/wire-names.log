@@ -1,0 +1,13 @@
+modules/document/include/qcae/record_registry.hpp:88:// Temporary decoding input only; authoritative records are generated C++ values.
+modules/document/include/qcae/record_registry.hpp:167:    Record decode(std::string_view, RecordStats* stats = nullptr) const;
+modules/document/include/qcae/record_registry.hpp:180:std::string encode(const RecordInput&, RecordStats* = nullptr);
+modules/document/include/qcae/record_registry.hpp:181:RecordInput decode(std::string_view);
+CMakeLists.txt:35:set(QCAE_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+CMakeLists.txt:78:  add_test(NAME generated_operation_inputs COMMAND Python3::Interpreter
+CMakeLists.txt:112:  add_test(NAME generated_profile COMMAND Python3::Interpreter
+CMakeLists.txt:114:    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/profiles/nastran/generated/qcae/nastran_digest.hpp" --check)
+CMakeLists.txt:132:  add_test(NAME generated_contract COMMAND Python3::Interpreter
+tools/generate_entities.py:20:DEFAULT_OUTPUT = ROOT / "modules/document/include/qcae/records.hpp"
+tools/generate_entities.py:201:    digest = hashlib.sha256(json.dumps(schema, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+tools/generate_entities.py:310:    lines += ["inline std::vector<RecordDescriptor> generated_record_descriptors() {", "    return {"]
+tools/generate_entities.py:322:        raise ValueError("clang-format 21 is required for deterministic generated formatting")

@@ -1,0 +1,81 @@
+448-}
+449-
+450-std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
+451-                                          const QJsonObject& r,
+452-                                          const Caller& caller,
+453-                                          const IModelCodec* codec,
+454-                                          const ProfileDefinition* profile) {
+455-    const auto id = r.value("request_id").toString();
+456-    const auto op = r.value("operation").toString();
+457-    const auto p = r.value("parameters").toObject();
+458-    const auto command = p.value("command").toString();
+459-    const bool edit =
+460-        op == "changes.preview" &&
+461-        (command == "model.import" || command == "part.upsert" || command == "assembly.upsert" ||
+462-         command == "set.upsert" || command == "node.move" || command == "entity.delete");
+463:    if (!edit && op != "entity.query" && op != "entity.references" && op != "model.export_preview")
+464-        return std::nullopt;
+465-    try {
+466-        if (op == "entity.query" || op == "entity.references") {
+467-            const auto snapshot = app.record_application().snapshot(ref(r));
+468-            if (!snapshot.ok())
+469-                return error(id, snapshot);
+470-            return op == "entity.query" ? entity_query(id, p, *snapshot.value)
+471-                                        : entity_references(id, p, *snapshot.value);
+472-        }
+473-        const auto snap = app.snapshot(ref(r));
+474-        if (!snap.ok())
+475-            return error(id, snap);
+476-        const auto& m = *snap.value;
+477:        if (edit || op == "model.export_preview") {
+478-            if (ctx(r).expected_revision != m.info.revision)
+479-                return failure(
+480-                    id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
+481-        }
+482-        if (edit && command == "model.import") {
+483-            fields(p,
+484-                   {"command", "root_resource", "resources", "source_profile_ref", "unit_system"});
+485-            if (!codec || !profile)
+486-                return failure(id, "UNSUPPORTED_CAPABILITY", "No model codec registered");
+487-            ImportRequest input;
+488-            input.root_resource = str(p, "root_resource");
+489-            input.source_profile = profile_ref(p, "source_profile_ref");
+490-            input.unit_system = str(p, "unit_system");
+491-            input.source_model_id =
+492-                QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
+--
+540-                fields(p, {"command", "entity_id", "position_mm"});
+541-                action = MoveNode{EntityId{str(p, "entity_id")}, vec(p, "position_mm")};
+542-            }
+543-            if (command == "entity.delete") {
+544-                fields(p, {"command", "entity_id"});
+545-                action = DeleteEntity{EntityId{str(p, "entity_id")}};
+546-            }
+547-            const auto preview = app.preview_edit(caller, ctx(r), action);
+548-            if (!preview.ok())
+549-                return error(id, preview);
+550-            auto data = preview_json(*preview.value);
+551-            data.insert("affected_analyses",
+552-                        id_json(affected_analyses(m, preview.value->affected_entity)));
+553-            return ok(id, data, m.info.revision);
+554-        }
+555:        if (op == "model.export_preview") {
+556-            fields(p, {"analysis_id", "expected_profile_ref"});
+557-            if (!codec)
+558-                return failure(id, "UNSUPPORTED_CAPABILITY", "No model codec registered");
+559-            const auto encoded = codec->encode(
+560-                m, EntityId{str(p, "analysis_id")}, profile_ref(p, "expected_profile_ref"));
+561-            const QJsonObject report{{"complete", encoded.report.complete},
+562-                                     {"profile_ref", profile_ref_json(encoded.report.profile)},
+563-                                     {"issues", issues_json(encoded.report.issues)}};
+564-            if (!encoded.artifact) {
+565-                auto out = failure(
+566-                    id, "EXPORT_REJECTED", "Model is not exportable to the selected target");
+567-                out.insert("report", report);
+568-                return out;
+569-            }
+570-            QJsonArray resources, mapping;
+241:Result<ModelSnapshot> MemoryApplication::snapshot(const DocumentRef& ref) const {
+242:    auto value = state_->app.snapshot(ref);
+246:    static_cast<Model&>(result) = model_from_records(value.value->records);
+343:            auto changes = diff_record_views(view, imported);

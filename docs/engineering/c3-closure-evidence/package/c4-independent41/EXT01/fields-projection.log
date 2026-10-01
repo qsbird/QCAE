@@ -1,0 +1,47 @@
+adapters/engine_api/src/typed_host.cpp-368-                throw std::invalid_argument(
+adapters/engine_api/src/typed_host.cpp-369-                    "Entity fields requires document context and only entity_id");
+adapters/engine_api/src/typed_host.cpp-370-            const auto snapshot = app_.snapshot(*ctx.document);
+adapters/engine_api/src/typed_host.cpp-371-            if (!snapshot.ok())
+adapters/engine_api/src/typed_host.cpp-372-                return response(id, {snapshot.status, {}, snapshot.error});
+adapters/engine_api/src/typed_host.cpp-373-            const EntityId identity(string(params, "entity_id"));
+adapters/engine_api/src/typed_host.cpp:374:            const auto fields = query_fields(snapshot.value->records, identity);
+adapters/engine_api/src/typed_host.cpp-375-            if (!fields.ok())
+adapters/engine_api/src/typed_host.cpp-376-                return response(id, {fields.status, {}, fields.error});
+adapters/engine_api/src/typed_host.cpp-377-            const auto record = snapshot.value->records.find_identity(identity.value);
+adapters/engine_api/src/typed_host.cpp-378-            Value::Object output;
+adapters/engine_api/src/typed_host.cpp-379-            for (const auto& field : fields.value->fields) {
+adapters/engine_api/src/typed_host.cpp-380-                for (const auto& descriptor : record->descriptor().fields)
+adapters/engine_api/src/typed_host.cpp-381-                    if (descriptor.id == field.id)
+adapters/engine_api/src/typed_host.cpp-382-                        output.emplace(descriptor.name, field_value(field));
+adapters/engine_api/src/typed_host.cpp-383-            }
+adapters/engine_api/src/typed_host.cpp-384-            return response(id,
+adapters/engine_api/src/typed_host.cpp-385-                            {Status::success,
+adapters/engine_api/src/typed_host.cpp-386-                             Value(Value::Object{
+adapters/engine_api/src/typed_host.cpp-387-                                 {"entity_id", Value(identity.value)},
+adapters/engine_api/src/typed_host.cpp-388-                                 {"kind", Value(record->descriptor().query_kind)},
+adapters/engine_api/src/typed_host.cpp-389-                                 {"revision", Value(std::to_string(snapshot.value->info.revision))},
+adapters/engine_api/src/typed_host.cpp-390-                                 {"fields", Value(std::move(output))}}),
+adapters/engine_api/src/typed_host.cpp-391-                             {}});
+adapters/engine_api/src/typed_host.cpp-392-        }
+adapters/engine_api/src/typed_host.cpp-393-        if (operation == "task.status" || operation == "task.cancel") {
+adapters/engine_api/src/typed_host.cpp-394-            const auto params = request.value("parameters").toObject();
+adapters/engine_api/src/typed_host.cpp-395-            if (params.size() != 1 || !params.contains("task_id") || !ctx.document)
+adapters/engine_api/src/typed_host.cpp-396-                throw std::invalid_argument(
+adapters/engine_api/src/typed_host.cpp-397-                    "Task requests require document context and only task_id");
+adapters/engine_api/src/typed_host.cpp-398-            const auto snapshot = app_.snapshot(*ctx.document);
+adapters/engine_api/src/typed_host.cpp-399-            if (!snapshot.ok())
+adapters/engine_api/src/typed_host.cpp-400-                return response(id, {snapshot.status, {}, snapshot.error});
+adapters/engine_api/src/typed_host.cpp-401-            const auto task_id = string(params, "task_id");
+adapters/engine_api/src/typed_host.cpp-402-            const auto current = tasks().query(caller, task_id);
+adapters/engine_api/src/typed_host.cpp-403-            if (!current.ok())
+adapters/engine_api/src/typed_host.cpp-404-                return response(id, converted(current, task_value));
+adapters/engine_api/src/typed_host.cpp-405-            if (current.value->input.document.id != ctx.document->id)
+adapters/engine_api/src/typed_host.cpp-406-                return failure(id, "ENTITY_NOT_FOUND", "Task belongs to another document");
+adapters/engine_api/src/typed_host.cpp-407-            if (operation == "task.status")
+adapters/engine_api/src/typed_host.cpp-408-                return response(id, converted(current, task_value));
+adapters/engine_api/src/typed_host.cpp-409-            return response(
+adapters/engine_api/src/typed_host.cpp-410-                id, converted(tasks().cancel(caller, task_id), [](const TaskCancelResult& value) {
+adapters/engine_api/src/typed_host.cpp-411-                    auto output = std::get<Value::Object>(task_value(value.task).data);
+adapters/engine_api/src/typed_host.cpp-412-                    output.emplace("accepted", Value(value.accepted));
+adapters/engine_api/src/typed_host.cpp-413-                    return Value(std::move(output));
+adapters/engine_api/src/typed_host.cpp-414-                }));

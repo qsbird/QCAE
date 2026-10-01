@@ -1,0 +1,457 @@
+[
+  {
+    "phase": "initial",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase initial AGENTS.md docs/engineering/c4-executor-task.md schemas/entities/entities.json schemas/operations/basic.json features/mesh_editing/src/mesh_editing_operations.cpp modules/document/include/qcae/edit_session.hpp modules/contracts/include/qcae/render_packet.hpp modules/query/include/qcae/render_projector.hpp",
+    "actual_delivered_utf8_bytes": 42601,
+    "truncated": true,
+    "token_count": null,
+    "note": "Nested exec_command returned exactly 42601 bytes; the outer functions.exec display was truncated. The complete 42601-byte packet was re-delivered before edits and is retained separately. Initial packet bytes are not total context cost.",
+    "outer_exec_display_truncated": true,
+    "tool_stdout_truncated": false,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/001.txt",
+    "retained_output_sha256": "fa04bba25fc7f7bb1af3bf7c61edf7efef4eb4c183a90a9b4d878475047b538b"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json tools/c4_context_read.py",
+    "actual_delivered_utf8_bytes": 32110,
+    "truncated": true,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/002.txt",
+    "retained_output_sha256": "92709bcbeb80a79a860bec554d64a1a586092cdbb858ece9b9ad93d01a463b6e"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 - <<'PY'\nimport json,subprocess\nfrom pathlib import Path\nm=json.loads(Path('docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json').read_text())\nprint('HEAD:',subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())\nprint('manifest keys:',list(m))\nfor k in ['baseline_commit','protected_files','generator_files','generators','initial_context','environment','execution_environment','input_fixtures','commands','execution_spec']:\n if k in m: print(k,json.dumps(m[k],ensure_ascii=False))\nprint('architecture files:',subprocess.check_output(['rg','--files','docs/architecture'],text=True))\nPY\npython3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent docs/baseline/README.md docs/architecture/module-dependencies.json docs/implementation/m0.md",
+    "actual_delivered_utf8_bytes": 32104,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/003.txt",
+    "retained_output_sha256": "163e2c085362487c52fcd1470d39e59f2498e4cfd73f6335ac6e29625f3eb532"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nm=json.loads(Path('docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json').read_text())\nfor k in ['environment_manifest','build_matrix','quality_gates','immutable_fixtures','protected_definition']: print(k,json.dumps(m[k],ensure_ascii=False))\nPY",
+    "actual_delivered_utf8_bytes": 22106,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/004.txt",
+    "retained_output_sha256": "71ce952e94558f894fd51d3c438ca66418be6f165103541aaf5878cedb84432b"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent features/mesh_editing/include/qcae/mesh_editing_operations.hpp docs/architecture/README.md",
+    "actual_delivered_utf8_bytes": 10761,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/005.txt",
+    "retained_output_sha256": "16490c3a05a3f893ed7e6c67fdf3afe7ef235f09361f508ddf220cba8581ed14"
+  },
+  {
+    "phase": "subsequent",
+    "command": "rg -n 'vector3|entity_id_array|quantity|preview|cancel|typed' tools/generate_operation_contracts.py tests/model_operation_tests.cpp tests/geometry_mesh_tests.cpp adapters/engine_api/src/ipc_api.cpp CMakeLists.txt tests/public*",
+    "actual_delivered_utf8_bytes": 8509,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/006.txt",
+    "retained_output_sha256": "5634e0f9e9ea81f5cd65fc145ebf136d58648d3927a5d7f4f405b3d907ea8218"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nm=json.loads(Path('docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json').read_text())\nprint('environment frozen:',m['environment_manifest']['environment']['frozen'])\nfor k,v in m['build_matrix'].items(): print(k, v.get('configuration'))\nf=Path('docs/engineering/c3-closure-evidence/package/common41-final/actual-commands.json')\nd=json.loads(f.read_text()); print('actual commands keys', list(d))\nprint(json.dumps(d,ensure_ascii=False)[:10000])\nPY\nsed -n '1,220p' tools/generate_operation_contracts.py",
+    "actual_delivered_utf8_bytes": 14833,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/007.txt",
+    "retained_output_sha256": "30d78797a00e84ae59c7422de6f4f69a58dab0b54de0fa1485fc8d59fcbb036b"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent tests/model_operation_tests.cpp",
+    "actual_delivered_utf8_bytes": 30305,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/008.txt",
+    "retained_output_sha256": "749be93f592d33ab350d21d3d0583f84c0e4f0a1d68633367e0e14d9451389e8"
+  },
+  {
+    "phase": "search",
+    "command": "rg -n 'preview|cancel|mesh.generate_line|model.query|node.move|history.list' adapters/engine_api/src/engine_contributions.cpp tests/c3_workflow_ipc_tests.py tests/typed_ipc_tests.py tests/geometry_mesh_ipc_tests.py features/geometry_line/src/geometry_line_operations.cpp tests/public_api_consumers/CMakeLists.txt; rg -n 'class RecordApplication|preview|history|cancel|current_document' modules/application/include/qcae/record_application.hpp; rg --files tests | rg 'ipc|c3|public'; sed -n '1,100p' features/mesh_editing/CMakeLists.txt; sed -n '1,100p' tests/public_api_consumers/CMakeLists.txt",
+    "actual_delivered_utf8_bytes": 6273,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/009.txt",
+    "retained_output_sha256": "eea830717a716f3c484ae47b37cc6c63ef6c68ea5cc25e6fc527b786b8a14478"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent tests/skeleton_workflow_ipc_tests.py docs/baseline/acceptance.md",
+    "actual_delivered_utf8_bytes": 34106,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/010.txt",
+    "retained_output_sha256": "61315fd4ee3447dfef3e76a5caa8d78c08a25a7d5772cbcc37ff20e72557f58a"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent tests/analysis_check_ipc_tests.py tests/result_fixture_ipc_tests.py",
+    "actual_delivered_utf8_bytes": 32013,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/011.txt",
+    "retained_output_sha256": "8e5a1863f54285f86f3e0c477fe552fc7851819941dd21904d8daa8924a27acc"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent adapters/engine_api/src/engine_contributions.cpp modules/parameters/src/quantities.cpp",
+    "actual_delivered_utf8_bytes": 24106,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/012.txt",
+    "retained_output_sha256": "f571deb6de8141570d08b1450c7d53a84cbf719cc1ec462c243979b5d91112d1"
+  },
+  {
+    "phase": "search",
+    "command": "rg -n 'prepare_move_node|changes.preview|NodeMoveInput|prepare_assign_section' adapters/engine_api/src/typed_host.cpp adapters/engine_api/src/*.cpp; sed -n '145,208p' modules/application/include/qcae/record_application.hpp; sed -n '1,55p' modules/parameters/src/quantities.cpp; rg -n 'QCAE_BUILD_DESKTOP|QCAE_BUILD_SQLITE|QCAE_BUILD_IPC|VTK_DIR|CMAKE_PREFIX_PATH' CMakeLists.txt",
+    "actual_delivered_utf8_bytes": 7273,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/013.txt",
+    "retained_output_sha256": "28c254a0f4b76826cd2b4e273331b21fbfbd186fd160ea024baab0aa8c0e57e2"
+  },
+  {
+    "phase": "search",
+    "command": "sed -n '410,500p' adapters/engine_api/src/ipc_model.cpp; rg -n 'parse|prepare_move|node.move|model_command|RecordPrepare|changes.preview' adapters/engine_api/src/ipc_model.cpp; rg --files features | rg 'legacy|model'; sed -n '1,60p' CMakeLists.txt",
+    "actual_delivered_utf8_bytes": 8014,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/014.txt",
+    "retained_output_sha256": "d473debdc82772d4b19c87ac8b97a863b56ca7b49768a790ae1f5dae39b65872"
+  },
+  {
+    "phase": "search",
+    "command": "sed -n '1,135p' modules/operations/include/qcae/operation_registry.hpp; rg -n 'ChangePreview|preview_value|creates_entity|normalized_modulus' adapters/engine_api/src/typed_values.hpp modules/contracts/include/qcae/contracts.hpp; sed -n '1,100p' adapters/engine_api/src/typed_values.hpp; sed -n '1,160p' modules/operations/src/operation_registry.cpp",
+    "actual_delivered_utf8_bytes": 13430,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/015.txt",
+    "retained_output_sha256": "02fc6853f05ba3ee320f62083bf3cfd778f03606061d0bacbfe83a7a2948a523"
+  },
+  {
+    "phase": "initial-redelivery",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase initial AGENTS.md docs/engineering/c4-executor-task.md schemas/entities/entities.json schemas/operations/basic.json features/mesh_editing/src/mesh_editing_operations.cpp modules/document/include/qcae/edit_session.hpp modules/contracts/include/qcae/render_packet.hpp modules/query/include/qcae/render_projector.hpp",
+    "actual_delivered_utf8_bytes": 42601,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/016.txt",
+    "retained_output_sha256": "fa04bba25fc7f7bb1af3bf7c61edf7efef4eb4c183a90a9b4d878475047b538b"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent modules/operations/CMakeLists.txt; rg -n 'size\\(\\).*|operation.*(11|10|[0-9]+)|definition.*node' tests/operation_registry_tests.cpp tests/engine_assembly_tests.cpp; /Library/Developer/CommandLineTools/usr/bin/clang-format --version",
+    "actual_delivered_utf8_bytes": 2760,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/017.txt",
+    "retained_output_sha256": "ae6cc43a4dfde203ee94cce6050e48459df68d5c22f519c73bb5289ae0f9669c"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py core-configure-frozen cmake -S . -B build-ext02-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DQCAE_BUILD_IPC=OFF -DQCAE_BUILD_STORAGE=OFF -DQCAE_BUILD_DESKTOP=OFF -DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "actual_delivered_utf8_bytes": 904,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/018.txt",
+    "retained_output_sha256": "2b8a5418a1c3fe8334fb34525e531c7b17e5ccf7ca9cb214ae7a47d8140ec602"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py core-build cmake --build build-ext02-core --parallel 2",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 69498,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/019.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 - <<'PY'\nimport json,hashlib\nfrom pathlib import Path\nm=json.loads(Path('docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json').read_text())\nfor kind in ('protected_files','generators'):\n bad=[e['path'] for e in m[kind] if hashlib.sha256(Path(e['path']).read_bytes()).hexdigest()!=e['sha256']]\n print(kind,'count',len(m[kind]),'changed',bad)\nprint('initial packet',m['initial_context']['content_utf8_bytes'],m['initial_context']['delivered_utf8_bytes'])\nPY\npython3 /private/tmp/qcae-ext02-evidence41/run.py desktop-configure cmake -S . -B build-ext02-desktop -G Ninja -DCMAKE_BUILD_TYPE=Release -DQCAE_BUILD_IPC=ON -DQCAE_BUILD_STORAGE=ON -DQCAE_BUILD_DESKTOP=ON '-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt;/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install' -DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "actual_delivered_utf8_bytes": 93,
+    "token_count": null,
+    "session_id": 64703,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/020.txt",
+    "retained_output_sha256": "31b076fb753051872a1046b3be990cd0ae96cd1605c8d6fd05e190c35a890d79"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll session 69498",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 69498,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/021.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll session 64703",
+    "actual_delivered_utf8_bytes": 2635,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/022.txt",
+    "retained_output_sha256": "cf7607ed4272150bac95585dd8aa3925e976400b8d2d1d22eb3438a8ad4e7e8f"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py desktop-configure-frozen cmake -S . -B build-ext02-desktop -G Ninja -DCMAKE_BUILD_TYPE=Release -DQCAE_BUILD_IPC=ON -DQCAE_BUILD_STORAGE=ON -DQCAE_BUILD_DESKTOP=ON '-DCMAKE_PREFIX_PATH=/opt/homebrew/opt/qt;/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install' -DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14 -DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include -DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 20601,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/023.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll core build 69498",
+    "actual_delivered_utf8_bytes": 7892,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/024.txt",
+    "retained_output_sha256": "e10e87459eb80c26f61a68600f1958a415108385eafcecd68f8e6c3265b6c1af"
+  },
+  {
+    "phase": "check-diagnostic",
+    "command": "PATH=/Library/Developer/CommandLineTools/usr/bin:$PATH python3 /private/tmp/qcae-ext02-evidence41/run.py design python3 tools/check_design.py\nPATH=/Library/Developer/CommandLineTools/usr/bin:$PATH python3 /private/tmp/qcae-ext02-evidence41/run.py cpp-format python3 tools/check_cpp_format.py\npython3 /private/tmp/qcae-ext02-evidence41/run.py diff-check git diff --check",
+    "actual_delivered_utf8_bytes": 585,
+    "token_count": null,
+    "session_id": 32464,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/025.txt",
+    "retained_output_sha256": "ad1460b0fac2bbecd942fad700b21a302992000c036105be13b2f18a78e05a03"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "/Library/Developer/CommandLineTools/usr/bin/clang-format -i tests/model_operation_tests.cpp\npython3 /private/tmp/qcae-ext02-evidence41/run.py core-build-repair1 cmake --build build-ext02-core --parallel 2",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 99217,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/026.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "check-diagnostic",
+    "command": "poll 20601",
+    "actual_delivered_utf8_bytes": 1934,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/027.txt",
+    "retained_output_sha256": "e93fb59c8a41a166b2ed28d6bb832e0707eca5e317267694db2099e82d46bf1f"
+  },
+  {
+    "phase": "check-diagnostic",
+    "command": "poll 32464",
+    "actual_delivered_utf8_bytes": 714,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/028.txt",
+    "retained_output_sha256": "a60554747d7e9d505fc777f5aa3de7c367f1f03ab3a53bf81899cf351e599e1f"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py consumers-configure cmake -S tests/public_api_consumers -B build-ext02-consumers -G Ninja -DCMAKE_BUILD_TYPE=Release -DQCAE_BUILD_IPC=OFF -DQCAE_BUILD_STORAGE=OFF -DQCAE_BUILD_DESKTOP=OFF -DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "actual_delivered_utf8_bytes": 1391,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/029.txt",
+    "retained_output_sha256": "7566a97cb1328ec02372242243ca3c3b2e3ffb1dedfbba4d3736260c6e97366e"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py core-tests ctest --test-dir build-ext02-core --output-on-failure",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 10499,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/030.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py desktop-build cmake --build build-ext02-desktop --parallel 2",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 73636,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/031.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll core tests 10499",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 10499,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/032.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "search",
+    "command": "python3 - <<'PY'\nimport json,hashlib\nfrom pathlib import Path\nm=json.loads(Path('docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json').read_text())\nfor item in m['environment_manifest']['environment']['tool_images']:\n path=Path(item['path'])\n if path.is_file(): print(item['id'],hashlib.sha256(path.read_bytes()).hexdigest()==item['sha256'])\nprint('tracked diff files:')\nPY\ngit diff --stat\ngit branch --show-current",
+    "actual_delivered_utf8_bytes": 527,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/033.txt",
+    "retained_output_sha256": "40709ec0d23e923f8386324144aceffb55d99b2fbe9bcb83bb0b39a7fe59c61c"
+  },
+  {
+    "phase": "check-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py generated-contracts python3 tools/generate_operation_contracts.py schemas/operations build-ext02-core/generated/qcae/operation_inputs.hpp --check",
+    "actual_delivered_utf8_bytes": 520,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/034.txt",
+    "retained_output_sha256": "4ffbb6b65b8881906bbd99680798e45778d08be5e7254ad60feb61c40c0bea60"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll desktop build 73636",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 73636,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/035.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "diagnostic-snapshot",
+    "command": "tail -n 18 /private/tmp/qcae-ext02-evidence41/core-tests.log\ntail -n 8 /private/tmp/qcae-ext02-evidence41/desktop-build.log",
+    "actual_delivered_utf8_bytes": 1526,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/036.txt",
+    "retained_output_sha256": "fdb649431a3c7bf47dbb5b053542c241aefdb1e4b523649fa8de7f2895f72724"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll core tests 10499",
+    "actual_delivered_utf8_bytes": 4694,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/037.txt",
+    "retained_output_sha256": "3521276c073a132804ce13ead645e986e0c872c723123c15dbed5b5fa9966920"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll desktop build 73636",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 73636,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/038.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "diagnostic-snapshot",
+    "command": "rg -n 'c4_freeze_contract|TIMEOUT' CMakeLists.txt; rg -n 'ps|subprocess|run\\(' tests/c4_freeze_contract_tests.py; tail -n 10 /private/tmp/qcae-ext02-evidence41/desktop-build.log",
+    "actual_delivered_utf8_bytes": 3700,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/039.txt",
+    "retained_output_sha256": "cc7361dd86ecec3b40e7d48791a44009b29dc58f726378e1d0bc62b1e2a70a5d"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py core-freeze-retry ctest --test-dir build-ext02-core -R '^c4_freeze_contract$' --output-on-failure",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 4223,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/040.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "subsequent",
+    "command": "python3 tools/c4_context_read.py --root /private/tmp/qcae-c4-ext02-41 --log /private/tmp/qcae-ext02-context.jsonl --phase subsequent tests/test_c4_freeze.py",
+    "actual_delivered_utf8_bytes": 16748,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/041.txt",
+    "retained_output_sha256": "3b9edd5abd19534eb939aa57ac949eea7c99bd74235eae47e666105344f35951"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll freeze retry 4223",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 4223,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/042.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll desktop build 73636",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 73636,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/043.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "diagnostic-snapshot",
+    "command": "tail -n 6 /private/tmp/qcae-ext02-evidence41/desktop-build.log\ntail -n 12 /private/tmp/qcae-ext02-evidence41/core-freeze-retry.log\n/usr/bin/git config --show-origin --get commit.gpgsign\n/usr/bin/git config --show-origin --get core.hooksPath\ncommand -v git",
+    "actual_delivered_utf8_bytes": 416,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/044.txt",
+    "retained_output_sha256": "be76609b3b2d59c4a1c55fc0555373007024ae4696096aa514d9147ba82b070c"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll desktop build 73636",
+    "actual_delivered_utf8_bytes": 10385,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/045.txt",
+    "retained_output_sha256": "ef62c623c50ebae1a543b460e456ddb4cc57efc094ed62a6c88928cd5f80d02e"
+  },
+  {
+    "phase": "test-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py ext02-ipc python3 tests/batch_translation_ipc_tests.py --engine build-ext02-desktop/qcae-engine --cli build-ext02-desktop/qcae-cli --evidence-dir /private/tmp/qcae-ext02-evidence41/ipc",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 42453,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/046.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py consumers-build cmake --build build-ext02-consumers --target qcae_public_consumers --parallel 2",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 99690,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/047.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "search",
+    "command": "ctest --test-dir build-ext02-desktop -N",
+    "actual_delivered_utf8_bytes": 2488,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/048.txt",
+    "retained_output_sha256": "928c6779f3e9dd9bfb324089a7d65aacf0292de64615b390b72bb55208160589"
+  },
+  {
+    "phase": "test-diagnostic",
+    "command": "poll ext02 ipc 42453",
+    "actual_delivered_utf8_bytes": 1245,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/049.txt",
+    "retained_output_sha256": "f2dd3a75f02023041ea806091ba6433f7169e6df5aae7bd07765295579aa2998"
+  },
+  {
+    "phase": "test-diagnostic",
+    "command": "poll freeze retry 4223",
+    "actual_delivered_utf8_bytes": 750,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/050.txt",
+    "retained_output_sha256": "4fa01f1525bdda9fce95712b90f31c2868b7972e3420bb865252d0f53d30984b"
+  },
+  {
+    "phase": "test-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py freeze-onecase /Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14 -u -c 'import faulthandler,runpy,sys; faulthandler.dump_traceback_later(20); sys.argv=[\"tests/test_c4_freeze.py\",\"-v\",\"FreezeContract.test_commit_packet_and_protection_integrity\"]; runpy.run_path(\"tests/test_c4_freeze.py\",run_name=\"__main__\")'\npython3 /private/tmp/qcae-ext02-evidence41/run.py local-regressions ctest --test-dir build-ext02-desktop -R '^(typed_host|engine_assembly|render_service|render_wire|render_projector|geometry_mesh_sqlite|engine_contributions_ipc|c3_display_ipc|entity_query_ipc|c3_sync_ipc|m1_ipc|ipc|m23_ipc)$' --output-on-failure",
+    "actual_delivered_utf8_bytes": 0,
+    "token_count": null,
+    "session_id": 99943,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/051.txt",
+    "retained_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "poll public consumers 99690",
+    "actual_delivered_utf8_bytes": 10427,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/052.txt",
+    "retained_output_sha256": "2790876f139922114a19619217ac0975d92beee8199787ff5b14eceaf8db47a4"
+  },
+  {
+    "phase": "test-diagnostic",
+    "command": "poll diagnostic/local tests 99943",
+    "actual_delivered_utf8_bytes": 2918,
+    "token_count": null,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/053.txt",
+    "retained_output_sha256": "f603b16809b8c8566b7921c589bc88397492425403061852b1fe0cf958033575"
+  },
+  {
+    "phase": "build-diagnostic",
+    "command": "python3 /private/tmp/qcae-ext02-evidence41/run.py core-config-refresh cmake --build build-ext02-core --parallel 2\npython3 /private/tmp/qcae-ext02-evidence41/run.py desktop-config-refresh cmake --build build-ext02-desktop --parallel 2\npython3 /private/tmp/qcae-ext02-evidence41/run.py consumers-config-refresh cmake --build build-ext02-consumers --target qcae_public_consumers --parallel 2\npython3 /private/tmp/qcae-ext02-evidence41/run.py batch-consumer ./build-ext02-consumers/consumer_batch_translation",
+    "actual_delivered_utf8_bytes": 653,
+    "token_count": null,
+    "session_id": 87653,
+    "retained_output": "/private/tmp/qcae-ext02-evidence41/context-deliveries/054.txt",
+    "retained_output_sha256": "7a4f0ed1a9c92e5d8afb6aed99a22c1cf2f5f7ac04ede543893b68e53330693d"
+  }
+]
