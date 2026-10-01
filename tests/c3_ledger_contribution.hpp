@@ -3,6 +3,7 @@
 #include "qcae/operation_ledger.hpp"
 #include "qcae/records.hpp"
 #include "c3_qt_source_bridge.hpp"
+#include "c3_process_observation.hpp"
 #ifdef QCAE_C3_SQLITE_INSTRUMENTED
 #include "c3_sqlite_copy_bridge.h"
 #endif
@@ -335,6 +336,16 @@ inline qcae::ipc::EngineContribution contribution() {
                         .emplace("harfbuzz_source_observation_json", Value(hb_json));
 #endif
 #endif
+                    const auto memory = c3_process_observation::peak_rss();
+                    std::get<Value::Object>(result.data)
+                        .emplace(
+                            "process_memory",
+                            Value(Value::Object{
+                                {"process_id", Value(std::to_string(memory.process_id))},
+                                {"peak_rss_bytes",
+                                 memory.bytes ? Value(std::to_string(*memory.bytes)) : Value()},
+                                {"source", Value(std::string("getrusage(RUSAGE_SELF)"))},
+                                {"scope", Value(std::string("process_lifetime_high_water"))}}));
                     return {Status::success, std::move(result), {}};
                 });
         }};

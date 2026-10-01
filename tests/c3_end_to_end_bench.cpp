@@ -3,6 +3,7 @@
 #include "qcae/json_ledger.hpp"
 #include "qcae/vtk_view.hpp"
 #include "c3_qt_source_bridge.hpp"
+#include "c3_process_observation.hpp"
 
 #include <QApplication>
 #include <QDir>
@@ -23,11 +24,13 @@
 #include <QVTKOpenGLNativeWidget.h>
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <vtkRenderWindow.h>
 
 namespace {
 using namespace qcae;
@@ -250,7 +253,8 @@ QJsonObject sample(DesktopClient& observer,
                    QMainWindow& window,
                    std::size_t size,
                    std::size_t index,
-                   bool node_edit) {
+                   bool node_edit,
+                   qint64 engine_process_id) {
     const auto before = data(call(observer, "project.current"));
     wait_for_render(window, before);
     const auto run_id =
@@ -301,13 +305,20 @@ QJsonObject sample(DesktopClient& observer,
                                        {"value", "unit"});
         transport::json_ledger::object(parameters, {"entity_id", "young_modulus"});
     }
+    QElapsedTimer edit_timer;
+    edit_timer.start();
     const auto receipt = data(call(observer, operation, parameters, context(before, run_id)));
+    const auto commit_ack_ms = static_cast<double>(edit_timer.nsecsElapsed()) / 1000000.0;
     auto after = before;
     after.insert("revision", receipt.value("current_revision"));
     require(after.value("revision").toString().toULongLong() ==
                 before.value("revision").toString().toULongLong() + 1,
             "Measured operation did not commit exactly one revision");
     wait_for_render(window, after);
+    const auto derived_sync_ms = static_cast<double>(edit_timer.nsecsElapsed()) / 1000000.0;
+    require(std::isfinite(commit_ack_ms) && std::isfinite(derived_sync_ms) && commit_ack_ms >= 0 &&
+                derived_sync_ms >= commit_ack_ms,
+            "Edit response timing is not a valid monotonic interval");
     const auto server =
         normalize_server(data(call(observer, "test.ledger.end", {}, context(after), true)));
     const auto local = snapshot_json(client->snapshot());
@@ -332,6 +343,29 @@ QJsonObject sample(DesktopClient& observer,
             "The HarfBuzz fragments have different identities, manifests or missing sites");
 #endif
 #endif
+    const auto memory = c3_process_observation::peak_rss();
+    const auto engine_memory = server.value("process_memory").toObject();
+    require(memory.bytes && *memory.bytes > 0 &&
+                engine_memory.value("process_id").toString() ==
+                    QString::number(engine_process_id) &&
+                engine_memory.value("peak_rss_bytes").toString().toULongLong() > 0,
+            "Peak memory must be observed independently in the actual GUI and engine processes");
+    const QJsonObject desktop_memory{{"process_id", QString::number(memory.process_id)},
+                                     {"peak_rss_bytes", QString::number(*memory.bytes)},
+                                     {"source", "getrusage(RUSAGE_SELF)"},
+                                     {"scope", "process_lifetime_high_water"}};
+    const auto vtk_widget = window.findChild<QVTKOpenGLNativeWidget*>();
+    require(vtk_widget && vtk_widget->renderWindow(), "Actual framebuffer is missing");
+    const auto framebuffer = vtk_widget->renderWindow()->GetSize();
+    const QJsonObject experience{
+        {"commit_ack_ms", commit_ack_ms},
+        {"derived_sync_ms", derived_sync_ms},
+        {"timing_boundary",
+         "client edit dispatch through reply and actual desktop render completion"},
+        {"derived_sync_includes_commit_ack", true},
+        {"memory", QJsonObject{{"desktop", desktop_memory}, {"engine", engine_memory}}},
+        {"framebuffer_pixels", QJsonArray{framebuffer[0], framebuffer[1]}},
+        {"device_pixel_ratio", vtk_widget->devicePixelRatioF()}};
     for (const auto* key : {"run_id", "document_id", "document_epoch", "base_revision"})
         require(server.value(key) == local.value(key),
                 "Ledger fragments have unrelated run identities");
@@ -461,6 +495,7 @@ QJsonObject sample(DesktopClient& observer,
             {"revision", after.value("revision")},
             {"server", server},
             {"desktop", local},
+            {"editing_experience", experience},
 #ifdef QCAE_C3_QT_SDK_MANIFEST
             {"qt_source_observation", qt_source},
 #ifdef QCAE_C3_HARFBUZZ_SDK_MANIFEST
@@ -567,7 +602,8 @@ int main(int argc, char** argv) {
             wait_for_render(*window, info);
             for (const bool node_edit : {true, false})
                 for (std::size_t index = 0; index < 10; ++index) {
-                    samples.append(sample(observer, *window, size, index, node_edit));
+                    samples.append(sample(
+                        observer, *window, size, index, node_edit, engine.process.processId()));
                     const auto edited = data(call(observer, "project.current"));
                     call(observer,
                          "history.undo",
@@ -595,6 +631,13 @@ int main(int argc, char** argv) {
         {"sample_count", samples.size()},
         {"error", error},
         {"complete_sk12_passed", false},
+        {"c4_start_requires_complete_sdk_copy_coverage", false},
+        {"editing_experience_definition",
+         "Actual monotonic dispatch-to-commit and dispatch-to-render durations; getrusage peak RSS "
+         "is each process lifetime high water, not an isolated edit allocation or a current RSS. "
+         "The engine is fresh per model size; the desktop process spans the three model sizes. "
+         "No dedicated edit/RSS acceptance threshold is inferred from viewport-input/task ACK "
+         "limits."},
         {"counter_coverage_definition",
          "Per-sample complete_coverage checks necessary counter presence/unknown; it does not "
          "declare complete SDK source audit"},
