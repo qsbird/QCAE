@@ -45,6 +45,7 @@ class FreezeContract(unittest.TestCase):
         self.commit()
         repo = FREEZE.Repository(self.root, self.source)
         names = [name for name in repo.entries if FREEZE.source_path(name)]
+        repo.load_blobs(names)
         self.digest = FREEZE.source_digest([repo.fact(name) for name in names])
         self.environment = self.environment_fixture()
         self.execution = self.execution_fixture()
