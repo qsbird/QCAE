@@ -1,0 +1,26 @@
+{
+  "source": "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py",
+  "source_sha256": "63bc78d3a234277f7bfde59d2e853591ca9c128da1f194359b231614700c851b",
+  "scope": "actual production stage() early path/cache checks+mkdir only, module ROOT fixture under private tmp; expected missing source binary stops before command/macdeployqt/install_name_tool/signature",
+  "cases": [
+    {
+      "case": "dotdot",
+      "argument": "/private/tmp/qcae-stage-scope-pke3pe1r/fixture-workspace/out/../escaped.app",
+      "resolved_target": "/private/tmp/qcae-stage-scope-pke3pe1r/fixture-workspace/escaped.app",
+      "within_ignored_out_after_resolve": false,
+      "actual_stage_preflight_admitted_and_created_directory": true,
+      "copy_stop": "FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/qcae-stage-scope-pke3pe1r/fixture-build/qcae-desktop'",
+      "external_commands_executed": false
+    },
+    {
+      "case": "symlink",
+      "argument": "/private/tmp/qcae-stage-scope-pke3pe1r/fixture-workspace/out/linked/escaped.app",
+      "resolved_target": "/private/tmp/qcae-stage-scope-pke3pe1r/fixture-other-parent/escaped.app",
+      "within_ignored_out_after_resolve": false,
+      "actual_stage_preflight_admitted_and_created_directory": true,
+      "copy_stop": "FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/qcae-stage-scope-pke3pe1r/fixture-build/qcae-desktop'",
+      "external_commands_executed": false
+    }
+  ],
+  "red": true
+}

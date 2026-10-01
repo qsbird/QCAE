@@ -1,0 +1,158 @@
+test_absent_out_root_keeps_normal_preflight (__main__.StagePreflightTests.test_absent_out_root_keeps_normal_preflight) ... ok
+test_dangling_target_symlink_is_not_followed (__main__.StagePreflightTests.test_dangling_target_symlink_is_not_followed) ... ERROR
+test_dotdot_target_cannot_escape_out (__main__.StagePreflightTests.test_dotdot_target_cannot_escape_out) ... ERROR
+test_existing_app_directory_is_not_overwritten (__main__.StagePreflightTests.test_existing_app_directory_is_not_overwritten) ... ok
+test_existing_regular_file_is_not_overwritten (__main__.StagePreflightTests.test_existing_regular_file_is_not_overwritten) ... ok
+test_existing_target_symlink_is_not_followed (__main__.StagePreflightTests.test_existing_target_symlink_is_not_followed) ... ok
+test_new_nested_app_keeps_normal_preflight (__main__.StagePreflightTests.test_new_nested_app_keeps_normal_preflight) ... ok
+test_nonempty_or_missing_observer_gate_is_preserved (__main__.StagePreflightTests.test_nonempty_or_missing_observer_gate_is_preserved) ... ok
+test_out_itself_and_wrong_suffix_are_rejected (__main__.StagePreflightTests.test_out_itself_and_wrong_suffix_are_rejected) ... ok
+test_out_root_symlink_cannot_escape_workspace (__main__.StagePreflightTests.test_out_root_symlink_cannot_escape_workspace) ... ERROR
+test_parent_alias_inside_out_is_resolved_before_effects (__main__.StagePreflightTests.test_parent_alias_inside_out_is_resolved_before_effects) ... FAIL
+test_parent_symlink_cannot_escape_out (__main__.StagePreflightTests.test_parent_symlink_cannot_escape_out) ... ERROR
+test_release_gate_is_preserved (__main__.StagePreflightTests.test_release_gate_is_preserved) ... ok
+
+======================================================================
+ERROR: test_dangling_target_symlink_is_not_followed (__main__.StagePreflightTests.test_dangling_target_symlink_is_not_followed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 1016, in mkdir
+    os.mkdir(self, mode)
+    ~~~~~~~~^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/qcae-stage-contract-vmhrn98j/workspace/out/dangling.app/Contents/MacOS'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 1016, in mkdir
+    os.mkdir(self, mode)
+    ~~~~~~~~^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/qcae-stage-contract-vmhrn98j/workspace/out/dangling.app/Contents'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 103, in test_dangling_target_symlink_is_not_followed
+    self.rejected_before_effects(target)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 50, in rejected_before_effects
+    self.invoke(target)
+    ~~~~~~~~~~~^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 40, in invoke
+    return STAGE.stage(SimpleNamespace(build_dir=self.build, bundle=target))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 82, in stage
+    macos.mkdir(parents=True)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 1020, in mkdir
+    self.parent.mkdir(parents=True, exist_ok=True)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 1020, in mkdir
+    self.parent.mkdir(parents=True, exist_ok=True)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 1016, in mkdir
+    os.mkdir(self, mode)
+    ~~~~~~~~^^^^^^^^^^^^
+FileExistsError: [Errno 17] File exists: '/private/tmp/qcae-stage-contract-vmhrn98j/workspace/out/dangling.app'
+
+======================================================================
+ERROR: test_dotdot_target_cannot_escape_out (__main__.StagePreflightTests.test_dotdot_target_cannot_escape_out)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 67, in test_dotdot_target_cannot_escape_out
+    self.rejected_before_effects(self.out / ".." / "escaped.app")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 50, in rejected_before_effects
+    self.invoke(target)
+    ~~~~~~~~~~~^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 40, in invoke
+    return STAGE.stage(SimpleNamespace(build_dir=self.build, bundle=target))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 87, in stage
+    shutil.copy2(build / target.name, target)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1175, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1179, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1234, in _execute_mock_call
+    raise effect
+CopyBoundaryReached
+
+======================================================================
+ERROR: test_out_root_symlink_cannot_escape_workspace (__main__.StagePreflightTests.test_out_root_symlink_cannot_escape_workspace)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 80, in test_out_root_symlink_cannot_escape_workspace
+    self.rejected_before_effects(self.out / "escaped.app")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 50, in rejected_before_effects
+    self.invoke(target)
+    ~~~~~~~~~~~^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 40, in invoke
+    return STAGE.stage(SimpleNamespace(build_dir=self.build, bundle=target))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 87, in stage
+    shutil.copy2(build / target.name, target)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1175, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1179, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1234, in _execute_mock_call
+    raise effect
+CopyBoundaryReached
+
+======================================================================
+ERROR: test_parent_symlink_cannot_escape_out (__main__.StagePreflightTests.test_parent_symlink_cannot_escape_out)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 73, in test_parent_symlink_cannot_escape_out
+    self.rejected_before_effects(self.out / "linked" / "escaped.app")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 50, in rejected_before_effects
+    self.invoke(target)
+    ~~~~~~~~~~~^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 40, in invoke
+    return STAGE.stage(SimpleNamespace(build_dir=self.build, bundle=target))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 87, in stage
+    shutil.copy2(build / target.name, target)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1175, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1179, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1234, in _execute_mock_call
+    raise effect
+CopyBoundaryReached
+
+======================================================================
+FAIL: test_parent_alias_inside_out_is_resolved_before_effects (__main__.StagePreflightTests.test_parent_alias_inside_out_is_resolved_before_effects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 123, in test_parent_alias_inside_out_is_resolved_before_effects
+    self.admitted_before_copy_only(self.out / "alias" / "QCAE.app", actual / "QCAE.app")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_macos_package.py", line 60, in admitted_before_copy_only
+    copying.assert_called_once_with(self.build / "qcae-desktop", resolved / "Contents/MacOS/qcae-desktop")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 997, in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 985, in assert_called_with
+    raise AssertionError(_error_message()) from cause
+AssertionError: expected call not found.
+Expected: copy2(PosixPath('/private/tmp/qcae-stage-contract-wvgmiwo5/build/qcae-desktop'), PosixPath('/private/tmp/qcae-stage-contract-wvgmiwo5/workspace/out/actual/QCAE.app/Contents/MacOS/qcae-desktop'))
+  Actual: copy2(PosixPath('/private/tmp/qcae-stage-contract-wvgmiwo5/build/qcae-desktop'), PosixPath('/private/tmp/qcae-stage-contract-wvgmiwo5/workspace/out/alias/QCAE.app/Contents/MacOS/qcae-desktop'))
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.016s
+
+FAILED (failures=1, errors=4)

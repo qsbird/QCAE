@@ -311,11 +311,9 @@ def environment_record(data: bytes, reader: EvidenceReader) -> dict:
             and type(environment["threads"]) is int and environment["threads"] > 0,
             "Memory/thread counts must be positive integers")
     ratio = environment["device_pixel_ratio"]
-    require(type(ratio) in (int, float) and 0 < ratio <= sys.float_info.max
-            and math.isfinite(ratio), "Invalid device pixel ratio")
+    require(type(ratio) in (int, float) and math.isfinite(ratio) and ratio > 0, "Invalid device pixel ratio")
     images = environment["tool_images"]
-    require(isinstance(images, list) and images and all(isinstance(row, dict) for row in images)
-            and {row.get("id") for row in images} >= TOOL_ROLES,
+    require(isinstance(images, list) and images and {row.get("id") for row in images} >= TOOL_ROLES,
             "Environment lacks actual compiler/CMake/format/Python/Qt/VTK/SQLite image hashes")
     require(len({row["id"] for row in images}) == len(images), "Duplicate tool image identity")
     for row in images:

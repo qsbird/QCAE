@@ -1,0 +1,12 @@
+--- SDK8b initial bridge
++++ SDK8b final admitted-frame gate
+@@ -55,7 +55,8 @@
+     qcae_qt_sdk_loss.fetch_or(4, std::memory_order_relaxed);
+ }
+ extern "C" Q_CORE_EXPORT void qcae_qt_sdk_observer_emit(const char *site, unsigned kind, std::uint64_t bytes) {
+-    if (qcae_qt_sdk_depth)
++    if (qcae_qt_sdk_depth && !qcae_qt_sdk_overflow_frames && qcae_qt_sdk_frames
++        && qcae_qt_sdk_admitted[qcae_qt_sdk_frames - 1])
+         (void)qcae_dispatch(site, kind, bytes);
+ }
+ extern "C" Q_CORE_EXPORT void qcae_qt_sdk_observer_enter(const char *site) {

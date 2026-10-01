@@ -1,0 +1,12 @@
+command: ["python3", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/archive-first-failed.py"]
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/archive-first-failed.py", line 31, in <module>
+    core=ctypes.CDLL(images[1]['path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/ctypes/__init__.py", line 462, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ~~~~~~~^^^^^^^^^^^^^^^^^^
+OSError: dlopen(/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtGui.framework/Versions/A/QtGui, 0x0006): Symbol not found: __ZN9QtPrivate25QMetaTypeInterfaceWrapperI10QByteArrayE8metaTypeE
+  Referenced from: <DB46072C-1413-362C-B5FA-FE3362DEC754> /Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtGui.framework/Versions/A/QtGui
+  Expected as weak-def export from some loaded dylib
+
+exit_code: 1

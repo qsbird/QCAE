@@ -290,6 +290,32 @@ class FreezeContract(unittest.TestCase):
         report = self.rejected(environment=".env.private")
         self.assertIn("outside the freeze reader scope", report["blocked_reason"])
 
+    def test_malformed_tool_image_entries_produce_blocked_receipt(self):
+        for index, entry in enumerate(("malformed-image-entry", None, [], 1)):
+            with self.subTest(entry=entry):
+                self.environment["tool_images"] = [entry]
+                self.execution["environment_manifest_sha256"] = FREEZE.sha(
+                    (json.dumps(self.environment, indent=2) + "\n").encode())
+                self.persist_evidence()
+                process, report = self.run_tool(output=f"malformed-image-{index}.json")
+                self.assertEqual(process.returncode, 1, process.stderr)
+                self.assertIsNotNone(report, process.stderr)
+                self.assertFalse(report["mechanism_frozen"])
+                self.assertIn("lacks actual", report["blocked_reason"])
+                self.assertNotIn("Traceback", process.stderr)
+
+    def test_oversized_integer_pixel_ratio_produces_blocked_receipt(self):
+        self.environment["device_pixel_ratio"] = 10 ** 400
+        self.execution["environment_manifest_sha256"] = FREEZE.sha(
+            (json.dumps(self.environment, indent=2) + "\n").encode())
+        self.persist_evidence()
+        process, report = self.run_tool()
+        self.assertEqual(process.returncode, 1, process.stderr)
+        self.assertIsNotNone(report, process.stderr)
+        self.assertFalse(report["mechanism_frozen"])
+        self.assertEqual(report["blocked_reason"], "Invalid device pixel ratio")
+        self.assertNotIn("Traceback", process.stderr)
+
     def test_symlink_source_rejected(self):
         name = FREEZE.GENERATORS[0]
         (self.root / name).unlink()

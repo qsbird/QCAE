@@ -1,0 +1,79 @@
+--- SDK7 shared observer header (read only)
++++ SDK8 private observer header
+@@ -1,60 +1,23 @@
+ #pragma once
+-#include <cstddef>
+-#include <cstdint>
+-#include <cstring>
++#include "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/qtbase-everywhere-src-6.11.1/qcae-sdk-observer.hpp"
++
+ #if !defined(QT_BOOTSTRAPPED)
+-#include <QtCore/qtcoreexports.h>
+ extern "C" {
+-using QcaeQtSdkObserver = void (*)(void *, const char *, unsigned, std::uint64_t);
+-Q_CORE_EXPORT void qcae_qt_sdk_observer_install(QcaeQtSdkObserver callback, void *context);
+-Q_CORE_EXPORT const char *qcae_qt_sdk_observer_manifest();
+-Q_CORE_EXPORT void qcae_qt_sdk_observer_emit(const char *site, unsigned kind, std::uint64_t bytes);
+-Q_CORE_EXPORT void qcae_qt_sdk_observer_enter(const char *site);
+-Q_CORE_EXPORT void qcae_qt_sdk_observer_leave();
++Q_CORE_EXPORT std::uint64_t qcae_qt_sdk_observer_status() noexcept;
++Q_CORE_EXPORT unsigned qcae_qt_sdk_observer_depth() noexcept;
++Q_CORE_EXPORT void qcae_qt_sdk_observer_collector_loss() noexcept;
+ }
+ #else
+-inline void qcae_qt_sdk_observer_emit(const char *, unsigned, std::uint64_t) {}
+-inline void qcae_qt_sdk_observer_enter(const char *) {}
+-inline void qcae_qt_sdk_observer_leave() {}
++inline std::uint64_t qcae_qt_sdk_observer_status() noexcept { return 0; }
++inline unsigned qcae_qt_sdk_observer_depth() noexcept { return 0; }
++inline void qcae_qt_sdk_observer_collector_loss() noexcept {}
+ #endif
+-struct QcaeQtSdkScope {
+-    explicit QcaeQtSdkScope(const char *site) { qcae_qt_sdk_observer_enter(site); }
+-    ~QcaeQtSdkScope() { qcae_qt_sdk_observer_leave(); }
+-    QcaeQtSdkScope(const QcaeQtSdkScope &) = delete;
+-    QcaeQtSdkScope &operator=(const QcaeQtSdkScope &) = delete;
++// The original C declarations and legacy scope layout are unchanged.
++// SDK8's implementations fence every callback; these entry/exit wrappers are
++// explicitly noexcept without conflicting with reused SDK7 declarations.
++struct QcaeQtSdkNoexceptScope {
++    explicit QcaeQtSdkNoexceptScope(const char *site) noexcept { qcae_qt_sdk_observer_enter(site); }
++    ~QcaeQtSdkNoexceptScope() noexcept { qcae_qt_sdk_observer_leave(); }
++    QcaeQtSdkNoexceptScope(const QcaeQtSdkNoexceptScope &) = delete;
++    QcaeQtSdkNoexceptScope &operator=(const QcaeQtSdkNoexceptScope &) = delete;
+ };
+-inline void *qcae_qt_sdk_memcpy(const char *site, void *destination, const void *source, std::size_t bytes) {
+-    qcae_qt_sdk_observer_emit(site, 1, bytes);
+-    return std::memcpy(destination, source, bytes);
+-}
+-inline void *qcae_qt_sdk_memmove(const char *site, void *destination, const void *source, std::size_t bytes) {
+-    qcae_qt_sdk_observer_emit(site, 1, bytes);
+-    return std::memmove(destination, source, bytes);
+-}
+-inline void *qcae_qt_sdk_memset(const char *site, void *destination, int value, std::size_t bytes) {
+-    qcae_qt_sdk_observer_emit(site, 2, bytes);
+-    return std::memset(destination, value, bytes);
+-}
+-
+-#include <type_traits>
+-#include <utility>
+-// A sizeof operand does not evaluate an index expression. The original
+-// assignment executes once, including any post-increment, then reports the
+-// source-owned field's write upper bound. A bitfield uses its containing byte.
+-#define QCAE_QT_SDK_TYPED_WRITE(site, bytes, ...) \
+-    do { __VA_ARGS__; qcae_qt_sdk_observer_emit(site, 2, std::uint64_t(bytes)); } while (false)
+-template<class Invoke>
+-decltype(auto) qcae_qt_sdk_native_output(const char *site, const char *opaque,
+-                                        std::uint64_t bytes, Invoke &&invoke) {
+-    qcae_qt_sdk_observer_emit(site, 0, 0);
+-    if constexpr (std::is_void_v<std::invoke_result_t<Invoke>>) {
+-        std::forward<Invoke>(invoke)();
+-        qcae_qt_sdk_observer_emit(site, 2, bytes);
+-        qcae_qt_sdk_observer_emit(opaque, 3, 0);
+-    } else {
+-        auto result = std::forward<Invoke>(invoke)();
+-        qcae_qt_sdk_observer_emit(site, 2, bytes);
+-        qcae_qt_sdk_observer_emit(opaque, 3, 0);
+-        return result;
+-    }
+-}

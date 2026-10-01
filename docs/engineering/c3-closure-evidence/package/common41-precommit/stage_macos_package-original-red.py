@@ -68,25 +68,13 @@ def resolve(dependency, binary, executable, paths, extra):
     raise ValueError(f"unresolved dependency {dependency!r} of {binary}")
 
 
-def new_bundle_path(value):
-    allowed = ROOT.resolve(strict=True) / "out"
-    requested = Path(value).absolute()
-    # Reject the final link even when dangling; exists() follows links and would
-    # otherwise miss it. out itself must retain its ignored workspace location.
-    if allowed.is_symlink() or requested.is_symlink() or requested.exists():
-        raise ValueError("bundle must be a new .app directory below this workspace's ignored out/")
-    allowed = allowed.resolve()
-    bundle = requested.resolve()
-    if (bundle == allowed or not bundle.is_relative_to(allowed)
-            or bundle.suffix != ".app" or bundle.exists() or bundle.is_symlink()):
-        raise ValueError("bundle must be a new .app directory below this workspace's ignored out/")
-    return bundle
-
-
 def stage(args):
     if sys.platform != "darwin":
         raise ValueError("this staging tool requires macOS; other systems are unverified")
-    build, bundle = Path(args.build_dir).resolve(), new_bundle_path(args.bundle)
+    build, bundle = Path(args.build_dir).resolve(), Path(args.bundle).absolute()
+    allowed = ROOT / "out"
+    if not bundle.is_relative_to(allowed) or bundle.suffix != ".app" or bundle.exists():
+        raise ValueError("bundle must be a new .app directory below this workspace's ignored out/")
     cache = (build / "CMakeCache.txt").read_text()
     if "CMAKE_BUILD_TYPE:STRING=Release" not in cache or "QCAE_C3_SQLITE_OBSERVED_OBJECT:FILEPATH=\n" not in cache:
         raise ValueError("only a regular Release build with no test SQLite observer can be packaged")

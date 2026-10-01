@@ -256,8 +256,6 @@ class SelectionEngine {
     bool lean_refresh{}, summary_subscribed{}, wrong_next_target{}, hold_entity_rows{},
         hold_entity_all{};
     QString summary_fault, rows_fault, legacy_reply_fault, notified_revision{"7"};
-    QString property_revision_fault;
-    QJsonObject last_property_query_data;
     bool organization_enabled{};
     quint64 event_sequence{}, resource_sequence{};
     QMap<QString, QByteArray> resource_bytes;
@@ -514,15 +512,7 @@ class SelectionEngine {
             if (organization_enabled && parameters.value("view") == "all")
                 rows.append(QJsonObject{
                     {"entity_id", "material-owner"}, {"kind", "material"}, {"name", "Steel"}});
-            QJsonObject data{{"entities", rows}, {"total", rows.size()}, {"revision", revision}};
-            if (!ids.isEmpty()) {
-                if (property_revision_fault == "missing")
-                    data.remove("revision");
-                else if (property_revision_fault == "mismatch")
-                    data.insert("revision", "999");
-                last_property_query_data = data;
-            }
-            respond(request, data);
+            respond(request, {{"entities", rows}, {"total", rows.size()}});
         } else if (operation == "history.list")
             respond(request, {{"items", QJsonArray{}}});
         else if (operation == "view.create" || operation == "view.update") {
@@ -1574,59 +1564,6 @@ class DesktopSelectionTests : public QObject {
         QVERIFY(barrier(*desktop.client));
         QCOMPARE(engine.requests("selection.evaluate").size(), 2);
         QVERIFY(apply->isEnabled());
-    }
-
-    void propertyQueryNeedsSnapshotRevisionToEnableMeshTools_data() {
-        QTest::addColumn<QString>("revision_fault");
-        QTest::newRow("missing") << QString("missing");
-        QTest::newRow("mismatch") << QString("mismatch");
-    }
-
-    void propertyQueryNeedsSnapshotRevisionToEnableMeshTools() {
-        QFETCH(QString, revision_fault);
-        SelectionEngine engine;
-        engine.property_revision_fault = revision_fault;
-        QVERIFY(engine.listen());
-        Window desktop(engine);
-        QVERIFY(desktop.valid());
-        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
-        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
-        auto* tree = desktop.window->findChild<QTreeWidget*>("entityTree");
-        auto* mode = desktop.window->findChild<QComboBox*>("modelingMode");
-        auto* apply = desktop.window->findChild<QPushButton*>("modelingApply");
-        auto* property_details = desktop.window->findChild<QLabel*>("propertyDetails");
-        QVERIFY(tree && mode && apply && property_details);
-        QTRY_COMPARE(tree->topLevelItemCount(), 2);
-        mode->setCurrentIndex(1);
-        tree->setCurrentItem(tree->topLevelItem(1));
-        QTRY_COMPARE(engine.requests("selection.evaluate").size(), 1);
-        engine.respond(engine.requests("selection.evaluate").back(),
-                       {{"selection_handle", "bad-property-version"}});
-        QTRY_COMPARE(engine.requests("selection.get").size(), 1);
-        engine.respond(engine.requests("selection.get").back(),
-                       {{"entity_ids", QJsonArray{"line-b"}}});
-        QTRY_COMPARE(desktop.selected->text(), QString("line-b"));
-        // This barrier follows the real entity.query request on the local socket,
-        // so the negative assertion observes delivery rather than an empty window.
-        QVERIFY(barrier(*desktop.client));
-        QCOMPARE(engine.requests("entity.query")
-                     .back()
-                     .value("parameters")
-                     .toObject()
-                     .value("ids")
-                     .toArray(),
-                 QJsonArray({"line-b"}));
-        QCOMPARE(engine.last_property_query_data.value("entities").toArray().size(), 1);
-        if (revision_fault == "missing")
-            QVERIFY(!engine.last_property_query_data.contains("revision"));
-        else
-            QCOMPARE(engine.last_property_query_data.value("revision").toString(), QString("999"));
-        qInfo() << "delivered property query data" << engine.last_property_query_data;
-        QVERIFY(property_details->text().isEmpty());
-        QVERIFY(!apply->isEnabled());
-        QTest::mouseClick(apply, Qt::LeftButton);
-        QVERIFY(barrier(*desktop.client));
-        QVERIFY(engine.requests("mesh.generate_line").isEmpty());
     }
 
     void oldPacketCannotSubmitPicksDuringModelOrViewRefresh() {

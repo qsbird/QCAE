@@ -1,0 +1,349 @@
+[
+  {
+    "name": "core-configure",
+    "commands": [
+      [
+        "cmake",
+        "-S",
+        ".",
+        "-G",
+        "Ninja",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "-B",
+        "build-c3-closure-core",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=OFF",
+        "-DQCAE_BUILD_STORAGE=OFF",
+        "-DQCAE_BUILD_DESKTOP=OFF",
+        "-DQCAE_ENABLE_SANITIZERS=OFF"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 0.2840673748869449,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/core-configure.log",
+        "sha256": "5fc00c4d7537b4c6535f63ef1cff6000ad19d36cece7377c2efe74a69f9885a4"
+      }
+    ]
+  },
+  {
+    "name": "core-build",
+    "commands": [
+      [
+        "cmake",
+        "--build",
+        "build-c3-closure-core",
+        "-j",
+        "2"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 38.46497320802882,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/core-build.log",
+        "sha256": "fd928ce99dfa8f0de577bae2856756a58af246baea9cb364912f1c1ff72eda0e"
+      }
+    ]
+  },
+  {
+    "name": "core-tests",
+    "commands": [
+      [
+        "ctest",
+        "--test-dir",
+        "build-c3-closure-core",
+        "--output-on-failure",
+        "-j",
+        "2"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 32.54148416593671,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/core-tests.log",
+        "sha256": "5ae13ff3f116b1e4b11fa2f17cdbe78ecc1283b1a9e2dee16f08bf6f14775a48"
+      }
+    ]
+  },
+  {
+    "name": "sqlite_headless-configure",
+    "commands": [
+      [
+        "cmake",
+        "-S",
+        ".",
+        "-G",
+        "Ninja",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "-B",
+        "build-c3-vtk-sqlite-release",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=OFF",
+        "-DQCAE_BUILD_STORAGE=ON",
+        "-DQCAE_BUILD_DESKTOP=OFF",
+        "-DQCAE_ENABLE_SANITIZERS=OFF",
+        "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+        "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 0.20609212503768504,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/sqlite_headless-configure.log",
+        "sha256": "408146df3a40701cc4aa41ff31a196e97d79253368197de4188988ea71e93d12"
+      }
+    ]
+  },
+  {
+    "name": "sqlite_headless-build",
+    "commands": [
+      [
+        "cmake",
+        "--build",
+        "build-c3-vtk-sqlite-release",
+        "-j",
+        "2"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 49.39578716689721,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/sqlite_headless-build.log",
+        "sha256": "e44879fc4af6d87f985e995595a4f79ebead4332f33ce821cb42e1e8080ec1a2"
+      }
+    ]
+  },
+  {
+    "name": "sqlite_headless-tests",
+    "commands": [
+      [
+        "ctest",
+        "--test-dir",
+        "build-c3-vtk-sqlite-release",
+        "--output-on-failure",
+        "-j",
+        "2"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 44.743162541184574,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/sqlite_headless-tests.log",
+        "sha256": "d8495875b3c4ab25de097ab1c3a58e8e197a4d96d0848bddda5ac3b58d6ed5ca"
+      }
+    ]
+  },
+  {
+    "name": "asan_ubsan-configure",
+    "commands": [
+      [
+        "cmake",
+        "-S",
+        ".",
+        "-G",
+        "Ninja",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "-B",
+        "build-c4-baseline-sqlite-sanitizers40",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DQCAE_BUILD_IPC=OFF",
+        "-DQCAE_BUILD_STORAGE=ON",
+        "-DQCAE_BUILD_DESKTOP=OFF",
+        "-DQCAE_ENABLE_SANITIZERS=ON",
+        "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+        "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 0.2212373751681298,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/asan_ubsan-configure.log",
+        "sha256": "1e849869a4d02bd285a53f56b621b6a8f44d5918252ec9400f659ec86d69f019"
+      }
+    ]
+  },
+  {
+    "name": "asan_ubsan-build",
+    "commands": [
+      [
+        "cmake",
+        "--build",
+        "build-c4-baseline-sqlite-sanitizers40",
+        "-j",
+        "2"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 53.73130483413115,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/asan_ubsan-build.log",
+        "sha256": "e67a9e06ce497a1dd1c7b455a2c3cae64f827ab3da526b2218d2d91c091f598f"
+      }
+    ]
+  },
+  {
+    "name": "asan_ubsan-tests",
+    "commands": [
+      [
+        "ctest",
+        "--test-dir",
+        "build-c4-baseline-sqlite-sanitizers40",
+        "--output-on-failure",
+        "-j",
+        "2"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 101.47490404197015,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/asan_ubsan-tests.log",
+        "sha256": "40360875c0c37b67b206ab98f1211fa8454bcf9443a5d9caeda1c358b7f4cf5a"
+      }
+    ]
+  },
+  {
+    "name": "desktop-configure",
+    "commands": [
+      [
+        "cmake",
+        "-S",
+        ".",
+        "-G",
+        "Ninja",
+        "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+        "-B",
+        "build-c3-closure-desktop",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DQCAE_BUILD_IPC=ON",
+        "-DQCAE_BUILD_STORAGE=ON",
+        "-DQCAE_BUILD_DESKTOP=ON",
+        "-DQCAE_ENABLE_SANITIZERS=OFF",
+        "-DSQLite3_LIBRARY=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib",
+        "-DSQLite3_INCLUDE_DIR=/opt/homebrew/opt/sqlite/include",
+        "-DQt6_DIR=/opt/homebrew/opt/qt/lib/cmake/Qt6",
+        "-DVTK_DIR=/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/cmake/vtk-9.7"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 1.0053949169814587,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/desktop-configure.log",
+        "sha256": "c8537b4de6755e0dbdb2b1ca5ad806b5b623a2d52c49aa5fada81e24aac171b2"
+      }
+    ]
+  },
+  {
+    "name": "desktop-build",
+    "commands": [
+      [
+        "cmake",
+        "--build",
+        "build-c3-closure-desktop",
+        "-j",
+        "2"
+      ]
+    ],
+    "exit_codes": [
+      0
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 131.92829925008118,
+    "task_environment": {},
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/desktop-build.log",
+        "sha256": "c8924a4c571c70ed55037ea6623ccbb6cb156251382b1c6cdc9676a65e725042"
+      }
+    ]
+  },
+  {
+    "name": "desktop-tests",
+    "commands": [
+      [
+        "ctest",
+        "--test-dir",
+        "build-c3-closure-desktop",
+        "--output-on-failure",
+        "-j",
+        "1"
+      ]
+    ],
+    "exit_codes": [
+      8
+    ],
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c",
+    "source_tree_sha256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d",
+    "elapsed_seconds": 656.2355295829475,
+    "task_environment": {
+      "QCAE_AI_UNITS_SNAPSHOT": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-ai-units-snapshots/session5.qcae",
+      "QCAE_SOURCE_TREE_SHA256": "7384f4d00e6c65beca7288e0630bad1c77cb37e944aa2eb61b5ef0085b20739d"
+    },
+    "logs": [
+      {
+        "path": "docs/engineering/c3-closure-evidence/package/common40-final/desktop-tests.log",
+        "sha256": "5e143aa50d0ddb0210dce2e936f1624986e31011d3fd955e627f6319257c0a3b"
+      }
+    ]
+  }
+]

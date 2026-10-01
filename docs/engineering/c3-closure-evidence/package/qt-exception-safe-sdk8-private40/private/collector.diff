@@ -1,0 +1,75 @@
+--- readonly repository c3_qt_source_bridge.hpp
++++ SDK8 private collector copy
+@@ -27,11 +27,15 @@
+     using Callback = void (*)(void*, const char*, unsigned, std::uint64_t);
+     using Install = void (*)(Callback, void*);
+     using Manifest = const char* (*)();
++    using Status = std::uint64_t (*)();
++    using Loss = void (*)();
+     struct Fact {
+         std::uint64_t entries{}, copies{}, writes{}, unsupported{};
+     };
+     QLibrary core_;
+     Install install_{};
++    Status status_{};
++    Loss loss_{};
+     QJsonObject manifest_;
+     bool qt_{};
+     std::set<std::string> sites_;
+@@ -44,10 +48,10 @@
+     static void
+     observe(void* context, const char* site, unsigned kind, std::uint64_t bytes) noexcept {
+         auto& self = *static_cast<Bridge*>(context);
+-        const auto ledger = qcae::ledger::current();
+-        if (!ledger)
+-            return;
+         try {
++            const auto ledger = qcae::ledger::current();
++            if (!ledger)
++                return;
+             std::lock_guard lock(self.mutex_);
+             if (ledger->identity().run_id != self.run_)
+                 return;
+@@ -69,6 +73,7 @@
+                 total += increment;
+         } catch (...) {
+             self.exhausted_ = true;
++            if (self.loss_) self.loss_();
+         }
+     }
+ 
+@@ -131,6 +136,11 @@
+             throw std::runtime_error("The selected SDK library could not be loaded");
+         install_ = reinterpret_cast<Install>(core_.resolve(install_symbol));
+         const auto manifest = reinterpret_cast<Manifest>(core_.resolve(manifest_symbol));
++        if (qt_) {
++            status_ = reinterpret_cast<Status>(core_.resolve("qcae_qt_sdk_observer_status"));
++            loss_ = reinterpret_cast<Loss>(core_.resolve("qcae_qt_sdk_observer_collector_loss"));
++            if (!status_ || !loss_) throw std::runtime_error("SDK8 failure status bridge is missing");
++        }
+         if (!install_ || !manifest)
+             throw std::runtime_error("The loaded SDK has no source observer bridge");
+         const auto actual = QJsonDocument::fromJson(QByteArray(manifest()));
+@@ -148,8 +158,9 @@
+             (void)loaded_harfbuzz_images();
+         install_(observe, this);
+     }
+-    ~Bridge() {
+-        install_(nullptr, nullptr);
++    ~Bridge() noexcept {
++        try { if (install_) install_(nullptr, nullptr); }
++        catch (...) { exhausted_ = true; if (loss_) loss_(); }
+     }
+     void begin(const std::string& run) {
+         std::lock_guard lock(mutex_);
+@@ -174,7 +185,9 @@
+                                      {"write_upper_bound_bytes", QString::number(fact.writes)},
+                                      {"unsupported_calls", QString::number(fact.unsupported)}});
+         QJsonObject result{{"run_id", QString::fromStdString(run_)},
+-                           {"collector_complete", !exhausted_},
++                           {"collector_complete", !exhausted_ && (!status_ || status_() == 0)},
++                           {"observer_failure_status", QString::number(status_ ? status_() : 0)},
++                           {"collector_loss_is_unknown", true},
+                            {"unexpected_sites", unexpected},
+                            {"coverage_complete", false},
+                            {"whole_pipeline_owned_copy_coverage", "unknown"},

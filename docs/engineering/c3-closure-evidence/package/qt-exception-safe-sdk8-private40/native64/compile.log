@@ -1,0 +1,20 @@
+command: ["/usr/bin/c++", "-O3", "-DNDEBUG", "-std=c++20", "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-DQT_CORE_LIB", "-DQT_GUI_LIB", "-DQT_NO_DEBUG", "-isystem", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtGui.framework/Headers", "-isystem", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtCore.framework/Headers", "-isystem", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtGui.framework/Headers/6.11.1", "-isystem", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtGui.framework/Headers/6.11.1/QtGui", "-isystem", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtCore.framework/Headers/6.11.1", "-isystem", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib/QtCore.framework/Headers/6.11.1/QtCore", "-isystem", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/mkspecs/macx-clang", "-iframework", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-native64/driver.cpp", "-F", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib", "-framework", "QtGui", "-framework", "QtCore", "-Wl,-rpath,/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qt-prefix/lib", "-o", "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-native64/driver"]
+In file included from /Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-native64/driver.cpp:5:
+/Users/qs/Documents/ChatGPT/QCAE/tests/qt_freetype_store_probe.cpp:9:9: error: 'main' macro redefined [-Werror,-Wmacro-redefined]
+    9 | #define main qcae_fixed_font_probe_main
+      |         ^
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-native64/driver.cpp:4:9: note: previous definition is here
+    4 | #define main qcae_sdk8_original_store_main
+      |         ^
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-native64/driver.cpp:7:5: error: redefinition of 'main'
+    7 | int main(int argc, char** argv) {
+      |     ^
+/Users/qs/Documents/ChatGPT/QCAE/tests/qt_freetype_store_probe.cpp:68:5: note: previous definition is here
+   68 | int main(int argc, char** argv) {
+      |     ^
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-native64/driver.cpp:10:26: error: use of undeclared identifier 'qcae_sdk8_original_store_main'
+   10 |     const int original = qcae_sdk8_original_store_main(argc, argv);
+      |                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3 errors generated.
+
+exit_code: 1

@@ -1,0 +1,99 @@
+--- Frozen SDK7 callback boundary
++++ Private SDK8 callback boundary
+@@ -3,11 +3,41 @@
+ namespace {
+ std::atomic<QcaeQtSdkObserver> qcae_qt_sdk_callback{};
+ std::atomic<void *> qcae_qt_sdk_context{};
++// Sticky process status: callback exception=1, admission-capacity loss=2,
++// collector allocation/record loss=4, malformed callback metadata=8,
++// unbalanced leave=16. No strings or allocation are required to preserve loss.
++std::atomic<std::uint64_t> qcae_qt_sdk_loss{};
+ thread_local unsigned qcae_qt_sdk_depth{};
+ thread_local bool qcae_qt_sdk_dispatching{};
++thread_local bool qcae_qt_sdk_admitted[1024]{};
++thread_local unsigned qcae_qt_sdk_frames{};
++thread_local std::uint64_t qcae_qt_sdk_overflow_frames{};
++struct QcaeDispatchGuard {
++    QcaeDispatchGuard() noexcept { qcae_qt_sdk_dispatching = true; }
++    ~QcaeDispatchGuard() noexcept { qcae_qt_sdk_dispatching = false; }
++};
++bool qcae_dispatch(const char *site, unsigned kind, std::uint64_t bytes) noexcept {
++    if (!site || kind > 3) {
++        qcae_qt_sdk_loss.fetch_or(8, std::memory_order_relaxed);
++        return false;
++    }
++    if (qcae_qt_sdk_dispatching)
++        return true; // Observer-induced nested work stays unobserved.
++    if (auto callback = qcae_qt_sdk_callback.load(std::memory_order_acquire)) {
++        QcaeDispatchGuard guard;
++        try {
++            callback(qcae_qt_sdk_context.load(std::memory_order_acquire), site, kind, bytes);
++        } catch (...) {
++            qcae_qt_sdk_loss.fetch_or(1, std::memory_order_relaxed);
++            return false;
++        }
++    }
++    return true;
++}
+ }
+ extern "C" Q_CORE_EXPORT void qcae_qt_sdk_observer_install(QcaeQtSdkObserver callback, void *context) {
+-    // Installation is outside any measured operation. No callback owns Qt objects.
++    // Installation and callback/context destruction remain outside active calls.
++    // Reinstallation intentionally does not erase sticky loss.
+     qcae_qt_sdk_callback.store(nullptr, std::memory_order_release);
+     qcae_qt_sdk_context.store(context, std::memory_order_release);
+     qcae_qt_sdk_callback.store(callback, std::memory_order_release);
+@@ -15,21 +45,44 @@
+ extern "C" Q_CORE_EXPORT const char *qcae_qt_sdk_observer_manifest() {
+     return QCAE_QT_SDK_MANIFEST;
+ }
++extern "C" Q_CORE_EXPORT std::uint64_t qcae_qt_sdk_observer_status() noexcept {
++    return qcae_qt_sdk_loss.load(std::memory_order_relaxed);
++}
++extern "C" Q_CORE_EXPORT unsigned qcae_qt_sdk_observer_depth() noexcept {
++    return qcae_qt_sdk_depth;
++}
++extern "C" Q_CORE_EXPORT void qcae_qt_sdk_observer_collector_loss() noexcept {
++    qcae_qt_sdk_loss.fetch_or(4, std::memory_order_relaxed);
++}
+ extern "C" Q_CORE_EXPORT void qcae_qt_sdk_observer_emit(const char *site, unsigned kind, std::uint64_t bytes) {
+-    if (!qcae_qt_sdk_depth || qcae_qt_sdk_dispatching)
+-        return;
+-    if (auto callback = qcae_qt_sdk_callback.load(std::memory_order_acquire)) {
+-        qcae_qt_sdk_dispatching = true;
+-        callback(qcae_qt_sdk_context.load(std::memory_order_acquire), site, kind, bytes);
+-        qcae_qt_sdk_dispatching = false;
+-    }
++    if (qcae_qt_sdk_depth && !qcae_qt_sdk_overflow_frames && qcae_qt_sdk_frames
++        && qcae_qt_sdk_admitted[qcae_qt_sdk_frames - 1])
++        (void)qcae_dispatch(site, kind, bytes);
+ }
+ extern "C" Q_CORE_EXPORT void qcae_qt_sdk_observer_enter(const char *site) {
++    if (qcae_qt_sdk_frames == 1024 || qcae_qt_sdk_overflow_frames) {
++        ++qcae_qt_sdk_overflow_frames;
++        qcae_qt_sdk_loss.fetch_or(2, std::memory_order_relaxed);
++        return;
++    }
++    const auto frame = qcae_qt_sdk_frames++;
++    qcae_qt_sdk_admitted[frame] = false;
+     ++qcae_qt_sdk_depth;
+-    qcae_qt_sdk_observer_emit(site, 0, 0);
++    if (qcae_dispatch(site, 0, 0))
++        qcae_qt_sdk_admitted[frame] = true;
++    else
++        --qcae_qt_sdk_depth; // Failed admission still has a balanced leave frame.
+ }
+ extern "C" Q_CORE_EXPORT void qcae_qt_sdk_observer_leave() {
+-    if (qcae_qt_sdk_depth)
++    if (qcae_qt_sdk_overflow_frames) {
++        --qcae_qt_sdk_overflow_frames;
++        return;
++    }
++    if (!qcae_qt_sdk_frames) {
++        qcae_qt_sdk_loss.fetch_or(16, std::memory_order_relaxed);
++        return;
++    }
++    if (qcae_qt_sdk_admitted[--qcae_qt_sdk_frames])
+         --qcae_qt_sdk_depth;
+ }
+ #endif

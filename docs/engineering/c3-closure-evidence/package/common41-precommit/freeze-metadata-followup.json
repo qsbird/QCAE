@@ -1,0 +1,59 @@
+{
+  "scope": "actual environment_record private direct calls; no manifest publication/build/native/API",
+  "source_sha256": "2d47a729930e3e0b734a1f0e8c383fc85a677a59f52200d0460d8e5aa52c1310",
+  "cases": [
+    {
+      "field": "tool_images",
+      "value": [
+        "malformed-image-entry"
+      ],
+      "observed": {
+        "status": "structured_rejection",
+        "exception": "FreezeError",
+        "message": "Environment lacks actual compiler/CMake/format/Python/Qt/VTK/SQLite image hashes"
+      }
+    },
+    {
+      "field": "tool_images",
+      "value": [
+        null
+      ],
+      "observed": {
+        "status": "structured_rejection",
+        "exception": "FreezeError",
+        "message": "Environment lacks actual compiler/CMake/format/Python/Qt/VTK/SQLite image hashes"
+      }
+    },
+    {
+      "field": "tool_images",
+      "value": [
+        []
+      ],
+      "observed": {
+        "status": "structured_rejection",
+        "exception": "FreezeError",
+        "message": "Environment lacks actual compiler/CMake/format/Python/Qt/VTK/SQLite image hashes"
+      }
+    },
+    {
+      "field": "tool_images",
+      "value": [
+        1
+      ],
+      "observed": {
+        "status": "structured_rejection",
+        "exception": "FreezeError",
+        "message": "Environment lacks actual compiler/CMake/format/Python/Qt/VTK/SQLite image hashes"
+      }
+    },
+    {
+      "field": "device_pixel_ratio",
+      "value": "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "observed": {
+        "status": "unexpected_exception",
+        "exception": "OverflowError",
+        "message": "int too large to convert to float"
+      }
+    }
+  ]
+}

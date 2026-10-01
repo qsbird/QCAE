@@ -1,0 +1,15 @@
+{
+  "scope": "private direct actual environment_record only; no freeze/write/build/native or external image reads after invalid entry",
+  "source_sha256": "4b240a2b701dcb52c27149f3e716d99c798d38c71189db24e0bb20af2e0c8658",
+  "input_source_sha256": "addb4aeb04ac3418e94bb859cd51adeff405b73b1025bb1146d1b2da00cddafa",
+  "mutation": {
+    "tool_images": [
+      "malformed-image-entry"
+    ]
+  },
+  "observed": {
+    "status": "unexpected_exception",
+    "exception": "AttributeError",
+    "message": "'str' object has no attribute 'get'"
+  }
+}

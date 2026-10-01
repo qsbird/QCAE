@@ -1,0 +1,26 @@
+F
+======================================================================
+FAIL: test_oversized_integer_pixel_ratio_produces_blocked_receipt (__main__.FreezeContract.test_oversized_integer_pixel_ratio_produces_blocked_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_c4_freeze.py", line 314, in test_oversized_integer_pixel_ratio_produces_blocked_receipt
+    self.assertIsNotNone(report, process.stderr)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: unexpectedly None : Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/freeze_c4_baseline.py", line 482, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/freeze_c4_baseline.py", line 469, in main
+    report = freeze(arguments)
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/freeze_c4_baseline.py", line 414, in freeze
+    environment = environment_record(environment_bytes, reader)
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/freeze_c4_baseline.py", line 314, in environment_record
+    require(type(ratio) in (int, float) and math.isfinite(ratio) and ratio > 0, "Invalid device pixel ratio")
+                                            ~~~~~~~~~~~~~^^^^^^^
+OverflowError: int too large to convert to float
+
+
+----------------------------------------------------------------------
+Ran 1 test in 1.510s
+
+FAILED (failures=1)

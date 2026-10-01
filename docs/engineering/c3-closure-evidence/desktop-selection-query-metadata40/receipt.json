@@ -1,0 +1,57 @@
+{
+  "kind": "selection_query_fake_snapshot_metadata_regression",
+  "archived_utc": "2026-10-01T02:01:33.337586+00:00",
+  "source_frozen": true,
+  "native_slot_released": true,
+  "requirement_acceptance": [
+    "REQ-05",
+    "REQ-15",
+    "TST-A07",
+    "TST-I04"
+  ],
+  "production_source_sha256": "08b152f7620aef5090770e66a5385082866ec484e3cbce52f77332a7d5f395c7",
+  "test_source_sha256": "652f906d29f8ae2739cc0af579886d621f6f47d49aca4609e008636a8b18f43a",
+  "original_positive_function_sha256_unchanged": "e5b7f6a36f6a0aba8c83b715a9da4861d82dbce356be433e1d10a22343aabd35",
+  "original_red": {
+    "log": "common40-final-desktop-tests-original-red.log",
+    "binding": "original-red-source-binding.json",
+    "qt_entries_passed": 60,
+    "qt_entries_failed": 1,
+    "source_commit": "82526d8f851acb9c2b837b5133fa1e50a2d5948c"
+  },
+  "fresh_green": {
+    "build_log": "target-build-green.log",
+    "binding": "fresh-green-source-binding.json",
+    "targeted_log": "native-targeted-green.log",
+    "targeted_qt_entries_passed": 5,
+    "targeted_elapsed_ms": 4129,
+    "full_ctest_log": "native-full-green.log",
+    "full_qt_raw_log": "native-full-green-raw.log",
+    "full_qt_entries_passed": 63,
+    "full_qt_entries_failed": 0,
+    "full_qt_elapsed_ms": 96065,
+    "ctest_elapsed_seconds": 96.32,
+    "boundary": "Only qcae_desktop_selection_tests fresh built and desktop_selection target executed; existing production archives unchanged. Full test totals include init/cleanup,61 behavior cases =59 existing+2 new metadata negatives."
+  },
+  "actual_negative_transport": [
+    "Selection resolves line-b normally; entity.query single actual synthetic geometry row is delivered with data.revision missing.",
+    "Same real socket/widget flow with data.revision999 inconsistent with active7.",
+    "Socket barrier follows entity.query before disabled-control assertions; clicking disabled modelingApply sends no mesh.generate_line."
+  ],
+  "checks": {
+    "cpp_format": "PASS228",
+    "git_diff_check": "PASS"
+  },
+  "remaining_common_validation": "Root new common commit/build/matrix has not been run by this agent.",
+  "files_sha256": {
+    "README.md": "3b75c681212e88ed1721d08f75303aef0efecd6c426a2dfa4e587b9adc1f2a37",
+    "common40-final-desktop-tests-original-red.log": "5e143aa50d0ddb0210dce2e936f1624986e31011d3fd955e627f6319257c0a3b",
+    "desktop_selection_tests-original-red.cpp": "2301f8e5a70a864f61951338b1be3ea892298185efb2eb47b7391ff354b772a5",
+    "fresh-green-source-binding.json": "629f4eb6bea43b27d6c9e56e366ff27a4586d776f059f1cb6f50ca59c139b49e",
+    "native-full-green-raw.log": "1d3d2e02f674b2663ed3a7698eff35ca21560f4a08bd79f17f9c15275587435f",
+    "native-full-green.log": "13582d2c720dc439590834051640ed0290d5e5c2d4cddf9e5e93fe62cd39c211",
+    "native-targeted-green.log": "e11edddcf2a5ef1f99b43dbc36f11875ec2af1c79c00e31eda3cac1172dc8976",
+    "original-red-source-binding.json": "9c3b0a5d8ecf288d9430f6d320e033d28adcdbe9b840deb01f5ab22219af63ff",
+    "target-build-green.log": "9dab144e801a3e10f0bc07737e7966739d397e87d72a8d998aa09e38eb040901"
+  }
+}

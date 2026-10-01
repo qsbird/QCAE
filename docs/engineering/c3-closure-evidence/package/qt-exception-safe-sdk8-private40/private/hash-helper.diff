@@ -1,0 +1,35 @@
+--- SDK7 hash helper
++++ SDK8 private hash helper
+@@ -1,6 +1,6 @@
+ 
+ #pragma once
+-#include "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/qtbase-everywhere-src-6.11.1/qcae-sdk-observer.hpp"
++#include "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche8b-private/qcae-sdk-observer.hpp"
+ #include <limits>
+ namespace QcaeFtHash {
+ struct Scope;
+@@ -12,18 +12,19 @@
+     unsigned actions = 0;
+     bool unknown = false;
+     bool finished = false;
+-    QcaeQtSdkScope sdk;
++    QcaeQtSdkNoexceptScope sdk;
+     explicit Scope(unsigned kind, std::uint64_t byteLimit = (std::numeric_limits<std::uint64_t>::max)())
+         : previous(active), cache(kind), remaining(byteLimit), sdk(kind == 1 ? "ft_hash/glyph_operation" : "ft_hash/missing_operation")
+     { active = this; }
+-    void finish() { finished = true; }
+-    ~Scope() {
++    void finish() noexcept { finished = true; }
++    ~Scope() noexcept {
++        struct Restore { Scope *previous; ~Restore() noexcept { active = previous; } } restore{previous};
++        if (qcae_qt_sdk_observer_status()) unknown = true;
+         if (!finished || actions != 1)
+             markUnknown("ft_hash/unseen_or_multiple_node_action");
+         qcae_qt_sdk_observer_emit(cache == 1 ? "ft_hash/glyph_operation_complete" : "ft_hash/missing_operation_complete", unknown ? 3 : 0, 0);
+-        active = previous;
+     }
+-    void markUnknown(const char *site) {
++    void markUnknown(const char *site) noexcept {
+         unknown = true;
+         qcae_qt_sdk_observer_emit(site, 3, 0);
+     }
