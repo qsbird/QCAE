@@ -102,6 +102,59 @@ Result<OperationPlan> prepare_assign_section(const operations::BeamAssignSection
     return success(OperationPlan{*signature.value, std::move(prepare)});
 }
 
+Result<OperationPlan> prepare_translate_nodes(const operations::NodeTranslateBatchInput& input) {
+    const auto identities = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
+    if (!identities.ok())
+        return {identities.status, std::nullopt, identities.error};
+    auto canonical = input;
+    const std::array components{&canonical.x, &canonical.y, &canonical.z};
+    constexpr std::array names{"x", "y", "z"};
+    for (std::size_t axis = 0; axis < components.size(); ++axis) {
+        auto component =
+            parameters::canonical_quantity(*components[axis], parameters::Dimension::length);
+        if (!component.ok()) {
+            component.error->field = names[axis];
+            return {component.status, std::nullopt, component.error};
+        }
+        *components[axis] = std::move(*component.value);
+    }
+    std::sort(canonical.node_ids.begin(), canonical.node_ids.end());
+    const auto signature =
+        canonical_value(InputTraits<NodeTranslateBatchInput>::to_value(canonical));
+    if (!signature.ok())
+        return {signature.status, std::nullopt, signature.error};
+    RecordPrepare prepare = [canonical, signature = *signature.value](
+                                const DocumentView& view, const RecordIdentityAllocator&) {
+        try {
+            EditSession edit(view);
+            const std::array offset{canonical.x.value, canonical.y.value, canonical.z.value};
+            for (const auto& identity : canonical.node_ids) {
+                edit.update<records::Node>(identity, [&](auto& node) {
+                    for (std::size_t axis = 0; axis < offset.size(); ++axis) {
+                        const auto coordinate = parameters::canonical_quantity(
+                            {node.position[axis] + offset[axis], "mm"},
+                            parameters::Dimension::length);
+                        if (!coordinate.ok())
+                            throw RecordError(coordinate.error->code,
+                                              coordinate.error->message,
+                                              "position[" + std::to_string(axis) + "]");
+                        node.position[axis] = coordinate.value->value;
+                    }
+                });
+            }
+            return success(RecordPreparedOperation{edit.prepare(),
+                                                   "Translate nodes",
+                                                   canonical.node_ids.front(),
+                                                   signature,
+                                                   0,
+                                                   false});
+        } catch (const RecordError& error) {
+            return failed<RecordPreparedOperation>(error);
+        }
+    };
+    return success(OperationPlan{*signature.value, std::move(prepare)});
+}
+
 Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
     const auto registered = registry.register_typed<NodeMoveInput>(
         InputTraits<NodeMoveInput>::definition(),
@@ -110,10 +163,36 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
         });
     if (!registered.ok())
         return registered;
-    return registry.register_typed<BeamAssignSectionInput>(
+    const auto section = registry.register_typed<BeamAssignSectionInput>(
         InputTraits<BeamAssignSectionInput>::definition(),
         [&app](const OperationContext& context, const BeamAssignSectionInput& input) {
             return execute(app, context, input, prepare_assign_section);
+        });
+    if (!section.ok())
+        return section;
+    const auto translate = registry.register_typed<NodeTranslateBatchInput>(
+        InputTraits<NodeTranslateBatchInput>::definition(),
+        [&app](const OperationContext& context, const NodeTranslateBatchInput& input) {
+            return execute(app, context, input, prepare_translate_nodes);
+        });
+    if (!translate.ok())
+        return translate;
+    return registry.register_typed<NodeTranslateBatchPreviewInput>(
+        InputTraits<NodeTranslateBatchPreviewInput>::definition(),
+        [&app](const OperationContext& context,
+               const NodeTranslateBatchPreviewInput& input) -> Result<Value> {
+            const auto plan = prepare_translate_nodes({input.node_ids, input.x, input.y, input.z});
+            if (!plan.ok())
+                return {plan.status, std::nullopt, plan.error};
+            const auto preview = app.preview(context.caller,
+                                             {*context.document, *context.expected_revision},
+                                             plan.value->prepare);
+            if (!preview.ok())
+                return {preview.status, std::nullopt, preview.error};
+            return success(Value(Value::Object{
+                {"preview_id", Value(preview.value->id.value)},
+                {"affected_entity_id", Value(preview.value->affected_entity.value)},
+                {"revision", Value(std::to_string(preview.value->context.expected_revision))}}));
         });
 }
 } // namespace qcae::features::mesh_editing

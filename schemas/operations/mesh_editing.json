@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "status": "implemented_typed_feature_operations",
+  "operations": [
+    {
+      "operation_id": "node.translate_batch",
+      "version": 1,
+      "schema_id": "qcae.operation.node.translate_batch.v1",
+      "type_name": "NodeTranslateBatchInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "node_ids",
+          "type": "entity_id_array"
+        },
+        {
+          "field_id": 2,
+          "name": "x",
+          "type": "quantity",
+          "units": [
+            "mm",
+            "m"
+          ]
+        },
+        {
+          "field_id": 3,
+          "name": "y",
+          "type": "quantity",
+          "units": [
+            "mm",
+            "m"
+          ]
+        },
+        {
+          "field_id": 4,
+          "name": "z",
+          "type": "quantity",
+          "units": [
+            "mm",
+            "m"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "node.translate_batch_preview",
+      "version": 1,
+      "schema_id": "qcae.operation.node.translate_batch_preview.v1",
+      "type_name": "NodeTranslateBatchPreviewInput",
+      "effect": "preview",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "node_ids",
+          "type": "entity_id_array"
+        },
+        {
+          "field_id": 2,
+          "name": "x",
+          "type": "quantity",
+          "units": [
+            "mm",
+            "m"
+          ]
+        },
+        {
+          "field_id": 3,
+          "name": "y",
+          "type": "quantity",
+          "units": [
+            "mm",
+            "m"
+          ]
+        },
+        {
+          "field_id": 4,
+          "name": "z",
+          "type": "quantity",
+          "units": [
+            "mm",
+            "m"
+          ]
+        }
+      ]
+    }
+  ]
+}

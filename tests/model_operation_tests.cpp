@@ -2,6 +2,7 @@
 #include "qcae/mesh_editing_operations.hpp"
 #include "qcae/records.hpp"
 #include "qcae/core.hpp"
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -667,6 +668,116 @@ void edits_sections_and_reference_failures() {
         ErrorCode::revision_conflict,
         "actual expected revision is checked by application");
 }
+
+void batch_translation_contract() {
+    Fixture fixture;
+    const auto context = fixture.context("seed-batch");
+    good(fixture.app.execute(
+             fixture.caller,
+             {*context.document, *context.expected_revision},
+             "test.seed",
+             "batch-nodes",
+             [](const DocumentView& view,
+                const RecordIdentityAllocator&) -> Result<RecordPreparedOperation> {
+                 EditSession edit(view);
+                 edit.put(records::Node{EntityId("n0"), {0, 0, 0}, {}});
+                 edit.put(records::Node{EntityId("n1"), {1, 0, 0}, {}});
+                 edit.put(
+                     records::Node{EntityId("n2"), {std::numeric_limits<double>::max(), 0, 0}, {}});
+                 return {Status::success,
+                         RecordPreparedOperation{edit.prepare(),
+                                                 "Seed batch nodes",
+                                                 EntityId("n0"),
+                                                 "batch-nodes",
+                                                 0,
+                                                 false},
+                         {}};
+             },
+             "seed-batch"),
+         "seed batch nodes");
+    const auto original = fixture.snapshot();
+    const auto generation = fixture.rows->generation;
+    const NodeTranslateBatchInput input{
+        {EntityId("n0"), EntityId("n1")}, {0, "mm"}, {1, "mm"}, {0, "mm"}};
+    for (const auto invalid :
+         {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()}) {
+        auto nonfinite = input;
+        nonfinite.y.value = invalid;
+        bad(fixture.registry.invoke("node.translate_batch",
+                                    fixture.context("nonfinite"),
+                                    InputTraits<NodeTranslateBatchInput>::to_value(nonfinite)),
+            ErrorCode::invalid_input,
+            "nonfinite translation is rejected through registry");
+    }
+    auto missing = input;
+    missing.node_ids.back() = EntityId("zz-missing");
+    bad(fixture.registry.invoke("node.translate_batch",
+                                fixture.context("missing"),
+                                InputTraits<NodeTranslateBatchInput>::to_value(missing)),
+        ErrorCode::entity_not_found,
+        "missing second node rejects the staged first update");
+    auto overflow = input;
+    overflow.node_ids.back() = EntityId("n2");
+    overflow.x.value = std::numeric_limits<double>::max();
+    bad(fixture.registry.invoke("node.translate_batch",
+                                fixture.context("overflow"),
+                                InputTraits<NodeTranslateBatchInput>::to_value(overflow)),
+        ErrorCode::invalid_input,
+        "finite input that overflows a later coordinate is atomic");
+    check(fixture.rows->generation == generation &&
+              fixture.snapshot().info.revision == original.info.revision &&
+              fixture.snapshot().records.find<records::Node>(EntityId("n0")) ==
+                  original.records.find<records::Node>(EntityId("n0")),
+          "rejected batches do not publish any records or persistent rows");
+    const auto batch_context = fixture.context("translate-batch");
+    const auto translated = fixture.invoke("node.translate_batch",
+                                           batch_context,
+                                           InputTraits<NodeTranslateBatchInput>::to_value(input));
+    check(fixture.rows->generation == generation + 1 &&
+              fixture.snapshot().info.revision == original.info.revision + 1,
+          "batch uses exactly one application transaction");
+    for (const auto id : {"n0", "n1"})
+        check(fixture.snapshot()
+                      .records.find<records::Node>(EntityId(id))
+                      ->get<records::Node>()
+                      .position[1] == 1,
+              "one batch translates both selected nodes");
+    auto equivalent = input;
+    std::reverse(equivalent.node_ids.begin(), equivalent.node_ids.end());
+    equivalent.y = {.001, "m"};
+    const auto retry = fixture.invoke("node.translate_batch",
+                                      batch_context,
+                                      InputTraits<NodeTranslateBatchInput>::to_value(equivalent));
+    check(replayed(retry) && transaction(retry) == transaction(translated) &&
+              fixture.rows->generation == generation + 1,
+          "reordered selection and equivalent units replay the original transaction");
+    auto current = fixture.snapshot().info;
+    good(fixture.app.undo(fixture.caller, {current.document, current.revision}, "undo-batch"),
+         "undo batch");
+    const auto undone = fixture.snapshot();
+    for (const auto id : {"n0", "n1", "n2"})
+        check(undone.records.find<records::Node>(EntityId(id))->get<records::Node>().position ==
+                  original.records.find<records::Node>(EntityId(id))->get<records::Node>().position,
+              "one undo restores all coordinates");
+    const auto undone_generation = fixture.rows->generation;
+    fixture.invoke("node.translate_batch",
+                   batch_context,
+                   InputTraits<NodeTranslateBatchInput>::to_value(input));
+    check(fixture.rows->generation == undone_generation &&
+              fixture.snapshot()
+                      .records.find<records::Node>(EntityId("n0"))
+                      ->get<records::Node>()
+                      .position[1] == 0,
+          "retry after undo returns the old fact without applying again");
+    current = fixture.snapshot().info;
+    good(fixture.app.redo(fixture.caller, {current.document, current.revision}, "redo-batch"),
+         "redo batch");
+    check(fixture.snapshot()
+                  .records.find<records::Node>(EntityId("n1"))
+                  ->get<records::Node>()
+                  .position == std::array<double, 3>{1, 1, 0},
+          "redo restores the entire translation");
+}
 } // namespace
 int main() {
     try {
@@ -678,6 +789,7 @@ int main() {
         material_description_edits();
         retained_create_identity();
         edits_sections_and_reference_failures();
+        batch_translation_contract();
         std::cout << "PASS: reusable record feature operations, normalization, references and "
                      "direct retries\n";
     } catch (const std::exception& error) {
