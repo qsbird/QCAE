@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/prepare_c3_vtk_qt_sdk.py", line 63, in <module>
+    prepare(args.source, args.destination, args.qt_prefix)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/prepare_c3_vtk_qt_sdk.py", line 26, in prepare
+    shutil.copytree(source, destination, symlinks=True)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/shutil.py", line 652, in copytree
+    with os.scandir(src) as itr:
+         ~~~~~~~~~~^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/opt/homebrew/Cellar/vtk/9.7.0_2'

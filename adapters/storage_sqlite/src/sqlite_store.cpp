@@ -1,4 +1,5 @@
 #include "qcae/sqlite_store.hpp"
+#include "ledger_vfs.hpp"
 
 #include <sqlite3.h>
 
@@ -161,9 +162,13 @@ void ensure_same_inode(const std::string& path, const InodeLock& inode) {
 
 struct Db {
     sqlite3* db{};
+    std::map<std::string, sqlite3_stmt*, std::less<>> statements;
     Db(const std::string& path, int flags) {
+        const auto* observe = std::getenv("QCAE_LEDGER_VFS");
+        const auto* vfs =
+            observe && std::strcmp(observe, "1") == 0 ? sqlite_ledger::name() : nullptr;
         int rc = sqlite3_open_v2(
-            path.c_str(), &db, flags | SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_NOFOLLOW, nullptr);
+            path.c_str(), &db, flags | SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_NOFOLLOW, vfs);
         if (rc != SQLITE_OK) {
             std::string message = db ? sqlite3_errmsg(db) : "out of memory";
             if (db)
@@ -176,6 +181,8 @@ struct Db {
     Db(const Db&) = delete;
     Db& operator=(const Db&) = delete;
     ~Db() {
+        for (const auto& [sql, statement] : statements)
+            sqlite3_finalize(statement);
         if (db)
             sqlite3_close(db);
     }
@@ -279,19 +286,66 @@ void exec(sqlite3* db, const char* sql) {
 
 struct Statement {
     sqlite3_stmt* stmt{};
+    bool cached{};
     Statement(sqlite3* db, const char* sql) {
         if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
             fail("SQLite prepare: " + std::string(sqlite3_errmsg(db)));
     }
-    ~Statement() {
-        if (stmt)
+    Statement(Db& db, const char* sql) : cached(true) {
+        const auto found = db.statements.find(sql);
+        if (found != db.statements.end()) {
+            stmt = found->second;
+            return;
+        }
+        if (sqlite3_prepare_v3(db.db, sql, -1, SQLITE_PREPARE_PERSISTENT, &stmt, nullptr) !=
+            SQLITE_OK)
+            fail("SQLite prepare: " + std::string(sqlite3_errmsg(db.db)));
+        try {
+            db.statements.emplace(sql, stmt);
+        } catch (...) {
             sqlite3_finalize(stmt);
+            stmt = nullptr;
+            throw;
+        }
+        ledger::add(ledger::Stage::sqlite,
+                    ledger::Metric::metadata_copy_bytes,
+                    sizeof(decltype(db.statements)::value_type) + std::strlen(sql));
+    }
+    ~Statement() {
+        if (stmt) {
+            ledger::add(ledger::Stage::sqlite,
+                        ledger::Metric::sql_fullscan_steps,
+                        static_cast<std::uint64_t>(
+                            sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_FULLSCAN_STEP, cached)));
+            ledger::add(ledger::Stage::sqlite,
+                        ledger::Metric::sql_vm_steps,
+                        static_cast<std::uint64_t>(
+                            sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_VM_STEP, cached)));
+            if (cached) {
+                // reset releases cursors even after a failed step; clear_bindings
+                // drops every transient payload before the next transaction.
+                sqlite3_reset(stmt);
+                sqlite3_clear_bindings(stmt);
+            } else {
+                sqlite3_finalize(stmt);
+            }
+        }
     }
     Statement(const Statement&) = delete;
     Statement& operator=(const Statement&) = delete;
 };
 
-int scalar(sqlite3* db, const char* sql) {
+void exec(Db& db, const char* sql, bool uncertain = false) {
+    Statement statement(db, sql);
+    int result{};
+    do {
+        result = sqlite3_step(statement.stmt);
+    } while (result == SQLITE_ROW);
+    if (result != SQLITE_DONE)
+        throw StorageError("SQLite: " + std::string(sqlite3_errmsg(db.db)), uncertain);
+}
+
+template <class Database> int scalar(Database&& db, const char* sql) {
     Statement statement(db, sql);
     if (sqlite3_step(statement.stmt) != SQLITE_ROW)
         fail("invalid SQLite metadata");
@@ -322,7 +376,7 @@ struct RowState {
     std::uint64_t bytes;
 };
 
-RowState row_state(sqlite3* db) {
+template <class Database> RowState row_state(Database&& db) {
     Statement read(db,
                    "SELECT magic,record_version,generation,row_count,payload_bytes "
                    "FROM record_state WHERE id=1");
@@ -342,7 +396,7 @@ RowState row_state(sqlite3* db) {
             static_cast<std::uint64_t>(sqlite3_column_int64(read.stmt, 4))};
 }
 
-bool row_mode(sqlite3* db) {
+template <class Database> bool row_mode(Database&& db) {
     if (scalar(db, "PRAGMA application_id") != kWorkspaceId)
         fail("unsupported QCAE workspace identity");
     const int version = scalar(db, "PRAGMA user_version");
@@ -388,6 +442,7 @@ void bind_key(sqlite3* db, sqlite3_stmt* stmt, const StoreKey& key) {
                           static_cast<int>(key.identity.size()),
                           SQLITE_TRANSIENT) != SQLITE_OK)
         fail("bind record workspace key: " + std::string(sqlite3_errmsg(db)));
+    ledger::add(ledger::Stage::sqlite, ledger::Metric::driver_bind_copy_bytes, key.identity.size());
 }
 
 void initialize_rows(sqlite3* db) {
@@ -404,7 +459,11 @@ void initialize_rows(sqlite3* db) {
     exec(db,
          "CREATE TABLE store_rows(space INTEGER NOT NULL CHECK(space BETWEEN 1 AND 7),"
          "identity TEXT NOT NULL CHECK(length(identity)>0),value BLOB NOT NULL,"
-         "PRIMARY KEY(space,identity)) WITHOUT ROWID");
+         "PRIMARY KEY(space,identity))");
+    // Keep large history/record BLOBs out of index-btree keys. WITHOUT ROWID
+    // makes value part of the key record, so saving/seeking a cursor can copy
+    // an unrelated overflow BLOB. The private rowid is storage only; callers
+    // still use (space,identity). Existing WITHOUT ROWID stores remain readable.
 }
 
 void initialize(sqlite3* db, int application_id, bool project) {
@@ -438,6 +497,7 @@ void bind_blob(sqlite3* db, sqlite3_stmt* stmt, int index, const std::string& va
             stmt, index, value.data(), static_cast<int>(value.size()), SQLITE_TRANSIENT) !=
             SQLITE_OK)
         fail("SQLite bind payload: " + std::string(sqlite3_errmsg(db)));
+    ledger::add(ledger::Stage::sqlite, ledger::Metric::driver_bind_copy_bytes, value.size());
 }
 
 std::string column_blob(sqlite3_stmt* stmt, int index, std::size_t limit) {
@@ -692,6 +752,31 @@ LoadedRows SqliteWorkspaceStore::load_rows() {
 }
 
 BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
+    ledger::cover(ledger::Stage::sqlite);
+    std::uint64_t logical_bytes = sizeof(StoreBatch) + batch.transaction_id.size();
+    std::uint64_t key_bytes = batch.transaction_id.size();
+    std::uint64_t deletes = 0;
+    for (const auto& mutation : batch.mutations) {
+        logical_bytes += sizeof(RowMutation) + mutation.key.identity.size() +
+                         (mutation.after ? mutation.after->size() : 0);
+        key_bytes += sizeof(mutation.key.space) + mutation.key.identity.size();
+        deletes += mutation.after ? 0 : 1;
+    }
+    ledger::add(ledger::Stage::sqlite, ledger::Metric::batch_payload_bytes, logical_bytes);
+    ledger::add(ledger::Stage::sqlite, ledger::Metric::batch_key_bytes, key_bytes);
+    ledger::add(ledger::Stage::sqlite, ledger::Metric::batch_delete_count, deletes);
+    ledger::add(ledger::Stage::sqlite,
+                ledger::Metric::metadata_copy_bytes,
+                batch.mutations.size() * sizeof(StoreKey) + key_bytes);
+    int writes_before = 0, highwater = 0;
+    const bool cache_counted =
+        sqlite3_db_status(
+            impl_->db->db, SQLITE_DBSTATUS_CACHE_WRITE, &writes_before, &highwater, 0) == SQLITE_OK;
+    const auto* observe = std::getenv("QCAE_LEDGER_VFS");
+    if (observe && std::strcmp(observe, "1") == 0) {
+        ledger::add(ledger::Stage::sqlite, ledger::Metric::physical_wal_write_bytes, 0);
+        ledger::add(ledger::Stage::sqlite, ledger::Metric::physical_database_write_bytes, 0);
+    }
     ensure_same_inode(impl_->path, impl_->workspace.inode);
     const auto& options = impl_->options;
     if (batch.expected_generation >=
@@ -717,17 +802,17 @@ BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
             ++after_rows;
         }
     }
-    if (!row_mode(impl_->db->db) &&
-        scalar(impl_->db->db, "SELECT count(*) FROM workspace WHERE id=1") != 0)
+    if (!row_mode(*impl_->db) &&
+        scalar(*impl_->db, "SELECT count(*) FROM workspace WHERE id=1") != 0)
         fail("legacy workspace requires explicit migration to a separate destination");
     impl_->ensure_writer();
     sqlite3* db = impl_->db->db;
-    exec(db, "BEGIN IMMEDIATE");
+    exec(*impl_->db, "BEGIN IMMEDIATE");
     bool committed = false;
     try {
         RowState state{0, 0, 0};
-        if (row_mode(db)) {
-            state = row_state(db);
+        if (row_mode(*impl_->db)) {
+            state = row_state(*impl_->db);
         } else {
             Statement legacy(db, "SELECT generation FROM workspace WHERE id=1");
             const int rc = sqlite3_step(legacy.stmt);
@@ -742,12 +827,12 @@ BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
             fail("record workspace exceeds quota");
         if (state.generation == 0)
             initialize_rows(db);
-        Statement previous(db,
+        Statement previous(*impl_->db,
                            "SELECT length(value) FROM store_rows WHERE space=?1 AND identity=?2");
-        Statement upsert(db,
+        Statement upsert(*impl_->db,
                          "INSERT INTO store_rows(space,identity,value) VALUES(?1,?2,?3) "
                          "ON CONFLICT(space,identity) DO UPDATE SET value=excluded.value");
-        Statement remove(db, "DELETE FROM store_rows WHERE space=?1 AND identity=?2");
+        Statement remove(*impl_->db, "DELETE FROM store_rows WHERE space=?1 AND identity=?2");
         // Count the final batch state before writes so a full store can replace
         // deleted keys in either input order, without transient quota failures.
         for (const auto& mutation : batch.mutations) {
@@ -788,7 +873,7 @@ BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
                 fail("write record failed");
             rows_written += static_cast<std::uint64_t>(sqlite3_changes(db));
         }
-        Statement metadata(db,
+        Statement metadata(*impl_->db,
                            "INSERT INTO record_state(id,magic,record_version,generation,row_count,"
                            "payload_bytes,transaction_id) VALUES(1,'QCAE-ROWS',1,?1,?2,?3,?4) "
                            "ON CONFLICT(id) DO UPDATE SET generation=excluded.generation,"
@@ -808,10 +893,20 @@ BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
             sqlite3_step(metadata.stmt) != SQLITE_DONE)
             fail("write record workspace metadata failed");
         impl_->fault("before_db_commit");
-        const int commit_rc = sqlite3_exec(db, "COMMIT", nullptr, nullptr, nullptr);
-        if (commit_rc != SQLITE_OK)
-            throw StorageError("SQLite COMMIT: " + std::string(sqlite3_errmsg(db)), true);
+        exec(*impl_->db, "COMMIT", true);
         committed = true;
+        int writes_after = 0;
+        if (cache_counted &&
+            sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &writes_after, &highwater, 0) ==
+                SQLITE_OK)
+            ledger::add(ledger::Stage::sqlite,
+                        ledger::Metric::sqlite_cache_page_writes,
+                        static_cast<std::uint64_t>(writes_after - writes_before));
+        else
+            ledger::unknown(ledger::Stage::sqlite, ledger::Metric::sqlite_cache_page_writes);
+        ledger::add(ledger::Stage::sqlite,
+                    ledger::Metric::driver_bind_copy_bytes,
+                    batch.transaction_id.size());
         try {
             ensure_same_inode(impl_->path, impl_->workspace.inode);
         } catch (const StorageError& error) {
@@ -820,8 +915,12 @@ BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
         impl_->fault("after_db_commit", true);
         return {state.generation + 1, rows_written, payload_bytes};
     } catch (...) {
-        if (!committed)
-            sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, nullptr);
+        if (!committed) {
+            try {
+                exec(*impl_->db, "ROLLBACK");
+            } catch (...) {
+            }
+        }
         throw;
     }
 }

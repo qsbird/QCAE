@@ -1,0 +1,118 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-sanitizers
+      Start  1: acceptance_checker
+ 1/36 Test  #1: acceptance_checker ...............   Passed    0.25 sec
+      Start  2: architecture_gate_unit
+ 2/36 Test  #2: architecture_gate_unit ...........   Passed   11.23 sec
+      Start  3: record_application
+ 3/36 Test  #3: record_application ...............   Passed    2.35 sec
+      Start  4: operation_registry
+ 4/36 Test  #4: operation_registry ...............   Passed    0.07 sec
+      Start  5: generated_operation_inputs
+ 5/36 Test  #5: generated_operation_inputs .......   Passed    0.05 sec
+      Start  6: operation_generation
+ 6/36 Test  #6: operation_generation .............   Passed    4.79 sec
+      Start  7: parameters
+ 7/36 Test  #7: parameters .......................   Passed    0.14 sec
+      Start  8: model_operations
+ 8/36 Test  #8: model_operations .................   Passed    0.96 sec
+      Start  9: quantity_entry_consistency
+ 9/36 Test  #9: quantity_entry_consistency .......   Passed    1.23 sec
+      Start 10: record_query
+10/36 Test #10: record_query .....................   Passed    1.15 sec
+      Start 11: cpp_format
+11/36 Test #11: cpp_format .......................***Failed    1.49 sec
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:454:19: error: code should be clang-formatted [-Wclang-format-violations]
+    auto payload = record_wire::strings(std::array<std::string, 5>{
+                  ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:454:68: error: code should be clang-formatted [-Wclang-format-violations]
+    auto payload = record_wire::strings(std::array<std::string, 5>{
+                                                                   ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:455:32: error: code should be clang-formatted [-Wclang-format-violations]
+        "QCAE-SOLVER-RESULT-1", result.published ? "1" : "0",
+                               ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:455:62: error: code should be clang-formatted [-Wclang-format-violations]
+        "QCAE-SOLVER-RESULT-1", result.published ? "1" : "0",
+                                                             ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:456:52: error: code should be clang-formatted [-Wclang-format-violations]
+        encode_solver_parsed_result(result.parsed), result.artifact.directory.string(),
+                                                   ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:456:88: error: code should be clang-formatted [-Wclang-format-violations]
+        encode_solver_parsed_result(result.parsed), result.artifact.directory.string(),
+                                                                                       ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:461:44: error: code should be clang-formatted [-Wclang-format-violations]
+                      "qcae.solver.result", 1, std::make_shared<const std::string>(std::move(payload)), {}});
+                                           ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:461:47: error: code should be clang-formatted [-Wclang-format-violations]
+                      "qcae.solver.result", 1, std::make_shared<const std::string>(std::move(payload)), {}});
+                                              ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:461:104: error: code should be clang-formatted [-Wclang-format-violations]
+                      "qcae.solver.result", 1, std::make_shared<const std::string>(std::move(payload)), {}});
+                                                                                                       ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:483:41: error: code should be clang-formatted [-Wclang-format-violations]
+    return {StoreSpace::artifact_record, "qcae.solver.result",
+                                        ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:484:87: error: code should be clang-formatted [-Wclang-format-violations]
+            [](const OwnedRowImage& image) { (void)decode_solver_result_row(image); }, {}, {}};
+                                                                                      ^
+/Users/qs/Documents/ChatGPT/QCAE/adapters/engine_api/src/solver_result_store.cpp:484:91: error: code should be clang-formatted [-Wclang-format-violations]
+            [](const OwnedRowImage& image) { (void)decode_solver_result_row(image); }, {}, {}};
+                                                                                          ^
+
+      Start 12: model
+12/36 Test #12: model ............................   Passed    1.09 sec
+      Start 13: nastran
+13/36 Test #13: nastran ..........................   Passed    0.88 sec
+      Start 14: delta
+14/36 Test #14: delta ............................   Passed    0.90 sec
+      Start 15: persistence
+15/36 Test #15: persistence ......................   Passed    1.60 sec
+      Start 16: query
+16/36 Test #16: query ............................   Passed    0.93 sec
+      Start 17: generated_profile
+17/36 Test #17: generated_profile ................   Passed    0.04 sec
+      Start 18: profile_identity
+18/36 Test #18: profile_identity .................   Passed    0.09 sec
+      Start 19: entity_generation
+19/36 Test #19: entity_generation ................   Passed    0.94 sec
+      Start 20: core
+20/36 Test #20: core .............................   Passed    1.16 sec
+      Start 21: contracts
+21/36 Test #21: contracts ........................   Passed    1.06 sec
+      Start 22: allocation_atomicity
+22/36 Test #22: allocation_atomicity .............   Passed    2.53 sec
+      Start 23: design
+23/36 Test #23: design ...........................   Passed    0.25 sec
+      Start 24: generated_contract
+24/36 Test #24: generated_contract ...............   Passed    0.04 sec
+      Start 25: change_events
+25/36 Test #25: change_events ....................   Passed    0.85 sec
+      Start 26: render_projector
+26/36 Test #26: render_projector .................   Passed    0.70 sec
+      Start 27: record_document
+27/36 Test #27: record_document ..................   Passed   89.26 sec
+      Start 28: generated_entities
+28/36 Test #28: generated_entities ...............   Passed    0.13 sec
+      Start 29: runtime
+29/36 Test #29: runtime ..........................   Passed    0.84 sec
+      Start 30: geometry_mesh
+30/36 Test #30: geometry_mesh ....................   Passed    0.94 sec
+      Start 31: line_mesh_regeneration
+31/36 Test #31: line_mesh_regeneration ...........   Passed    0.69 sec
+      Start 32: analysis_checks
+32/36 Test #32: analysis_checks ..................   Passed    0.76 sec
+      Start 33: result_fixture
+33/36 Test #33: result_fixture ...................   Passed    0.74 sec
+      Start 34: nastran_static_result
+34/36 Test #34: nastran_static_result ............   Passed    0.56 sec
+      Start 35: artifacts_local
+35/36 Test #35: artifacts_local ..................   Passed    0.68 sec
+      Start 36: solver_local
+36/36 Test #36: solver_local .....................   Passed    4.71 sec
+
+97% tests passed, 1 tests failed out of 36
+
+Total Test time (real) = 136.14 sec
+
+The following tests FAILED:
+	 11 - cpp_format (Failed)
+Errors while running CTest

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/private/tmp/qcae-numerical-store-review/live_probe.py", line 59, in <module>
+    if __name__=='__main__': baseline()
+                             ~~~~~~~~^^
+  File "/private/tmp/qcae-numerical-store-review/live_probe.py", line 17, in baseline
+    cap=host.start();ctx,profile,params=prepare(host,cap,BASE,benchmark=True)
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/solver_run_ipc_tests.py", line 115, in start
+    raise AssertionError(f"Solver host startup failed: {self.log_file.read()}")
+AssertionError: Solver host startup failed: QLocalServer::listen: Unknown error 1
+

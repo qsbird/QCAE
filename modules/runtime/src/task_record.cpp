@@ -57,7 +57,11 @@ class Reader {
     std::string_view bytes;
     std::size_t offset{};
 };
-bool allowed_transition(TaskState before, TaskState after) {
+bool allowed_transition(TaskState before, TaskState after, bool artifact_completed) {
+    if (artifact_completed &&
+        (before == TaskState::interrupted || before == TaskState::outcome_unknown) &&
+        after == TaskState::succeeded)
+        return true;
     if (after == TaskState::outcome_unknown)
         return !task_terminal(before);
     if (after == TaskState::interrupted)
@@ -69,7 +73,7 @@ bool allowed_transition(TaskState before, TaskState after) {
         return after == TaskState::running || after == TaskState::cancel_requested ||
                after == TaskState::committing || after == TaskState::failed;
     if (before == TaskState::cancel_requested)
-        return after == TaskState::cancelled;
+        return after == TaskState::cancelled || after == TaskState::failed;
     if (before == TaskState::committing)
         return after == TaskState::succeeded || after == TaskState::conflicted ||
                after == TaskState::failed || after == TaskState::outcome_unknown;
@@ -89,7 +93,9 @@ void validate(const TaskRecord& record) {
         record.events.size() > 128 || record.events.front().state != TaskState::queued ||
         record.events.back().state != record.state ||
         record.events.back().progress != record.progress ||
-        (record.state == TaskState::succeeded) != bool(record.receipt))
+        (record.receipt && record.artifact_receipt) ||
+        (record.state == TaskState::succeeded) !=
+            (bool(record.receipt) || bool(record.artifact_receipt)))
         invalid();
     std::uint64_t previous_sequence = 0;
     double previous_progress = 0;
@@ -97,13 +103,24 @@ void validate(const TaskRecord& record) {
         const auto& event = record.events[index];
         if (event.sequence <= previous_sequence || !std::isfinite(event.progress) ||
             event.progress < previous_progress || event.progress > 1 ||
-            (index && !allowed_transition(record.events[index - 1].state, event.state)))
+            (index && !allowed_transition(record.events[index - 1].state,
+                                          event.state,
+                                          record.artifact_receipt.has_value())))
             invalid();
         previous_sequence = event.sequence;
         previous_progress = event.progress;
     }
     if (record.receipt && (record.receipt->transaction.value.empty() || record.progress != 1 ||
                            record.receipt->committed_revision <= record.input.revision))
+        invalid();
+    if (record.artifact_receipt &&
+        (record.artifact_receipt->artifact_id.empty() ||
+         record.artifact_receipt->artifact_id.size() > 128 ||
+         record.artifact_receipt->input_revision != record.input.revision ||
+         record.artifact_receipt->manifest_sha256.size() != 64 ||
+         record.artifact_receipt->manifest_sha256.find_first_not_of("0123456789abcdef") !=
+             std::string::npos ||
+         record.progress != 1))
         invalid();
 }
 TaskState state(Reader& reader) {
@@ -147,7 +164,7 @@ std::string encode_task_record(const TaskRecord& record) {
     validate(record);
     Writer w;
     w.text("QCAE-TASK");
-    w.number(2);
+    w.number(record.artifact_receipt ? 3 : 2);
     w.text(record.id);
     w.text(record.caller.principal);
     w.text(record.idempotency_key);
@@ -183,6 +200,12 @@ std::string encode_task_record(const TaskRecord& record) {
         w.text(record.diagnostic->message);
         w.text(record.diagnostic->field);
     }
+    if (record.artifact_receipt) {
+        w.number(1);
+        w.text(record.artifact_receipt->artifact_id);
+        w.number(record.artifact_receipt->input_revision);
+        w.text(record.artifact_receipt->manifest_sha256);
+    }
     if (w.bytes.size() > 65536)
         invalid();
     return std::move(w.bytes);
@@ -192,7 +215,7 @@ TaskRecord decode_task_record(std::string_view bytes) {
     if (r.text() != "QCAE-TASK")
         invalid();
     const auto schema = r.number();
-    if (schema != 1 && schema != 2)
+    if (schema != 1 && schema != 2 && schema != 3)
         invalid();
     TaskRecord record;
     record.id = r.text();
@@ -218,7 +241,7 @@ TaskRecord decode_task_record(std::string_view bytes) {
         receipt.current_revision = r.number();
         receipt.current_content_state = r.text();
         receipt.replayed = r.boolean();
-        if (schema == 2)
+        if (schema >= 2)
             receipt.primary_entity = EntityId(r.text());
         record.receipt = std::move(receipt);
     }
@@ -227,6 +250,11 @@ TaskRecord decode_task_record(std::string_view bytes) {
         if (code > static_cast<unsigned>(ErrorCode::schema_unsupported))
             invalid();
         record.diagnostic = Diagnostic{static_cast<ErrorCode>(code), r.text(), r.text()};
+    }
+    if (schema == 3) {
+        if (!r.boolean())
+            invalid();
+        record.artifact_receipt = TaskArtifactReceipt{r.text(), r.number(), r.text()};
     }
     r.finish();
     validate(record);

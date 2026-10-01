@@ -118,6 +118,19 @@ class ArchitectureMutations(unittest.TestCase):
         self.extra_cmake = "target_link_libraries(qcae_application PRIVATE qcae_query)\n"
         self.assert_rejected_then_restored("undeclared-dependency", lambda: setattr(self, "extra_cmake", ""))
 
+    def test_conditional_public_usage_requirements(self):
+        row = self.row("qcae_application")
+        row["conditional_public_dependencies"] = {"OPTIONAL_PUBLIC": ["qcae_query"]}
+        self.extra_cmake = "set(OPTIONAL_PUBLIC ON CACHE BOOL \"\" FORCE)\ntarget_link_libraries(qcae_application PUBLIC qcae_query)\n"
+        self.write_configuration()
+        self.assertEqual(self.run_gate(), [])
+        self.extra_cmake = "set(OPTIONAL_PUBLIC OFF CACHE BOOL \"\" FORCE)\n"
+        self.write_configuration()
+        self.assertEqual(self.run_gate(), [])
+        self.extra_cmake += "target_link_libraries(qcae_application PUBLIC qcae_query)\n"
+        self.write_configuration()
+        self.assertTrue(any(error.startswith("public-api:") for error in self.run_gate()))
+
     def test_unowned_production_unit(self):
         self.write("modules/document/src/unregistered.cpp", "int unregistered() { return 0; }\n")
         self.extra_cmake = "target_sources(qcae_document PRIVATE modules/document/src/unregistered.cpp)\n"
@@ -125,6 +138,21 @@ class ArchitectureMutations(unittest.TestCase):
         errors = self.run_gate()
         self.assertTrue(any(e.startswith("ownership:") for e in errors), errors)
         self.assertTrue(any(e.startswith("file-api-ownership:") for e in errors), errors)
+
+    def test_runtime_source_ownership(self):
+        self.write("modules/clients/bridge.py", "import json\n")
+        self.write_configuration()
+        self.assertTrue(any(e.startswith("ownership:") for e in self.run_gate()))
+        self.row("qcae_desktop_client")["runtime_sources"] = ["modules/clients/bridge.py"]
+        self.write_configuration()
+        self.assertEqual(self.run_gate(), [])
+
+    def test_mcp_cannot_link_application(self):
+        row = self.row("qcae_desktop_client")
+        old_path = row["path"]
+        row["path"] = "apps/mcp"
+        row["private_dependencies"].append("qcae_application")
+        self.assert_rejected_then_restored("client-domain", lambda: (row["private_dependencies"].clear(), row.update(path=old_path)))
 
     def test_private_include_directory_export(self):
         self.extra_cmake = 'target_include_directories(qcae_document PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/modules/document/src")\n'

@@ -1,6 +1,7 @@
 #include "qcae/resource_client.hpp"
+#include "qcae/operation_ledger.hpp"
+#include "qcae/json_ledger.hpp"
 #include <QCryptographicHash>
-#include <QJsonDocument>
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -20,6 +21,8 @@ bool unsigned_string(const QJsonValue& value, std::uint64_t& output) {
     if (!value.isString())
         return false;
     const auto bytes = value.toString().toLatin1();
+    ledger::add(
+        ledger::Stage::resource_decode, ledger::Metric::metadata_copy_bytes, bytes.size() * 3);
     const auto [end, error] = std::from_chars(bytes.data(), bytes.data() + bytes.size(), output);
     return error == std::errc{} && end == bytes.data() + bytes.size();
 }
@@ -39,6 +42,8 @@ bool bounded_text(const QJsonObject& object,
     if (!value.isString())
         return false;
     output = value.toString().toStdString();
+    ledger::add(
+        ledger::Stage::resource_decode, ledger::Metric::metadata_copy_bytes, output.size() * 4);
     return (empty || !output.empty()) && output.size() <= 256;
 }
 bool same_manifest(const ResourceManifest& a, const ResourceManifest& b) {
@@ -46,11 +51,28 @@ bool same_manifest(const ResourceManifest& a, const ResourceManifest& b) {
            a.byte_length == b.byte_length && a.chunk_bytes == b.chunk_bytes &&
            a.chunk_count == b.chunk_count && a.sha256 == b.sha256 && a.media_type == b.media_type;
 }
-QJsonObject parameters(const ResourceManifest& manifest) {
-    QJsonObject result{{"resource_id", QString::fromStdString(manifest.resource_id)}};
+std::size_t manifest_copy_bytes(const ResourceManifest& manifest) {
+    return sizeof(ResourceManifest) + manifest.resource_id.size() + manifest.sha256.size() +
+           manifest.media_type.size() + manifest.version.document.id.value.size() +
+           manifest.version.document.epoch.value.size() + manifest.version.view_session_id.size();
+}
+QJsonObject parameters(const ResourceManifest& manifest,
+                       std::optional<std::uint64_t> offset = std::nullopt) {
+    QJsonObject result{{"resource_id", transport::json_ledger::from_utf8(manifest.resource_id)}};
+    transport::json_ledger::ObjectCopies copies;
+    copies.insert(QLatin1StringView("resource_id"), result.value("resource_id"));
     if (!manifest.version.view_session_id.empty()) {
-        result.insert("view_session_id", QString::fromStdString(manifest.version.view_session_id));
-        result.insert("expected_view_revision", QString::number(manifest.version.view_revision));
+        result.insert("view_session_id",
+                      transport::json_ledger::from_utf8(manifest.version.view_session_id));
+        copies.insert(QLatin1StringView("view_session_id"), result.value("view_session_id"));
+        result.insert("expected_view_revision",
+                      transport::json_ledger::number(manifest.version.view_revision));
+        copies.insert(QLatin1StringView("expected_view_revision"),
+                      result.value("expected_view_revision"));
+    }
+    if (offset) {
+        result.insert("offset", transport::json_ledger::number(*offset));
+        copies.insert(QLatin1StringView("offset"), result.value("offset"));
     }
     return result;
 }
@@ -77,11 +99,17 @@ ResourceClient::~ResourceClient() {
     abandon();
 }
 void ResourceClient::release(const ResourceManifest& manifest) {
-    if (client_ && client_->ready())
-        (void)client_->request("resources.release",
-                               {{"resource_id", QString::fromStdString(manifest.resource_id)}},
-                               {{"requested_version", 1}},
+    if (client_ && client_->ready()) {
+        const QJsonObject params{
+            {"resource_id", transport::json_ledger::from_utf8(manifest.resource_id)}};
+        const QJsonObject context{{"requested_version", 1}};
+        transport::json_ledger::object(params, {"resource_id"});
+        transport::json_ledger::object(context, {"requested_version"});
+        (void)client_->request(transport::json_ledger::from_utf8("resources.release"),
+                               params,
+                               context,
                                [](const auto&) {});
+    }
 }
 void ResourceClient::abandon() {
     ++generation_;
@@ -102,9 +130,16 @@ void ResourceClient::setContext(const ResourceVersion& context) {
         return;
     abandon();
     context_ = context;
+    ledger::add(ledger::Stage::resource_decode,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(ResourceVersion) + context.document.id.value.size() +
+                    context.document.epoch.value.size() + context.view_session_id.size());
 }
 Result<ResourceManifest> ResourceClient::parseManifest(const QJsonObject& object) {
     ResourceManifest manifest;
+    ledger::add(ledger::Stage::resource_decode,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(ResourceManifest));
     auto& version = manifest.version;
     if (!bounded_text(object, "resource_id", manifest.resource_id) ||
         !bounded_text(object, "document_id", version.document.id.value) ||
@@ -141,10 +176,12 @@ void ResourceClient::request(const std::shared_ptr<Fetch>& fetch,
     }
     const auto& version = fetch->manifest.version;
     const QJsonObject context{
-        {"document_id", QString::fromStdString(version.document.id.value)},
-        {"document_epoch", QString::fromStdString(version.document.epoch.value)},
-        {"expected_revision", QString::number(version.revision)},
+        {"document_id", transport::json_ledger::from_utf8(version.document.id.value)},
+        {"document_epoch", transport::json_ledger::from_utf8(version.document.epoch.value)},
+        {"expected_revision", transport::json_ledger::number(version.revision)},
         {"requested_version", 1}};
+    transport::json_ledger::object(
+        context, {"document_id", "document_epoch", "expected_revision", "requested_version"});
     QPointer<ResourceClient> guard(this);
     const auto generation = generation_;
     (void)client_->request(
@@ -154,7 +191,8 @@ void ResourceClient::request(const std::shared_ptr<Fetch>& fetch,
         [guard, generation, fetch, reply = std::move(reply)](const auto& response) {
             if (guard && guard->generation_ == generation && guard->active_ == fetch)
                 reply(response);
-        });
+        },
+        resource_max_wire_bytes);
 }
 void ResourceClient::fetch(const ResourceManifest& manifest, Reply reply) {
     abandon();
@@ -171,10 +209,22 @@ void ResourceClient::fetch(const ResourceManifest& manifest, Reply reply) {
     }
     auto transfer = std::make_shared<Fetch>();
     transfer->manifest = manifest;
+    ledger::add(ledger::Stage::resource_decode,
+                ledger::Metric::metadata_copy_bytes,
+                manifest_copy_bytes(manifest));
     transfer->reply = std::move(reply);
     active_ = transfer;
+    if (manifest.byte_length) {
+        // Every read response carries the complete pinned manifest and renews
+        // a released cached lease. Validate it before assembling any bytes.
+        transfer->bytes.reserve(static_cast<qsizetype>(manifest.byte_length));
+        readNext(transfer);
+        return;
+    }
+    // An empty resource has no legal read offset. Its describe still checks
+    // remote ownership/version/cache state before the empty digest is accepted.
     request(transfer,
-            "resources.describe",
+            transport::json_ledger::from_utf8("resources.describe"),
             parameters(manifest),
             [this, transfer](const auto& response) {
                 if (response.value("status") != "success") {
@@ -196,9 +246,8 @@ void ResourceClient::readNext(const std::shared_ptr<Fetch>& transfer) {
     const auto offset = static_cast<std::uint64_t>(transfer->bytes.size());
     if (offset == manifest.byte_length) {
         if (transfer->chunks != manifest.chunk_count ||
-            QCryptographicHash::hash(transfer->bytes, QCryptographicHash::Sha256)
-                    .toHex()
-                    .toStdString() != manifest.sha256) {
+            transport::json_ledger::sha256_hex(transfer->bytes, ledger::Stage::resource_decode) !=
+                manifest.sha256) {
             finish(transfer,
                    failure<QByteArray>("Resource length, chunk count or SHA-256 did not match"));
             return;
@@ -206,43 +255,69 @@ void ResourceClient::readNext(const std::shared_ptr<Fetch>& transfer) {
         finish(transfer, {Status::success, std::move(transfer->bytes), std::nullopt});
         return;
     }
-    auto params = parameters(manifest);
-    params.insert("offset", QString::number(offset));
-    request(transfer, "resources.read", params, [this, transfer, offset](const auto& response) {
-        if (response.value("status") != "success") {
-            finish(transfer, remote_failure(response));
-            return;
-        }
-        const auto data = response.value("data").toObject();
-        const auto described = parseManifest(data.value("manifest").toObject());
-        const auto expected_size =
-            std::min<std::uint64_t>(resource_chunk_bytes, transfer->manifest.byte_length - offset);
-        std::uint64_t chunk_offset{};
-        std::uint32_t raw_length{};
-        const auto encoded = data.value("data_base64").toString().toLatin1();
-        if (!described.ok() || !same_manifest(*described.value, transfer->manifest) ||
-            !unsigned_string(data.value("offset"), chunk_offset) || chunk_offset != offset ||
-            !bounded_integer(data.value("raw_length"), raw_length) || raw_length != expected_size ||
-            data.value("encoding") != "base64" || !data.value("data_base64").isString() ||
-            static_cast<std::uint64_t>(encoded.size()) != ((expected_size + 2) / 3) * 4 ||
-            QJsonDocument(response).toJson(QJsonDocument::Compact).size() + 1 >
-                resource_max_wire_bytes) {
-            finish(
-                transfer,
-                failure<QByteArray>("Resource chunk identity, order, offset or size is invalid"));
-            return;
-        }
-        const auto decoded =
-            QByteArray::fromBase64Encoding(encoded, QByteArray::AbortOnBase64DecodingErrors);
-        if (!decoded || decoded.decoded.size() != raw_length ||
-            decoded.decoded.toBase64() != encoded) {
-            finish(transfer, failure<QByteArray>("Resource chunk has invalid base64 encoding"));
-            return;
-        }
-        transfer->bytes.append(decoded.decoded);
-        ++transfer->chunks;
-        readNext(transfer);
-    });
+    const auto params = parameters(manifest, offset);
+    request(
+        transfer,
+        transport::json_ledger::from_utf8("resources.read"),
+        params,
+        [this, transfer, offset](const auto& response) {
+            if (response.value("status") != "success") {
+                finish(transfer, remote_failure(response));
+                return;
+            }
+            const auto data = response.value("data").toObject();
+            const auto described = parseManifest(data.value("manifest").toObject());
+            const auto expected_size = std::min<std::uint64_t>(
+                resource_chunk_bytes, transfer->manifest.byte_length - offset);
+            std::uint64_t chunk_offset{};
+            std::uint32_t raw_length{};
+            const auto text = data.value("data_base64").toString();
+            const auto encoded = text.toLatin1();
+            ledger::add(
+                ledger::Stage::resource_decode, ledger::Metric::model_copy_bytes, encoded.size());
+            // QCbor stringAt makes this owned UTF-16 QString. toLatin1 and the
+            // once-reserved Base64 encode/decode outputs are counted separately.
+            ledger::add(ledger::Stage::resource_decode,
+                        ledger::Metric::library_internal_copy_bytes,
+                        text.size() * 2);
+            if (!described.ok() || !same_manifest(*described.value, transfer->manifest) ||
+                !unsigned_string(data.value("offset"), chunk_offset) || chunk_offset != offset ||
+                !bounded_integer(data.value("raw_length"), raw_length) ||
+                raw_length != expected_size || data.value("encoding") != "base64" ||
+                !data.value("data_base64").isString() ||
+                static_cast<std::uint64_t>(encoded.size()) != ((expected_size + 2) / 3) * 4) {
+                finish(transfer,
+                       failure<QByteArray>(
+                           "Resource chunk identity, order, offset or size is invalid"));
+                return;
+            }
+            const auto decoded =
+                QByteArray::fromBase64Encoding(encoded, QByteArray::AbortOnBase64DecodingErrors);
+            ledger::add(ledger::Stage::resource_decode,
+                        ledger::Metric::decoded_bytes,
+                        decoded.decoded.size());
+            ledger::add(ledger::Stage::resource_decode,
+                        ledger::Metric::model_copy_bytes,
+                        decoded.decoded.size() + encoded.size());
+            if (!decoded || decoded.decoded.size() != raw_length ||
+                decoded.decoded.toBase64() != encoded) {
+                finish(transfer, failure<QByteArray>("Resource chunk has invalid base64 encoding"));
+                return;
+            }
+            const auto previous_size = transfer->bytes.size();
+            const auto previous_capacity = transfer->bytes.capacity();
+            transfer->bytes.append(decoded.decoded);
+            ledger::add(ledger::Stage::resource_decode,
+                        ledger::Metric::model_copy_bytes,
+                        decoded.decoded.size());
+            if (transfer->bytes.capacity() != previous_capacity)
+                ledger::add(ledger::Stage::resource_decode,
+                            ledger::Metric::model_copy_bytes,
+                            previous_size);
+            ledger::cover(ledger::Stage::resource_decode);
+            ++transfer->chunks;
+            readNext(transfer);
+        });
 }
 void ResourceClient::finish(const std::shared_ptr<Fetch>& transfer, Result<QByteArray> result) {
     if (active_ != transfer)

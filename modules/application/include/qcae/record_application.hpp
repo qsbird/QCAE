@@ -1,4 +1,5 @@
 #pragma once
+#include "qcae/immutable_fact_map.hpp"
 #include "qcae/application_types.hpp"
 #include "qcae/edit_session.hpp"
 #include "qcae/record_store.hpp"
@@ -42,6 +43,11 @@ using RecordIdentityAllocator = std::function<EntityId()>;
 // supplied immutable view and must not re-enter this application.
 using RecordPrepare = std::function<Result<RecordPreparedOperation>(
     const DocumentView&, const RecordIdentityAllocator&)>;
+struct ProjectRecordMigration {
+    // Identifies the explicit source/target semantics for host-operation replay.
+    std::string signature;
+    std::function<PreparedRecordChange(const DocumentView&)> prepare;
+};
 
 // Restoration images are values passed at the migration boundary, never mutable
 // handles into an active application. Ordinary writes accept prepared changes.
@@ -74,6 +80,10 @@ struct OwnedRowImage {
     SharedStoreBytes encoded{};
 };
 using OwnedRowTable = std::map<StoreKey, std::shared_ptr<const OwnedRowImage>>;
+struct OwnedRowPage {
+    std::vector<std::shared_ptr<const OwnedRowImage>> rows;
+    bool overflow{};
+};
 struct OwnedRowUpdate {
     StoreKey key;
     SharedStoreBytes expected; // Null requires absence; otherwise compare exact payload bytes.
@@ -98,8 +108,8 @@ struct RecordStateImage {
     std::string initial_content_state;
     std::vector<std::shared_ptr<const RecordHistoryImage>> history;
     std::size_t cursor{};
-    std::map<std::string, RecordOperationImage> operations;
-    std::map<std::string, RecordHostImage> host_operations;
+    ImmutableFactMap<RecordOperationImage> operations;
+    ImmutableFactMap<RecordHostImage> host_operations;
     std::shared_ptr<const RecordSaveImage> save_intent;
     bool recoverable{};
     std::shared_ptr<const OwnedRowTable> owned_rows = std::make_shared<const OwnedRowTable>();
@@ -142,6 +152,10 @@ class RecordApplication {
     Result<DocumentInfo> create_document(const Caller&, const std::string&, const std::string&);
     Result<DocumentInfo> current_document() const;
     Result<DocumentInfo> open_document(const Caller&, const std::string&, const std::string&);
+    Result<DocumentInfo> open_migrated_document(const Caller&,
+                                                const std::string& source_path,
+                                                const std::string& idempotency_key,
+                                                const ProjectRecordMigration&);
     Result<DocumentInfo> recover_document(const Caller&, const std::string&);
     Result<DocumentInfo>
     save_document(const Caller&, const WriteContext&, const std::string&, bool, const std::string&);
@@ -173,8 +187,17 @@ class RecordApplication {
                                          const std::string& idempotency_key) const;
     Result<bool>
     update_owned_rows(const Caller&, const DocumentRef&, std::span<const OwnedRowUpdate>);
+    // User-initiated auxiliary writes must admit the revision and CAS together.
+    Result<bool>
+    update_owned_rows(const Caller&, const WriteContext&, std::span<const OwnedRowUpdate>);
     Result<std::vector<std::shared_ptr<const OwnedRowImage>>>
     owned_rows(const DocumentRef&, StoreSpace, std::string_view owner) const;
+    // Reads only the indexed identity-prefix range. A bounded page borrows the
+    // immutable row payloads; callers still validate ownership and row schemas.
+    Result<OwnedRowPage> owned_rows_with_prefix(const DocumentRef&,
+                                                StoreSpace,
+                                                std::string_view identity_prefix,
+                                                std::size_t limit) const;
     Result<ChangeReceipt> undo(const Caller&, const WriteContext&, const std::string&);
     Result<ChangeReceipt> redo(const Caller&, const WriteContext&, const std::string&);
     Result<HistorySnapshot> history(const DocumentRef&) const;
@@ -183,6 +206,14 @@ class RecordApplication {
     RecordStats stats() const;
 
   private:
+    Result<bool> update_owned_rows_checked(const Caller&,
+                                           const DocumentRef&,
+                                           std::optional<Revision>,
+                                           std::span<const OwnedRowUpdate>);
+    Result<DocumentInfo> open_document_impl(const Caller&,
+                                            const std::string&,
+                                            const std::string&,
+                                            const ProjectRecordMigration*);
     struct State;
     std::unique_ptr<State> state_;
 };

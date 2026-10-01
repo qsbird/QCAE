@@ -18,6 +18,13 @@ inline Value task_value(const TaskRecord& task) {
                          {"events", Value(std::move(events))}};
     if (task.receipt)
         object.emplace("receipt", operations::change_receipt_value(*task.receipt));
+    if (task.artifact_receipt)
+        object.emplace(
+            "artifact_receipt",
+            Value(Value::Object{
+                {"artifact_id", Value(task.artifact_receipt->artifact_id)},
+                {"input_revision", Value(std::to_string(task.artifact_receipt->input_revision))},
+                {"manifest_sha256", Value(task.artifact_receipt->manifest_sha256)}}));
     if (task.diagnostic)
         object.emplace("diagnostic",
                        Value(Value::Object{{"code", Value(error_name(task.diagnostic->code))},

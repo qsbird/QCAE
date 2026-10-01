@@ -200,15 +200,22 @@ def integration_scenario(socket_path: str, engine_stdout: Any, engine_stderr: An
             item = require_mapping(entry, "capability operation")
             name = string_field(item, "name", "capability operation")
             implementation = string_field(item, "implementation_status", f"operation {name}")
-            check(implementation in {"implemented", "partial", "planned"},
+            check(implementation in {"implemented", "partial", "planned", "unavailable"},
                   f"operation {name} has invalid implementation_status {implementation!r}")
+            if implementation == "unavailable":
+                check(item.get("available") is False,
+                      f"unavailable operation {name} must not advertise executability")
             statuses[name] = implementation
         for name in ("project.create", "model.summary", "changes.preview", "changes.commit",
                      "history.undo", "history.redo", "history.list", "capabilities.list"):
             check(statuses.get(name) in {"implemented", "partial"},
                   f"implemented M0 operation {name} must not be marked planned; got {statuses.get(name)!r}")
-        check(statuses.get("model.export") == "planned",
-              f"unsupported model.export must be marked planned, got {statuses.get('model.export')!r}")
+        nastran_available = any(item.get("solver_family") == "Nastran"
+                                for item in caps.get("declared_solver_profiles", []))
+        expected_export_status = "implemented" if nastran_available else "planned"
+        check(statuses.get("model.export") == expected_export_status,
+              f"model.export package status must be {expected_export_status!r}, "
+              f"got {statuses.get('model.export')!r}")
 
         create_key = "ipc-project-create"
         create1 = call(socket_path, "project.create", {"name": "demo"},
@@ -217,6 +224,17 @@ def integration_scenario(socket_path: str, engine_stdout: Any, engine_stderr: An
         create_data = data_of(create1, "project.create")
         document_id = string_field(create_data, "document_id", "project.create.data")
         epoch = string_field(create_data, "document_epoch", "project.create.data")
+        if statuses.get("analysis.start") == "unavailable" and nastran_available:
+            profile = next(item["profile_ref"] for item in caps["declared_solver_profiles"]
+                           if item.get("solver_family") == "Nastran")
+            unavailable = call(socket_path, "analysis.start", {"artifact_id": "never-start"},
+                               document_id=document_id, document_epoch=epoch, expected_revision="0",
+                               idempotency_key="unconfigured-solver", extra={"expected_profile": profile},
+                               expected_status="failed")
+            check(unavailable["error"]["code"] == "UNSUPPORTED_CAPABILITY",
+                  "an unavailable solver capability must reject before execution")
+            check(data_of(call(socket_path, "project.current"), "project.current")["revision"] == "0",
+                  "unavailable solver invocation must not mutate the model")
         check(create_data.get("revision") == "0", "project.create data revision must be '0'")
         check(create_data.get("durable") is False, "project.create data durable must be false")
 
@@ -359,10 +377,15 @@ def integration_scenario(socket_path: str, engine_stdout: Any, engine_stderr: An
 
         export = document_call(
             "model.export", {}, revision="3", key="ipc-unsupported-export",
-            expected_status="failed",
+            expected_status="needs_input" if nastran_available else "failed",
         )
-        check(error_code(export, "unsupported model.export") == "UNSUPPORTED_CAPABILITY",
-              f"unsupported model.export must report UNSUPPORTED_CAPABILITY: {export!r}")
+        expected_export_error = "MISSING_INPUT" if nastran_available else "UNSUPPORTED_CAPABILITY"
+        check(error_code(export, "incomplete model.export") == expected_export_error,
+              f"incomplete model.export must report {expected_export_error}: {export!r}")
+        if nastran_available:
+            check(export["error"].get("field") == "expected_profile",
+                  f"incomplete export must identify its missing target profile: {export!r}")
+        check_summary(socket_path, document_id, epoch, "3", 1)
     finally:
         stop_process(engine)
 

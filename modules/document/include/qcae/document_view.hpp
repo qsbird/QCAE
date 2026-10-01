@@ -28,7 +28,12 @@ struct RecordDocumentState;
 class DocumentView {
   public:
     explicit DocumentView(std::shared_ptr<const RecordRegistry>, RecordVersion = {});
+    DocumentView(const DocumentView&);
+    DocumentView& operator=(const DocumentView&);
+    DocumentView(DocumentView&&) noexcept = default;
+    DocumentView& operator=(DocumentView&&) noexcept = default;
     RecordVersion version() const;
+    bool matches_version(const RecordVersion&) const noexcept;
     std::shared_ptr<const RecordRegistry> registry() const noexcept;
     std::size_t size() const noexcept;
     std::size_t count(RecordTypeId) const noexcept;
@@ -45,10 +50,14 @@ class DocumentView {
     }
 
   private:
+    struct SharedState {};
+    DocumentView(std::shared_ptr<const RecordDocumentState>, RecordVersion, SharedState);
     friend DocumentView apply_record_changes(const DocumentView&,
                                              const RecordChangeSet&,
                                              RecordDirection,
                                              RecordStats*);
+    friend void
+    validate_record_candidate(const DocumentView&, const DocumentView&, const RecordChangeSet&);
     std::shared_ptr<const RecordDocumentState> state_;
     RecordVersion version_;
 };
@@ -57,6 +66,9 @@ DocumentView apply_record_changes(const DocumentView&,
                                   const RecordChangeSet&,
                                   RecordDirection = RecordDirection::forward,
                                   RecordStats* = nullptr);
+// Verify an externally prepared immutable candidate exactly represents these changes.
+// Shared, unchanged pages are checked by identity; only distinct pages are inspected.
+void validate_record_candidate(const DocumentView&, const DocumentView&, const RecordChangeSet&);
 RecordChangeSet diff_record_views(const DocumentView&, const DocumentView&);
 std::string encode_record_changes(const RecordChangeSet&, RecordStats* = nullptr);
 RecordChangeSet decode_record_changes(const RecordRegistry&, std::string_view);

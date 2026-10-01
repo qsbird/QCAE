@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/real_ai_mcp_units_workflow.py", line 172, in <module>
+    run(arguments)
+    ~~~^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/real_ai_mcp_units_workflow.py", line 110, in run
+    second = server.turn(second_prompt, args.effort, second_schema)
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/real_ai_mcp_clarification.py", line 132, in turn
+    assert calls and not failed_calls, {"completed_calls": len(calls), "failed_calls": failed_calls}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'completed_calls': 74, 'failed_calls': [{'tool': 'entity.query', 'status': 'failed', 'error': None}, {'tool': 'entity.fields', 'status': 'failed', 'error': None}, {'tool': 'model.summary', 'status': 'failed', 'error': None}, {'tool': 'model.summary', 'status': 'failed', 'error': None}]}

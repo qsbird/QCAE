@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/private/tmp/qcae-numerical-store-review/carried_public_probe.py", line 40, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/private/tmp/qcae-numerical-store-review/carried_public_probe.py", line 29, in main
+    data=reply['data'];checks=data['numerical_checks'];ensure(len(checks['immutable_history'])==16,'actual no16history')
+                                                       ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/qcae-numerical-store-review/carried_public_probe.py", line 9, in ensure
+    if not v:raise AssertionError(m)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: actual no16history

@@ -1,6 +1,9 @@
 #include "runtime_test_support.hpp"
 #include "qcae/event_stream.hpp"
+#include "qcae/ipc_model.hpp"
+#include "qcae/operation_ledger.hpp"
 #include <QCoreApplication>
+#include <QJsonDocument>
 #include <iostream>
 
 using namespace runtime_test;
@@ -43,6 +46,12 @@ QJsonObject data(const QJsonObject& response) {
     check(response.value("status") == "success", "event operation success");
     return response.value("data").toObject();
 }
+QJsonObject with_summary(QJsonObject request) {
+    auto parameters = request.value("parameters").toObject();
+    parameters.insert("include_document_summary", true);
+    request.insert("parameters", parameters);
+    return request;
+}
 std::uint64_t sequence(const QJsonObject& event, const char* key = "sequence") {
     bool valid = false;
     const auto value = event.value(QLatin1String(key)).toString().toULongLong(&valid);
@@ -53,6 +62,221 @@ void change(RecordApplication& app, double value, const std::string& key) {
     const auto info = good(app.current_document());
     good(app.execute(
         caller, at(info), "test.material", modulus_signature(value), material_change(value), key));
+}
+void latest_summary_preserves_legacy_journal() {
+    auto store = std::make_shared<Store>();
+    auto config = options(store);
+    config.projects = std::make_shared<Projects>();
+    RecordApplication app(config);
+    seed(app);
+    ipc::EventStream stream(app, "engine-a");
+    stream.refresh();
+    const auto baseline = data(stream.dispatch(request("events.subscribe", ""), "legacy"));
+    data(stream.dispatch(with_summary(request("events.subscribe", "")), "modern"));
+    const auto cursor = sequence(baseline, "next_sequence");
+    change(app, 180000, "summary-edit");
+    good(app.undo(caller, at(good(app.current_document())), "summary-undo"));
+    good(app.redo(caller, at(good(app.current_document())), "summary-redo"));
+    const auto current = good(app.current_document());
+    stream.refresh();
+    const auto modern = stream.drain("modern");
+    const auto legacy = stream.drain("legacy");
+    check(modern.size() == 6 && legacy.size() == 6, "summary does not coalesce journal events");
+    for (qsizetype index = 0; index < modern.size(); ++index) {
+        auto event = modern[index].toObject();
+        auto payload = event.value("data").toObject();
+        check(payload.contains("document_summary") == (index == 4),
+              "only the final current DocumentChanged has a proven summary");
+        if (index == 4) {
+            const auto summary = payload.value("document_summary").toObject();
+            check(summary == ipc::info_json(current) &&
+                      summary.value("revision") == event.value("revision") &&
+                      summary.value("document_id") == event.value("document_id") &&
+                      summary.value("document_epoch") == event.value("document_epoch"),
+                  "summary is the exact authoritative current info, not relabeled history");
+            payload.remove("document_summary");
+            event.insert("data", payload);
+        }
+        check(event == legacy[index].toObject() && sequence(event) == cursor + index + 1,
+              "legacy payload, sequence and ordered document/history pairs are unchanged");
+    }
+    check(data(stream.dispatch(with_summary(request("events.read", "engine-a", cursor)), {}))
+                      .value("events")
+                      .toArray() == modern &&
+              data(stream.dispatch(request("events.read", "engine-a", cursor), {}))
+                      .value("events")
+                      .toArray() == legacy,
+          "read and subscriptions apply the same explicit summary selection");
+    for (const QJsonValue& value : {QJsonValue("true"), QJsonValue(1), QJsonValue(QJsonArray{})}) {
+        auto invalid = request("events.read");
+        auto parameters = invalid.value("parameters").toObject();
+        parameters.insert("include_document_summary", value);
+        invalid.insert("parameters", parameters);
+        check(stream.dispatch(invalid, {}).value("error").toObject().value("code") ==
+                  "INVALID_INPUT",
+              "summary opt-in requires a boolean");
+    }
+    good(app.save_document(caller, at(current), "/summary.qcae", false, "summary-save"));
+    stream.refresh();
+    const auto metadata = stream.drain("modern");
+    check(metadata.size() == 1 &&
+              metadata[0].toObject().value("event") == "ProjectMetadataChanged" &&
+              !metadata[0].toObject().value("data").toObject().contains("document_summary"),
+          "same-revision metadata keeps the authoritative query fallback");
+
+    ipc::EventStream bounded(app, "engine-a", {2, 2});
+    bounded.refresh();
+    data(bounded.dispatch(request("events.subscribe", ""), "legacy"));
+    data(bounded.dispatch(with_summary(request("events.subscribe", "")), "modern"));
+    change(app, 170000, "summary-overflow-one");
+    change(app, 160000, "summary-overflow-two");
+    bounded.refresh();
+    check(bounded.drain("modern")[0].toObject().value("frame_type") == "event_gap" &&
+              bounded.drain("legacy")[0].toObject().value("frame_type") == "event_gap",
+          "summary subscribers retain ordinary gap behavior");
+    change(app, 150000, "summary-after-gap");
+    bounded.refresh();
+    const auto resumed = bounded.drain("modern");
+    const auto old = bounded.drain("legacy");
+    check(resumed.size() == 2 && old.size() == 2 &&
+              resumed[0].toObject().value("data").toObject().contains("document_summary") &&
+              !old[0].toObject().value("data").toObject().contains("document_summary"),
+          "a gap advances the cursor without forgetting negotiated summary selection");
+}
+void canonical_wire_cache_is_shared_and_bounded() {
+    RecordApplication app(options(std::make_shared<Store>()));
+    seed(app);
+    ipc::EventStream stream(app, "engine-a", {2, 2});
+    stream.refresh();
+    data(stream.dispatch(with_summary(request("events.subscribe", "")), "modern"));
+    data(stream.dispatch(request("events.subscribe", ""), "legacy"));
+    change(app, 180000, "cache-one");
+    const auto stats_before = stream.stats();
+    const auto observation =
+        std::make_shared<ledger::OperationLedger>(ledger::Identity{"event-cache", {}, {}, 0});
+    ledger::activate(observation);
+    stream.refresh();
+    const auto modern = stream.drain("modern");
+    const auto legacy = stream.drain("legacy");
+    const auto before_cache = observation->snapshot();
+    std::uint64_t logical_encoded{};
+    for (const auto& value : modern) {
+        const auto event = value.toObject();
+        const auto encoded = stream.encoded_frame(event);
+        const auto shared = stream.encoded_frame(event);
+        check(encoded && shared &&
+                  *encoded == QJsonDocument(event).toJson(QJsonDocument::Compact) + '\n' &&
+                  encoded->constData() == shared->constData(),
+              "Canonical events borrow the exact immutable encoded frame");
+        logical_encoded += encoded->size() - 1;
+        auto changed = event;
+        changed.insert("revision", "999");
+        check(!stream.encoded_frame(changed), "Modified fields cannot reuse canonical wire bytes");
+    }
+    const auto after_cache = observation->snapshot();
+    const auto stage = static_cast<std::size_t>(ledger::Stage::socket_send);
+    check(before_cache.values[stage] == after_cache.values[stage],
+          "Cache lookup must not fabricate a new encoding or owned payload copy");
+    ledger::activate({});
+    check(stream.stats().metadata_bytes_encoded - stats_before.metadata_bytes_encoded ==
+              logical_encoded,
+          "The event encoded-statistic preserves its original logical JSON size");
+    check(!stream.encoded_frame(legacy[0].toObject()) &&
+              stream.encoded_frame(legacy[1].toObject()).has_value(),
+          "Legacy stripped summary falls back while unchanged history still borrows wire");
+    const auto retained_event = modern[0].toObject();
+    auto detached = *stream.encoded_frame(retained_event);
+    const auto original = detached;
+    detached.append('x');
+    check(*stream.encoded_frame(retained_event) == original,
+          "Caller mutation cannot overwrite cached immutable bytes");
+    change(app, 170000, "cache-two");
+    stream.refresh();
+    check(!stream.encoded_frame(retained_event), "Expired retained events cannot borrow cache");
+    check(!stream.encoded_frame(QJsonObject{{"frame_type", "event_gap"}, {"sequence", "3"}}),
+          "Gaps always use normal encoding");
+    for (const auto text : {"", "+1", "-1", " 1", "18446744073709551616"}) {
+        auto invalid = request("events.read");
+        auto parameters = invalid.value("parameters").toObject();
+        parameters.insert("after_sequence", text);
+        invalid.insert("parameters", parameters);
+        check(stream.dispatch(invalid, {}).value("error").toObject().value("code") ==
+                  "INVALID_INPUT",
+              "Borrowed cursor parsing preserves strict failures");
+    }
+}
+void same_snapshot_rows_are_complete_or_empty() {
+    RecordApplication app(options(std::make_shared<Store>()));
+    seed(app);
+    const auto before = good(app.current_document());
+    good(app.execute(
+        caller,
+        at(before),
+        "test.sources",
+        "source",
+        [](const DocumentView& view,
+           const RecordIdentityAllocator&) -> Result<RecordPreparedOperation> {
+            EditSession edit(view);
+            edit.put(records::IncludeDocument{
+                EntityId("include"), "model.bdf", {}, {EntityId("material")}});
+            edit.put(records::SourceIdentifier{EntityId("source"),
+                                               EntityId("material"),
+                                               "import",
+                                               EntityId("include"),
+                                               profile,
+                                               "MAT1",
+                                               42});
+            return {Status::success,
+                    RecordPreparedOperation{
+                        edit.prepare(), "Source", EntityId("material"), "source", 0., false},
+                    {}};
+        },
+        "rows-source"));
+    const auto snapshot = good(app.snapshot(before.document));
+    const std::vector<std::string> ids{"material"};
+    const auto rows = good(ipc::entity_rows_json(snapshot, ids));
+    check(rows.complete && rows.rows.size() == 1 &&
+              rows.encoded_byte_upper_bound >=
+                  static_cast<std::uint64_t>(
+                      QJsonDocument(rows.rows).toJson(QJsonDocument::Compact).size()),
+          "complete row encoding stays inside its conservative wire budget");
+    const auto material = rows.rows[0].toObject();
+    const auto sources = material.value("sources").toArray();
+    check(material.value("entity_id") == "material" && material.value("kind") == "material" &&
+              material.value("name") == "Steel" &&
+              material.value("young_modulus_mpa").toDouble() == 210000 && sources.size() == 1 &&
+              sources[0].toObject().value("number") == "42" &&
+              sources[0].toObject().value("namespace") == "MAT1" &&
+              sources[0].toObject().value("include_id") == "include",
+          "shared entity DTO preserves actual material fields and source projection");
+    change(app, 180000, "row-later-revision");
+    check(good(ipc::entity_rows_json(snapshot, ids))
+                  .rows[0]
+                  .toObject()
+                  .value("young_modulus_mpa")
+                  .toDouble() == 210000,
+          "row serializer borrows the supplied immutable snapshot, not a later current model");
+    for (const auto& incomplete_ids :
+         {std::vector<std::string>{"source"}, std::vector<std::string>{"missing"}}) {
+        const auto incomplete = good(ipc::entity_rows_json(snapshot, incomplete_ids));
+        check(!incomplete.complete && incomplete.rows.isEmpty(),
+              "non-query and missing records cannot masquerade as complete empty changes");
+    }
+    const auto too_many =
+        good(ipc::entity_rows_json(snapshot, std::vector<std::string>{"material", "include"}, 1));
+    const auto too_large = good(ipc::entity_rows_json(snapshot, ids, 1000, 64));
+    check(!too_many.complete && too_many.rows.isEmpty() && !too_large.complete &&
+              too_large.rows.isEmpty(),
+          "row and byte limits return no partially applicable rows");
+    check(!ipc::entity_rows_json(snapshot, std::vector<std::string>{"material", "material"}).ok() &&
+              !ipc::entity_rows_json(snapshot, std::vector<std::string>{""}).ok() &&
+              !ipc::entity_rows_json(snapshot, ids, 0).ok() &&
+              !ipc::entity_rows_json(snapshot, ids, 1001).ok() &&
+              !ipc::entity_rows_json(snapshot, ids, 1000, 0).ok(),
+          "duplicate IDs and invalid budgets are structured input failures");
+    const auto empty = good(ipc::entity_rows_json(snapshot, {}));
+    check(empty.complete && empty.rows.isEmpty() && empty.encoded_byte_upper_bound == 2,
+          "an actually empty changed-ID set is complete without a whole-model query");
 }
 void journal_events_and_metadata() {
     auto store = std::make_shared<Store>();
@@ -236,6 +460,9 @@ int main(int argc, char** argv) {
     QCoreApplication application(argc, argv);
     try {
         journal_events_and_metadata();
+        latest_summary_preserves_legacy_journal();
+        canonical_wire_cache_is_shared_and_bounded();
+        same_snapshot_rows_are_complete_or_empty();
         gaps_bounds_and_storage_uncertainty();
         actual_task_fact_events();
         std::cout << "event stream tests passed\n";

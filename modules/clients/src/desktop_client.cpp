@@ -1,6 +1,8 @@
 #include "qcae/desktop_client.hpp"
 
 #include "qcae/local_endpoint.hpp"
+#include "qcae/json_ledger.hpp"
+#include "qcae/operation_ledger.hpp"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -18,14 +20,12 @@ constexpr auto api_version = "1.1";
 constexpr int max_pending = 64;
 bool unsignedString(const QJsonObject& object, const char* field, quint64& result) {
     const auto value = object.value(QLatin1String(field));
-    if (!value.isString() || value.toString().isEmpty())
+    std::uint64_t parsed{};
+    if (!value.isString() ||
+        !transport::json_ledger::unsigned_decimal(value.toStringView(), parsed))
         return false;
-    const auto text = value.toString();
-    if (std::any_of(text.begin(), text.end(), [](QChar c) { return c < '0' || c > '9'; }))
-        return false;
-    bool valid = false;
-    result = text.toULongLong(&valid);
-    return valid;
+    result = parsed;
+    return true;
 }
 } // namespace
 
@@ -117,6 +117,11 @@ void DesktopClient::onDisconnected() {
     events_need_resync_ = true;
     supports_events_ = false;
     supports_resources_ = false;
+    supports_inline_empty_render_ = false;
+    supports_events_document_summary_ = false;
+    supports_render_model_rebase_ = false;
+    supports_render_changed_rows_ = false;
+    render_wire_version_ = 2;
     if (ready_) {
         ready_ = false;
         QPointer<DesktopClient> self(this);
@@ -138,8 +143,9 @@ void DesktopClient::setEventCursor(const QString& instance, quint64 sequence) {
 QString DesktopClient::request(const QString& operation,
                                const QJsonObject& parameters,
                                const QJsonObject& context,
-                               Reply callback) {
-    const auto id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+                               Reply callback,
+                               qsizetype max_reply_bytes) {
+    const auto id = transport::json_ledger::uuid();
     if (!ready_ || pending_.size() >= max_pending) {
         if (callback)
             callback(failure(id,
@@ -147,11 +153,36 @@ QString DesktopClient::request(const QString& operation,
                              ready_ ? "Too many pending requests" : "Engine is not connected"));
         return {};
     }
-    QJsonObject frame = context;
-    frame.insert("api_version", api_version);
-    frame.insert("request_id", id);
-    frame.insert("operation", operation);
-    frame.insert("parameters", parameters);
+    QJsonObject frame;
+    transport::json_ledger::ObjectCopies object_copies;
+    const std::array<QLatin1StringView, 4> names{QLatin1StringView("api_version"),
+                                                 QLatin1StringView("operation"),
+                                                 QLatin1StringView("parameters"),
+                                                 QLatin1StringView("request_id")};
+    const std::array<QJsonValue, 4> values{QStringLiteral("1.1"), operation, parameters, id};
+    std::size_t field{};
+    const auto append_fixed = [&] {
+        frame.insert(names[field], values[field]);
+        object_copies.insert(names[field], values[field], true, false, true);
+        ++field;
+    };
+    // Merge already sorted context keys with the reserved fields. Reserved
+    // values retain their original precedence. Every insertion appends at
+    // the end, with no COW of the original context or temporary owned key.
+    for (auto it = context.constBegin(); it != context.constEnd(); ++it) {
+        const auto key = it.keyView();
+        while (field < names.size() && QAnyStringView::compare(names[field], key) < 0)
+            append_fixed();
+        if (field < names.size() && QAnyStringView::compare(names[field], key) == 0) {
+            append_fixed();
+            continue;
+        }
+        const auto member = it.value();
+        const auto owned_key = transport::json_ledger::insert_borrowed_key(frame, key, member);
+        object_copies.insert(key, member, false, owned_key, true);
+    }
+    while (field < names.size())
+        append_fixed();
     QPointer<DesktopClient> self(this);
     const bool sent = send(frame);
     if (!self)
@@ -164,23 +195,42 @@ QString DesktopClient::request(const QString& operation,
     pending_.insert(
         id,
         {std::move(callback),
-         QDateTime::currentMSecsSinceEpoch() + std::max<qint64>(1, options_.request_timeout_ms)});
+         QDateTime::currentMSecsSinceEpoch() + std::max<qint64>(1, options_.request_timeout_ms),
+         max_reply_bytes > 0 ? std::min<qsizetype>(max_reply_bytes, transport::max_frame_bytes)
+                             : transport::max_frame_bytes});
     return id;
 }
 
 bool DesktopClient::send(const QJsonObject& frame) {
-    const auto bytes = QJsonDocument(frame).toJson(QJsonDocument::Compact) + '\n';
+    const auto bytes = transport::json_ledger::compact_frame(frame);
     if (bytes.size() > transport::max_frame_bytes ||
         socket_.bytesToWrite() + bytes.size() > transport::max_frame_bytes * 2)
         return false;
-    if (socket_.write(bytes) == bytes.size())
+    const auto accepted = socket_.write(bytes);
+    if (accepted > 0) {
+        transport::json_ledger::frame(ledger::Stage::socket_send, frame, accepted);
+        ledger::add(ledger::Stage::socket_send, ledger::Metric::socket_bytes, accepted);
+        ledger::add(ledger::Stage::socket_send, ledger::Metric::model_copy_bytes, accepted);
+    }
+    ledger::cover(ledger::Stage::socket_send);
+    if (accepted == bytes.size())
         return true;
     socket_.abort();
     return false;
 }
 
 void DesktopClient::consume() {
-    incoming_ += socket_.readAll();
+    const auto received = socket_.readAll();
+    ledger::add(ledger::Stage::socket_receive, ledger::Metric::socket_bytes, received.size());
+    ledger::add(ledger::Stage::socket_receive, ledger::Metric::model_copy_bytes, received.size());
+    transport::json_ledger::socket_read(received.size());
+    ledger::cover(ledger::Stage::socket_receive);
+    const auto previous_size = incoming_.size();
+    const auto previous_capacity = incoming_.capacity();
+    incoming_ += received;
+    ledger::add(ledger::Stage::socket_receive, ledger::Metric::model_copy_bytes, received.size());
+    if (incoming_.capacity() != previous_capacity)
+        ledger::add(ledger::Stage::socket_receive, ledger::Metric::model_copy_bytes, previous_size);
     while (true) {
         const auto newline = incoming_.indexOf('\n');
         if (newline < 0) {
@@ -192,16 +242,21 @@ void DesktopClient::consume() {
             socket_.abort();
             return;
         }
-        const auto line = incoming_.left(newline);
-        incoming_.remove(0, newline + 1);
+        const auto line = QByteArrayView(incoming_).first(newline);
         QJsonParseError error;
-        const auto parsed = QJsonDocument::fromJson(line, &error);
+        const auto parsed = QJsonValue::fromJson(line, &error);
+        transport::json_ledger::decoding(line);
+        ledger::add(ledger::Stage::socket_receive, ledger::Metric::decoded_bytes, line.size());
+        // The parsed object owns its strings; the borrowed input ends here.
+        transport::json_ledger::remove_prefix(incoming_, newline + 1);
         if (error.error != QJsonParseError::NoError || !parsed.isObject()) {
             socket_.abort();
             return;
         }
         QPointer<DesktopClient> self(this);
-        deliver(parsed.object());
+        transport::json_ledger::frame(
+            ledger::Stage::socket_receive, parsed.toObject(), newline + 1);
+        deliver(parsed.toObject(), newline + 1);
         if (!self)
             return;
         if (socket_.state() != QLocalSocket::ConnectedState)
@@ -209,8 +264,8 @@ void DesktopClient::consume() {
     }
 }
 
-void DesktopClient::deliver(const QJsonObject& response) {
-    const auto frame_type = response.value("frame_type").toString();
+void DesktopClient::deliver(const QJsonObject& response, qsizetype frame_bytes) {
+    const auto frame_type = transport::json_ledger::string(response.value("frame_type"));
     if (frame_type == "event" || frame_type == "event_gap") {
         const auto generation = transport_generation_;
         QTimer::singleShot(0, this, [this, generation, response] {
@@ -219,7 +274,7 @@ void DesktopClient::deliver(const QJsonObject& response) {
         });
         return;
     }
-    const auto id = response.value("request_id").toString();
+    const auto id = transport::json_ledger::string(response.value("request_id"));
     if (id.isEmpty() || !response.value("status").isString()) {
         socket_.abort();
         return;
@@ -246,6 +301,22 @@ void DesktopClient::deliver(const QJsonObject& response) {
             data.value("capabilities").toObject().value("events_version").toInt() == 1;
         supports_resources_ =
             data.value("capabilities").toObject().value("resources_version").toInt() == 1;
+        supports_inline_empty_render_ =
+            data.value("capabilities").toObject().value("render_inline_empty_version").toInt() == 1;
+        const auto advertised_wire =
+            data.value("capabilities").toObject().value("render_wire_version").toInt(2);
+        render_wire_version_ = advertised_wire > 0 ? std::min<unsigned>(advertised_wire, 3) : 2;
+        supports_events_document_summary_ =
+            supports_events_ && data.value("capabilities")
+                                        .toObject()
+                                        .value("events_document_summary_version")
+                                        .toInt() == 1;
+        supports_render_model_rebase_ =
+            supports_resources_ &&
+            data.value("capabilities").toObject().value("render_model_rebase_version").toInt() == 1;
+        supports_render_changed_rows_ =
+            supports_resources_ &&
+            data.value("capabilities").toObject().value("render_changed_rows_version").toInt() == 1;
         events_need_resync_ = true;
         event_sequence_ = 0;
         QPointer<DesktopClient> self(this);
@@ -266,7 +337,10 @@ void DesktopClient::deliver(const QJsonObject& response) {
     }
     auto pending = pending_.take(id);
     if (pending.callback)
-        postReply(std::move(pending.callback), response);
+        postReply(std::move(pending.callback),
+                  frame_bytes > pending.max_reply_bytes
+                      ? failure(id, "FRAME_TOO_LARGE", "Reply exceeds its requested frame limit")
+                      : response);
 }
 
 void DesktopClient::requireEventResync(const QString& reason, quint64 sequence) {
@@ -278,7 +352,7 @@ void DesktopClient::requireEventResync(const QString& reason, quint64 sequence) 
 void DesktopClient::deliverEvent(const QJsonObject& event) {
     quint64 sequence{};
     if (!supports_events_ || !unsignedString(event, "sequence", sequence) ||
-        event.value("engine_instance_id").toString() != engine_instance_id_) {
+        transport::json_ledger::string(event.value("engine_instance_id")) != engine_instance_id_) {
         requireEventResync("Invalid event instance or sequence", event_sequence_);
         return;
     }
@@ -292,9 +366,9 @@ void DesktopClient::deliverEvent(const QJsonObject& event) {
     }
     quint64 revision{};
     if (!sequence || !event.value("event").isString() ||
-        event.value("event").toString().isEmpty() ||
-        event.value("document_id").toString().isEmpty() ||
-        event.value("document_epoch").toString().isEmpty() ||
+        transport::json_ledger::string(event.value("event")).isEmpty() ||
+        transport::json_ledger::string(event.value("document_id")).isEmpty() ||
+        transport::json_ledger::string(event.value("document_epoch")).isEmpty() ||
         !unsignedString(event, "revision", revision) || !event.value("data").isObject()) {
         requireEventResync("Malformed event frame", event_sequence_);
         return;

@@ -20,6 +20,7 @@
 #include <iostream>
 #include <numbers>
 #include <stdexcept>
+#include <string_view>
 #include <vector>
 #include <vtkCamera.h>
 #include <vtkRenderWindow.h>
@@ -247,6 +248,13 @@ QJsonObject hardware() {
 #endif
     return result;
 }
+void save_report(const char* path, const QJsonObject& report) {
+    QSaveFile output(QString::fromLocal8Bit(path));
+    require(output.open(QIODevice::WriteOnly), "Cannot open graphics report");
+    const auto bytes = QJsonDocument(report).toJson(QJsonDocument::Indented);
+    require(output.write(bytes) == bytes.size() && output.commit(),
+            "Cannot publish graphics report");
+}
 } // namespace
 int main(int argc, char** argv) {
     auto format = QVTKOpenGLNativeWidget::defaultFormat();
@@ -257,7 +265,10 @@ int main(int argc, char** argv) {
 #ifndef NDEBUG
         throw std::runtime_error("SK-12 graphics evidence requires a Release build");
 #endif
-        require(argc == 2, "Usage: qcae_c3_graphics_bench output.json");
+        const bool environment_only =
+            argc == 3 && std::string_view(argv[2]) == "--environment-only";
+        require(argc == 2 || environment_only,
+                "Usage: qcae_c3_graphics_bench output.json [--environment-only]");
         qcae::VtkView view;
         view.resize(framebuffer_width, framebuffer_height);
         view.show();
@@ -283,6 +294,14 @@ int main(int argc, char** argv) {
         environment.insert("framebuffer", QJsonArray{size[0], size[1]});
         environment.insert("logical_widget", QJsonArray{widget->width(), widget->height()});
         environment.insert("opengl_capabilities", QString::fromUtf8(window->ReportCapabilities()));
+        if (environment_only) {
+            save_report(argv[1],
+                        QJsonObject{{"kind", "actual_graphics_environment_probe"},
+                                    {"environment", environment},
+                                    {"performance_samples_collected", 0}});
+            std::cout << "Actual OpenGL environment captured; framebuffer 1280x720\n";
+            return 0;
+        }
         const auto rotation = trajectory(*window, *renderer, false);
         const auto zoom = trajectory(*window, *renderer, true);
         const auto feedback = inputFeedback(view, *widget, *window, *renderer);
@@ -336,11 +355,7 @@ int main(int argc, char** argv) {
             {"feedback_highlight_pixels", highlighted},
             {"screenshot", screenshot_path},
             {"passed", rotation.p95 <= 33 && zoom.p95 <= 33 && feedback.p95 <= 100}};
-        QSaveFile output(QString::fromLocal8Bit(argv[1]));
-        require(output.open(QIODevice::WriteOnly), "Cannot open graphics report");
-        const auto bytes = QJsonDocument(report).toJson(QJsonDocument::Indented);
-        require(output.write(bytes) == bytes.size() && output.commit(),
-                "Cannot publish graphics report");
+        save_report(argv[1], report);
         std::cout << "rotation P95 " << rotation.p95 << " ms; zoom P95 " << zoom.p95 << " ms\n";
         std::cout << "visible-pick highlight input P95 " << feedback.p95 << " ms\n";
         return rotation.p95 <= 33 && zoom.p95 <= 33 && feedback.p95 <= 100 ? 0 : 1;

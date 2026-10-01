@@ -1,0 +1,3676 @@
+{
+  "schema": "qcae.harfbuzz-alias-tranche4/1",
+  "status": "independent Release build/install and headless 15-case outputs equal",
+  "coverage_complete": false,
+  "previous_prefixes_modified": false,
+  "manifest_site_count": 377,
+  "added_alias_sites": 23,
+  "actual_added_reached_sites": 7,
+  "actual_added_typed_write_calls": 720,
+  "actual_added_typed_write_upper_bound_bytes": 2160,
+  "actual_outputs_equal_cases": 15,
+  "headless_no_qapplication": true,
+  "original_once_proof": "Original assignment occurs once in do/while macro; sizeof exact destination is unevaluated; observer fires only after that assignment. Installed-vs-observed public glyph records/positions/shaping success equal in every actual case.",
+  "alias_sites": [
+    {
+      "site": "harfbuzz/src/hb-buffer.cc:owned_alias_store:1",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "glyph->codepoint = codepoint;",
+      "destination": "glyph->codepoint",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 120,
+      "actual_typed_write_upper_bound_bytes": 480,
+      "runtime_reached_in_fixture": true
+    },
+    {
+      "site": "harfbuzz/src/hb-buffer.cc:owned_alias_store:2",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "glyph->mask = 0;",
+      "destination": "glyph->mask",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 120,
+      "actual_typed_write_upper_bound_bytes": 480,
+      "runtime_reached_in_fixture": true
+    },
+    {
+      "site": "harfbuzz/src/hb-buffer.cc:owned_alias_store:3",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "glyph->cluster = cluster;",
+      "destination": "glyph->cluster",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 120,
+      "actual_typed_write_upper_bound_bytes": 480,
+      "runtime_reached_in_fixture": true
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:1",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() = props;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 80,
+      "actual_typed_write_upper_bound_bytes": 160,
+      "runtime_reached_in_fixture": true
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:10",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() &= ~ UPROPS_MASK_CONTINUATION;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:11",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() |= UPROPS_MASK_Cf_AAT_DELETED;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:12",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() |= UPROPS_MASK_HIDDEN;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:13",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->lig_props() = 0;",
+      "destination": "info->lig_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 80,
+      "actual_typed_write_upper_bound_bytes": 80,
+      "runtime_reached_in_fixture": true
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:14",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->lig_props() = (lig_id << 5) | IS_LIG_BASE | (lig_num_comps & 0x0F);",
+      "destination": "info->lig_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:15",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->lig_props() = (lig_id << 5) | (lig_comp & 0x0F);",
+      "destination": "info->lig_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:16",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->glyph_props() = props;",
+      "destination": "info->glyph_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 160,
+      "actual_typed_write_upper_bound_bytes": 320,
+      "runtime_reached_in_fixture": true
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:17",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->glyph_props() &= ~(HB_OT_LAYOUT_GLYPH_PROPS_LIGATED |\n\t\t\t   HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED);",
+      "destination": "info->glyph_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:18",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->glyph_props() &= ~(HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED);",
+      "destination": "info->glyph_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:2",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() = (unsigned int) gen_cat | (info->unicode_props() & (0xFF & ~UPROPS_MASK_GEN_CAT));",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:3",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() = (modified_class<<8) | (info->unicode_props() & 0xFF);",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:4",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() = (((unsigned int) s)<<8) | (info->unicode_props() & 0xFF);",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:5",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() |= UPROPS_MASK_Cf_VS;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:6",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() |= UPROPS_MASK_IGNORABLE;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:7",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() &= ~ UPROPS_MASK_IGNORABLE;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:8",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() &= ~ UPROPS_MASK_HIDDEN;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-layout.hh:owned_alias_store:9",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "info->unicode_props() |= UPROPS_MASK_CONTINUATION;",
+      "destination": "info->unicode_props()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-shape-normalize.cc:owned_alias_store:1",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "buffer->cur().normalizer_glyph_index() = glyph;",
+      "destination": "buffer->cur().normalizer_glyph_index()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 1,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 0,
+      "actual_typed_write_upper_bound_bytes": 0,
+      "runtime_reached_in_fixture": false
+    },
+    {
+      "site": "harfbuzz/src/hb-ot-shape-normalize.cc:owned_alias_store:2",
+      "kind": "actual_owned_alias_typed_store_upper_bound",
+      "original_statement": "buffer->cur().normalizer_glyph_index() = glyph;",
+      "destination": "buffer->cur().normalizer_glyph_index()",
+      "destination_bytes": "sizeof exact lvalue type, unevaluated",
+      "source_prefix_occurrence": 2,
+      "proof": "original statement once; callback after write; no getter/index evaluated for sizeof",
+      "origin": "frozen 23-entry alias/mutator inventory",
+      "actual_calls": 40,
+      "actual_typed_write_upper_bound_bytes": 160,
+      "runtime_reached_in_fixture": true
+    }
+  ],
+  "actual_total_known_copy_write_upper_bound_bytes": 76958,
+  "actual_remaining_shape_entry_placeholder_calls": 15,
+  "headless_fixture_domain": [
+    {
+      "text": "Steel E = 200000 MPa",
+      "shaper": "default",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 249,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              1215,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 894,
+            "cluster": 1,
+            "mask": 0,
+            "advance": [
+              587,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 2,
+            "mask": 1,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 772,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              418,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 5,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 72,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1131,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 7,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1459,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              1238,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1310,
+            "cluster": 10,
+            "mask": 0,
+            "advance": [
+              1159,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 11,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 12,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 13,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 14,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 16,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 182,
+            "cluster": 17,
+            "mask": 0,
+            "advance": [
+              1702,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 235,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              1093,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 588,
+            "cluster": 19,
+            "mask": 1,
+            "advance": [
+              1028,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 249,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              1215,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 894,
+            "cluster": 1,
+            "mask": 0,
+            "advance": [
+              587,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 2,
+            "mask": 1,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 772,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              418,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 5,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 72,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1131,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 7,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1459,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              1238,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1310,
+            "cluster": 10,
+            "mask": 0,
+            "advance": [
+              1159,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 11,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 12,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 13,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 14,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 16,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 182,
+            "cluster": 17,
+            "mask": 0,
+            "advance": [
+              1702,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 235,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              1093,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 588,
+            "cluster": 19,
+            "mask": 1,
+            "advance": [
+              1028,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "梁 αβ",
+      "shaper": "default",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1025,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              1189,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1026,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1123,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1025,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              1189,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1026,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1123,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "العربية",
+      "shaper": "default",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 12,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 10,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 4,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 2,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 12,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 10,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 4,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 2,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "देवनागरी",
+      "shaper": "default",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              0,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              0,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "🙂",
+      "shaper": "default",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "Steel E = 200000 MPa",
+      "shaper": "ot",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 249,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              1215,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 894,
+            "cluster": 1,
+            "mask": 0,
+            "advance": [
+              587,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 2,
+            "mask": 1,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 772,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              418,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 5,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 72,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1131,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 7,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1459,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              1238,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1310,
+            "cluster": 10,
+            "mask": 0,
+            "advance": [
+              1159,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 11,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 12,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 13,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 14,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 16,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 182,
+            "cluster": 17,
+            "mask": 0,
+            "advance": [
+              1702,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 235,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              1093,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 588,
+            "cluster": 19,
+            "mask": 1,
+            "advance": [
+              1028,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 249,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              1215,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 894,
+            "cluster": 1,
+            "mask": 0,
+            "advance": [
+              587,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 2,
+            "mask": 1,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 772,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              418,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 5,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 72,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1131,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 7,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1459,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              1238,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1310,
+            "cluster": 10,
+            "mask": 0,
+            "advance": [
+              1159,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 11,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 12,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 13,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 14,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 16,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 182,
+            "cluster": 17,
+            "mask": 0,
+            "advance": [
+              1702,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 235,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              1093,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 588,
+            "cluster": 19,
+            "mask": 1,
+            "advance": [
+              1028,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "梁 αβ",
+      "shaper": "ot",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1025,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              1189,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1026,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1123,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 3,
+            "mask": 0,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1025,
+            "cluster": 4,
+            "mask": 0,
+            "advance": [
+              1189,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1026,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              1123,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "العربية",
+      "shaper": "ot",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 12,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 10,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 4,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 2,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 12,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 10,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 8,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 4,
+            "mask": 1,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 2,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "देवनागरी",
+      "shaper": "ot",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              0,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              0,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 15,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "🙂",
+      "shaper": "ot",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 0,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "Steel E = 200000 MPa",
+      "shaper": "coretext",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 249,
+            "cluster": 0,
+            "mask": 1208,
+            "advance": [
+              1215,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 894,
+            "cluster": 1,
+            "mask": 587,
+            "advance": [
+              587,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 2,
+            "mask": 1051,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 3,
+            "mask": 1051,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 772,
+            "cluster": 4,
+            "mask": 419,
+            "advance": [
+              418,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 5,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 72,
+            "cluster": 6,
+            "mask": 1131,
+            "advance": [
+              1131,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 7,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1459,
+            "cluster": 8,
+            "mask": 1235,
+            "advance": [
+              1238,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 9,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1310,
+            "cluster": 10,
+            "mask": 1155,
+            "advance": [
+              1159,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 11,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 12,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 13,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 14,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 15,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 16,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 182,
+            "cluster": 17,
+            "mask": 1699,
+            "advance": [
+              1702,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 235,
+            "cluster": 18,
+            "mask": 1091,
+            "advance": [
+              1093,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 588,
+            "cluster": 19,
+            "mask": 1027,
+            "advance": [
+              1028,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 249,
+            "cluster": 0,
+            "mask": 1208,
+            "advance": [
+              1215,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 894,
+            "cluster": 1,
+            "mask": 587,
+            "advance": [
+              587,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 2,
+            "mask": 1051,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 676,
+            "cluster": 3,
+            "mask": 1051,
+            "advance": [
+              1049,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 772,
+            "cluster": 4,
+            "mask": 419,
+            "advance": [
+              418,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 5,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 72,
+            "cluster": 6,
+            "mask": 1131,
+            "advance": [
+              1131,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 7,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1459,
+            "cluster": 8,
+            "mask": 1235,
+            "advance": [
+              1238,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 9,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1310,
+            "cluster": 10,
+            "mask": 1155,
+            "advance": [
+              1159,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 11,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 12,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 13,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 14,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1306,
+            "cluster": 15,
+            "mask": 1243,
+            "advance": [
+              1242,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 16,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 182,
+            "cluster": 17,
+            "mask": 1699,
+            "advance": [
+              1702,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 235,
+            "cluster": 18,
+            "mask": 1091,
+            "advance": [
+              1093,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 588,
+            "cluster": 19,
+            "mask": 1027,
+            "advance": [
+              1028,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "梁 αβ",
+      "shaper": "coretext",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 3,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1025,
+            "cluster": 4,
+            "mask": 1187,
+            "advance": [
+              1189,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1026,
+            "cluster": 6,
+            "mask": 1123,
+            "advance": [
+              1123,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 3,
+            "cluster": 3,
+            "mask": 419,
+            "advance": [
+              420,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1025,
+            "cluster": 4,
+            "mask": 1187,
+            "advance": [
+              1189,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 1026,
+            "cluster": 6,
+            "mask": 1123,
+            "advance": [
+              1123,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "العربية",
+      "shaper": "coretext",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 12,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 10,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 8,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 4,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 2,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 12,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 10,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 8,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 4,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 2,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "देवनागरी",
+      "shaper": "coretext",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 15,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 6,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 9,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 15,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          },
+          {
+            "glyph_id": 0,
+            "cluster": 18,
+            "mask": 2051,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    },
+    {
+      "text": "🙂",
+      "shaper": "coretext",
+      "original": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "observed": {
+        "success": true,
+        "glyphs": [
+          {
+            "glyph_id": 0,
+            "cluster": 0,
+            "mask": 2048,
+            "advance": [
+              2048,
+              0
+            ],
+            "offset": [
+              0,
+              0
+            ]
+          }
+        ]
+      },
+      "equal": true
+    }
+  ],
+  "raw_report": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/harfbuzz-alias-source-report.json",
+  "actual_hb_library": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/hb-prefix/lib/libharfbuzz.dylib",
+  "actual_hb_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+  "manifest_path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/harfbuzz-observer-manifest.json",
+  "manifest_sha256": "b85468f19c8d0f96e34ac9f011f372fd9c3bd57340889ff9dcd81c785730b10a",
+  "remaining": [
+    "unlisted OT/generated glyph alias assignments, increments and indirect stores",
+    "scratch/cache vector initialized writes, nontrivial constructor/assignment copies and relocation inventory",
+    "backend model-derived CoreText/Graphite/FreeType input/output ownership boundaries",
+    "shape-entry placeholder retained; finite typed sites are not complete shaper ownership proof"
+  ],
+  "same_run_qt_integration": "not performed; no existing frozen prefix replaced"
+}

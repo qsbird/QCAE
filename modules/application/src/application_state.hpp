@@ -16,19 +16,21 @@ using HistoryEntry = RecordHistoryImage;
 using RecordedOperation = RecordOperationImage;
 using HostOperation = RecordHostImage;
 using SaveIntent = RecordSaveImage;
+SharedStoreBytes encode_operation_record(const RecordedOperation&);
 struct Data : RecordStateImage {
     explicit Data(std::shared_ptr<const RecordApplicationOptions> settings)
         : RecordStateImage(settings->registry), limits(settings->limits),
           options(std::move(settings)) {}
     Limits limits;
     std::shared_ptr<const RecordApplicationOptions> options;
-    std::map<std::string, Prepared> previews;
+    std::map<std::string, std::shared_ptr<const Prepared>> previews;
     std::vector<RowMutation> pending;
     RecordStats stats;
     // Transient, bounded and never written to a workspace/project snapshot.
     std::shared_ptr<const std::vector<std::shared_ptr<const CommittedRecordChange>>> change_journal;
     ChangeJournalStats journal_stats;
 };
+Data copy_data(const Data&);
 std::string nonce();
 void update_document(Data&);
 std::optional<Diagnostic> validate_candidate(const DocumentView&, const Data&);

@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "status": "isolated Release libraries prepared; native same-run pending",
+  "coverage_complete": false,
+  "sdk_facts_in_contract_total": false,
+  "qt": {
+    "sites": 157,
+    "manifest_sha256": "8a7158a1f54af297b28ba970e95ffd06fcf045b1de94d50e79d2079e8087b2c9",
+    "prefix": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/qt-prefix",
+    "recompiled_sources": [
+      "src/corelib/global/qglobal.cpp",
+      "src/gui/text/coretext/qfontengine_coretext.mm",
+      "src/gui/text/qharfbuzzng.cpp"
+    ],
+    "reused_objects": 493,
+    "hashed_headers": 5977,
+    "build_method": "exact frozen Release flags/headers; implicit local source quote lookup restored; original source/output argv replacements; immutable untouched object reuse"
+  },
+  "harfbuzz": {
+    "sites": 354,
+    "manifest_sha256": "c73d9029932d767b931bc8df581958862ea14cf9ca48963a9087da76d345043b",
+    "actual_loaded_library_sha256": "191ce31cdee473cf1a69abc14d1b49377e9e67a0b138a6e6f20fe334717c8cb1",
+    "original_output_cases": 15,
+    "passed": true,
+    "actual_entry_calls": 1549,
+    "known_copy_write_upper_bound": 74798,
+    "retained_unsupported_calls": 15,
+    "new_typed_store_sites_reached": 6,
+    "new_typed_store_calls": 294,
+    "new_typed_store_write_bytes": 1176
+  },
+  "actual_exact_marker_load": {
+    "qt_manifest_exact": true,
+    "qt_sites": 157,
+    "hb_manifest_exact": true,
+    "hb_sites": 354,
+    "libraries": [
+      {
+        "module": "Core",
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+        "sha256": "e8b497711f390605b59c13df48ce2e811513fab2d4141ad5158afe31125b86dd"
+      },
+      {
+        "module": "Gui",
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+        "sha256": "22342e622d3f813c6c3dd60d873fce10022083be1a93011f86ff8a70d2c6b359"
+      },
+      {
+        "module": "HarfBuzz",
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/qt-prefix/lib/libharfbuzz.dylib",
+        "sha256": "191ce31cdee473cf1a69abc14d1b49377e9e67a0b138a6e6f20fe334717c8cb1"
+      }
+    ],
+    "mode": "RTLD_GLOBAL, executable-global scope; no QApplication/nativeGUI",
+    "whole_font_coverage": "unknown",
+    "runtime_gui_probe": "pending root",
+    "passed": true
+  },
+  "previous_prefixes_unchanged": [
+    {
+      "prefix": "first",
+      "all_original_libraries_unchanged": true,
+      "libraries": [
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtCore.framework/Versions/A/QtCore",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "2ef9756919072563f0e23cec7426c732323eb01787c63b46c752aca54bccb16b"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtGui.framework/Versions/A/QtGui",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "ab1e06281d908a1fb44d4d3f797eeda59d1de17400afe22bff58b1e2d9cc36c3"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtWidgets.framework/Versions/A/QtWidgets",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "2a6c2f91fb0e626b8e22629babc4d463d7fff61f759c418c9ef7b197964b1b11"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtNetwork.framework/Versions/A/QtNetwork",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "c4892c32ccbb6808b4be235ba71ec5c5231cab91e38c67d4414ade083bf78677"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtOpenGL.framework/Versions/A/QtOpenGL",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "4770fda05fb10753b31a3c750be9afa7f7d93d53ad6f877d59f5d4b3b22af946"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtOpenGLWidgets.framework/Versions/A/QtOpenGLWidgets",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "d3a1f022b36c13782578d83854d8f363631d84bc3af9c27cb301253fb7a33121"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtTest.framework/Versions/A/QtTest",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "f9c3cdbe437fbddfef0f734c4e67a63a0f2d9eef23ad05aebf67a599211fdb5f"
+        }
+      ]
+    },
+    {
+      "prefix": "second",
+      "all_original_libraries_unchanged": true,
+      "libraries": [
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtCore.framework/Versions/A/QtCore",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "b5f3940b321a2480ff383301ed5a2445ca5c2d304f7827b6531237ca60450f1e"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtGui.framework/Versions/A/QtGui",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "93cdbd4b9d029f25c0ab93d2abfebb8412d6bdcbe68b130c1f04127521870591"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtWidgets.framework/Versions/A/QtWidgets",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "64a1f7c52068c6a97415adf56cbaa0d90685721f8279b8c739f9369ee626971d"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtNetwork.framework/Versions/A/QtNetwork",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "ba4ef76a84f5f888c688184d1d4310edf6fd5da6439bb86b53f12525e8e03162"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtOpenGL.framework/Versions/A/QtOpenGL",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "4f8b431b30a4a6dbc0d874950c936f20bc15fad16dbfd6ac4137ba7f3f39ddff"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtOpenGLWidgets.framework/Versions/A/QtOpenGLWidgets",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "0bf2284a7d94c0ebf17be18196d529b960a118b1434f996cce2119f5bf4cb75e"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtTest.framework/Versions/A/QtTest",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "b7d76a424e74d0f7be150462bd931f82b02a304ce1c163a2cd7732a46a8c1e34"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/QtDBus.framework/Versions/A/QtDBus",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "7e51e4623f7fc8974155dc46caa9bb1ff78e47ca3da71edec8345c32e12513ac"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/prefix/lib/libharfbuzz.dylib",
+          "matches_frozen_sha256": true,
+          "actual_sha256": "1e9e089d796fa8fa4d41452cd6406c8ce93e1d654883394064a3506354ad7c2e"
+        }
+      ]
+    }
+  ],
+  "remaining": [
+    "nontrivial container deep-copy/generated stores require source/IR inventory",
+    "glyph/cache typed writes outside the enumerated qtextengine assignments",
+    "external HarfBuzz calls require exact observed-library marker and remaining typed-store inventory",
+    "native CoreText opaque storage; Qt-owned API input/output must be separately classified",
+    "unlisted glyph aliases, field mutators, OT layout/shaper/cache/generated stores",
+    "nontrivial container constructor/assignment deep copies and indirect relocation inventory",
+    "native CoreText/Graphite/FreeType model-derived input/output ownership boundaries"
+  ],
+  "evidence_paths": [
+    "build-c3-qt-observed/tranche3/object-reuse.json",
+    "build-c3-qt-observed/tranche3/qt-glyph-build.log",
+    "build-c3-qt-observed/tranche3/harfbuzz-typed-source-report.json",
+    "build-c3-qt-observed/tranche3/installed-core-gui-hb-load-probe.json"
+  ],
+  "initial_failures_retained": [
+    "build-c3-qt-observed/tranche3/qt-glyph-build.initial-missing-local-header.log",
+    "build-c3-qt-observed/tranche3/qt-compile-qglobal.cpp.initial-missing-local-header.log",
+    "build-c3-qt-observed/tranche3/qt-compile-qfontengine_coretext.mm.initial-missing-local-header.log",
+    "build-c3-qt-observed/tranche3/qt-compile-qharfbuzzng.cpp.initial-missing-local-header.log"
+  ]
+}

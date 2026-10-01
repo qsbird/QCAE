@@ -1,4 +1,5 @@
 #include "qcae/event_stream.hpp"
+#include "qcae/json_ledger.hpp"
 #include "qcae/ipc_api.hpp"
 #include "qcae/task_service.hpp"
 #include <QJsonDocument>
@@ -13,10 +14,10 @@
 namespace qcae::ipc {
 namespace {
 QString qs(const std::string& text) {
-    return QString::fromStdString(text);
+    return transport::json_ledger::from_utf8(text);
 }
 QString number(std::uint64_t value) {
-    return QString::number(static_cast<qulonglong>(value));
+    return transport::json_ledger::number(value);
 }
 bool sameDocument(const DocumentRef& a, const DocumentRef& b) {
     return a.id == b.id && a.epoch == b.epoch;
@@ -32,18 +33,29 @@ std::uint64_t unsignedField(const QJsonObject& object, const char* name, std::ui
     const auto value = object.value(QLatin1String(name));
     if (!value.isString())
         throw std::invalid_argument(std::string(name) + " must be an unsigned integer string");
-    const auto text = value.toString().toStdString();
     std::uint64_t result{};
-    const auto parsed = std::from_chars(text.data(), text.data() + text.size(), result);
-    if (text.empty() || parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())
+    if (!transport::json_ledger::unsigned_decimal(value.toStringView(), result))
         throw std::invalid_argument(std::string(name) + " must be an unsigned integer string");
     return result;
+}
+void observeInfoCopy(const DocumentInfo& info) {
+    qcae::ledger::add(qcae::ledger::Stage::socket_send,
+                      qcae::ledger::Metric::metadata_copy_bytes,
+                      sizeof(DocumentInfo) + info.document.id.value.size() +
+                          info.document.epoch.value.size() + info.content_state.size() +
+                          info.name.size() + info.project_id.size() + info.saved_path.size() +
+                          info.saved_content_state.size());
 }
 } // namespace
 
 struct EventStream::State {
+    struct RetainedEvent {
+        QJsonObject object;
+        QByteArray wire;
+    };
     struct Subscriber {
         std::uint64_t sequence{}, generation{};
+        bool include_document_summary{};
     };
     struct TaskSeen {
         std::shared_ptr<const OwnedRowImage> row;
@@ -56,7 +68,7 @@ struct EventStream::State {
     EventStreamLimits limits;
     std::optional<DocumentInfo> document;
     std::map<std::string, TaskSeen> tasks;
-    std::deque<QJsonObject> events;
+    std::deque<RetainedEvent> events;
     std::map<QString, Subscriber> subscribers;
     std::uint64_t sequence{}, generation{};
     bool invalidated{};
@@ -87,9 +99,18 @@ struct EventStream::State {
         document.reset();
         tasks.clear();
     }
-    void append(const char* name, const DocumentInfo& info, QJsonObject data) {
+    void append(const char* name,
+                const DocumentInfo& info,
+                QJsonObject data,
+                const QJsonObject& summary = {}) {
         if (sequence == std::numeric_limits<std::uint64_t>::max())
             throw std::overflow_error("Event sequence exhausted");
+        if (!summary.isEmpty()) {
+            transport::json_ledger::ObjectCopies copies;
+            copies.retained(data);
+            data.insert("document_summary", summary);
+            copies.insert("document_summary", summary);
+        }
         QJsonObject event{{"frame_type", "event"},
                           {"engine_instance_id", engine_instance},
                           {"sequence", number(++sequence)},
@@ -98,24 +119,53 @@ struct EventStream::State {
                           {"document_epoch", qs(info.document.epoch.value)},
                           {"revision", number(info.revision)},
                           {"data", std::move(data)}};
-        ledger.metadata_bytes_encoded += QJsonDocument(event).toJson(QJsonDocument::Compact).size();
+        transport::json_ledger::object(event,
+                                       {"frame_type",
+                                        "engine_instance_id",
+                                        "sequence",
+                                        "event",
+                                        "document_id",
+                                        "document_epoch",
+                                        "revision",
+                                        "data"});
+        auto encoded = transport::json_ledger::compact_frame(event);
+        ledger.metadata_bytes_encoded += encoded.size() - 1;
         ++ledger.emitted_events;
-        events.push_back(std::move(event));
+        events.push_back({std::move(event), std::move(encoded)});
         while (events.size() > limits.max_events)
             events.pop_front();
     }
-    QJsonObject read(const QString& instance, std::uint64_t cursor, std::size_t limit) {
+    QJsonObject readable_event(const QJsonObject& event, bool include_document_summary) {
+        const auto original_data = event.value("data").toObject();
+        if (include_document_summary || !original_data.contains("document_summary"))
+            return event;
+        auto data = original_data;
+        transport::json_ledger::ObjectCopies data_copies;
+        data_copies.retained(data);
+        data.remove("document_summary");
+        auto output = event;
+        transport::json_ledger::ObjectCopies output_copies;
+        output_copies.retained(event);
+        output.insert("data", data);
+        output_copies.insert("data", data, false);
+        return output;
+    }
+    QJsonObject read(const QString& instance,
+                     std::uint64_t cursor,
+                     std::size_t limit,
+                     bool include_document_summary) {
         const bool resync = invalidated || cursorGap(instance, cursor);
         QJsonArray page;
         auto next = resync ? sequence : cursor;
         if (!resync)
-            for (const auto& event : events) {
+            for (const auto& retained : events) {
+                const auto& event = retained.object;
                 const auto event_sequence = unsignedField(event, "sequence", 0);
                 if (event_sequence <= cursor)
                     continue;
                 if (page.size() == static_cast<qsizetype>(limit))
                     break;
-                page.append(event);
+                page.append(readable_event(event, include_document_summary));
                 next = event_sequence;
             }
         ledger.metadata_bytes_copied += page.size() * sizeof(QJsonObject);
@@ -139,9 +189,10 @@ void EventStream::refresh() noexcept {
     try {
         const auto current = state_->app.current_document();
         std::optional<DocumentInfo> info;
-        if (current.ok())
+        if (current.ok()) {
             info = *current.value;
-        else if (current.error->code != ErrorCode::document_not_found) {
+            observeInfoCopy(*info);
+        } else if (current.error->code != ErrorCode::document_not_found) {
             state_->invalidate();
             return;
         }
@@ -180,9 +231,11 @@ void EventStream::refresh() noexcept {
         }
         // Prepare a disposable event candidate. No allocation follows its publication.
         State candidate = *state_;
+        if (candidate.document)
+            observeInfoCopy(*candidate.document);
         candidate.invalidated = false;
         candidate.ledger.metadata_bytes_copied +=
-            candidate.events.size() * sizeof(QJsonObject) +
+            candidate.events.size() * sizeof(State::RetainedEvent) +
             candidate.tasks.size() * sizeof(State::TaskSeen) +
             candidate.subscribers.size() * sizeof(State::Subscriber);
         if (context_changed) {
@@ -205,11 +258,21 @@ void EventStream::refresh() noexcept {
             } else {
                 for (const auto& change : changes.value->changes) {
                     DocumentInfo version = *info;
+                    observeInfoCopy(version);
                     version.revision = change.revision;
                     const QJsonObject data{{"base_revision", number(change.base_revision)},
                                            {"transaction_id", qs(change.transaction.value)},
                                            {"resync_required", false}};
-                    candidate.append("DocumentChanged", version, data);
+                    transport::json_ledger::object(
+                        data, {"base_revision", "transaction_id", "resync_required"});
+                    // info is the one authoritative current_document result.
+                    // Earlier journal revisions have no proven current-state
+                    // summary; never relabel current content/dirty as history.
+                    candidate.append("DocumentChanged",
+                                     version,
+                                     data,
+                                     change.revision == info->revision ? info_json(*info)
+                                                                       : QJsonObject{});
                     candidate.append("HistoryChanged", version, data);
                 }
                 info->revision = changes.value->current_revision;
@@ -218,6 +281,8 @@ void EventStream::refresh() noexcept {
         if (metadata_changed && !revision_changed)
             candidate.append("ProjectMetadataChanged", *info, {{"resync_required", true}});
         candidate.document = info;
+        if (info)
+            observeInfoCopy(*info);
         std::map<std::string, State::TaskSeen> next_tasks;
         for (const auto& row : rows) {
             const auto previous = candidate.tasks.find(row->key.identity);
@@ -291,13 +356,17 @@ QJsonObject EventStream::dispatch(const QJsonObject& request, const QString& con
         const auto parameters = request.value("parameters").toObject();
         for (auto it = parameters.begin(); it != parameters.end(); ++it)
             if (it.key() != "engine_instance_id" && it.key() != "after_sequence" &&
-                it.key() != "limit")
+                it.key() != "limit" && it.key() != "include_document_summary")
                 throw std::invalid_argument("Unexpected event parameter");
         if (parameters.contains("engine_instance_id") &&
             !parameters.value("engine_instance_id").isString())
             throw std::invalid_argument("engine_instance_id must be a string");
         const auto instance = parameters.value("engine_instance_id").toString();
         const auto cursor = unsignedField(parameters, "after_sequence", 0);
+        if (parameters.contains("include_document_summary") &&
+            !parameters.value("include_document_summary").isBool())
+            throw std::invalid_argument("include_document_summary must be a boolean");
+        const auto include_document_summary = parameters.value("include_document_summary").toBool();
         std::uint64_t limit = 64;
         if (parameters.value("limit").isDouble()) {
             const auto numeric = parameters.value("limit").toDouble();
@@ -309,7 +378,7 @@ QJsonObject EventStream::dispatch(const QJsonObject& request, const QString& con
             limit = unsignedField(parameters, "limit", 64);
         if (!limit || limit > 64)
             throw std::invalid_argument("Event read limit must be 1..64");
-        auto data = state_->read(instance, cursor, limit);
+        auto data = state_->read(instance, cursor, limit, include_document_summary);
         if (operation == "events.subscribe") {
             if (connection.isEmpty())
                 throw std::invalid_argument("Subscription requires a trusted connection");
@@ -317,8 +386,8 @@ QJsonObject EventStream::dispatch(const QJsonObject& request, const QString& con
                 state_->subscribers.size() >= state_->limits.max_subscribers)
                 return failure(id, "RESOURCE_LIMIT", "Event subscriber limit reached");
             const bool resync = data.value("resync_required").toBool();
-            state_->subscribers[connection] = {resync ? state_->sequence : cursor,
-                                               state_->generation};
+            state_->subscribers[connection] = {
+                resync ? state_->sequence : cursor, state_->generation, include_document_summary};
             // Subscription baseline contains cursor metadata; queued events arrive via drain.
             data.remove("events");
             data.insert("next_sequence", number(resync ? state_->sequence : cursor));
@@ -337,14 +406,33 @@ QJsonArray EventStream::drain(const QString& connection, std::size_t limit) {
     if (subscriber.generation != state_->generation ||
         state_->cursorGap(state_->engine_instance, subscriber.sequence)) {
         result.append(state_->gap());
-        subscriber = {state_->sequence, state_->generation};
+        subscriber = {state_->sequence, state_->generation, subscriber.include_document_summary};
         return result;
     }
-    const auto data = state_->read(
-        state_->engine_instance, subscriber.sequence, std::clamp<std::size_t>(limit, 1, 64));
+    const auto data = state_->read(state_->engine_instance,
+                                   subscriber.sequence,
+                                   std::clamp<std::size_t>(limit, 1, 64),
+                                   subscriber.include_document_summary);
     result = data.value("events").toArray();
     subscriber.sequence = unsignedField(data, "next_sequence", subscriber.sequence);
     return result;
+}
+std::optional<QByteArray> EventStream::encoded_frame(const QJsonObject& event) const {
+    if (event.value("frame_type").toStringView() != QAnyStringView(QLatin1StringView("event")))
+        return {};
+    const auto value = event.value("sequence");
+    std::uint64_t sequence{};
+    if (!value.isString() ||
+        !transport::json_ledger::unsigned_decimal(value.toStringView(), sequence) ||
+        sequence < state_->oldest())
+        return {};
+    const auto offset = sequence - state_->oldest();
+    if (offset >= state_->events.size())
+        return {};
+    const auto& retained = state_->events[static_cast<std::size_t>(offset)];
+    if (retained.object != event)
+        return {};
+    return retained.wire; // QByteArray shares immutable storage; no payload copy.
 }
 void EventStream::unsubscribe(const QString& connection) {
     state_->subscribers.erase(connection);

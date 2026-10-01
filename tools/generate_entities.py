@@ -271,7 +271,8 @@ def render(schema: dict) -> str:
                     id_type = "records::" + id_type
                 expression = f"{id_type}(record_wire::read_text({payload}))"
             elif kind == "references":
-                expression = f"records_detail::unpack_references<{cpp_type(field, True)}>({payload})"
+                value_field = {**field, "optional": False}
+                expression = f"records_detail::unpack_references<{cpp_type(value_field, True)}>({payload})"
             else:
                 expression = f"record_wire::read_{WIRE[kind]}({payload})"
             lines.append(f"            value.{name} = {expression};")
@@ -291,10 +292,15 @@ def render(schema: dict) -> str:
             name, number = field["name"], field["id"]
             targets = ", ".join(f"RecordTypeId{{{by_name[target]}}}" for target in field["targets"])
             lines.append(f"            static constexpr std::array targets_{number}{{{targets}}};")
-            if field.get("optional"):
+            if field["kind"] == "references":
+                expression = f"*value.{name}" if field.get("optional") else f"value.{name}"
+                if field.get("optional"):
+                    lines.append(f"            if (value.{name}) {{")
+                lines.append(f"            for (const auto& item : {expression}) visitor(RecordFieldId{{{number}}}, item.value, targets_{number});")
+                if field.get("optional"):
+                    lines.append("            }")
+            elif field.get("optional"):
                 lines.append(f"            if (value.{name}) visitor(RecordFieldId{{{number}}}, value.{name}->value, targets_{number});")
-            elif field["kind"] == "references":
-                lines.append(f"            for (const auto& item : value.{name}) visitor(RecordFieldId{{{number}}}, item.value, targets_{number});")
             else:
                 lines.append(f"            visitor(RecordFieldId{{{number}}}, value.{name}.value, targets_{number});")
         lines += ["        };", "        result.validate = [](const void* object, const DocumentView& view) {",

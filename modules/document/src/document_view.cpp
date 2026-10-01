@@ -1,12 +1,21 @@
 #include "qcae/document_view.hpp"
+#include "qcae/operation_ledger.hpp"
 
 #include <algorithm>
 #include <set>
 
 namespace qcae {
 namespace {
+void observe_version_copy(const RecordVersion& version) noexcept {
+    ledger::add(ledger::Stage::records,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(RecordVersion) + version.document.id.value.size() +
+                    version.document.epoch.value.size());
+}
 struct RecordPage {
-    std::array<Record, record_page_capacity> entries;
+    // A partial page stores only slots that have existed. Tombstones remain present,
+    // preserving storage positions without copying 1024 empty references for one material.
+    std::vector<Record> entries;
 };
 using RecordLocator = std::map<std::string, std::size_t, std::less<>>;
 using IdentityLocator = std::map<std::string, RecordTypeId, std::less<>>;
@@ -63,9 +72,43 @@ DocumentView::DocumentView(std::shared_ptr<const RecordRegistry> registry, Recor
     state->registry = std::move(registry);
     state_ = std::move(state);
 }
-RecordVersion DocumentView::version() const {
-    return version_;
+DocumentView::DocumentView(const DocumentView& source) try
+    : state_(source.state_), version_(source.version_) {
+    observe_version_copy(version_);
+} catch (...) {
+    ledger::unknown(ledger::Stage::records, ledger::Metric::metadata_copy_bytes);
+    throw;
 }
+DocumentView& DocumentView::operator=(const DocumentView& source) {
+    if (this == &source)
+        return *this;
+    try {
+        state_ = source.state_;
+        version_ = source.version_;
+        observe_version_copy(version_);
+        return *this;
+    } catch (...) {
+        ledger::unknown(ledger::Stage::records, ledger::Metric::metadata_copy_bytes);
+        throw;
+    }
+}
+RecordVersion DocumentView::version() const {
+    try {
+        auto result = version_;
+        observe_version_copy(version_);
+        return result;
+    } catch (...) {
+        ledger::unknown(ledger::Stage::records, ledger::Metric::metadata_copy_bytes);
+        throw;
+    }
+}
+bool DocumentView::matches_version(const RecordVersion& version) const noexcept {
+    return same_record_version(version_, version);
+}
+DocumentView::DocumentView(std::shared_ptr<const RecordDocumentState> state,
+                           RecordVersion version,
+                           SharedState)
+    : state_(std::move(state)), version_(std::move(version)) {}
 std::shared_ptr<const RecordRegistry> DocumentView::registry() const noexcept {
     return state_->registry;
 }
@@ -100,8 +143,10 @@ void DocumentView::visit(RecordTypeId type,
         return;
     for (const auto& page : found->second->pages)
         for (const auto& record : page->entries)
-            if (record)
+            if (record) {
+                ledger::add(ledger::Stage::records, ledger::Metric::scanned_records, 1);
                 visitor(record);
+            }
 }
 void DocumentView::visit(const std::function<void(const Record&)>& visitor) const {
     for (const auto& [type, unused] : state_->tables) {
@@ -144,21 +189,84 @@ void DocumentView::validate(RecordLimits limits) const {
         rule(*this);
 }
 DocumentView DocumentView::with_version(RecordVersion version) const {
-    auto result = *this;
-    result.version_ = std::move(version);
-    return result;
+    return DocumentView(state_, std::move(version), SharedState{});
+}
+
+void validate_record_candidate(const DocumentView& base,
+                               const DocumentView& candidate,
+                               const RecordChangeSet& changes) {
+    if (base.registry() != candidate.registry() ||
+        !same_record_version(base.version_, candidate.version_))
+        throw RecordError(ErrorCode::revision_conflict, "Candidate base or registry differs");
+    std::set<RecordKey> seen;
+    std::size_t expected_count = base.size();
+    for (const auto& change : changes.records) {
+        check_change_shape(change);
+        const auto before = optional_image(change.before);
+        const auto after = optional_image(change.after);
+        check_image(base, change.key, before);
+        check_image(base, change.key, after);
+        if (!seen.insert(change.key).second || !images_equal(base.find(change.key), before) ||
+            !images_equal(candidate.find(change.key), after))
+            throw RecordError(ErrorCode::revision_conflict, "Candidate change images differ");
+        if (!before)
+            ++expected_count;
+        if (!after)
+            --expected_count;
+    }
+    if (candidate.size() != expected_count)
+        throw RecordError(ErrorCode::invalid_input, "Candidate includes unreported record changes");
+    const auto changed = [&](const RecordKey& key) { return seen.contains(key); };
+    const auto inspect_distinct_pages = [&](const DocumentView& source, const DocumentView& other) {
+        for (const auto& [type, table] : source.state_->tables) {
+            const auto other_table = other.state_->tables.find(type);
+            if (other_table != other.state_->tables.end() && table == other_table->second)
+                continue;
+            for (std::size_t page = 0; page < table->pages.size(); ++page) {
+                if (other_table != other.state_->tables.end() &&
+                    page < other_table->second->pages.size() &&
+                    table->pages[page] == other_table->second->pages[page])
+                    continue;
+                for (const auto& record : table->pages[page]->entries)
+                    if (record) {
+                        ledger::add(ledger::Stage::records, ledger::Metric::scanned_records, 1);
+                        if (!changed(record->key()) &&
+                            !images_equal(record, other.find(record->key())))
+                            throw RecordError(ErrorCode::invalid_input,
+                                              "Candidate changed an unreported record");
+                    }
+            }
+        }
+    };
+    inspect_distinct_pages(base, candidate);
+    inspect_distinct_pages(candidate, base);
+    ledger::add(ledger::Stage::records,
+                ledger::Metric::metadata_copy_bytes,
+                seen.size() * sizeof(RecordKey));
+    for (const auto& key : seen)
+        ledger::add(
+            ledger::Stage::records, ledger::Metric::metadata_copy_bytes, key.identity.size());
 }
 
 DocumentView apply_record_changes(const DocumentView& base,
                                   const RecordChangeSet& changes,
                                   RecordDirection direction,
                                   RecordStats* stats) {
+    RecordStats local_stats;
+    if (!stats)
+        stats = &local_stats;
+    const auto metadata_before = stats->metadata_bytes_copied;
     if (changes.empty())
         return base;
     std::set<RecordKey> seen;
     for (const auto& change : changes.records) {
         check_change_shape(change);
-        if (!seen.insert(change.key).second || (!change.before && !change.after))
+        const bool inserted = seen.insert(change.key).second;
+        if (inserted)
+            ledger::add(ledger::Stage::records,
+                        ledger::Metric::metadata_copy_bytes,
+                        sizeof(RecordKey) + change.key.identity.size());
+        if (!inserted || (!change.before && !change.after))
             throw RecordError(ErrorCode::invalid_input, "Duplicate or empty change record");
         const auto before = optional_image(change.before);
         const auto after = optional_image(change.after);
@@ -253,7 +361,8 @@ DocumentView apply_record_changes(const DocumentView& base,
                 table.pages[page_index] = page_it->second;
             if (stats) {
                 ++stats->dirty_pages;
-                stats->metadata_bytes_copied += sizeof(RecordPage);
+                stats->metadata_bytes_copied +=
+                    sizeof(RecordPage) + page_it->second->entries.size() * sizeof(Record);
             }
         }
         if (!from && to) {
@@ -268,12 +377,25 @@ DocumentView apply_record_changes(const DocumentView& base,
             --table.count;
             --state->count;
         }
-        page_it->second->entries[slot % record_page_capacity] = to;
+        auto& entries = page_it->second->entries;
+        const auto offset = slot % record_page_capacity;
+        if (offset >= entries.size()) {
+            const auto old_size = entries.size();
+            const auto old_capacity = entries.capacity();
+            entries.resize(offset + 1);
+            stats->metadata_bytes_copied += (entries.size() - old_size) * sizeof(Record);
+            if (entries.capacity() != old_capacity)
+                stats->metadata_bytes_copied += old_size * sizeof(Record);
+        }
+        entries[offset] = to;
         if (stats)
             ++stats->changed_records;
     }
     auto result = base;
     result.state_ = std::move(state);
+    ledger::add(ledger::Stage::records,
+                ledger::Metric::metadata_copy_bytes,
+                stats->metadata_bytes_copied - metadata_before);
     return result;
 }
 

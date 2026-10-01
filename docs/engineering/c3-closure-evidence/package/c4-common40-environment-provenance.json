@@ -1,0 +1,111 @@
+{
+  "schema": "qcae.c4-environment-sampling/1",
+  "sampled_at_utc": "2026-10-01T00:29:15.095926+00:00",
+  "scope": "Readonly environment parameter selection; no native GUI, no product/default font backend change, no solver/credential/configuration access.",
+  "environment_manifest": {
+    "path": "docs/engineering/c3-closure-evidence/package/c4-common40-environment.json",
+    "sha256": "addb4aeb04ac3418e94bb859cd51adeff405b73b1025bb1146d1b2da00cddafa"
+  },
+  "parameters_frozen": true,
+  "mechanism_frozen": false,
+  "build_matrices_with_new_sqlite_completed": false,
+  "complete_c3_passed": false,
+  "complete_sk12_passed": false,
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "build_threads_meaning": "Chosen future matrix build parallelism -j2; not actual Qt process thread count. Parent confirmed.",
+  "native_facts_source": "Existing original/default native probe, images rehashed now; no new native run. Existing evidence remains original and unchanged.",
+  "future_native_probe_required_if_hardware_or_images_change": true,
+  "git_head": "9e0a56b7496d402421940ebd31d34ae47f3ba242",
+  "git_index_sha256_before": "a89917826fee7ce12dd205ed65ed6f9751f2d224fcd144231fd5dfac59ea3107",
+  "git_index_sha256_after": "a89917826fee7ce12dd205ed65ed6f9751f2d224fcd144231fd5dfac59ea3107",
+  "git_head_unchanged": true,
+  "selected_sqlite": {
+    "version": "3.53.4",
+    "actual_loaded_image": {
+      "id": "sqlite",
+      "requested_real_path": "/opt/homebrew/Cellar/sqlite/3.53.4/lib/libsqlite3.3.53.4.dylib",
+      "loaded_paths": [
+        "/opt/homebrew/Cellar/sqlite/3.53.4/lib/libsqlite3.3.53.4.dylib"
+      ],
+      "sha256": "6b8bb64feced74cd0766990ad5e089566be6fec655a6c96d4cc1358325afb35a"
+    },
+    "reason": "Existing Homebrew image has independently readable bytes for hash binding. Parent will configure final matrices explicitly and rerun storage/legacy/recovery; no new dependency installation."
+  },
+  "old_sqlite_environment": {
+    "version": "3.51.0",
+    "actual_runtime_image": "/usr/lib/libsqlite3.dylib",
+    "independent_file_exists": false,
+    "file_sha256": null,
+    "reason": "System image resides in dyld shared cache; SDK .tbd and CLI executable hashes are not library-image hashes. Old logs/observed diagnostics remain their original environment and do not prove coverage in new SQLite 3.53.4 matrices."
+  },
+  "sampler_executable": {
+    "path": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "sha256": "50298e5fa54e018a9950794d4625a82ba7f2b04a6ef272dc4d26f89a2176072b"
+  },
+  "headless_loader_images": [
+    {
+      "id": "qt",
+      "requested_real_path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtCore.framework/Versions/A/QtCore",
+      "loaded_paths": [
+        "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtCore.framework/Versions/A/QtCore"
+      ],
+      "sha256": "79af90e17b1ebefb279d2d6ec3fa5054da1c86827ee6c78fd6fa2562b604aa31"
+    },
+    {
+      "id": "vtk",
+      "requested_real_path": "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkRenderingOpenGL2-9.7.9.7.dylib",
+      "loaded_paths": [
+        "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkRenderingOpenGL2-9.7.9.7.dylib"
+      ],
+      "sha256": "854f59cfca828b1dfa3d442da95f41ddb346608596e12c486c0ebc5546d72a48"
+    },
+    {
+      "id": "vtk_commoncore",
+      "requested_real_path": "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkCommonCore-9.7.9.7.dylib",
+      "loaded_paths": [
+        "/Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/lib/libvtkCommonCore-9.7.9.7.dylib"
+      ],
+      "sha256": "f03b4b0a4dbac1ce77e0c98b49c6b2d36fdbc3ff884f3ab973a4b614c61178e5"
+    },
+    {
+      "id": "sqlite",
+      "requested_real_path": "/opt/homebrew/Cellar/sqlite/3.53.4/lib/libsqlite3.3.53.4.dylib",
+      "loaded_paths": [
+        "/opt/homebrew/Cellar/sqlite/3.53.4/lib/libsqlite3.3.53.4.dylib"
+      ],
+      "sha256": "6b8bb64feced74cd0766990ad5e089566be6fec655a6c96d4cc1358325afb35a"
+    }
+  ],
+  "hardware_selected": [
+    {
+      "_name": "Apple M5",
+      "sppci_model": "Apple M5",
+      "sppci_bus": "spdisplays_builtin",
+      "sppci_cores": "8",
+      "displays": [
+        {
+          "_name": "Color LCD",
+          "spdisplays_display_type": "spdisplays_built-in-liquid-retina",
+          "_spdisplays_pixels": "2940 x 1912",
+          "_spdisplays_resolution": "1470 x 956 @ 60.00Hz",
+          "spdisplays_pixelresolution": "spdisplays_2560x1664Retina",
+          "spdisplays_main": "spdisplays_yes",
+          "spdisplays_online": "spdisplays_yes",
+          "spdisplays_mirror": "spdisplays_off"
+        }
+      ]
+    }
+  ],
+  "historical_sandbox_probe_failure": {
+    "command": [
+      "sysctl",
+      "-n",
+      "hw.model",
+      "hw.memsize",
+      "machdep.cpu.brand_string"
+    ],
+    "result": "Sandbox permission denial. The same non-sensitive hardware facts were then successfully sampled with reviewed read-only escalation."
+  },
+  "frozen_source_commit": null,
+  "acceptance_note": "Environment parameters do not establish source freeze or C3/SK12/EXT acceptance. Actual source commit and four executed matrix/evidence records remain required."
+}

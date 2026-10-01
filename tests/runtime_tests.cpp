@@ -3,6 +3,93 @@
 
 using namespace runtime_test;
 namespace {
+void artifact_receipts_keep_model_task_contracts_strict() {
+    TaskRecord queued{"task-artifact",
+                      caller,
+                      "artifact-key",
+                      "model.export",
+                      "frozen-input",
+                      {{DocumentId("document"), DocumentEpoch("epoch")}, 7, {}},
+                      TaskState::queued,
+                      0,
+                      {{1, TaskState::queued, 0}},
+                      {},
+                      {}};
+    const auto legacy = encode_task_record(queued);
+    check(static_cast<unsigned char>(legacy[17]) == 2, "Nonartifact tasks still encode schema2");
+    auto schema1 = legacy;
+    schema1[17] = 1;
+    check(decode_task_record(schema1).id == queued.id && decode_task_record(legacy).id == queued.id,
+          "Existing task schemas1/2 remain readable");
+    auto artifact = queued;
+    artifact.state = TaskState::succeeded;
+    artifact.progress = 1;
+    artifact.events.insert(
+        artifact.events.end(),
+        {{2, TaskState::running, 0}, {3, TaskState::committing, 0}, {4, TaskState::succeeded, 1}});
+    artifact.artifact_receipt = TaskArtifactReceipt{"artifact-task", 7, std::string(64, 'a')};
+    const auto encoded = encode_task_record(artifact);
+    check(static_cast<unsigned char>(encoded[17]) == 3 &&
+              decode_task_record(encoded).artifact_receipt == artifact.artifact_receipt &&
+              !decode_task_record(encoded).receipt,
+          "Artifact task schema3 retains an explicit nonmodel receipt");
+    const auto rejects = [](const TaskRecord& value) {
+        bool rejected = false;
+        try {
+            (void)encode_task_record(value);
+        } catch (const std::exception&) {
+            rejected = true;
+        }
+        check(rejected, "Invalid task completion receipt was accepted");
+    };
+    auto invalid = artifact;
+    invalid.artifact_receipt.reset();
+    rejects(invalid);
+    invalid = artifact;
+    invalid.receipt = ChangeReceipt{TransactionId("transaction"), 8, 8, "state", false};
+    rejects(invalid);
+    invalid = artifact;
+    invalid.artifact_receipt->manifest_sha256[0] = 'Z';
+    rejects(invalid);
+    invalid = artifact;
+    invalid.artifact_receipt->input_revision = 8;
+    rejects(invalid);
+    invalid = artifact;
+    invalid.artifact_receipt->artifact_id.clear();
+    rejects(invalid);
+    invalid = artifact;
+    invalid.state = TaskState::failed;
+    invalid.events.back().state = TaskState::failed;
+    rejects(invalid);
+    auto model = artifact;
+    model.operation = "mesh.generate_line";
+    model.artifact_receipt.reset();
+    model.receipt = ChangeReceipt{TransactionId("model-transaction"), 8, 8, "state", false};
+    check(static_cast<unsigned char>(encode_task_record(model)[17]) == 2,
+          "Model completion remains schema2 with a real advanced transaction receipt");
+    model.receipt->committed_revision = 7;
+    rejects(model);
+    auto recovered = artifact;
+    recovered.events = {{1, TaskState::queued, 0},
+                        {2, TaskState::running, 0},
+                        {3, TaskState::interrupted, 0},
+                        {4, TaskState::succeeded, 1}};
+    check(decode_task_record(encode_task_record(recovered)).artifact_receipt ==
+              artifact.artifact_receipt,
+          "Verified artifact completion supports explicit interruption reconciliation");
+    recovered.artifact_receipt.reset();
+    recovered.receipt = ChangeReceipt{TransactionId("false-recovered-model"), 8, 8, "state", false};
+    rejects(recovered);
+    recovered = artifact;
+    recovered.events = {{1, TaskState::queued, 0},
+                        {2, TaskState::running, 0},
+                        {3, TaskState::committing, 0},
+                        {4, TaskState::outcome_unknown, 0},
+                        {5, TaskState::succeeded, 1}};
+    check(decode_task_record(encode_task_record(recovered)).artifact_receipt.has_value(),
+          "Verified artifact fact supports explicit unknown-outcome reconciliation");
+}
+
 void queue_and_cancel() {
     auto store = std::make_shared<Store>();
     RecordApplication app(options(store));
@@ -41,6 +128,60 @@ void queue_and_cancel() {
           "all task resources released");
     check(good(app.current_document()).revision == initial.revision,
           "cancelled tasks produced zero model transactions");
+}
+void external_outcomes_survive_cancellation() {
+    struct OutcomePayload final : TaskPayload {
+        TaskCompletion outcome;
+        explicit OutcomePayload(TaskState state)
+            : outcome{state,
+                      Diagnostic{ErrorCode::unsupported_capability,
+                                 "Test-only external terminal fact",
+                                 "external-run"}} {}
+        std::optional<TaskCompletion> completion() const override {
+            return outcome;
+        }
+    };
+    auto store = std::make_shared<Store>();
+    RecordApplication app(options(store));
+    seed(app);
+    auto publish = publisher(app);
+    const auto original_publish = publish.publish;
+    std::atomic<unsigned> publication_calls{};
+    publish.publish = [original_publish, &publication_calls](
+                          const auto& payload, const auto& expected, auto success) {
+        ++publication_calls;
+        return original_publish(payload, expected, std::move(success));
+    };
+    TaskService service(std::move(publish));
+    const auto initial = good(app.current_document());
+    for (const auto terminal : {TaskState::outcome_unknown, TaskState::failed}) {
+        auto gate = std::make_shared<Gate>();
+        auto request = material_task(app, task_state_name(terminal), 180000);
+        request.work = [gate, terminal](const TaskControl&) {
+            gate->arrive_and_wait();
+            return std::make_shared<const OutcomePayload>(terminal);
+        };
+        const auto started = good(service.start(std::move(request)));
+        gate->wait_for();
+        check(good(service.cancel(caller, started.id)).accepted,
+              "An in-flight external task accepts a cancellation request");
+        gate->release();
+        const auto complete = good(service.wait(caller, started.id));
+        check(complete.state == terminal && complete.diagnostic.has_value() &&
+                  decode_task_record(encode_task_record(complete)).state == terminal,
+              "Cancellation cannot replace a persisted external unknown or failure fact");
+    }
+    auto invalid = material_task(app, "invalid-external-success", 180000);
+    invalid.work = [](const TaskControl&) {
+        return std::make_shared<const OutcomePayload>(TaskState::succeeded);
+    };
+    const auto invalid_task = good(service.start(std::move(invalid)));
+    const auto rejected = good(service.wait(caller, invalid_task.id));
+    check(rejected.state == TaskState::failed &&
+              rejected.diagnostic->code == ErrorCode::invalid_input,
+          "A worker cannot claim success through a terminal override");
+    check(publication_calls == 0 && good(app.current_document()).revision == initial.revision,
+          "External terminal facts produce neither publication nor model transactions");
 }
 void incomplete_candidates_do_not_commit() {
     auto store = std::make_shared<Store>();
@@ -304,6 +445,7 @@ void execute_and_history_integrity() {
         rows.push_back({key, value});
     bool rejected = false;
     try {
+        artifact_receipts_keep_model_task_contracts_strict();
         decode_record_state_image(rows, registry);
     } catch (const RecordError& error) {
         rejected = error.code() == ErrorCode::schema_unsupported;
@@ -314,6 +456,7 @@ void execute_and_history_integrity() {
 int main() {
     try {
         queue_and_cancel();
+        external_outcomes_survive_cancellation();
         incomplete_candidates_do_not_commit();
         competing_worker_publications();
         state_write_failure_reconciliation();

@@ -1,10 +1,12 @@
 #include "qcae/ipc_api.hpp"
 #include "qcae/typed_host.hpp"
+#include "../adapters/engine_api/src/typed_json.hpp"
 #include "runtime_test_support.hpp"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <chrono>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <thread>
 
@@ -29,12 +31,75 @@ template <> struct InputTraits<ProfileWriteInput> {
         return {Status::success, ProfileWriteInput{}, {}};
     }
 };
+struct DiagnosticReportInput {};
+template <> struct InputTraits<DiagnosticReportInput> {
+    static constexpr std::string_view schema_id = "qcae.operation.test.diagnostic_report.v1";
+    static OperationDefinition definition() {
+        return {"test.diagnostic_report",
+                1,
+                std::string(schema_id),
+                OperationEffect::read_only,
+                {},
+                {}};
+    }
+    static Result<DiagnosticReportInput> from_value(const Value& value) {
+        const auto fields =
+            wire::object_fields(value, std::span<const std::string_view>{}, "input");
+        if (!fields.ok())
+            return {fields.status, {}, fields.error};
+        return {Status::success, DiagnosticReportInput{}, {}};
+    }
+};
 } // namespace qcae::operations
 
 namespace {
 void require(bool condition, const char* message) {
     if (!condition)
         throw std::runtime_error(message);
+}
+void diagnostic_reports_survive_transport() {
+    using namespace qcae;
+    using namespace operations;
+    MemoryApplication application;
+    const Caller caller{"report-reader"};
+    const auto info = runtime_test::good(application.create_document(caller, "Report", "create"));
+    Status outcome = Status::needs_input;
+    ipc::TypedHost host(
+        application.record_application(),
+        [](const auto&) { return true; },
+        [&](OperationRegistry& registry, RecordApplication&, std::function<TaskService&()>) {
+            return registry.register_typed<DiagnosticReportInput>(
+                InputTraits<DiagnosticReportInput>::definition(),
+                [&](const OperationContext&, const DiagnosticReportInput&) -> Result<Value> {
+                    return {outcome,
+                            Value(Value::Object{{"check_id", Value("check-1")},
+                                                {"issues",
+                                                 Value(Value::Array{Value(Value::Object{
+                                                     {"rule_id", Value("missing-load")}})})}}),
+                            Diagnostic{outcome == Status::needs_input ? ErrorCode::missing_input
+                                                                      : ErrorCode::invalid_input,
+                                       "The scenario has unresolved physical facts.",
+                                       "forces"}};
+                });
+        });
+    const QJsonObject request{{"api_version", "1.1"},
+                              {"request_id", "report-request"},
+                              {"operation", "test.diagnostic_report"},
+                              {"parameters", QJsonObject{}}};
+    for (const auto status : {Status::needs_input, Status::failed}) {
+        outcome = status;
+        const auto response =
+            ipc::dispatch(application, request, caller, nullptr, nullptr, nullptr, &host);
+        const auto data = response.value("data").toObject();
+        require(response.value("status") == QString::fromUtf8(status_name(status)) &&
+                    response.value("error").toObject().value("field") == "forces" &&
+                    data.value("check_id") == "check-1" &&
+                    data.value("issues").toArray().size() == 1,
+                "JSON transport preserves non-success status, diagnostic and report facts");
+    }
+    require(runtime_test::good(application.current_document()).revision == info.revision &&
+                runtime_test::good(application.history(info.document)).items.empty(),
+            "reading a diagnostic response adds no model change or history");
 }
 void retained_outcome_without_handler(qcae::MemoryApplication& application,
                                       const qcae::Caller& caller,
@@ -348,6 +413,33 @@ void poisoned_lazy_tasks_require_recovery() {
 
 int main() {
     try {
+        {
+            const qcae::operations::Value::Array history{
+                qcae::operations::Value(qcae::operations::Value::Object{
+                    {"id", qcae::operations::Value(std::string(121, '\1'))},
+                    {"ordinal",
+                     qcae::operations::Value(std::numeric_limits<std::int64_t>::max())}})};
+            const auto expected = QJsonDocument(qcae::ipc::detail::typed_json_array(history))
+                                      .toJson(QJsonDocument::Compact);
+            auto measurement = std::make_shared<qcae::ledger::OperationLedger>(
+                qcae::ledger::Identity{"quota-scratch-encoding", {}, {}, 0});
+            qcae::ledger::activate(measurement);
+            const auto bytes = qcae::ipc::detail::typed_json_array_bytes(history);
+            qcae::ledger::activate({});
+            const auto observed = measurement->snapshot();
+            const auto& metrics =
+                observed.values[static_cast<std::size_t>(qcae::ledger::Stage::socket_send)];
+            require(bytes == static_cast<std::size_t>(expected.size()) &&
+                        metrics[static_cast<std::size_t>(qcae::ledger::Metric::encoded_bytes)] ==
+                            bytes &&
+                        observed.frames.empty(),
+                    "Quota scratch JSON encoding must count actual escaped bytes without a socket "
+                    "frame");
+            const auto parsed = QJsonDocument::fromJson(expected).array().at(0).toObject();
+            require(parsed.value("id").toString() == QString(121, QChar(1)) &&
+                        parsed.value("ordinal").toString() == "9223372036854775807",
+                    "Quota measurement must use the actual control-string/int64 response codec");
+        }
         qcae::MemoryApplication application({}, {}, {}, {qcae::task_row_handler()});
         qcae::ipc::TypedHost host(application.record_application(),
                                   [](const auto&) { return true; });
@@ -444,6 +536,7 @@ int main() {
         definite_task_failure_reconciles();
         poisoned_lazy_tasks_require_recovery();
         version_and_profile_contract();
+        diagnostic_reports_survive_transport();
         std::cout << "PASS typed JSON transport, mesh idempotency and task fault recovery\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

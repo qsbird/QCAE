@@ -1,0 +1,17 @@
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+FAIL!  : Workflow::realFailedAnalysisReportRemainsReviewable() 'created.value("status") == "success"' returned FALSE. ({
+    "error": {
+        "code": "INVALID_INPUT",
+        "field": "entity-60bb5383892bda7173e77fe3d6e40382-12",
+        "message": "The controlled static subset supports at most one load case"
+    },
+    "request_id": "c0e4da45-b50d-448c-ac7e-9d7c9a8919ce",
+    "status": "failed"
+}
+)
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(622)]
+PASS   : Workflow::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 648ms
+********* Finished testing of Workflow *********

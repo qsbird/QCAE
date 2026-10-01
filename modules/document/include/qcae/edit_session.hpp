@@ -1,6 +1,7 @@
 #pragma once
 
 #include "qcae/document_view.hpp"
+#include "qcae/operation_ledger.hpp"
 
 namespace qcae {
 struct PreparedRecordChange {
@@ -25,6 +26,9 @@ class EditSession {
         if (!record)
             throw RecordError(ErrorCode::entity_not_found, "Record does not exist", id.value);
         T value = record->template get<T>();
+        ledger::add(ledger::Stage::records,
+                    ledger::Metric::model_copy_bytes,
+                    record->descriptor().owned_bytes(record->object()));
         edit(value);
         if (RecordTraits<T>::identity(value) != id.value)
             throw RecordError(ErrorCode::invalid_input, "Updating a record cannot change its ID");

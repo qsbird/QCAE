@@ -30,6 +30,12 @@ struct TaskEvent {
     TaskState state{TaskState::queued};
     double progress{};
 };
+struct TaskArtifactReceipt {
+    std::string artifact_id;
+    Revision input_revision{};
+    std::string manifest_sha256;
+    bool operator==(const TaskArtifactReceipt&) const = default;
+};
 struct TaskRecord {
     std::string id;
     Caller caller;
@@ -40,11 +46,23 @@ struct TaskRecord {
     std::vector<TaskEvent> events;
     std::optional<ChangeReceipt> receipt;
     std::optional<Diagnostic> diagnostic;
+    // Artifact publication retains its frozen input revision and does not create a
+    // document transaction. Exactly one kind of receipt certifies task success.
+    std::optional<TaskArtifactReceipt> artifact_receipt{};
 };
 std::string encode_task_record(const TaskRecord&);
 TaskRecord decode_task_record(std::string_view);
+struct TaskCompletion {
+    TaskState state{TaskState::failed};
+    std::optional<Diagnostic> diagnostic;
+};
 struct TaskPayload {
     virtual ~TaskPayload() = default;
+    // Trusted workers may report a non-success terminal fact. Success still requires publish.
+    // Existing model/artifact payloads return no override and retain their commit path.
+    [[nodiscard]] virtual std::optional<TaskCompletion> completion() const {
+        return {};
+    }
 };
 class TaskControl {
   public:

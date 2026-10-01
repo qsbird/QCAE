@@ -1,4 +1,8 @@
 #include "qcae/vtk_view.hpp"
+#include "qcae/operation_ledger.hpp"
+#include "qcae/sdk_copy_tracker.hpp"
+#include "coordinate_range_observer.hpp"
+#include "shift_scale_copy_observer.hpp"
 
 #include <QCryptographicHash>
 #include <QEvent>
@@ -10,10 +14,13 @@
 #include <cmath>
 #include <map>
 #include <set>
+#include <string_view>
 #include <unordered_map>
 #include <vtkActor.h>
 #include <vtkCamera.h>
+#include <vtkCallbackCommand.h>
 #include <vtkCellArray.h>
+#include <vtkCellData.h>
 #include <vtkCommand.h>
 #include <vtkDataObject.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -22,7 +29,14 @@
 #include <vtkInformation.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkNew.h>
+#include <vtkObjectFactory.h>
+#include <vtkOpenGLIndexBufferObject.h>
+#include <vtkOpenGLHelper.h>
+#include <vtkOpenGLPolyDataMapper.h>
+#include <vtkOpenGLVertexBufferObject.h>
+#include <vtkOpenGLVertexBufferObjectGroup.h>
 #include <vtkPoints.h>
+#include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProp.h>
@@ -31,6 +45,8 @@
 #include <vtkRenderer.h>
 #include <vtkSelection.h>
 #include <vtkSelectionNode.h>
+#include <vtkShaderProgram.h>
+#include <vtkVersion.h>
 
 namespace qcae {
 namespace {
@@ -72,17 +88,222 @@ bool segmentIntersectsRect(const QPointF& a, const QPointF& b, const QRectF& r) 
     return intersects(a, b, tl, tr) || intersects(a, b, tr, br) || intersects(a, b, br, bl) ||
            intersects(a, b, bl, tl);
 }
+bool polygonContains(const std::vector<QPointF>& points, const QPointF& point) {
+    bool contained{};
+    for (std::size_t i = 0, j = points.size() - 1; i < points.size(); j = i++) {
+        const auto& a = points[i];
+        const auto& b = points[j];
+        if ((a.y() > point.y()) != (b.y() > point.y()) &&
+            point.x() < (b.x() - a.x()) * (point.y() - a.y()) / (b.y() - a.y()) + a.x())
+            contained = !contained;
+    }
+    return contained;
+}
+
+// The installed OpenGL mapper still performs every operation. Overrides observe
+// actual virtual entry points and cache decisions without changing VTK state.
+class ObservedPolyDataMapper : public vtkOpenGLPolyDataMapper {
+  public:
+    static ObservedPolyDataMapper* New();
+    vtkTypeMacro(ObservedPolyDataMapper, vtkOpenGLPolyDataMapper) void setCopyTracker(
+        std::shared_ptr<sdk_copy::Tracker> tracker) {
+        tracker_ = std::move(tracker);
+    }
+
+  protected:
+    ObservedPolyDataMapper() = default;
+    ~ObservedPolyDataMapper() override = default;
+
+    bool GetNeedToRebuildBufferObjects(vtkRenderer* renderer, vtkActor* actor) override {
+        const auto rebuild = this->Superclass::GetNeedToRebuildBufferObjects(renderer, actor);
+        if (observing()) {
+            // Three appended MTime scalars plus possible initialized-prefix
+            // moves, and the three-scalar state assignment on a cache miss.
+            tracker_->record(sdk_copy::Component::vtk_mapper_check,
+                             ledger::Stage::vtk_apply,
+                             (6 + (rebuild ? 3 : 0)) * sizeof(vtkMTimeType));
+        }
+        return rebuild;
+    }
+
+    void BuildBufferObjects(vtkRenderer* renderer, vtkActor* actor) override {
+        this->Superclass::BuildBufferObjects(renderer, actor);
+        if (!observing())
+            return;
+        // TempState contains six MTimes and two integer properties. Each
+        // append can relocate its preceding initialized bytes, and assigning
+        // the completed state can copy its entire payload once more.
+        tracker_->record(sdk_copy::Component::vtk_mapper_build,
+                         ledger::Stage::vtk_apply,
+                         30 * sizeof(vtkMTimeType) + 19 * sizeof(int));
+        if (auto* vbo = this->VBOs->GetVBO("vertexMC"))
+            tracker_->record(sdk_copy::Component::vtk_mapper_build,
+                             ledger::Stage::vtk_apply,
+                             detail::autoInverseMatrixBytes(vbo),
+                             "inverse matrices require the audited AUTO/DISABLE coordinate path");
+        if (this->Colors || this->ColorCoordinates || this->ColorTextureMap ||
+            !this->ExtraAttributes.empty() || this->GetSelection() ||
+            (this->CurrentInput && (this->CurrentInput->GetPointData()->GetNormals() ||
+                                    this->CurrentInput->GetPointData()->GetTCoords() ||
+                                    this->CurrentInput->GetPointData()->GetTangents() ||
+                                    this->CurrentInput->GetCellData()->GetNormals())))
+            tracker_->unsupported(sdk_copy::Component::vtk_mapper_build,
+                                  ledger::Stage::vtk_apply,
+                                  "scalar/normal/texture/selection buffers are not audited");
+    }
+
+    void BuildCellTextures(vtkRenderer* renderer,
+                           vtkActor* actor,
+                           vtkCellArray* primitives[4],
+                           int representation) override {
+        this->Superclass::BuildCellTextures(renderer, actor, primitives, representation);
+        if (observing())
+            tracker_->record(sdk_copy::Component::vtk_cell_texture,
+                             ledger::Stage::vtk_apply,
+                             this->HaveCellScalars || this->HaveCellNormals
+                                 ? std::nullopt
+                                 : std::optional<std::uint64_t>(0),
+                             "cell scalar/normal arrays require their own observer");
+    }
+
+    void BuildIBO(vtkRenderer* renderer, vtkActor* actor, vtkPolyData* poly) override {
+        if (!observing()) {
+            this->Superclass::BuildIBO(renderer, actor, poly);
+            return;
+        }
+        vtkCellArray* primitives[]{
+            poly->GetVerts(), poly->GetLines(), poly->GetPolys(), poly->GetStrips()};
+        const auto representation = actor->GetProperty()->GetRepresentation();
+        auto* edge_flags = poly->GetPointData()->GetAttribute(vtkDataSetAttributes::EDGEFLAG);
+        // This state is diagnostic overhead. It reproduces the installed
+        // source key only to observe whether the original call rebuilds.
+        vtkStateStorage expected;
+        for (auto* primitive : primitives)
+            expected.Append(primitive->GetNumberOfCells() ? primitive->GetMTime() : 0, "primitive");
+        expected.Append(representation, "representation");
+        expected.Append(actor->GetProperty()->GetVertexVisibility(), "vertices");
+        expected.Append(edge_flags ? edge_flags->GetMTime() : 0, "edges");
+        expected.Append(actor->GetProperty()->GetEdgeVisibility() && representation == VTK_SURFACE,
+                        "surface edges");
+        const bool rebuild = this->IBOBuildState != expected;
+        this->Superclass::BuildIBO(renderer, actor, poly);
+        // State append writes and possible prefix relocation; state assignment
+        // copies one completed payload only when the original cache changes.
+        const auto state_bytes = 28 * sizeof(vtkMTimeType) + 8 * sizeof(int) + 2 * sizeof(bool);
+        const auto assigned = 5 * sizeof(vtkMTimeType) + sizeof(int) + 2 * sizeof(bool);
+        if (!rebuild) {
+            tracker_->record(
+                sdk_copy::Component::vtk_index_build, ledger::Stage::vtk_apply, state_bytes);
+            return;
+        }
+        if (primitives[2]->GetNumberOfCells() || primitives[3]->GetNumberOfCells() || edge_flags ||
+            actor->GetProperty()->GetVertexVisibility() ||
+            actor->GetProperty()->GetEdgeVisibility() ||
+            (representation != VTK_SURFACE && representation != VTK_WIREFRAME)) {
+            tracker_->record(
+                sdk_copy::Component::vtk_index_build,
+                ledger::Stage::vtk_apply,
+                std::nullopt,
+                "polygon/strip/edge/vertex/point-representation indices are not audited");
+            ledger::unknown(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes);
+            return;
+        }
+        const auto points = primitives[0]->GetNumberOfConnectivityIds();
+        const auto connectivity = primitives[1]->GetNumberOfConnectivityIds();
+        const auto cells = primitives[1]->GetNumberOfCells();
+        const auto lines = 2 * (connectivity - cells);
+        if (points < 0 || lines < 0 ||
+            this->Primitives[PrimitivePoints].IBO->IndexCount != static_cast<std::size_t>(points) ||
+            this->Primitives[PrimitiveLines].IBO->IndexCount != static_cast<std::size_t>(lines)) {
+            tracker_->record(sdk_copy::Component::vtk_index_build,
+                             ledger::Stage::vtk_apply,
+                             std::nullopt,
+                             "installed index counts do not match the audited source path");
+            ledger::unknown(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes);
+            return;
+        }
+        // Point indices reserve their complete size. Polyline indices reserve
+        // when arity exceeds two. Line2 uses libc++ geometric growth; twice
+        // the final size bounds all prior initialized-prefix relocations.
+        const auto index_writes = static_cast<std::uint64_t>(points + lines) * sizeof(unsigned int);
+        const auto line_moves = connectivity > 2 * cells
+                                    ? 0
+                                    : 2 * static_cast<std::uint64_t>(lines) * sizeof(unsigned int);
+        tracker_->record(sdk_copy::Component::vtk_index_build,
+                         ledger::Stage::vtk_apply,
+                         state_bytes + assigned + index_writes + line_moves);
+        ledger::add(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes, index_writes);
+    }
+
+    void UpdateCameraShiftScale(vtkRenderer* renderer, vtkActor* actor) override {
+        this->Superclass::UpdateCameraShiftScale(renderer, actor);
+        if (!observing())
+            return;
+        const bool camera_shift =
+            this->ShiftScaleMethod == ShiftScaleMethodType::NEAR_PLANE_SHIFT_SCALE ||
+            this->ShiftScaleMethod == ShiftScaleMethodType::FOCAL_POINT_SHIFT_SCALE;
+        tracker_->record(
+            sdk_copy::Component::vtk_camera_shift,
+            ledger::Stage::vtk_apply,
+            camera_shift ? std::nullopt : std::optional<std::uint64_t>(0),
+            "camera shift matrices and transformed coordinate buffers are not audited");
+    }
+
+    void SetCameraShaderParameters(vtkOpenGLHelper& cell,
+                                   vtkRenderer* renderer,
+                                   vtkActor* actor) override {
+        this->Superclass::SetCameraShaderParameters(cell, renderer, actor);
+        if (!observing())
+            return;
+        auto* vbo = this->VBOs->GetVBO("vertexMC");
+        if (!cell.Program || !actor->GetIsIdentity() || !vbo) {
+            tracker_->record(sdk_copy::Component::vtk_camera_shift,
+                             ledger::Stage::vtk_apply,
+                             std::nullopt,
+                             "shader matrices require an identity actor and coordinate VBO");
+            return;
+        }
+        // The original identity-actor branch has already looked up all four
+        // names. Post-call queries borrow that cache; they cannot create a new
+        // lazy uniform entry or alter the shader's original output.
+        const bool display = cell.Program->IsUniformUsed("MCDCMatrix");
+        const bool model_view = cell.Program->IsUniformUsed("MCVCMatrix");
+        const bool normal = cell.Program->IsUniformUsed("normalMatrix");
+        const bool environment = cell.Program->IsUniformUsed("envMatrix");
+        tracker_->record(
+            sdk_copy::Component::vtk_camera_shift,
+            ledger::Stage::vtk_apply,
+            display ? detail::autoShaderMatrixBytes(vbo, true, model_view, normal, environment)
+                    : std::nullopt,
+            "environment/absent-display/alternate coordinate shader paths are not audited");
+    }
+
+  private:
+    bool observing() const {
+        if (!tracker_ || !ledger::current())
+            return false;
+        if (std::string_view(vtkVersion::GetVTKVersion()) == "9.7.0")
+            return true;
+        tracker_->unsupported(sdk_copy::Component::vtk_mapper_build,
+                              ledger::Stage::vtk_apply,
+                              "VTK version differs from the 9.7.0 source audit");
+        return false;
+    }
+    std::shared_ptr<sdk_copy::Tracker> tracker_;
+};
+vtkStandardNewMacro(ObservedPolyDataMapper);
 } // namespace
 
 struct VtkView::Impl {
     static constexpr std::size_t block_capacity = 1024;
-    enum class Kind { node, beam, geometry };
+    enum class Kind { node, beam, geometry, cell };
     struct Location {
         Kind kind;
         std::size_t index;
     };
     struct Endpoint {
         std::size_t block, point;
+        Kind kind{Kind::beam};
     };
     struct Block {
         Kind kind;
@@ -91,13 +312,14 @@ struct VtkView::Impl {
         vtkSmartPointer<vtkPoints> points;
         std::vector<std::size_t> cell_entities;
         std::set<std::size_t> selected;
+        std::vector<vtkIdType> point_offsets{};
     };
     QVTKOpenGLNativeWidget* widget{};
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> window;
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkActor> preview;
     RenderPacket packet;
-    std::vector<Block> node_blocks, beam_blocks, geometry_blocks;
+    std::vector<Block> node_blocks, beam_blocks, geometry_blocks, cell_blocks;
     std::unordered_map<std::string, Location> locations;
     std::map<const vtkProp*, Block*> actors;
     std::vector<std::vector<Endpoint>> incident_endpoints;
@@ -108,6 +330,120 @@ struct VtkView::Impl {
     bool mouse_down{false};
     bool box_active{false};
     bool through{false};
+    struct ObservedVbo {
+        vtkSmartPointer<vtkOpenGLVertexBufferObject> buffer;
+        vtkMTimeType upload_time{};
+    };
+    // Diagnostic references never copy geometry or change VBO/array modification times.
+    std::map<vtkOpenGLVertexBufferObject*, ObservedVbo> observed_vbos;
+    std::shared_ptr<ledger::OperationLedger> render_ledger;
+    unsigned render_depth{};
+    unsigned long render_start_observer{}, render_end_observer{};
+    std::shared_ptr<sdk_copy::Tracker> sdk_copies = std::make_shared<sdk_copy::Tracker>(
+        std::initializer_list<sdk_copy::Component>{sdk_copy::Component::vtk_mapper_check,
+                                                   sdk_copy::Component::vtk_mapper_build,
+                                                   sdk_copy::Component::vtk_index_build,
+                                                   sdk_copy::Component::vtk_cell_texture,
+                                                   sdk_copy::Component::vtk_coordinate_ranges,
+                                                   sdk_copy::Component::vtk_camera_shift,
+                                                   sdk_copy::Component::vtk_coordinate_vbo});
+
+    ~Impl() {
+        if (window) {
+            window->RemoveObserver(render_start_observer);
+            window->RemoveObserver(render_end_observer);
+        }
+    }
+    void unknownModelBufferObservation() noexcept {
+        if (!render_ledger)
+            return;
+        render_ledger->unknown(ledger::Stage::vtk_apply,
+                               ledger::Metric::library_internal_copy_bytes);
+        render_ledger->unknown(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes);
+        sdk_copies->unsupported(sdk_copy::Component::vtk_coordinate_vbo,
+                                ledger::Stage::vtk_apply,
+                                "coordinate VBO observation was unsupported or incomplete");
+    }
+    template <class Visitor> void visitModelVbos(Visitor visit) {
+        for (const auto* blocks : {&node_blocks, &beam_blocks, &geometry_blocks, &cell_blocks})
+            for (const auto& block : *blocks)
+                for (const auto& actor : {block.actor, block.highlight}) {
+                    auto* mapper = vtkOpenGLPolyDataMapper::SafeDownCast(actor->GetMapper());
+                    if (!mapper) {
+                        unknownModelBufferObservation();
+                        continue;
+                    }
+                    if (auto* vbo = mapper->GetVBOs()->GetVBO("vertexMC"))
+                        visit(vbo);
+                }
+    }
+    void beginModelBufferObservation() noexcept {
+        ++render_depth;
+        if (render_depth != 1) {
+            unknownModelBufferObservation();
+            return;
+        }
+        render_ledger = ledger::current();
+        if (!render_ledger)
+            return;
+        try {
+            observed_vbos.clear();
+            visitModelVbos([&](vtkOpenGLVertexBufferObject* vbo) {
+                observed_vbos.try_emplace(vbo, ObservedVbo{vbo, vbo->GetUploadTime().GetMTime()});
+            });
+        } catch (...) {
+            unknownModelBufferObservation();
+        }
+    }
+    void endModelBufferObservation() noexcept {
+        if (render_depth == 0 || --render_depth != 0 || !render_ledger)
+            return;
+        try {
+            // Source audit is limited to the installed VTK 9.7.0 coordinate VBO path:
+            // UploadDataArray resizes PackedVBO then converts double points to float.
+            // Two destination-buffer writes conservatively include resize initialization.
+            // Other VTK model buffers remain separate, explicitly unaudited boundaries.
+            if (std::string_view(vtkVersion::GetVTKVersion()) != "9.7.0") {
+                unknownModelBufferObservation();
+            } else {
+                std::set<vtkOpenGLVertexBufferObject*> counted;
+                visitModelVbos([&](vtkOpenGLVertexBufferObject* vbo) {
+                    if (!counted.insert(vbo).second)
+                        return;
+                    const auto previous = observed_vbos.find(vbo);
+                    if (previous != observed_vbos.end() &&
+                        previous->second.upload_time == vbo->GetUploadTime().GetMTime())
+                        return;
+                    if (vbo->GetDataType() != VTK_FLOAT || vbo->GetNumberOfComponents() != 3 ||
+                        vbo->GetStride() != 3 * sizeof(float) || !vbo->GetPackedVBO().empty()) {
+                        unknownModelBufferObservation();
+                        return;
+                    }
+                    const auto bytes =
+                        static_cast<std::uint64_t>(vbo->GetNumberOfTuples()) * vbo->GetStride();
+                    sdk_copies->record(sdk_copy::Component::vtk_coordinate_vbo,
+                                       ledger::Stage::vtk_apply,
+                                       2 * bytes);
+                    // CacheDataArray supplies exactly one AOS double3 input;
+                    // BuildAllVBOs makes one UploadDataArray call on an actual
+                    // upload-time change. Shared VBOs are deduplicated above.
+                    // AUTO's worker writes the same PackedVBO float3 values
+                    // already charged by 2*bytes, not a second transform array.
+                    sdk_copies->record(sdk_copy::Component::vtk_coordinate_ranges,
+                                       ledger::Stage::vtk_apply,
+                                       detail::autoShiftVectorBytes(vbo),
+                                       "shift vectors require the audited AUTO/DISABLE path");
+                    // This is the actual OpenGL upload argument length, not GPU memory traffic.
+                    render_ledger->add(
+                        ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes, bytes);
+                });
+            }
+        } catch (...) {
+            unknownModelBufferObservation();
+        }
+        observed_vbos.clear();
+        render_ledger.reset();
+    }
     BoxMode box_mode{BoxMode::intersecting};
     QTimer camera_timer;
     QString last_camera;
@@ -131,7 +467,8 @@ struct VtkView::Impl {
             if (point.visible && inside(screenPoint(point.position_mm), rect))
                 selected_ids.insert(qs(point.entity.value));
         for (const auto& beam : packet.beams) {
-            if (beam.points[0] >= packet.points.size() || beam.points[1] >= packet.points.size())
+            if (!beam.visible || beam.points[0] >= packet.points.size() ||
+                beam.points[1] >= packet.points.size())
                 continue;
             const auto& a = packet.points[beam.points[0]];
             const auto& b = packet.points[beam.points[1]];
@@ -139,8 +476,30 @@ struct VtkView::Impl {
                 selected_ids.insert(qs(beam.entity.value));
         }
         for (const auto& line : packet.geometry_lines)
-            if (lineHit(line.start_mm, line.end_mm))
+            if (line.visible && lineHit(line.start_mm, line.end_mm))
                 selected_ids.insert(qs(line.entity.value));
+        for (const auto& cell : packet.cells) {
+            if (!cell.visible)
+                continue;
+            std::vector<QPointF> projected;
+            for (const auto index : cell.points)
+                projected.push_back(screenPoint(packet.points[index].position_mm));
+            bool hit = std::all_of(projected.begin(), projected.end(), [&](const auto& point) {
+                return inside(point, rect);
+            });
+            if (mode == BoxMode::intersecting) {
+                for (std::size_t i = 1; i < projected.size(); ++i)
+                    hit = hit || segmentIntersectsRect(projected[i - 1], projected[i], rect);
+                if (cell.kind == RenderCellKind::polygon) {
+                    hit = hit || segmentIntersectsRect(projected.back(), projected.front(), rect);
+                    for (const auto& corner :
+                         {rect.topLeft(), rect.topRight(), rect.bottomLeft(), rect.bottomRight()})
+                        hit = hit || polygonContains(projected, corner);
+                }
+            }
+            if (hit)
+                selected_ids.insert(qs(cell.entity.value));
+        }
         return QStringList(selected_ids.begin(), selected_ids.end());
     }
 
@@ -174,6 +533,8 @@ struct VtkView::Impl {
                     ids.insert(qs(packet.points[entity].entity.value));
                 else if (block.kind == Kind::beam)
                     ids.insert(qs(packet.beams[entity].entity.value));
+                else if (block.kind == Kind::cell)
+                    ids.insert(qs(packet.cells[entity].entity.value));
                 else
                     ids.insert(qs(packet.geometry_lines[entity].entity.value));
             }
@@ -196,14 +557,18 @@ struct VtkView::Impl {
                    vtkCellArray* cells,
                    bool vertices,
                    const double color[3],
-                   double width) {
+                   double width,
+                   vtkCellArray* polygons = nullptr) {
         vtkNew<vtkPolyData> geometry;
         geometry->SetPoints(points);
         if (vertices)
             geometry->SetVerts(cells);
         else
             geometry->SetLines(cells);
-        vtkNew<vtkPolyDataMapper> mapper;
+        if (polygons)
+            geometry->SetPolys(polygons);
+        vtkNew<ObservedPolyDataMapper> mapper;
+        mapper->setCopyTracker(sdk_copies);
         mapper->SetInputData(geometry);
         actor->SetMapper(mapper);
         actor->GetProperty()->SetColor(color[0], color[1], color[2]);
@@ -221,10 +586,61 @@ struct VtkView::Impl {
         const auto index = location.index / block_capacity;
         return location.kind == Kind::node   ? node_blocks[index]
                : location.kind == Kind::beam ? beam_blocks[index]
+               : location.kind == Kind::cell ? cell_blocks[index]
                                              : geometry_blocks[index];
     }
+    Block& endpointBlock(const Endpoint& endpoint) {
+        return endpoint.kind == Kind::cell ? cell_blocks[endpoint.block]
+                                           : beam_blocks[endpoint.block];
+    }
+    void cellArrays(Block& block, vtkCellArray* lines, vtkCellArray* polygons, bool highlight) {
+        std::vector<std::size_t> line_entities, polygon_entities;
+        const auto count = static_cast<vtkIdType>(block.point_offsets.size() - 1);
+        const auto indices = block.point_offsets.back();
+        lines->AllocateExact(count, indices);
+        polygons->AllocateExact(count, indices);
+        line_entities.reserve(static_cast<std::size_t>(count));
+        polygon_entities.reserve(static_cast<std::size_t>(count));
+        std::uint64_t copied{};
+        for (std::size_t local = 0; local + 1 < block.point_offsets.size(); ++local) {
+            const auto index = block.begin + local;
+            const auto& cell = packet.cells[index];
+            if (!cell.visible || (highlight && !block.selected.contains(index)))
+                continue;
+            const auto first = block.point_offsets[local], end = block.point_offsets[local + 1];
+            auto* array = cell.kind == RenderCellKind::polyline ? lines : polygons;
+            array->InsertNextCell(end - first);
+            for (auto point = first; point < end; ++point)
+                array->InsertCellPoint(point);
+            (cell.kind == RenderCellKind::polyline ? line_entities : polygon_entities)
+                .push_back(index);
+            copied += static_cast<std::uint64_t>(end - first + 1) * sizeof(vtkIdType);
+            if (highlight)
+                ++stats.highlight_cells_written;
+        }
+        if (!highlight) {
+            block.cell_entities = std::move(line_entities);
+            block.cell_entities.insert(
+                block.cell_entities.end(), polygon_entities.begin(), polygon_entities.end());
+            copied += 3 * block.cell_entities.size() * sizeof(std::size_t);
+        }
+        ledger::add(ledger::Stage::vtk_apply, ledger::Metric::array_write_bytes, copied);
+    }
     void refreshHighlight(Block& block) {
+        if (block.kind == Kind::cell) {
+            vtkNew<vtkCellArray> lines;
+            vtkNew<vtkCellArray> polygons;
+            cellArrays(block, lines, polygons, true);
+            const double color[]{1.0, 0.62, 0.13};
+            makeActor(block.highlight, block.points, lines, false, color, 7, polygons);
+            block.highlight->PickableOff();
+            ++stats.highlight_blocks;
+            return;
+        }
         vtkNew<vtkCellArray> cells;
+        cells->AllocateEstimate(static_cast<vtkIdType>(block.selected.size()),
+                                block.kind == Kind::node ? 1 : 2);
+        const auto prior_written = stats.highlight_cells_written;
         for (const auto index : block.selected) {
             if (block.kind == Kind::node) {
                 if (!packet.points[index].visible)
@@ -232,9 +648,11 @@ struct VtkView::Impl {
                 const vtkIdType point = static_cast<vtkIdType>(index - block.begin);
                 cells->InsertNextCell(1, &point);
             } else {
-                if (block.kind == Kind::beam &&
-                    (packet.beams[index].points[0] >= packet.points.size() ||
-                     packet.beams[index].points[1] >= packet.points.size()))
+                if ((block.kind == Kind::beam &&
+                     (!packet.beams[index].visible ||
+                      packet.beams[index].points[0] >= packet.points.size() ||
+                      packet.beams[index].points[1] >= packet.points.size())) ||
+                    (block.kind == Kind::geometry && !packet.geometry_lines[index].visible))
                     continue;
                 const auto first = static_cast<vtkIdType>((index - block.begin) * 2);
                 const vtkIdType endpoints[]{first, first + 1};
@@ -251,8 +669,119 @@ struct VtkView::Impl {
                   block.kind == Kind::node ? 13 : 7);
         block.highlight->PickableOff();
         ++stats.highlight_blocks;
+        ledger::add(ledger::Stage::vtk_apply,
+                    ledger::Metric::array_write_bytes,
+                    (stats.highlight_cells_written - prior_written) *
+                            (block.kind == Kind::node ? 2 : 3) * sizeof(vtkIdType) +
+                        sizeof(vtkIdType));
+    }
+    void refreshVisibility(Block& block) {
+        if (block.kind == Kind::cell) {
+            vtkNew<vtkCellArray> lines;
+            vtkNew<vtkCellArray> polygons;
+            cellArrays(block, lines, polygons, false);
+            auto* geometry = vtkPolyData::SafeDownCast(block.actor->GetMapper()->GetInput());
+            geometry->SetLines(lines);
+            geometry->SetPolys(polygons);
+            refreshHighlight(block);
+            return;
+        }
+        vtkNew<vtkCellArray> cells;
+        block.cell_entities.clear();
+        const auto count = static_cast<std::size_t>(block.points->GetNumberOfPoints()) /
+                           (block.kind == Kind::node ? 1 : 2);
+        block.cell_entities.reserve(count);
+        cells->AllocateEstimate(static_cast<vtkIdType>(count), block.kind == Kind::node ? 1 : 2);
+        for (std::size_t local = 0; local < count; ++local) {
+            const auto index = block.begin + local;
+            const bool visible = block.kind == Kind::node   ? packet.points[index].visible
+                                 : block.kind == Kind::beam ? packet.beams[index].visible
+                                                            : packet.geometry_lines[index].visible;
+            if (!visible)
+                continue;
+            const vtkIdType first =
+                static_cast<vtkIdType>(local * (block.kind == Kind::node ? 1 : 2));
+            const vtkIdType endpoints[]{first, first + 1};
+            cells->InsertNextCell(block.kind == Kind::node ? 1 : 2, endpoints);
+            block.cell_entities.push_back(index);
+        }
+        auto* geometry = vtkPolyData::SafeDownCast(block.actor->GetMapper()->GetInput());
+        if (block.kind == Kind::node)
+            geometry->SetVerts(cells);
+        else
+            geometry->SetLines(cells);
+        ledger::add(
+            ledger::Stage::vtk_apply,
+            ledger::Metric::array_write_bytes,
+            block.cell_entities.size() *
+                (sizeof(std::size_t) + (block.kind == Kind::node ? 2 : 3) * sizeof(vtkIdType)));
+        refreshHighlight(block);
+    }
+    void finishDisplayUpdate() {
+        if (ledger::current()) {
+            sdk_copies->beginOperation();
+            // A measured run completes at GPU synchronization, not at Render() return.
+            window->WaitForCompletion();
+            // A version-only delta performs no Render/coordinate upload. Known zero
+            // here describes this component, not complete VTK SDK copy coverage.
+            ledger::add(ledger::Stage::vtk_apply, ledger::Metric::library_internal_copy_bytes, 0);
+            ledger::add(ledger::Stage::vtk_apply, ledger::Metric::gpu_upload_bytes, 0);
+            ledger::cover(ledger::Stage::vtk_complete);
+        }
+    }
+    void installCoordinateObserver(vtkPoints* points) {
+        vtkNew<detail::ObservedCoordinateArray> coordinates;
+        coordinates->SetNumberOfComponents(3);
+        coordinates->setCopyTracker(sdk_copies);
+        points->SetData(coordinates);
+    }
+    Block makeCellBlock(std::size_t begin, std::size_t count) {
+        Block block{Kind::cell,
+                    begin,
+                    vtkSmartPointer<vtkActor>::New(),
+                    vtkSmartPointer<vtkActor>::New(),
+                    vtkSmartPointer<vtkPoints>::New(),
+                    {},
+                    {}};
+        installCoordinateObserver(block.points);
+        block.point_offsets.reserve(count + 1);
+        block.point_offsets.push_back(0);
+        for (std::size_t local = 0; local < count; ++local)
+            block.point_offsets.push_back(
+                block.point_offsets.back() +
+                static_cast<vtkIdType>(packet.cells[begin + local].points.size()));
+        block.points->SetNumberOfPoints(block.point_offsets.back());
+        for (std::size_t local = 0; local < count; ++local) {
+            const auto index = begin + local;
+            const auto& cell = packet.cells[index];
+            for (std::size_t j = 0; j < cell.points.size(); ++j) {
+                const auto source = cell.points[j];
+                const auto destination = block.point_offsets[local] + static_cast<vtkIdType>(j);
+                block.points->SetPoint(destination, packet.points[source].position_mm.data());
+                incident_endpoints[source].push_back(
+                    {begin / block_capacity, static_cast<std::size_t>(destination), Kind::cell});
+            }
+            if (cell.entity.value.empty() ||
+                !locations.emplace(cell.entity.value, Location{Kind::cell, index}).second)
+                delta_ready = false;
+            if (selected.contains(cell.entity.value))
+                block.selected.insert(index);
+        }
+        vtkNew<vtkCellArray> lines;
+        vtkNew<vtkCellArray> polygons;
+        cellArrays(block, lines, polygons, false);
+        const double color[]{0.8, 0.85, 0.91};
+        makeActor(block.actor, block.points, lines, false, color, 3, polygons);
+        refreshHighlight(block);
+        const auto bytes =
+            static_cast<std::uint64_t>(block.point_offsets.back()) * 3 * sizeof(double);
+        stats.coordinate_bytes_copied += bytes;
+        stats.dirty_coordinate_array_bytes += bytes;
+        return block;
     }
     Block makeBlock(Kind kind, std::size_t begin, std::size_t count) {
+        if (kind == Kind::cell)
+            return makeCellBlock(begin, count);
         Block block{kind,
                     begin,
                     vtkSmartPointer<vtkActor>::New(),
@@ -260,7 +789,7 @@ struct VtkView::Impl {
                     vtkSmartPointer<vtkPoints>::New(),
                     {},
                     {}};
-        block.points->SetDataTypeToDouble();
+        installCoordinateObserver(block.points);
         block.points->SetNumberOfPoints(
             static_cast<vtkIdType>(count * (kind == Kind::node ? 1 : 2)));
         vtkNew<vtkCellArray> cells;
@@ -304,8 +833,12 @@ struct VtkView::Impl {
                 block.points->SetPoint(cell, first.data());
                 block.points->SetPoint(cell + 1, last.data());
                 const vtkIdType endpoints[]{cell, cell + 1};
-                cells->InsertNextCell(2, endpoints);
-                block.cell_entities.push_back(index);
+                const bool visible = kind == Kind::beam ? packet.beams[index].visible
+                                                        : packet.geometry_lines[index].visible;
+                if (visible) {
+                    cells->InsertNextCell(2, endpoints);
+                    block.cell_entities.push_back(index);
+                }
             }
             if (entity->value.empty() ||
                 !locations.emplace(entity->value, Location{kind, index}).second)
@@ -335,7 +868,7 @@ struct VtkView::Impl {
         stats.full_rebuilds = 1;
         stats.coordinate_bytes_copied = packet.points.size() * 3 * sizeof(double) +
                                         packet.geometry_lines.size() * 6 * sizeof(double);
-        for (auto* blocks : {&node_blocks, &beam_blocks, &geometry_blocks}) {
+        for (auto* blocks : {&node_blocks, &beam_blocks, &geometry_blocks, &cell_blocks}) {
             for (auto& block : *blocks) {
                 renderer->RemoveActor(block.actor);
                 renderer->RemoveActor(block.highlight);
@@ -345,7 +878,7 @@ struct VtkView::Impl {
         actors.clear();
         locations.clear();
         locations.reserve(packet.points.size() + packet.beams.size() +
-                          packet.geometry_lines.size());
+                          packet.geometry_lines.size() + packet.cells.size());
         incident_endpoints.clear();
         incident_endpoints.resize(packet.points.size());
         delta_ready = !packet.view_session_id.empty();
@@ -357,7 +890,8 @@ struct VtkView::Impl {
         build(node_blocks, Kind::node, packet.points.size());
         build(beam_blocks, Kind::beam, packet.beams.size());
         build(geometry_blocks, Kind::geometry, packet.geometry_lines.size());
-        for (auto* blocks : {&beam_blocks, &geometry_blocks, &node_blocks})
+        build(cell_blocks, Kind::cell, packet.cells.size());
+        for (auto* blocks : {&beam_blocks, &geometry_blocks, &cell_blocks, &node_blocks})
             for (auto& block : *blocks) {
                 actors.emplace(block.actor, &block);
                 renderer->AddActor(block.actor);
@@ -366,7 +900,9 @@ struct VtkView::Impl {
         stats.node_blocks = node_blocks.size();
         stats.beam_blocks = beam_blocks.size();
         stats.geometry_blocks = geometry_blocks.size();
+        stats.cell_blocks = cell_blocks.size();
         window->Render();
+        finishDisplayUpdate();
     }
     void select(const QStringList& ids) {
         stats = {};
@@ -407,11 +943,12 @@ struct VtkView::Impl {
             delta.revision < delta.base_revision ||
             delta.view_revision < delta.base_view_revision ||
             ((!delta.points.empty() || !delta.geometry_lines.empty()) &&
-             delta.revision == delta.base_revision))
+             delta.revision == delta.base_revision) ||
+            (!delta.visibility.empty() && delta.view_revision == delta.base_view_revision))
             return false;
         std::set<std::size_t> point_indices, geometry_indices;
-        std::set<Block*> dirty_nodes, dirty_beams, dirty_geometry;
-        // Build every affected-block set before touching either the packet or VTK arrays.
+        std::set<Block*> dirty_nodes, dirty_beams, dirty_geometry, dirty_cells, visibility_blocks;
+        // Validate every update and build affected sets before changing retained state.
         for (const auto& update : delta.points) {
             if (update.index >= packet.points.size() ||
                 !point_indices.insert(update.index).second ||
@@ -421,15 +958,33 @@ struct VtkView::Impl {
                 return false;
             dirty_nodes.insert(&node_blocks[update.index / block_capacity]);
             for (const auto& endpoint : incident_endpoints[update.index])
-                dirty_beams.insert(&beam_blocks[endpoint.block]);
+                (endpoint.kind == Kind::cell ? dirty_cells : dirty_beams)
+                    .insert(&endpointBlock(endpoint));
         }
         for (const auto& update : delta.geometry_lines) {
             if (update.index >= packet.geometry_lines.size() ||
                 !geometry_indices.insert(update.index).second ||
                 update.line.entity != packet.geometry_lines[update.index].entity ||
+                update.line.visible != packet.geometry_lines[update.index].visible ||
                 !finite(update.line.start_mm) || !finite(update.line.end_mm))
                 return false;
             dirty_geometry.insert(&geometry_blocks[update.index / block_capacity]);
+        }
+        std::set<std::pair<RenderPrimitive, std::size_t>> visibility_indices;
+        std::set<std::string> visibility_ids;
+        for (const auto& update : delta.visibility) {
+            const auto found = locations.find(update.entity.value);
+            const auto kind = update.primitive == RenderPrimitive::point  ? Kind::node
+                              : update.primitive == RenderPrimitive::beam ? Kind::beam
+                              : update.primitive == RenderPrimitive::cell ? Kind::cell
+                                                                          : Kind::geometry;
+            if (update.primitive < RenderPrimitive::point ||
+                update.primitive > RenderPrimitive::cell || found == locations.end() ||
+                found->second.kind != kind || found->second.index != update.index ||
+                !visibility_indices.emplace(update.primitive, update.index).second ||
+                !visibility_ids.insert(update.entity.value).second)
+                return false;
+            visibility_blocks.insert(&blockAt(found->second));
         }
         for (const auto& update : delta.points) {
             packet.points[update.index].position_mm = update.point.position_mm;
@@ -438,8 +993,8 @@ struct VtkView::Impl {
                 update.point.position_mm.data());
             stats.coordinate_bytes_copied += 6 * sizeof(double);
             for (const auto& endpoint : incident_endpoints[update.index]) {
-                beam_blocks[endpoint.block].points->SetPoint(static_cast<vtkIdType>(endpoint.point),
-                                                             update.point.position_mm.data());
+                endpointBlock(endpoint).points->SetPoint(static_cast<vtkIdType>(endpoint.point),
+                                                         update.point.position_mm.data());
                 stats.coordinate_bytes_copied += 3 * sizeof(double);
             }
         }
@@ -453,19 +1008,62 @@ struct VtkView::Impl {
             points->SetPoint(first + 1, line.end_mm.data());
             stats.coordinate_bytes_copied += 12 * sizeof(double);
         }
-        for (const auto* dirty : {&dirty_nodes, &dirty_beams, &dirty_geometry})
+        for (const auto& update : delta.visibility) {
+            if (update.primitive == RenderPrimitive::point)
+                packet.points[update.index].visible = update.visible;
+            else if (update.primitive == RenderPrimitive::beam)
+                packet.beams[update.index].visible = update.visible;
+            else if (update.primitive == RenderPrimitive::cell)
+                packet.cells[update.index].visible = update.visible;
+            else
+                packet.geometry_lines[update.index].visible = update.visible;
+        }
+        for (const auto* dirty : {&dirty_nodes, &dirty_beams, &dirty_geometry, &dirty_cells})
             for (auto* block : *dirty) {
                 block->points->Modified();
                 stats.dirty_coordinate_array_bytes +=
                     block->points->GetNumberOfPoints() * 3 * sizeof(double);
             }
+        for (auto* block : visibility_blocks) {
+            refreshVisibility(*block);
+            if (block->kind == Kind::node)
+                dirty_nodes.insert(block);
+            else if (block->kind == Kind::beam)
+                dirty_beams.insert(block);
+            else if (block->kind == Kind::cell)
+                dirty_cells.insert(block);
+            else
+                dirty_geometry.insert(block);
+        }
         stats.node_blocks = dirty_nodes.size();
         stats.beam_blocks = dirty_beams.size();
         stats.geometry_blocks = dirty_geometry.size();
+        stats.cell_blocks = dirty_cells.size();
         packet.revision = delta.revision;
         packet.view_revision = delta.view_revision;
-        if (!dirty_nodes.empty() || !dirty_beams.empty() || !dirty_geometry.empty())
+        ledger::add(ledger::Stage::vtk_apply,
+                    ledger::Metric::model_copy_bytes,
+                    stats.coordinate_bytes_copied + delta.visibility.size() * sizeof(bool));
+        ledger::add(ledger::Stage::vtk_apply,
+                    ledger::Metric::array_write_bytes,
+                    stats.coordinate_bytes_copied);
+        ledger::add(ledger::Stage::vtk_apply,
+                    ledger::Metric::array_invalidated_bytes,
+                    stats.dirty_coordinate_array_bytes);
+        // Index payloads and identity strings are local. Allocator bookkeeping and
+        // graphics-driver buffers are not in-process model-data copies.
+        std::uint64_t metadata =
+            (point_indices.size() + geometry_indices.size() + visibility_indices.size() +
+             dirty_nodes.size() + dirty_beams.size() + dirty_geometry.size() + dirty_cells.size()) *
+            4 * sizeof(std::size_t);
+        for (const auto& id : visibility_ids)
+            metadata += 3 * id.size();
+        ledger::add(ledger::Stage::vtk_apply, ledger::Metric::metadata_copy_bytes, metadata);
+        ledger::cover(ledger::Stage::vtk_apply);
+        if (!dirty_nodes.empty() || !dirty_beams.empty() || !dirty_geometry.empty() ||
+            !dirty_cells.empty())
             window->Render();
+        finishDisplayUpdate();
         return true;
     }
 
@@ -496,6 +1094,18 @@ VtkView::VtkView(QWidget* parent) : QWidget(parent), impl_(std::make_unique<Impl
     impl_->window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     impl_->renderer = vtkSmartPointer<vtkRenderer>::New();
     impl_->window->AddRenderer(impl_->renderer);
+    vtkNew<vtkCallbackCommand> render_observer;
+    render_observer->SetClientData(impl_.get());
+    render_observer->SetCallback([](vtkObject*, unsigned long event, void* state, void*) {
+        auto* implementation = static_cast<Impl*>(state);
+        if (event == vtkCommand::StartEvent)
+            implementation->beginModelBufferObservation();
+        else
+            implementation->endModelBufferObservation();
+    });
+    impl_->render_start_observer =
+        impl_->window->AddObserver(vtkCommand::StartEvent, render_observer);
+    impl_->render_end_observer = impl_->window->AddObserver(vtkCommand::EndEvent, render_observer);
     impl_->widget->setRenderWindow(impl_->window);
     vtkNew<vtkInteractorStyleTrackballCamera> style;
     impl_->widget->interactor()->SetInteractorStyle(style);
@@ -520,6 +1130,25 @@ VtkView::VtkView(QWidget* parent) : QWidget(parent), impl_(std::make_unique<Impl
 VtkView::~VtkView() = default;
 
 void VtkView::setPacket(const RenderPacket& packet) {
+    std::set<std::string_view> identities;
+    for (const auto& point : packet.points)
+        identities.insert(point.entity.value);
+    for (const auto& beam : packet.beams)
+        identities.insert(beam.entity.value);
+    for (const auto& line : packet.geometry_lines)
+        identities.insert(line.entity.value);
+    for (const auto& cell : packet.cells) {
+        if (cell.entity.value.empty() || !identities.insert(cell.entity.value).second ||
+            (cell.kind != RenderCellKind::polyline && cell.kind != RenderCellKind::polygon) ||
+            cell.points.size() < (cell.kind == RenderCellKind::polyline ? 2U : 3U) ||
+            cell.points.size() > render_cell_point_limit)
+            return;
+        std::set<std::size_t> unique;
+        for (const auto index : cell.points)
+            if (index >= packet.points.size() || !unique.insert(index).second ||
+                !Impl::finite(packet.points[index].position_mm))
+                return;
+    }
     impl_->packet = packet;
     impl_->rebuild();
     if (!impl_->last_camera.size())
@@ -532,6 +1161,10 @@ void VtkView::setSelectedIds(const QStringList& ids) {
 
 bool VtkView::applyDelta(const RenderDelta& delta) {
     return impl_->apply(delta);
+}
+
+bool VtkView::pendingCameraUpdate() const {
+    return impl_->camera_timer.isActive();
 }
 
 VtkUpdateStats VtkView::lastUpdateStats() const {
@@ -585,6 +1218,18 @@ void VtkView::setThroughSelection(bool enabled) {
 }
 bool VtkView::hasPacket() const {
     return !impl_->packet.view_session_id.empty();
+}
+std::optional<ResourceVersion> VtkView::installedVersion() const {
+    if (!impl_->delta_ready)
+        return std::nullopt;
+    return ResourceVersion{impl_->packet.document,
+                           impl_->packet.revision,
+                           impl_->packet.view_session_id,
+                           impl_->packet.view_revision};
+}
+
+SdkCopySnapshot VtkView::sdkCopyObservation() const {
+    return impl_->sdk_copies->snapshot();
 }
 
 QString VtkView::cameraFingerprint() const {

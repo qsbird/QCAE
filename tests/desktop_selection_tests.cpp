@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QSettings>
 #include <QComboBox>
+#include <QDebug>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QEventLoop>
@@ -107,6 +108,34 @@ class SelectionEngine {
                          '\n');
         } else {
             ++event_sequence;
+            QJsonObject details;
+            if (lean_refresh && summary_subscribed) {
+                auto summary = documentSummary();
+                if (summary_fault == "revision")
+                    summary.insert("revision", "999");
+                if (summary_fault == "document")
+                    summary.insert("document_id", "other-document");
+                if (summary_fault == "epoch")
+                    summary.insert("document_epoch", "other-epoch");
+                if (summary_fault == "name")
+                    summary.insert("name", 7);
+                if (summary_fault == "count")
+                    summary.insert("material_count", -1);
+                if (summary_fault == "oversized")
+                    summary.insert("name", QString(4097, QChar('X')));
+                details = {{"base_revision", notified_revision},
+                           {"resync_required", false},
+                           {"document_summary", summary}};
+                if (summary_fault == "missing")
+                    details.remove("document_summary");
+                if (summary_fault == "malformed")
+                    details.insert("document_summary", "bad");
+                if (summary_fault == "resync")
+                    details.insert("resync_required", true);
+                if (summary_fault == "base")
+                    details.insert("base_revision", "999");
+                notified_revision = revision;
+            }
             peer_->write(QJsonDocument(QJsonObject{{"frame_type", "event"},
                                                    {"engine_instance_id", "fake-engine"},
                                                    {"sequence", QString::number(event_sequence)},
@@ -114,20 +143,63 @@ class SelectionEngine {
                                                    {"document_id", document_id},
                                                    {"document_epoch", epoch},
                                                    {"revision", revision},
-                                                   {"data", QJsonObject{}}})
+                                                   {"data", details}})
                              .toJson(QJsonDocument::Compact) +
                          '\n');
         }
     }
     void respondResource(const QJsonObject& request) {
         const auto params = request.value("parameters").toObject();
-        const auto view_revision = params.value("expected_view_revision").toString().toULongLong();
+        auto view_revision = params.value("expected_view_revision").toString().toULongLong();
         const auto rev = request.value("expected_revision").toString().toULongLong();
+        if (lean_refresh && params.value("allow_model_rebase").toBool()) {
+            if (request.value("expected_revision") != revision || view_revision != view_revision_ ||
+                params.value("base_view_revision").toString().toULongLong() != view_revision_ ||
+                params.value("base_revision").toString().toULongLong() != view_model_revision_ ||
+                rev <= view_model_revision_) {
+                rejectView(request);
+                return;
+            }
+            view_model_revision_ = rev;
+            view_revision = ++view_revision_;
+            if (wrong_next_target) {
+                wrong_next_target = false;
+                ++view_revision;
+                hold_render = true;
+            }
+        } else if (lean_refresh &&
+                   (request.value("expected_revision") != revision || rev != view_model_revision_ ||
+                    view_revision != view_revision_)) {
+            rejectView(request);
+            return;
+        }
         const qcae::DocumentRef doc{
             qcae::DocumentId(request.value("document_id").toString().toStdString()),
             qcae::DocumentEpoch(request.value("document_epoch").toString().toStdString())};
         const auto resource_view = params.value("view_session_id").toString();
         const bool delta = params.contains("base_revision");
+        if (delta && inline_empty && params.value("allow_inline_empty").toBool()) {
+            QJsonObject acknowledgement{{"document_id", request.value("document_id")},
+                                        {"document_epoch", request.value("document_epoch")},
+                                        {"revision", QString::number(rev)},
+                                        {"view_session_id", resource_view},
+                                        {"view_revision", QString::number(view_revision)},
+                                        {"base_revision", params.value("base_revision")},
+                                        {"base_view_revision", params.value("base_view_revision")}};
+            if (corrupt_next_ack) {
+                corrupt_next_ack = false;
+                acknowledgement.insert("base_revision", "999");
+                hold_render = true;
+            }
+            respond(request,
+                    changedRows({{"mode", "version_only"},
+                                 {"acknowledgement", acknowledgement},
+                                 {"refresh_tree", false},
+                                 {"changed_ids", QJsonArray{"line-a"}}},
+                                request,
+                                view_revision));
+            return;
+        }
         const auto resource = "resource-" + QString::number(++resource_sequence);
         const auto a = qcae::RenderGeometryLine{qcae::EntityId("line-a"),
                                                 {0, 0, rev == 7 ? 0.0 : 15.0},
@@ -171,12 +243,20 @@ class SelectionEngine {
         resource_bytes[resource] = bytes;
         resource_manifests[resource] = manifest;
         respond(request,
-                {{"mode", delta ? "delta" : "full"},
-                 {"manifest", manifest},
-                 {"refresh_tree", !delta},
-                 {"changed_ids", QJsonArray{"line-a"}}});
+                changedRows({{"mode", delta ? "delta" : "full"},
+                             {"manifest", manifest},
+                             {"refresh_tree", !delta},
+                             {"changed_ids", QJsonArray{"line-a"}}},
+                            request,
+                            view_revision));
     }
     bool resources_enabled{}, drop_next_manifest{}, drop_next_subscription{}, drop_next_update{};
+    bool inline_empty{}, corrupt_next_ack{}, reject_next_update{};
+    bool legacy_numeric_versions{};
+    bool lean_refresh{}, summary_subscribed{}, wrong_next_target{}, hold_entity_rows{},
+        hold_entity_all{};
+    QString summary_fault, rows_fault, legacy_reply_fault, notified_revision{"7"};
+    bool organization_enabled{};
     quint64 event_sequence{}, resource_sequence{};
     QMap<QString, QByteArray> resource_bytes;
     QMap<QString, QJsonObject> resource_manifests;
@@ -188,15 +268,120 @@ class SelectionEngine {
     QList<QJsonObject> held_renders;
     QList<QJsonObject> held_updates;
     QList<QJsonObject> held_current;
+    QList<QJsonObject> held_entity_rows;
+    bool hold_create{}, hold_view_ack{};
+    QList<QJsonObject> held_creates;
+    QList<std::pair<QJsonObject, QJsonObject>> held_view_acks;
+
+    void acceptHeldViewUpdates() {
+        hold_view_ack = true;
+        releaseViewUpdates();
+        hold_view_ack = false;
+        hold_update = true;
+    }
+    void releaseViewAcknowledgements() {
+        const auto pending = held_view_acks;
+        held_view_acks.clear();
+        for (const auto& [request, data] : pending)
+            respond(request, data);
+    }
+    void releaseCreates() {
+        hold_create = false;
+        const auto pending = held_creates;
+        held_creates.clear();
+        for (const auto& request : pending)
+            respondView(request);
+    }
+
+    void releaseEntityRows() {
+        hold_entity_rows = false;
+        hold_entity_all = false;
+        const auto pending = held_entity_rows;
+        held_entity_rows.clear();
+        for (const auto& request : pending)
+            dispatch(request);
+    }
 
   private:
+    QJsonObject documentSummary() const {
+        return {{"document_id", document_id},
+                {"document_epoch", epoch},
+                {"revision", revision},
+                {"content_state", "content-" + revision},
+                {"name", "Selection test"},
+                {"material_count", 0},
+                {"dirty", false},
+                {"durable", false},
+                {"project_id", "selection-project"},
+                {"saved_path", ""},
+                {"saved_content_state", ""}};
+    }
+    void rejectView(const QJsonObject& request) {
+        peer_->write(QJsonDocument(QJsonObject{{"request_id", request.value("request_id")},
+                                               {"status", "conflict"},
+                                               {"error",
+                                                QJsonObject{{"code", "REVISION_CONFLICT"},
+                                                            {"message", "View baseline changed"}}}})
+                         .toJson(QJsonDocument::Compact) +
+                     '\n');
+    }
+    QJsonObject changedRows(QJsonObject data, const QJsonObject& request, quint64 view_revision) {
+        if (!lean_refresh ||
+            !request.value("parameters").toObject().value("include_changed_rows").toBool())
+            return data;
+        const bool complete = !data.value("refresh_tree").toBool();
+        data.insert("rows_complete", complete && rows_fault != "complete");
+        if (!complete)
+            return data;
+        QJsonObject version{
+            {"document_id", request.value("document_id")},
+            {"document_epoch", request.value("document_epoch")},
+            {"revision", request.value("expected_revision")},
+            {"view_session_id", request.value("parameters").toObject().value("view_session_id")},
+            {"view_revision", QString::number(view_revision)}};
+        auto row = line("line-a");
+        if (!rows_fault.isEmpty())
+            row.insert("name", "poison-row");
+        if (rows_fault == "version")
+            version.insert("revision", "999");
+        if (rows_fault == "fields")
+            row.insert("fields", "bad-fields");
+        if (rows_fault == "position")
+            row.insert("start_mm", QJsonArray{0, 1});
+        if (rows_fault == "id")
+            row.insert("entity_id", "other-id");
+        if (rows_fault == "budget")
+            row.insert("name", QString(11000, QChar('X')));
+        QJsonArray rows{row};
+        if (rows_fault == "duplicate")
+            rows.append(row);
+        data.insert("rows_version", version);
+        data.insert("changed_rows", rows);
+        if (rows_fault == "missing_rows")
+            data.remove("changed_rows");
+        if (rows_fault == "missing_ids")
+            data.remove("changed_ids");
+        if (rows_fault == "null_ids")
+            data.insert("changed_ids", QJsonValue(QJsonValue::Null));
+        if (rows_fault == "string_ids")
+            data.insert("changed_ids", "line-a");
+        if (rows_fault == "duplicate_ids")
+            data.insert("changed_ids", QJsonArray{"line-a", "line-a"});
+        if (rows_fault == "invalid_id")
+            data.insert("changed_ids", QJsonArray{""});
+        return data;
+    }
     QJsonObject line(const QString& id) const {
-        const double z = id == "line-b" ? 25.0 : revision == "7" ? 0.0 : 15.0;
+        const double z = id == "line-b" ? 25.0 : revision == "7" || inline_empty ? 0.0 : 15.0;
         return {{"entity_id", id},
                 {"kind", "geometry"},
-                {"name", id},
+                {"name",
+                 organization_enabled && revision != "7" && id == "line-a"
+                     ? QString("renamed-line-a")
+                     : id},
                 {"start_mm", QJsonArray{0, 0, z}},
-                {"end_mm", QJsonArray{100, 0, z}}};
+                {"end_mm", QJsonArray{100, 0, z}},
+                {"sources", QJsonArray{}}};
     }
     QJsonObject renderData(const QJsonObject& request) const {
         QJsonArray lines;
@@ -204,16 +389,31 @@ class SelectionEngine {
             if (!hidden_.contains(id))
                 lines.append(line(id));
         const auto parameters = request.value("parameters").toObject();
-        return {{"document_id", request.value("document_id")},
-                {"document_epoch", request.value("document_epoch")},
-                {"revision", request.value("expected_revision")},
-                {"view_session_id", parameters.value("view_session_id")},
-                {"view_revision", parameters.value("expected_view_revision")},
-                {"points", QJsonArray{}},
-                {"beams", QJsonArray{}},
-                {"geometry_lines", lines}};
+        QJsonObject data{{"document_id", request.value("document_id")},
+                         {"document_epoch", request.value("document_epoch")},
+                         {"revision", request.value("expected_revision")},
+                         {"view_session_id", parameters.value("view_session_id")},
+                         {"view_revision", parameters.value("expected_view_revision")},
+                         {"points", QJsonArray{}},
+                         {"beams", QJsonArray{}},
+                         {"geometry_lines", lines}};
+        if (legacy_numeric_versions) {
+            data.insert("revision", request.value("expected_revision").toString().toLongLong());
+            data.insert("view_revision",
+                        parameters.value("expected_view_revision").toString().toLongLong());
+        }
+        return data;
     }
     void respondView(const QJsonObject& request) {
+        if (request.value("operation") == "view.update" && reject_next_update) {
+            reject_next_update = false;
+            rejectView(request);
+            return;
+        }
+        if (lean_refresh && request.value("expected_revision") != revision) {
+            rejectView(request);
+            return;
+        }
         if (resources_enabled && request.value("operation") == "view.update" &&
             request.value("parameters")
                     .toObject()
@@ -234,26 +434,37 @@ class SelectionEngine {
             view_revision_ = 1;
         else
             ++view_revision_;
+        view_model_revision_ = request.value("expected_revision").toString().toULongLong();
         hidden_ = request.value("parameters").toObject().value("hidden_ids").toArray();
         if (request.value("operation") == "view.update" && drop_next_update) {
             drop_next_update = false;
             return; // Server updated its disposable view but the acknowledgement was lost.
         }
-        respond(request,
-                {{"view_session_id", view_id}, {"view_revision", QString::number(view_revision_)}});
+        const QJsonObject data{{"view_session_id", view_id},
+                               {"view_revision", QString::number(view_revision_)}};
+        if (hold_view_ack)
+            held_view_acks.append({request, data});
+        else
+            respond(request, data);
     }
     void dispatch(const QJsonObject& request) {
         const auto operation = request.value("operation").toString();
         const auto parameters = request.value("parameters").toObject();
         if (operation == "runtime.handshake")
-            respond(
-                request,
-                {{"api_version", "1.1"},
-                 {"engine_instance_id", "fake-engine"},
-                 {"capabilities",
-                  resources_enabled ? QJsonObject{{"resources_version", 1}, {"events_version", 1}}
-                                    : QJsonObject{}}});
+            respond(request,
+                    {{"api_version", "1.1"},
+                     {"engine_instance_id", "fake-engine"},
+                     {"capabilities",
+                      resources_enabled
+                          ? QJsonObject{{"resources_version", 1},
+                                        {"events_version", 1},
+                                        {"render_inline_empty_version", inline_empty ? 1 : 0},
+                                        {"events_document_summary_version", lean_refresh ? 1 : 0},
+                                        {"render_model_rebase_version", lean_refresh ? 1 : 0},
+                                        {"render_changed_rows_version", lean_refresh ? 1 : 0}}
+                          : QJsonObject{}}});
         else if (operation == "events.subscribe") {
+            summary_subscribed = parameters.value("include_document_summary").toBool();
             if (drop_next_subscription)
                 drop_next_subscription = false;
             else
@@ -287,30 +498,67 @@ class SelectionEngine {
             if (hold_current)
                 held_current.append(request);
             else
-                respond(request,
-                        {{"document_id", document_id},
-                         {"document_epoch", epoch},
-                         {"revision", revision},
-                         {"name", "Selection test"},
-                         {"dirty", false}});
+                respond(request, documentSummary());
         } else if (operation == "entity.query") {
             QJsonArray rows;
             const auto ids = parameters.value("ids").toArray();
+            if ((hold_entity_rows && !ids.isEmpty()) || (hold_entity_all && ids.isEmpty())) {
+                held_entity_rows.append(request);
+                return;
+            }
             for (const auto* id : {"line-a", "line-b"})
                 if (ids.isEmpty() || ids.contains(id))
                     rows.append(line(id));
+            if (organization_enabled && parameters.value("view") == "all")
+                rows.append(QJsonObject{
+                    {"entity_id", "material-owner"}, {"kind", "material"}, {"name", "Steel"}});
             respond(request, {{"entities", rows}, {"total", rows.size()}});
         } else if (operation == "history.list")
             respond(request, {{"items", QJsonArray{}}});
         else if (operation == "view.create" || operation == "view.update") {
-            if (operation == "view.update" && hold_update)
+            if (operation == "view.create" && hold_create)
+                held_creates.append(request);
+            else if (operation == "view.update" && hold_update)
                 held_updates.append(request);
             else
                 respondView(request);
         } else if (operation == "view.render_data") {
             if (hold_render)
                 held_renders.append(request);
-            else
+            else if (!legacy_reply_fault.isEmpty()) {
+                hold_render = true;
+                if (legacy_reply_fault == "failed")
+                    rejectView(request);
+                else {
+                    auto data = renderData(request);
+                    if (legacy_reply_fault == "bad-coordinate")
+                        data.insert(
+                            "points",
+                            QJsonArray{QJsonObject{{"entity_id", "bad-point"},
+                                                   {"position_mm", QJsonArray{"bad", 0, 0}}}});
+                    else if (legacy_reply_fault == "duplicate-id") {
+                        auto lines = data.value("geometry_lines").toArray();
+                        lines.append(lines.first());
+                        data.insert("geometry_lines", lines);
+                    } else if (legacy_reply_fault == "cross-kind-id")
+                        data.insert("points",
+                                    QJsonArray{QJsonObject{{"entity_id", "line-a"},
+                                                           {"position_mm", QJsonArray{0, 0, 0}}}});
+                    else if (legacy_reply_fault == "visible-type")
+                        data.insert("points",
+                                    QJsonArray{QJsonObject{{"entity_id", "new-point"},
+                                                           {"position_mm", QJsonArray{0, 0, 0}},
+                                                           {"visible", "false"}}});
+                    else if (legacy_reply_fault == "missing-document")
+                        data.remove("document_id");
+                    else if (legacy_reply_fault == "missing-revision")
+                        data.remove("revision");
+                    else
+                        data.remove("view_revision");
+                    respond(request, data);
+                }
+                legacy_reply_fault.clear();
+            } else
                 respond(request, renderData(request));
         }
         // selection.evaluate/get are answered explicitly by the test.
@@ -322,6 +570,7 @@ class SelectionEngine {
     QList<QJsonObject> requests_;
     QJsonArray hidden_;
     std::uint64_t view_revision_{};
+    std::uint64_t view_model_revision_{7};
 };
 
 struct Window {
@@ -399,9 +648,576 @@ QAction* action(QMainWindow* window, const QString& title) {
     return nullptr;
 }
 
+QStringList treeIdentities(const QTreeWidget& tree) {
+    QStringList identities;
+    for (int index = 0; index < tree.topLevelItemCount(); ++index)
+        identities.append(tree.topLevelItem(index)->data(0, Qt::UserRole).toString());
+    identities.sort();
+    return identities;
+}
+
+void reportSelectionSetup(const Window& desktop, const SelectionEngine& engine) {
+    qInfo() << "selection setup idle" << qcae::desktop_pipeline_idle(*desktop.window)
+            << "viewport timer" << desktop.viewport->pendingCameraUpdate() << "pending requests"
+            << desktop.client->pendingRequests() << "camera"
+            << desktop.viewport->cameraFingerprint();
+    qInfo() << "selection setup view.create" << engine.requests("view.create");
+    qInfo() << "selection setup view.update" << engine.requests("view.update");
+    qInfo() << "selection setup view.render_data" << engine.requests("view.render_data");
+}
+
 class DesktopSelectionTests : public QObject {
     Q_OBJECT
   private slots:
+    void idleObservationIncludesDeferredCameraAndQueuedViewWork() {
+        SelectionEngine engine;
+        engine.resources_enabled = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(desktop.valid());
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QMainWindow unrelated;
+        QVERIFY(!qcae::desktop_pipeline_idle(unrelated));
+        const auto updates = engine.requests("view.update").size();
+        engine.hold_update = true;
+        desktop.viewport->standardView(qcae::VtkView::StandardView::front);
+        QVERIFY(desktop.viewport->pendingCameraUpdate());
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        QTRY_COMPARE(engine.held_updates.size(), 1);
+        QVERIFY(!desktop.viewport->pendingCameraUpdate());
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        auto* show_all = action(desktop.window.get(), "Show all");
+        QVERIFY(show_all);
+        show_all->trigger();
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        engine.releaseViewUpdates();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QVERIFY(engine.requests("view.update").size() >= updates + 2);
+    }
+
+    void continuousModelEditUsesSameVersionSummaryAndRows_data() {
+        QTest::addColumn<bool>("lean");
+        QTest::addColumn<bool>("inline_empty");
+        QTest::newRow("nonempty-delta") << true << false;
+        QTest::newRow("empty-inline-delta") << true << true;
+        QTest::newRow("legacy-fallback") << false << false;
+    }
+    void continuousModelEditUsesSameVersionSummaryAndRows() {
+        QFETCH(bool, lean);
+        QFETCH(bool, inline_empty);
+        SelectionEngine engine;
+        engine.resources_enabled = engine.organization_enabled = true;
+        engine.lean_refresh = lean;
+        engine.inline_empty = inline_empty;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        auto* tree = desktop.window->findChild<QTreeWidget*>("entityTree");
+        QVERIFY(tree);
+        const auto initial_ids = treeIdentities(*tree);
+        qInfo() << "initial organization identities" << initial_ids;
+        QCOMPARE(initial_ids, QStringList({"line-a", "line-b", "material-owner"}));
+        auto* original = tree->topLevelItem(0);
+        const auto baseline = *desktop.viewport->installedVersion();
+        const auto current = engine.requests("project.current").size();
+        const auto updates = engine.requests("view.update").size();
+        const auto queries = engine.requests("entity.query").size();
+        const auto renders = engine.requests("view.render_resource").size();
+        const auto reads = engine.requests("resources.read").size();
+        const auto releases = engine.requests("resources.release").size();
+        QCOMPARE(engine.summary_subscribed, lean);
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_COMPARE(tree->topLevelItem(0)->text(0), QString("renamed-line-a"));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QCOMPARE(tree->topLevelItem(0), original);
+        QCOMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QCOMPARE(desktop.viewport->installedVersion()->view_revision, baseline.view_revision + 1);
+        QCOMPARE(engine.requests("view.render_resource").size(), renders + 1);
+        QCOMPARE(engine.requests("project.current").size(), current + (lean ? 0 : 1));
+        QCOMPARE(engine.requests("view.update").size(), updates + (lean ? 0 : 1));
+        QCOMPARE(engine.requests("entity.query").size(), queries + (lean ? 0 : 1));
+        const auto parameters =
+            engine.requests("view.render_resource").back().value("parameters").toObject();
+        QCOMPARE(parameters.value("base_revision").toString(), QString("7"));
+        QCOMPARE(parameters.value("base_view_revision").toString().toULongLong(),
+                 baseline.view_revision);
+        if (lean) {
+            QCOMPARE(parameters.value("allow_model_rebase"), QJsonValue(true));
+            QCOMPARE(parameters.value("include_changed_rows"), QJsonValue(true));
+            QCOMPARE(parameters.value("expected_view_revision").toString().toULongLong(),
+                     baseline.view_revision);
+        } else {
+            QVERIFY(!parameters.contains("allow_model_rebase"));
+            QVERIFY(!parameters.contains("include_changed_rows"));
+        }
+        QCOMPARE(engine.requests("resources.read").size(), reads + (inline_empty ? 0 : 1));
+        QCOMPARE(engine.requests("resources.release").size(), releases + (inline_empty ? 0 : 1));
+        QVERIFY(engine.requests("changes.commit").isEmpty());
+    }
+
+    void invalidDocumentSummaryUsesAuthoritativeFallback_data() {
+        QTest::addColumn<QString>("fault");
+        for (const auto* fault : {"revision",
+                                  "document",
+                                  "epoch",
+                                  "name",
+                                  "count",
+                                  "oversized",
+                                  "missing",
+                                  "malformed",
+                                  "resync",
+                                  "base",
+                                  "jump"})
+            QTest::newRow(fault) << QString::fromLatin1(fault);
+    }
+    void invalidDocumentSummaryUsesAuthoritativeFallback() {
+        QFETCH(QString, fault);
+        SelectionEngine engine;
+        engine.resources_enabled = engine.organization_enabled = engine.lean_refresh = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        const auto current = engine.requests("project.current").size();
+        const auto updates = engine.requests("view.update").size();
+        const auto renders = engine.requests("view.render_resource").size();
+        engine.summary_fault = fault;
+        engine.revision = fault == "jump" ? "9" : "8";
+        engine.notifyChange();
+        QTRY_COMPARE(desktop.window->property("treeRevision").toString(), engine.revision);
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QVERIFY(engine.requests("project.current").size() > current);
+        QVERIFY(engine.requests("view.update").size() > updates);
+        for (const auto& request : engine.requests("view.render_resource").mid(renders)) {
+            QVERIFY(!request.value("parameters").toObject().contains("allow_model_rebase"));
+            QCOMPARE(request.value("document_id").toString(), QString("document"));
+            QCOMPARE(request.value("document_epoch").toString(), QString("epoch"));
+            QCOMPARE(request.value("expected_revision").toString(), engine.revision);
+        }
+        QCOMPARE(desktop.window->windowTitle(), QString("Selection test — QCAE"));
+        QVERIFY(engine.requests("changes.commit").isEmpty());
+    }
+
+    void invalidChangedRowsCannotPublishPartialTreeState_data() {
+        QTest::addColumn<QString>("fault");
+        for (const auto* fault : {"complete",
+                                  "version",
+                                  "fields",
+                                  "position",
+                                  "id",
+                                  "budget",
+                                  "duplicate",
+                                  "missing_rows",
+                                  "missing_ids",
+                                  "null_ids",
+                                  "string_ids",
+                                  "duplicate_ids",
+                                  "invalid_id"})
+            QTest::newRow(fault) << QString::fromLatin1(fault);
+    }
+    void invalidChangedRowsCannotPublishPartialTreeState() {
+        QFETCH(QString, fault);
+        SelectionEngine engine;
+        engine.resources_enabled = engine.organization_enabled = engine.lean_refresh = true;
+        engine.inline_empty = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        auto* tree = desktop.window->findChild<QTreeWidget*>("entityTree");
+        QVERIFY(tree);
+        const auto initial_ids = treeIdentities(*tree);
+        qInfo() << "initial organization identities" << initial_ids;
+        QCOMPARE(initial_ids, QStringList({"line-a", "line-b", "material-owner"}));
+        auto* original = tree->topLevelItem(0);
+        const bool full_fallback = fault.endsWith("ids") || fault == "invalid_id";
+        engine.rows_fault = fault;
+        engine.hold_entity_rows = true;
+        engine.hold_entity_all = full_fallback;
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_COMPARE(engine.held_entity_rows.size(), 1);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QCOMPARE(desktop.window->property("treeRevision").toString(), QString("7"));
+        QCOMPARE(original->text(0), QString("line-a"));
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        if (full_fallback)
+            QVERIFY(
+                !engine.held_entity_rows.front().value("parameters").toObject().contains("ids"));
+        else
+            QCOMPARE(engine.held_entity_rows.front()
+                         .value("parameters")
+                         .toObject()
+                         .value("ids")
+                         .toArray(),
+                     QJsonArray({"line-a"}));
+        engine.releaseEntityRows();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        if (!full_fallback)
+            QCOMPARE(tree->topLevelItem(0), original);
+        QCOMPARE(tree->topLevelItem(0)->text(0), QString("renamed-line-a"));
+        QCOMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
+    }
+
+    void unexpectedRebaseTargetRecreatesViewBeforePublishingRows() {
+        SelectionEngine engine;
+        engine.resources_enabled = engine.organization_enabled = engine.lean_refresh = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        auto* tree = desktop.window->findChild<QTreeWidget*>("entityTree");
+        QVERIFY(tree);
+        const auto initial_ids = treeIdentities(*tree);
+        qInfo() << "initial organization identities" << initial_ids;
+        QCOMPARE(initial_ids, QStringList({"line-a", "line-b", "material-owner"}));
+        const auto views = engine.requests("view.create").size();
+        const auto releases = engine.requests("resources.release").size();
+        engine.wrong_next_target = true;
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_VERIFY(!engine.held_renders.isEmpty());
+        QCOMPARE(engine.requests("view.create").size(), views + 1);
+        QVERIFY(engine.requests("resources.release").size() > releases);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(7));
+        QCOMPARE(desktop.window->property("treeRevision").toString(), QString("7"));
+        QCOMPARE(tree->topLevelItem(0)->text(0), QString("line-a"));
+        const auto replacement = engine.held_renders.back().value("parameters").toObject();
+        QVERIFY(!replacement.contains("base_revision"));
+        QVERIFY(!replacement.contains("allow_model_rebase"));
+        engine.releaseRender();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QCOMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
+        QCOMPARE(tree->topLevelItem(0)->text(0), QString("renamed-line-a"));
+    }
+
+    void cameraAndHiddenQueueUseTheAdmittedRebaseVersion() {
+        SelectionEngine engine;
+        engine.resources_enabled = engine.organization_enabled = engine.lean_refresh = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        const auto baseline = *desktop.viewport->installedVersion();
+        const auto updates = engine.requests("view.update").size();
+        engine.hold_render = true;
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_COMPARE(engine.held_renders.size(), 1);
+        QVERIFY(engine.held_renders.front()
+                    .value("parameters")
+                    .toObject()
+                    .value("allow_model_rebase")
+                    .toBool());
+        desktop.viewport->standardView(qcae::VtkView::StandardView::top);
+        auto* show_all = action(desktop.window.get(), "Show all");
+        QVERIFY(show_all);
+        show_all->trigger();
+        QTest::qWait(450); // Both real camera timers expire while the resource is held.
+        QVERIFY(barrier(*desktop.client));
+        QCOMPARE(engine.requests("view.update").size(), updates);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(7));
+        desktop.click(0);
+        QVERIFY(barrier(*desktop.client));
+        QVERIFY(engine.requests("selection.evaluate").isEmpty());
+        engine.releaseRender();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        const auto queued = engine.requests("view.update").mid(updates);
+        QVERIFY(!queued.isEmpty());
+        QCOMPARE(queued.front()
+                     .value("parameters")
+                     .toObject()
+                     .value("expected_view_revision")
+                     .toString()
+                     .toULongLong(),
+                 baseline.view_revision + 1);
+        QCOMPARE(
+            queued.front().value("parameters").toObject().value("camera_fingerprint").toString(),
+            desktop.viewport->cameraFingerprint());
+        QCOMPARE(queued.front().value("parameters").toObject().value("hidden_ids").toArray(),
+                 QJsonArray{});
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+    }
+
+    void pendingCurrentCannotOverwriteAcceptedDocumentSummary() {
+        SelectionEngine engine;
+        engine.resources_enabled = engine.organization_enabled = engine.lean_refresh = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        engine.hold_current = true;
+        QTRY_VERIFY_WITH_TIMEOUT(!engine.held_current.isEmpty(), 5000);
+        const auto old = engine.held_current.takeFirst();
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_COMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QTRY_COMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
+        engine.respond(old,
+                       {{"document_id", "document"},
+                        {"document_epoch", "epoch"},
+                        {"revision", "7"},
+                        {"name", "Obsolete name"},
+                        {"dirty", true}});
+        engine.releaseCurrent();
+        QVERIFY(barrier(*desktop.client));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QCOMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
+        QCOMPARE(desktop.window->windowTitle(), QString("Selection test — QCAE"));
+    }
+
+    void modelRefreshPreservesPendingHiddenIntent_data() {
+        QTest::addColumn<bool>("old_success");
+        QTest::addColumn<bool>("second_intent");
+        QTest::newRow("accepted-H1-queued-H2") << true << true;
+        QTest::newRow("accepted-H1-alone") << true << false;
+        QTest::newRow("conflicted-H1-queued-H2") << false << true;
+        QTest::newRow("conflicted-H1-alone") << false << false;
+    }
+    void modelRefreshPreservesPendingHiddenIntent() {
+        QFETCH(bool, old_success);
+        QFETCH(bool, second_intent);
+        SelectionEngine engine;
+        engine.resources_enabled = engine.lean_refresh = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        desktop.orient();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QVERIFY(clickWhenReady(desktop, engine, 0));
+        engine.respond(engine.requests("selection.evaluate").back(),
+                       {{"selection_handle", "hide-choice"}});
+        QTRY_COMPARE(engine.requests("selection.get").size(), 1);
+        engine.respond(engine.requests("selection.get").back(),
+                       {{"entity_ids", QJsonArray{"line-a"}}});
+        QTRY_COMPARE(desktop.selected->text(), QString("line-a"));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        auto* hide = action(desktop.window.get(), "Hide selected");
+        auto* isolate = action(desktop.window.get(), "Isolate selected");
+        QVERIFY(hide && isolate);
+        const auto baseline_view = desktop.viewport->installedVersion()->view_revision;
+        engine.hold_update = true;
+        hide->trigger();
+        QTRY_COMPARE(engine.held_updates.size(), 1);
+        QCOMPARE(engine.held_updates.front()
+                     .value("parameters")
+                     .toObject()
+                     .value("hidden_ids")
+                     .toArray(),
+                 QJsonArray({"line-a"}));
+        if (second_intent)
+            isolate->trigger();
+        QVERIFY(barrier(*desktop.client));
+        const QJsonArray desired{second_intent ? "line-b" : "line-a"};
+        if (old_success) {
+            engine.acceptHeldViewUpdates();
+            QCOMPARE(engine.held_view_acks.size(), 1);
+        } else
+            engine.hold_create = true;
+        engine.revision = "8";
+        engine.notifyChange();
+        QVERIFY(barrier(*desktop.client));
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(7));
+        if (old_success) {
+            engine.releaseViewAcknowledgements();
+            QTRY_COMPARE(engine.held_updates.size(), 1);
+            const auto parameters = engine.held_updates.front().value("parameters").toObject();
+            QCOMPARE(engine.held_updates.front().value("expected_revision").toString(),
+                     QString("8"));
+            QCOMPARE(parameters.value("expected_view_revision").toString().toULongLong(),
+                     baseline_view + 1);
+            QCOMPARE(parameters.value("hidden_ids").toArray(), desired);
+            engine.releaseViewUpdates();
+        } else {
+            engine.releaseViewUpdates();
+            QTRY_COMPARE(engine.held_creates.size(), 1);
+            QCOMPARE(engine.held_creates.front()
+                         .value("parameters")
+                         .toObject()
+                         .value("hidden_ids")
+                         .toArray(),
+                     desired);
+            engine.releaseCreates();
+        }
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QVERIFY(engine.requests("changes.commit").isEmpty());
+    }
+
+    void heldRecoveryCreateRetainsNewCameraUntilDisplaySynchronization_data() {
+        QTest::addColumn<bool>("resources");
+        QTest::addColumn<bool>("queued_hidden");
+        QTest::newRow("resources-camera") << true << false;
+        QTest::newRow("legacy-camera") << false << false;
+        QTest::newRow("resources-camera-and-hidden") << true << true;
+        QTest::newRow("legacy-camera-and-hidden") << false << true;
+    }
+    void heldRecoveryCreateRetainsNewCameraUntilDisplaySynchronization() {
+        QFETCH(bool, resources);
+        QFETCH(bool, queued_hidden);
+        SelectionEngine engine;
+        engine.resources_enabled = engine.lean_refresh = resources;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        desktop.orient();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        const auto views = engine.requests("view.create").size();
+        const auto updates = engine.requests("view.update").size();
+        engine.hold_create = true;
+        engine.reject_next_update = true;
+        engine.summary_fault = "missing";
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_COMPARE(engine.held_creates.size(), 1);
+        const auto old_camera = engine.held_creates.front()
+                                    .value("parameters")
+                                    .toObject()
+                                    .value("camera_fingerprint")
+                                    .toString();
+        desktop.viewport->standardView(qcae::VtkView::StandardView::top);
+        if (queued_hidden) {
+            auto* isolate = action(desktop.window.get(), "Isolate selected");
+            QVERIFY(isolate);
+            isolate->trigger();
+        }
+        QTest::qWait(450);
+        const auto new_camera = desktop.viewport->cameraFingerprint();
+        qInfo() << "held create camera C0" << old_camera << "viewport C1" << new_camera;
+        QVERIFY(new_camera != old_camera);
+        QVERIFY(barrier(*desktop.client));
+        QCOMPARE(engine.requests("view.create").size(), views + 1);
+        QCOMPARE(engine.requests("view.update").size(), updates + 1);
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        engine.hold_update = true;
+        engine.hold_render = true;
+        engine.releaseCreates();
+        QTRY_COMPARE(engine.held_renders.size(), 1);
+        engine.releaseRender();
+        QTRY_COMPARE(engine.held_updates.size(), 1);
+        QCOMPARE(engine.held_updates.front()
+                     .value("parameters")
+                     .toObject()
+                     .value("camera_fingerprint")
+                     .toString(),
+                 new_camera);
+        QCOMPARE(engine.held_updates.front()
+                     .value("parameters")
+                     .toObject()
+                     .value("hidden_ids")
+                     .toArray(),
+                 queued_hidden ? QJsonArray({"line-a", "line-b"}) : QJsonArray{});
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        desktop.click(15);
+        QVERIFY(barrier(*desktop.client));
+        QVERIFY(engine.requests("selection.evaluate").isEmpty());
+        engine.releaseViewUpdates();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QCOMPARE(engine.requests("view.create").size(), views + 1);
+        QCOMPARE(desktop.viewport->cameraFingerprint(), new_camera);
+    }
+
+    void legacySameRevisionDisplayFailureResynchronizes_data() {
+        QTest::addColumn<QString>("fault");
+        QTest::newRow("failed-reply") << QString("failed");
+        QTest::newRow("malformed-packet") << QString("malformed");
+        QTest::newRow("bad-coordinate") << QString("bad-coordinate");
+        QTest::newRow("duplicate-id") << QString("duplicate-id");
+        QTest::newRow("cross-kind-id") << QString("cross-kind-id");
+        QTest::newRow("visible-type") << QString("visible-type");
+        QTest::newRow("missing-document") << QString("missing-document");
+        QTest::newRow("missing-revision-at-zero") << QString("missing-revision");
+    }
+    void legacySameRevisionDisplayFailureResynchronizes() {
+        QFETCH(QString, fault);
+        SelectionEngine engine;
+        if (fault == "missing-revision")
+            engine.revision = "0";
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        const auto baseline = *desktop.viewport->installedVersion();
+        const auto renders = engine.requests("view.render_data").size();
+        engine.legacy_reply_fault = fault;
+        auto* show_all = action(desktop.window.get(), "Show all");
+        QVERIFY(show_all);
+        show_all->trigger();
+        QTRY_VERIFY_WITH_TIMEOUT(!engine.held_renders.isEmpty(), 5000);
+        QVERIFY(engine.requests("view.render_data").size() >= renders + 2);
+        QVERIFY(desktop.viewport->installedVersion().has_value());
+        QCOMPARE(desktop.viewport->installedVersion()->view_revision, baseline.view_revision);
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        desktop.click(0);
+        QVERIFY(barrier(*desktop.client));
+        QVERIFY(engine.requests("selection.evaluate").isEmpty());
+        engine.releaseRender();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, baseline.revision);
+        QVERIFY(desktop.viewport->installedVersion()->view_revision > baseline.view_revision);
+        QVERIFY(engine.requests("changes.commit").isEmpty());
+    }
+
+    void legacyNumericPacketVersionsRemainCompatible() {
+        SelectionEngine engine;
+        engine.legacy_numeric_versions = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(7));
+        QVERIFY(!engine.requests("view.render_data").isEmpty());
+        QVERIFY(engine.requests("changes.commit").isEmpty());
+    }
+
+    void cameraChangeFencesPicksAndAnAlreadyRequestedSelectionReply() {
+        SelectionEngine engine;
+        engine.resources_enabled = engine.lean_refresh = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        desktop.orient();
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QVERIFY(clickWhenReady(desktop, engine, 0));
+        const auto before_camera = engine.requests("selection.evaluate").back();
+        engine.respond(before_camera, {{"selection_handle", "before-camera"}});
+        QTRY_COMPARE(engine.requests("selection.get").size(), 1);
+        const auto old_get = engine.requests("selection.get").back();
+        desktop.viewport->standardView(qcae::VtkView::StandardView::top);
+        QVERIFY(desktop.viewport->pendingCameraUpdate());
+        desktop.click(0);
+        engine.respond(old_get, {{"entity_ids", QJsonArray{"line-a"}}});
+        QVERIFY(barrier(*desktop.client));
+        QCOMPARE(engine.requests("selection.evaluate").size(), 1);
+        QCOMPARE(desktop.selected->text(), QString("No selection"));
+        QTRY_COMPARE(engine.requests("selection.evaluate").size(), 2);
+        const auto current = engine.requests("selection.evaluate").back();
+        QVERIFY(current.value("parameters")
+                    .toObject()
+                    .value("expected_view_revision")
+                    .toString()
+                    .toULongLong() > before_camera.value("parameters")
+                                         .toObject()
+                                         .value("expected_view_revision")
+                                         .toString()
+                                         .toULongLong());
+        engine.respond(current, {{"selection_handle", "after-camera"}});
+        QTRY_COMPARE(engine.requests("selection.get").size(), 2);
+        engine.respond(engine.requests("selection.get").back(),
+                       {{"entity_ids", QJsonArray{"line-a"}}});
+        QTRY_COMPARE(desktop.selected->text(), QString("line-a"));
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+    }
+
     void oldDocumentViewReplyCannotOwnNewDocumentPendingState() {
         SelectionEngine engine;
         engine.resources_enabled = true;
@@ -534,8 +1350,7 @@ class DesktopSelectionTests : public QObject {
         QTRY_COMPARE(
             engine.requests("view.render_resource").back().value("expected_revision").toString(),
             QString("8"));
-        QTest::qWait(200);
-        desktop.click(15);
+        QVERIFY(clickWhenReady(desktop, engine, 15));
         QTRY_VERIFY(!engine.requests("selection.evaluate").isEmpty());
         QVERIFY(engine.requests("changes.commit").isEmpty());
         QCOMPARE(engine.revision, QString("8"));
@@ -565,8 +1380,7 @@ class DesktopSelectionTests : public QObject {
         QVERIFY(engine.requests("history.list").size() >
                 history); // Explicit recovery reloads history.
         QVERIFY(barrier(*desktop.client));
-        QTest::qWait(100);
-        desktop.click(15);
+        QVERIFY(clickWhenReady(desktop, engine, 15));
         QTRY_VERIFY(!engine.requests("selection.evaluate").isEmpty());
         const auto accepted = engine.requests("selection.evaluate").size();
         engine.hold_render = true;
@@ -582,6 +1396,106 @@ class DesktopSelectionTests : public QObject {
         QTRY_COMPARE(engine.requests("selection.evaluate").size(), accepted + 1);
         QVERIFY(engine.requests("view.render_data").isEmpty());
     }
+    void ordinaryFieldChangeRefreshesOrganizationRowsByIdentity() {
+        SelectionEngine engine;
+        engine.resources_enabled = true;
+        engine.organization_enabled = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(desktop.valid());
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY(desktop.viewport->hasPacket());
+        desktop.orient();
+        auto* tree = desktop.window->findChild<QTreeWidget*>("entityTree");
+        auto* kind = desktop.window->findChild<QComboBox*>("entityViewKind");
+        auto* owner = desktop.window->findChild<QComboBox*>("entityViewOwner");
+        QVERIFY(tree && kind && owner);
+        kind->setCurrentText("material");
+        QTRY_VERIFY(owner->findData("material-owner") > 0);
+        owner->setCurrentIndex(owner->findData("material-owner"));
+        QTRY_COMPARE(tree->topLevelItemCount(), 2);
+        QVERIFY(barrier(*desktop.client));
+        QTRY_COMPARE(desktop.client->pendingRequests(), std::size_t(0));
+        auto* original = tree->topLevelItem(0);
+        const auto queries = engine.requests("entity.query").size();
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_COMPARE(tree->topLevelItem(0)->text(0), QString("renamed-line-a"));
+        QCOMPARE(tree->topLevelItem(0), original);
+        QCOMPARE(owner->currentData().toString(), QString("material-owner"));
+        const auto requests = engine.requests("entity.query");
+        QVERIFY(requests.size() > queries);
+        for (qsizetype index = queries; index < requests.size(); ++index) {
+            const auto params = requests[index].value("parameters").toObject();
+            QCOMPARE(params.value("ids").toArray(), QJsonArray({"line-a"}));
+            QVERIFY(!params.contains("view"));
+            QVERIFY(!params.contains("owner_id"));
+        }
+    }
+
+    void versionAcknowledgementAdvancesSceneAndRowsAndRejectsAStaleBase() {
+        SelectionEngine engine;
+        engine.resources_enabled = true;
+        engine.inline_empty = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY(desktop.viewport->hasPacket());
+        desktop.orient();
+        QVERIFY(barrier(*desktop.client));
+        QTRY_COMPARE(desktop.client->pendingRequests(), std::size_t(0));
+        const auto reads = engine.requests("resources.read").size();
+        const auto releases = engine.requests("resources.release").size();
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_COMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QTRY_COMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
+        QTRY_COMPARE(desktop.client->pendingRequests(), std::size_t(0));
+        QCOMPARE(engine.requests("resources.read").size(), reads);
+        QCOMPARE(engine.requests("resources.release").size(), releases);
+        engine.corrupt_next_ack = true;
+        engine.revision = "9";
+        engine.notifyChange();
+        QTRY_VERIFY(!engine.held_renders.isEmpty());
+        QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QVERIFY(
+            !engine.held_renders.back().value("parameters").toObject().contains("base_revision"));
+        engine.releaseRender();
+        QTRY_COMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(9));
+        QTRY_COMPARE(desktop.window->property("treeRevision").toString(), QString("9"));
+        QTRY_COMPARE(desktop.client->pendingRequests(), std::size_t(0));
+        QCOMPARE(engine.requests("resources.read").size(), reads + 1);
+    }
+
+    void cameraUpdateWaitsForThePendingResourceInstallation() {
+        SelectionEngine engine;
+        engine.resources_enabled = true;
+        QVERIFY(engine.listen());
+        Window desktop(engine);
+        QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
+        QTRY_VERIFY(desktop.viewport->hasPacket());
+        desktop.orient();
+        QVERIFY(barrier(*desktop.client));
+        QTRY_COMPARE(desktop.client->pendingRequests(), std::size_t(0));
+        engine.hold_render = true;
+        engine.revision = "8";
+        engine.notifyChange();
+        QTRY_VERIFY(!engine.held_renders.isEmpty());
+        const auto updates = engine.requests("view.update").size();
+        const auto renders = engine.requests("view.render_resource").size();
+        desktop.viewport->standardView(qcae::VtkView::StandardView::top);
+        QTest::qWait(350); // Exercise the real 200 ms camera debounce while the transfer waits.
+        QVERIFY(barrier(*desktop.client));
+        QCOMPARE(engine.requests("view.update").size(), updates);
+        QCOMPARE(engine.requests("view.render_resource").size(), renders);
+        engine.releaseRender();
+        QTRY_VERIFY(engine.requests("view.update").size() > updates);
+        QTRY_COMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QTRY_COMPARE(desktop.client->pendingRequests(), std::size_t(0));
+        for (const auto& request : engine.requests("view.render_resource").mid(renders))
+            QVERIFY(request.value("parameters").toObject().contains("base_revision"));
+    }
+
     void latestTreeSelectionSurvivesViewRefreshAndEnablesMeshTools() {
         SelectionEngine engine;
         QVERIFY(engine.listen());
@@ -598,6 +1512,9 @@ class DesktopSelectionTests : public QObject {
         QTRY_COMPARE(tree->topLevelItemCount(), 2);
         mode->setCurrentIndex(1);
 
+        reportSelectionSetup(desktop, engine);
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        reportSelectionSetup(desktop, engine);
         desktop.click(0);
         QTRY_COMPARE(engine.requests("selection.evaluate").size(), 1);
         engine.respond(engine.requests("selection.evaluate").front(),
@@ -714,6 +1631,9 @@ class DesktopSelectionTests : public QObject {
         QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
         QTRY_VERIFY(desktop.viewport->hasPacket());
         desktop.orient();
+        reportSelectionSetup(desktop, engine);
+        QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        reportSelectionSetup(desktop, engine);
         desktop.click(0);
         desktop.click(25);
         QTRY_COMPARE(engine.requests("selection.evaluate").size(), 2);

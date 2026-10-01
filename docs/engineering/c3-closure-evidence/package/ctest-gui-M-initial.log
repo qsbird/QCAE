@@ -1,0 +1,30 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-desktop
+    Start 44: desktop_selection
+1/2 Test #44: desktop_selection ................   Passed   20.97 sec
+    Start 45: c3_desktop_workflow
+2/2 Test #45: c3_desktop_workflow ..............***Failed  117.92 sec
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+2026-09-30 21:02:31.906 qcae_c3_desktop_workflow_tests[93300:40050855] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+FAIL!  : Workflow::guiCreatesChecksRepairsAndPublishesM(GUI-M-0) 'window->findChild<QLabel*>("selectedEntities")->text().contains(analysis_id)' returned FALSE. ()
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(312)]
+FAIL!  : Workflow::guiCreatesChecksRepairsAndPublishesM(GUI-M-1) 'window->findChild<QLabel*>("selectedEntities")->text().contains(analysis_id)' returned FALSE. ()
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(312)]
+FAIL!  : Workflow::guiCreatesChecksRepairsAndPublishesM(GUI-M-2) 'window->findChild<QLabel*>("selectedEntities")->text().contains(analysis_id)' returned FALSE. ()
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(312)]
+PASS   : Workflow::packageExportFormPublishesVerifiedFilesFromAPreloadedFixture()
+PASS   : Workflow::layoutRoundTripDoesNotChangeDocument()
+PASS   : Workflow::realEngineModelingAndHistory()
+PASS   : Workflow::cleanupTestCase()
+Totals: 5 passed, 3 failed, 0 skipped, 0 blacklisted, 117305ms
+********* Finished testing of Workflow *********
+
+
+50% tests passed, 1 tests failed out of 2
+
+Total Test time (real) = 138.92 sec
+
+The following tests FAILED:
+	 45 - c3_desktop_workflow (Failed)
+Errors while running CTest

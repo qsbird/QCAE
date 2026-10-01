@@ -1,0 +1,15 @@
+Fresh strict Release compile solver_result_store_tests.cpp
+Fresh strict Release compile solver_result_store.cpp
+Fresh strict Release compile solver_run_record.cpp
+Fresh strict Release compile solver_version_probe.cpp
+Link/run standalone result sequence tests
+A pending result accepted a regressed or unchanged run sequence
+Synthetic unit evidence retained at "/private/var/folders/vf/j_dmv8cd4yb3dt0sqw_29w940000gn/T/qcae-result-unit-18981"
+Traceback (most recent call last):
+  File "/private/tmp/qcae-result-sequence-fix/compile.py", line 27, in <module>
+    subprocess.run([str(out/'sequence-tests')],check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/private/tmp/qcae-result-sequence-fix/sequence-tests']' returned non-zero exit status 1.

@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/real_ai_mcp_session.py", line 106, in <module>
+    raise SystemExit(run(parser.parse_args()))
+                     ~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/real_ai_mcp_session.py", line 72, in run
+    context = cli_call(cli, endpoint, "project.current")["data"]
+              ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/real_ai_mcp_session.py", line 28, in cli_call
+    assert result.returncode == 0, (result.stdout, result.stderr)
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('{"error":{"code":"DOCUMENT_NOT_FOUND","field":"","message":"No active document"},"request_id":"diagnostic-1790793530871677000","status":"failed"}\n', '')

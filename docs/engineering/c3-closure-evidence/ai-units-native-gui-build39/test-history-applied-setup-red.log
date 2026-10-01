@@ -1,0 +1,12 @@
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+2026-10-01 08:33:35.667 workflow-new-ui[84268:41634207] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+QINFO  : Workflow::aiSnapshotForcePreviewUndoAndRecoveryUseSharedHistory() File dialog driver "Open QCAE project" QList("/Users/qs/Documents/ChatGPT/QCAE/build-c3-ai-units-snapshots/session5.qcae") accept button "&Open" enabled true
+FAIL!  : Workflow::aiSnapshotForcePreviewUndoAndRecoveryUseSharedHistory() Compared values are not the same
+   Actual   (undone_history.value("items")) : QJsonValue(array, QJsonArray([{"applied":false,"label":"Set nodal force vector","transaction_id":"transaction-9e598ff46f3aa9872d7e81fbc2f0478b-5"}]))
+   Expected (changed_history.value("items")): QJsonValue(array, QJsonArray([{"applied":true,"label":"Set nodal force vector","transaction_id":"transaction-9e598ff46f3aa9872d7e81fbc2f0478b-5"}]))
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(713)]
+PASS   : Workflow::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 7808ms
+********* Finished testing of Workflow *********

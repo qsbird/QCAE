@@ -10,9 +10,15 @@ class TypedHost {
   public:
     using OperationContributor = std::function<Result<bool>(
         operations::OperationRegistry&, RecordApplication&, std::function<TaskService&()>)>;
+    using TaskPublisherFactory =
+        std::function<TaskPublisher(RecordApplication&, std::function<bool(const ProfileRef&)>)>;
     TypedHost(RecordApplication&, std::function<bool(const ProfileRef&)>);
     // An explicit contributor replaces the default feature registrations.
     TypedHost(RecordApplication&, std::function<bool(const ProfileRef&)>, OperationContributor);
+    TypedHost(RecordApplication&,
+              std::function<bool(const ProfileRef&)>,
+              OperationContributor,
+              TaskPublisherFactory);
     static OperationContributor default_operations();
     ~TypedHost();
     bool supports(std::string_view) const;
@@ -24,6 +30,7 @@ class TypedHost {
     TaskService& tasks();
     RecordApplication& app_;
     std::function<bool(const ProfileRef&)> profile_supported_;
+    TaskPublisherFactory publisher_factory_;
     struct State;
     std::unique_ptr<State> state_;
     std::unique_ptr<TaskService> tasks_;

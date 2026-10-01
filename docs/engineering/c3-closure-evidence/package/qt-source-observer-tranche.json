@@ -1,0 +1,552 @@
+{
+  "status": "bounded_source_probe_passed_whole_coverage_unknown",
+  "coverage_complete": false,
+  "manifest": {
+    "schema": 1,
+    "qt_version": "6.11.1",
+    "archive_sha256": "d9594a31228aa23ad6b531719a29b45f0f3989fe6c136d45767ea179f233c1ac",
+    "callback_abi": "void(void*, const char*, unsigned, uint64_t)",
+    "kind_codes": {
+      "entry": 0,
+      "copy_upper_bound": 1,
+      "write_upper_bound": 2,
+      "unsupported": 3
+    },
+    "scope": "actual text/layout/delegate/native font entries; nested model-payload operations only",
+    "whole_pipeline_owned_copy_coverage": "unknown",
+    "coverage_complete": false,
+    "remaining": [
+      "nontrivial container constructor/assignment deep copies and generated store loops",
+      "all scalar glyph/layout state writes and Qt font/backend buffer inventory",
+      "installed system HarfBuzz 14.4.0 internal initialized payload moves",
+      "native CoreText opaque internal storage (Qt-owned input/output buffers need separate classification)"
+    ],
+    "sources": [
+      {
+        "path": "src/corelib/global/qglobal.cpp",
+        "original_sha256": "d099f0dcf93738f16937b5b93ab44190fe5803e79f4da77258c59c464c54f91b",
+        "instrumented_body_sha256": "d099f0dcf93738f16937b5b93ab44190fe5803e79f4da77258c59c464c54f91b"
+      },
+      {
+        "path": "src/corelib/text/qstring.cpp",
+        "original_sha256": "8fb0134e9ed28f4d6c58351268600692faa50455d0a634df0d8aae9c8d7fba54",
+        "instrumented_body_sha256": "99c6dab44c45096b4ef69bfb76eff47c98b67dc3940447c12eb9e8d46d47ea16"
+      },
+      {
+        "path": "src/corelib/tools/qarraydataops.h",
+        "original_sha256": "c03fe3718c4f542b9b85b814e8b52382a32853d562a86ba2b8e80f8c59e48954",
+        "instrumented_body_sha256": "22b01b10a2a6b49754574cba84179bf2a9287bfac82d0053d4a55a06563a365b"
+      },
+      {
+        "path": "src/corelib/tools/qarraydatapointer.h",
+        "original_sha256": "0e56c1e4b46b7f5887726dcecabbcaa29cab4e75b936bf2fb835f02e36b89308",
+        "instrumented_body_sha256": "a2eca46c958a920db9a370518f1e4fdbefbdd5766175c0040f924f92f7debf5b"
+      },
+      {
+        "path": "src/corelib/tools/qvarlengtharray.h",
+        "original_sha256": "2811d98a6b2df65ddb1dfe4d68dc321b9ae7f39b6a24ce389efbc1b90b3768a1",
+        "instrumented_body_sha256": "31234bfb495da1e26b76faecedd211f868c6ae287738c123122e620c81c86f00"
+      },
+      {
+        "path": "src/corelib/tools/qcontainertools_impl.h",
+        "original_sha256": "1b12188353f0ace0cb9d95947597933e4e0738f2b81ebc7e31392944d62dc19a",
+        "instrumented_body_sha256": "a366e1e1fee6817d4c1d65f93988703b576449e992b20651739c6a2f53f47619"
+      },
+      {
+        "path": "src/gui/text/qtextobject.cpp",
+        "original_sha256": "cf81c50d8b366cdf3ebd612922a4c1abb9753564bdb54c98257db6a8f5a9da80",
+        "instrumented_body_sha256": "1262a17dfca94233409387533102d42240312e128fff5d3ca820bf54cab24a77"
+      },
+      {
+        "path": "src/gui/text/qtextengine.cpp",
+        "original_sha256": "e27e42047f55b003ff27e16a9986dacbd6aef5287612f97da6f4e80774566753",
+        "instrumented_body_sha256": "261f12991ad59cdcd34e39045811f0ba39783745483fc6a094c6fac6cc850172"
+      },
+      {
+        "path": "src/gui/text/qtextengine_p.h",
+        "original_sha256": "a0e5cada6914da634a8ac97c1e357a94b97e39802556266f9b4bc3d50c13d8a3",
+        "instrumented_body_sha256": "0d6537f13bad96eb8643a4447899a695d038a1fdb2639f9d97cfa4257944f926"
+      },
+      {
+        "path": "src/gui/text/qtextlayout.cpp",
+        "original_sha256": "df6fc9652eea6f8ff033fefd08e15bb012f5fd68ffb3e9edabb12966ccd41b88",
+        "instrumented_body_sha256": "56c12d3ef594bc0e7b6560177ceaf03e077762209028dcfe97ef2d75662b2dd6"
+      },
+      {
+        "path": "src/gui/text/qfontengine.cpp",
+        "original_sha256": "0bf8d208dc32f1633f841e8bf3f644a0523dc0fa23c1848cb85335aef02e6645",
+        "instrumented_body_sha256": "0bf8d208dc32f1633f841e8bf3f644a0523dc0fa23c1848cb85335aef02e6645"
+      },
+      {
+        "path": "src/gui/text/qfontengineglyphcache.cpp",
+        "original_sha256": "6e41c37335d054f2db52ffd33f6e2dae040fae32f939cec5be5a5bafb74ea9fb",
+        "instrumented_body_sha256": "6e41c37335d054f2db52ffd33f6e2dae040fae32f939cec5be5a5bafb74ea9fb"
+      },
+      {
+        "path": "src/gui/text/coretext/qfontengine_coretext.mm",
+        "original_sha256": "f633bc1154b731bc90db5581cc82f052b63fd9276a58a96732149f9b2555877f",
+        "instrumented_body_sha256": "2e49b6cdcb3329d8409a399f8ae45b976573ba6a13202b96083849935622c509"
+      },
+      {
+        "path": "src/widgets/widgets/qplaintextedit.cpp",
+        "original_sha256": "5c9b8b6c3764d29d8dd099f85389a8c51829130341f9263e5e75dc2b707eb8ce",
+        "instrumented_body_sha256": "f12e10c0e3a2734f1c79d6302fc7ba104f81cb9f520060a33f6d0366ddd7a204"
+      },
+      {
+        "path": "src/widgets/itemviews/qstyleditemdelegate.cpp",
+        "original_sha256": "05d436dc469dd945c3ddb1bd9611fbcae348b5e9a88096857bc0a548919db353",
+        "instrumented_body_sha256": "19f23e01f9f6052ea8a1603386bad39e5914742f94dad9e383ab2b4a0121e331"
+      },
+      {
+        "path": "src/widgets/styles/qcommonstyle.cpp",
+        "original_sha256": "2bcd6df2bce7bee179fe60e1220ae3be780c92e04ed9936a0269de18722053e8",
+        "instrumented_body_sha256": "a63149d2f54ec4c9a7321e5149d1d880bfbc59d66ffc5c8d24deca259f79d639"
+      }
+    ],
+    "sites": [
+      {
+        "site": "QArrayDataPointer::fast_realloc_initialized_prefix",
+        "kind": "logical_prefix_relocation_upper_bound",
+        "proof": "size * sizeof(T), not allocation footprint"
+      },
+      {
+        "site": "QPodArrayOps::copyAppend_repeat",
+        "kind": "actual_loop_write_bytes",
+        "proof": "n initialized T assignments"
+      },
+      {
+        "site": "QTextEngine::LayoutData::owned_realloc",
+        "kind": "logical_storage_relocation_upper_bound",
+        "proof": "prior allocated field; excludes allocator headers and capacities outside this logical layout"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:1",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:10",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:11",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:12",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:13",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:14",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:2",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:3",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:4",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:5",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:6",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:7",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:8",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/text/qstring.cpp:memcpy:9",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memcpy:1",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memcpy:3",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memcpy:5",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memmove:2",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memmove:4",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memmove:6",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memmove:7",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qarraydataops.h:memmove:8",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qcontainertools_impl.h:memcpy:1",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qcontainertools_impl.h:memmove:2",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qvarlengtharray.h:memcpy:1",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/corelib/tools/qvarlengtharray.h:memmove:2",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/coretext/qfontengine_coretext.mm:QCoreTextFontEngine::recalcAdvances:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/coretext/qfontengine_coretext.mm:QCoreTextFontEngine::stringToCMap:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:QGlyphLayout::copy:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:QGlyphLayout::grow:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:QTextEngine::LayoutData::reallocate:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:QTextEngine::shapeText:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:QTextEngine::shapeTextWithHarfbuzzNG:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:QTextEngine::validate:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memcpy:3",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memcpy:5",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memcpy:6",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memcpy:7",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memcpy:8",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memcpy:9",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memmove:10",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memmove:11",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memmove:12",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memmove:13",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memset:1",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memset:14",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memset:2",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine.cpp:memset:4",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:1",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:2",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:3",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:4",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:5",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:6",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:7",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:8",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextengine_p.h:memset:9",
+        "kind": "actual_bulk_argument_bytes",
+        "proof": "original bulk call exactly once"
+      },
+      {
+        "site": "src/gui/text/qtextlayout.cpp:QTextLayout::beginLayout:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextlayout.cpp:QTextLayout::draw:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextlayout.cpp:QTextLayout::drawCursor:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextlayout.cpp:QTextLayout::drawCursor:2",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextlayout.cpp:QTextLayout::endLayout:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/gui/text/qtextobject.cpp:QTextBlock::text:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/widgets/itemviews/qstyleditemdelegate.cpp:QStyledItemDelegate::initStyleOption:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/widgets/itemviews/qstyleditemdelegate.cpp:QStyledItemDelegate::paint:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/widgets/itemviews/qstyleditemdelegate.cpp:QStyledItemDelegate::sizeHint:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/widgets/styles/qcommonstyle.cpp:QCommonStylePrivate::calculateElidedText:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/widgets/widgets/qplaintextedit.cpp:QPlainTextDocumentLayout::layoutBlock:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "src/widgets/widgets/qplaintextedit.cpp:QPlainTextEdit::paintEvent:1",
+        "kind": "actual_entry",
+        "proof": "original body executes unchanged"
+      },
+      {
+        "site": "system_harfbuzz::buffer_and_shape_internal",
+        "kind": "unsupported",
+        "proof": "system library source/IR observer required; not claimed by Qt hooks"
+      }
+    ],
+    "bridge_header_sha256": "455f69997303ce10200d24ab0fe6453091ba04a2335ff31090ba3fd8d37bd4f5",
+    "bridge_implementation_sha256": "0ec188d5b2065bff90a01f7ecbefd4434192af0a275bf0cebf63820cb6629bc3"
+  },
+  "required_feature_comparison": [
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtCore.framework/Headers/qconfig.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/corelib/global/qconfig.h",
+      "differences": {
+        "pkg_config": {
+          "installed": "1",
+          "observed": "-1"
+        }
+      }
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtCore.framework/Headers/qtcore-config.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/corelib/qtcore-config.h",
+      "differences": {}
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtCore.framework/Headers/6.11.1/QtCore/private/qtcore-config_p.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/corelib/qtcore-config_p.h",
+      "differences": {}
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtGui.framework/Headers/qtgui-config.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/gui/qtgui-config.h",
+      "differences": {
+        "vulkan": {
+          "installed": "1",
+          "observed": "-1"
+        }
+      }
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtGui.framework/Headers/6.11.1/QtGui/private/qtgui-config_p.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/gui/qtgui-config_p.h",
+      "differences": {}
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtWidgets.framework/Headers/qtwidgets-config.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/widgets/qtwidgets-config.h",
+      "differences": {}
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtWidgets.framework/Headers/6.11.1/QtWidgets/private/qtwidgets-config_p.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/widgets/qtwidgets-config_p.h",
+      "differences": {}
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtNetwork.framework/Headers/qtnetwork-config.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/network/qtnetwork-config.h",
+      "differences": {}
+    },
+    {
+      "installed": "/opt/homebrew/opt/qt/lib/QtNetwork.framework/Headers/6.11.1/QtNetwork/private/qtnetwork-config_p.h",
+      "observed": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/build/src/network/qtnetwork-config_p.h",
+      "differences": {}
+    }
+  ],
+  "actual_toolchain": {
+    "compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "sdk_version": "26.5",
+    "full_xcode_available": false,
+    "full_xcode_output": "xcrun: error: unable to find utility \"xcodebuild\", not a developer tool or in PATH\n"
+  },
+  "isolated_build": "build-c3-qt-observed",
+  "build_parallelism": 2,
+  "first_libraries_build_exit_code": 0,
+  "probe_syntax_exit_code": 0,
+  "bounded_source_probe": {
+    "probe_passed": true,
+    "coverage_complete": false,
+    "source_report": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-qt-observed/qt-source-copy-report.json",
+    "source_report_sha256": "3a7ca920d9d0eee6013d1fce8809cd28d2e6411010d3e38ab2a921cb73089f81",
+    "actual_loaded_core": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/prefix/lib/QtCore.framework/Versions/A/QtCore",
+    "reached_sites": 27,
+    "full_selection_regression_for_this_prefix": "pending"
+  }
+}

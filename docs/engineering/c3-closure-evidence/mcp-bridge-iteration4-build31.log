@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/mcp_bridge_tests.py", line 159, in <module>
+    run(parser.parse_args())
+    ~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/mcp_bridge_tests.py", line 131, in run
+    first.call("model.summary", context=wrong_epoch, status="error")
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/mcp_bridge_tests.py", line 51, in call
+    assert raw["status"] == status and result["isError"] == (status != "success"), raw
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'error': {'code': 'DOCUMENT_EPOCH_EXPIRED', 'field': 'document_epoch', 'message': 'Document epoch has expired'}, 'request_id': 'mcp-1226c793-05a0-46aa-8bc1-5769ba494d84', 'status': 'conflict'}

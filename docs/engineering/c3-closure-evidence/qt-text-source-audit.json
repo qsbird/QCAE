@@ -1,0 +1,120 @@
+{
+  "status": "source audit plus actual public text-shape probe; whole SDK owned-copy coverage remains unknown",
+  "qt_version": "6.11.1",
+  "sources": [
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/widgets/widgets/qwidgettextcontrol.cpp",
+      "sha256": "2c5b838e05cb70c7d33bb8eda129526636a2dcef286a27e321bbbf5ecd4c7939",
+      "lines": [
+        3275,
+        3320
+      ],
+      "boundary": "appendPlainText selects a paragraph separator only for a nonempty document"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/gui/text/qtextdocument_p.cpp",
+      "sha256": "955c67f02bed809ace0e0d0177ecb883b56ba80146799df645485eda8e93dfa8",
+      "lines": [
+        381,
+        458
+      ],
+      "boundary": "owned piece-table QString append can copy its initialized prefix on COW or growth"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/gui/text/qtextcursor.cpp",
+      "sha256": "0e952e582ef111e0d8511d9caf0e95c9db960afe4b949706beec853768c2ffb9",
+      "lines": [
+        1398,
+        1426
+      ],
+      "boundary": "insertText appends the complete input UTF-16 buffer before fragment insertion"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/gui/text/qtextobject.cpp",
+      "sha256": "cf81c50d8b366cdf3ebd612922a4c1abb9753564bdb54c98257db6a8f5a9da80",
+      "lines": [
+        1117,
+        1131
+      ],
+      "boundary": "QTextBlock::text reserves and copies fragment text into a fresh QString"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/gui/text/qtextengine.cpp",
+      "sha256": "e27e42047f55b003ff27e16a9986dacbd6aef5287612f97da6f4e80774566753",
+      "lines": [
+        1922,
+        1928
+      ],
+      "boundary": "validate obtains QTextBlock::text; invocation count is not observed"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/gui/text/qtextlayout.cpp",
+      "sha256": "df6fc9652eea6f8ff033fefd08e15bb012f5fd68ffb3e9edabb12966ccd41b88",
+      "lines": [
+        548,
+        626,
+        1260
+      ],
+      "boundary": "layout/paint may rebuild text and glyph buffers; default cacheGlyphs is false"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/widgets/itemviews/qtreewidget.cpp",
+      "sha256": "fe32f1741aa0fb5335f92153113891c18dbe840e42a511035c3bd16861b99ec2",
+      "lines": [
+        1742,
+        1820
+      ],
+      "boundary": "DisplayRole QVariant retains QString; equal display values return without emitDataChanged"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/widgets/itemviews/qstyleditemdelegate.cpp",
+      "sha256": "05d436dc469dd945c3ddb1bd9611fbcae348b5e9a88096857bc0a548919db353",
+      "lines": [
+        329,
+        366
+      ],
+      "boundary": "paint delegates to the actual widget style, so storage sharing does not prove painting has no owned text"
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/widgets/styles/qcommonstyle.cpp",
+      "sha256": "2bcd6df2bce7bee179fe60e1220ae3be780c92e04ed9936a0269de18722053e8",
+      "lines": [
+        851,
+        881,
+        920,
+        1002
+      ],
+      "boundary": "calculateElidedText appends line text into a fresh QString even on its nonelided branch"
+    }
+  ],
+  "observer": {
+    "header": "adapters/transport_local/include/qcae/json_ledger.hpp",
+    "type": "PlainTextAppendCopies",
+    "scope": "piece-table text append only; input QString construction counted separately",
+    "assumptions": [
+      "one initially empty QTextDocument",
+      "every append observed including warmup",
+      "public before/after character counts match",
+      "no text deletion/clear, newline, paragraph or fragment-control character",
+      "installed and compile-time Qt versions are exactly 6.11.1"
+    ],
+    "conservative_utf16_units": "(separator ? C+1 : 0) + (L ? C+separator+L : 0), separator=0 when the document was empty, else 1",
+    "metric": "library_internal_copy_bytes = 2 * conservative_utf16_units",
+    "capacity": "private and unobserved; every append can conservatively relocate the prior initialized prefix",
+    "invalid_shape": "sticky unknown, never zero"
+  },
+  "not_covered": [
+    "QTextBlock::text owned UTF-16 copies during layout/paint",
+    "text-engine shaping buffers and glyph arrays",
+    "QTreeWidget delegate/font text and layout copies",
+    "other Qt or VTK SDK CPU payload buffers",
+    "actual native style, QTreeWidget paint call count and calculateElidedText owned QString output"
+  ],
+  "verification": {
+    "pure_observer_smoke": "passed in independent /private/tmp binary on 2026-09-30; warm-prefix guard and unsupported shapes",
+    "actual_QTextDocument_append_integration": "passed with real QPlainTextEdit/QTextDocument in an independent Qt 6.11.1 offscreen /private/tmp binary on 2026-10-01; warmup, nonempty/empty/4096-character append shapes, clear invalidation and multiline unknown guard",
+    "whole_pipeline": "unknown; cannot mark SK-12 passed",
+    "probe_source": "tests/qt_text_ledger_probe.cpp",
+    "probe_scope": "public runtime shape and guarded piece-table upper-bound observer only; not font/layout/paint internal copies or whole pipeline"
+  }
+}

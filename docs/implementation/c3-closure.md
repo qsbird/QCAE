@@ -1,0 +1,99 @@
+# C3 收敛实现与接续
+
+状态：实现及集成验收进行中，起点 `9e0a56b`。执行范围见[授权计划](../engineering/c3-closure-plan.md)。本文说明当前运行链，不将中间测试组合为完整 SK、C4 或 P0 通过。
+
+## 共用应用与显示
+
+记录预览保留准备后的不可变候选，提交核对基础版本、显式变更和候选一致性，再通过原有 SQLite 批次发布。未声明变更、失败预览、旧版本和重复键不能绕过校验。持久操作事实使用不可变 AVL 结构共享旧载荷；记录页只复制已占用的槽位。完整保存和故障恢复仍有各自的全量路径，不据局部编辑声称整体算法恒定。
+
+隐藏更新保留点、梁及几何线的稳定显示索引；受影响显示块局部安装，隐藏节点仍保留梁端坐标。一般字段编辑按稳定 ID 更新组织树行。初次场景、拓扑变化和事件缺口保留完整刷新。资源下载、解码、版本校验及 VTK 安装属于同一个待完成状态；相机请求排队到该版本安装后，文档事件立即隔离旧回包。
+
+通用 `RenderCell` 持有稳定实体 ID、polyline/polygon 拓扑和可变数量的点索引；生产 Line2 已经由该载体投影。wire schema 3 严格校验单元和索引，并保留 schema 1/2 的读取/写出兼容路径。VTK 用可变 offsets 构造线与多边形单元，完整校验差量后安装。共性多边形测试不计 Tri3 持久实体或其四项 PICK 验收；Tri3 仍需冻结后独立扩展。
+
+## 分析、检查及结果
+
+工况记录引用力和约束，分析定义的可选工况字段兼容旧记录。创建/修复仍经统一事务；缺少载荷或约束产生带实体和版本的 Issue，而悬空引用等结构错误拒绝提交。检查报告通过有 owner 和 CAS 的副作用行保存，不增加模型修订或历史。
+
+`results.read_fixture` 只读取明确标记为 fixture 的静力节点位移。冻结输入保留分析、工况、目标 profile、原文档版本、物理签名及完整编号映射。输入签名使用确定性二进制编码，网络以可逆 hex 表达；产物另用 SHA256 覆盖精确签名。物理改变使旧结果 stale，组织/显示改变保持适用，undo 恢复相同物理输入可以恢复 current。正常打开创建新文档身份，旧结果保持原来源。
+
+结果定向证据及 QG-02 审查见[结果交付说明](../engineering/c3-closure-evidence/results/README.md)。这些数值来自固定 R 夹具，不来自求解器。
+
+## Nastran 包与实际文件发布
+
+静态包提供实体/规则、操作、codec、validation、UI 及 render 六类实际贡献。`QCAE_ENABLE_NASTRAN_PACKAGE=OFF` 时不注册该包的生产操作或 profile，共用工程/查询/历史仍可运行。
+
+`model.export` 冻结输入并将任务与产物意图保存到同一个工作库批次；后台适配器在独占的新目录中分阶段写文件、独立读回工程语义、验证长度和摘要，最后发布完整 manifest。文件系统和工作库不属于同一个原子事务。成功状态通过单个批次保存任务的 `TaskArtifactReceipt` 与发布事实，回执包含产物 ID、冻结输入修订和 manifest SHA256，不伪造模型提交或增加修订。
+
+`artifact.reconcile` 按实际完整文件和持久意图核实中断状态，不自动重跑任务。调用者、键、原文档/epoch/修订和产物身份构成持久重试事实；历史验证结果与当前文件验证结果分开返回。已完成任务的重复核实不再追加成功事件。模型任务仍必须有真实 `ChangeReceipt` 且提交修订递增；普通任务写 schema 2，产物回执使用 schema 3，兼容读取 schema 1/2。
+
+Profile 0.2.0 的语义摘要忽略纯格式/注释变化，实现指纹另行记录。旧 0.1.0 三元组不会静默重绑定。`project.migrate_profile` 显式核对来源与目标，校验后激活新的未保存文档，保留 dirty 状态、清空源保存路径并释放源租约；原输入不被修改，后续保存要求指定目标。
+
+## 统计与未完成门禁
+
+操作账本关联同次命令、应用、记录、SQLite、资源、实际套接字、客户端解码和 VTK 完成。未知覆盖返回 null，不记为 0。VFS 记录成功 `xWrite` 的请求字节，不等于磁盘设备写放大。
+
+IPC/桌面构建的 Qt 最低 API 版本登记为 6.10，因为借用 JSON 键与值的
+`keyView`/`toStringView` 自该版本提供；见 [Qt keyView 文档](https://doc.qt.io/qt-6/qjsonobject-const-iterator.html#keyView)
+及 [Qt toStringView 文档](https://doc.qt.io/qt-6/qjsonvalue.html#toStringView)。实际构建和字节审计仍仅验证已安装的 6.11.1，其他版本不继承其 SDK 字节覆盖证据；不需要安装新依赖。
+
+默认构建使用既有系统 SQLite。测试专用 `QCAE_C3_SQLITE_OBSERVED_OBJECT` 接收同版本 3.51.0 的未跟踪插桩对象，通过 `tests/prepare_c3_sqlite_ledger.py` 生成并审计显式/编译器聚合复制。该保守字节环境不用于生产 Release 的时延统计；源码、编译选项与内部复制子集关系需要随原始账本归档。只有所有必需项覆盖且 3 档共 60 次真实样本达标，才能判定局部负载通过。
+
+新建工作库使用普通 SQLite rowid 表和原有逻辑 `(space, identity)` 主键。rowid 仅为 SQLite 私有存储位置；实体与导出身份不取自它。已有 WITHOUT ROWID 工作库保持原布局并继续可读写，不自动迁移输入。此变更避免新工作库的小记录更新在索引游标保存时复制大历史载荷；旧布局的性能不能归入新布局夹具结果。驱动定向回归不是端到端 60 样本通过证据。
+
+已有 9 条真实 M 工作流诊断（CLI/GUI/MIX 各 3 条）及 220 次故障诊断；72 个流程检查点的完整记录比较未发现语义差异。这些日志对应各自的可变源码构建，尚未形成最终同一源码版本的验收证据。
+
+build31 的 N=1000 材料诊断失败保留：合同复制量（含保守上界）84719–88501 字节，
+超过 69632 字节。build32 已接入借用 ASCII 整帧编码及版本字段源头计量，并新增
+真实 UI/VTK 组件 hook；20 次诊断的组件 run_id 全部匹配。当前已知项累计为材料
+64898–66584、节点 121349–131411 字节，各 10 次已知项均在原上界内，但字体缓冲
+和节点 VBO 范围缓存让部分库阶段成为 unknown；缺失阶段未计入累计。因此完整
+覆盖为 0/20，不直接比较两轮总量，也不判复制门禁通过。同版本 Qt 源码观察构建
+与 VTK 范围审计继续补齐这些缺口。原失败及测试前置条件修正记录均保留。
+
+真实 stdio MCP 薄桥、两个桥与 CLI 的共享事务回归已通过；实际外部客户端为
+Codex CLI 0.159.2、已登记模型 gpt-6.1-sol/xhigh。一次实际 AI 会话通过桥完成
+材料创建、单位归一化及撤销/重做，CLI 复核修订 3、材料 1、E=210000 MPa；
+11 次完成工具调用，无 shell/文件动作，证据为
+`c3-closure-evidence/real-ai-mcp-smoke2-build31/`。首次会话因单次 CLI 工具审批
+配置拒绝调用的失败也保留；修正只限定此次合成测试的八工具允许列表，未改全局
+配置。这不是 TST-I01—10 各三次的完整 M5 验收。
+
+C4 同基线独立扩展、Tri3 拾取、三档 60 次负载及统一 Release 验收仍未完成。
+真实 Nastran 可执行路径/版本未登记，M4/M5 真实求解与数值闭环未完成；本地
+进程适配器正在独立实现，替身回归不能替代真实求解。
+
+2026-10-01 build34/35 接续：本地 runner 已接入同一个 engine/task/SQLite，
+真实 test-only 子进程的执行、取消、重启未知状态与原产物验证由 10/10 定向
+回归保护，见 [M4 执行事实](m4-local-runner.md)。受控 F06 parse-only reader
+经过独立复核修复；预登记悬臂梁 v3 已通过生产 codec 导入，见
+[数值预登记](../engineering/m4-numerical-preregistration.md)。这些仍不是真实求解。
+
+第二轮同版本 Qt 源码加 HarfBuzz 观察环境已通过 4/4 因果测试和 N=1000 的
+20 次真实桌面/SQLite诊断，两进程的清单与操作身份全部核验。原数据载荷计量
+补齐后，材料已知合同量为 70571—73113 字节，超过原 69632 字节上限；节点
+已知量 126026—136969 字节。字体及部分 VTK 库路径仍 unknown，新增 SDK
+raw facts 单列，尚未在没有逐站去重证明时叠加。日志与旧失败均保留于
+`c3-closure-evidence/ledger-qt-harfbuzz-tranche2-build35-diagnostic.json`，
+全链覆盖为 0/20，三个档位的合同通过仍未完成。
+
+独立 public-header consumers 已在普通 Release 的完整 Qt/VTK/SQLite 装配下
+编译链接 69/69；这是公共依赖边的诊断证据。核心 Release 和 ASan/UBSan
+首次共同回归分别为 35/36、34/36，格式检查撞上进行中的 core 编辑，另外
+ASan 的测试子进程将 SIGSEGV 转为 SIGABRT。后者已改明确 SIGABRT 夹具，
+ASan solver_local 1/1 重验通过；完整同源码验证等各 owner 冻结后重跑。
+
+build38 的共同纯核心 Release 已通过 37/37（20.73 秒），结果发布/核实恢复、
+场景报告传输、MCP 与数值比较器的共同定向回归通过 15/15（28.90 秒）；
+日志为 `c3-closure-evidence/package/core-tests-build38.log` 和
+`c3-closure-evidence/package/solver-result-reconcile-common-tests38.log`。
+真实文件已完成而数据库回滚时，任务保留 `outcome_unknown`；
+`analysis.reconcile_result` 核验原 manifest/raw/F06 和来源后恢复发布事实，
+不重跑进程。测试进程始终是 `test_process`，原运行数值阶段仍为 `not_run`。
+
+第三轮独立 Qt/HarfBuzz 加载路径已修复并完成实际 N1000 同次 20 样本：
+节点已知合同量 447141—457966、材料 67834—69464 字节，已知负载和元数据
+均在原上限内。Qt/HB raw 仍独立报告且待逐站去重，字体内部复制仍 unknown，
+全链覆盖 0/20，尚无该源码的 N10k/N100k，不能判 SK-12 通过。摘要与原始
+报告见 `c3-closure-evidence/package/qt-harfbuzz-tranche3b-summary-build37.json`。
+FreeType 独立 SDK 的 emoji 行高修复使 64 个案例均可画，但与 Mac 后端
+布局和像素不同；默认产品后端未切换，内部字体复制覆盖尚未闭合。

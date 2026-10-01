@@ -1,0 +1,17 @@
+CMake Warning at build-c3-qt-observed/prefix/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  build-c3-qt-observed/prefix/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  build-c3-qt-observed/prefix/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:334 (find_package)
+
+
+-- Configuring done (1.1s)
+-- Generating done (0.9s)
+-- Build files have been written to: /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-qt-observed

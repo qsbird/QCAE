@@ -1,4 +1,5 @@
 #include "application_state.hpp"
+#include "qcae/operation_ledger.hpp"
 #include <algorithm>
 #include <iomanip>
 #include <random>
@@ -7,26 +8,102 @@
 
 namespace qcae {
 namespace {
+void set_record_version(RecordStateImage& data) {
+    const auto& document = *data.document;
+    RecordVersion version{document.document, document.revision};
+    ledger::add(ledger::Stage::records,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(RecordVersion) + version.document.id.value.size() +
+                    version.document.epoch.value.size());
+    data.records = data.records.with_version(std::move(version));
+}
 class Writer {
   public:
+    explicit Writer(std::size_t capacity = 0) {
+        bytes_.reserve(capacity);
+    }
     void number(std::uint64_t value) {
-        for (unsigned i = 0; i < 8; ++i)
+        for (unsigned i = 0; i < 8; ++i) {
+            const auto previous_size = bytes_.size();
+            const auto previous_capacity = bytes_.capacity();
             bytes_.push_back(static_cast<char>((value >> (i * 8)) & 255));
+            if (bytes_.capacity() != previous_capacity)
+                copied_previous(previous_size);
+        }
+        ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, 8);
     }
     void boolean(bool value) {
         number(value ? 1 : 0);
     }
-    void text(std::string_view value) {
+    void text(std::string_view value, bool model_payload = false) {
         number(value.size());
+        const auto previous_size = bytes_.size();
+        const auto previous_capacity = bytes_.capacity();
         bytes_.append(value);
+        ledger::add(ledger::Stage::application,
+                    model_payload ? ledger::Metric::model_copy_bytes
+                                  : ledger::Metric::metadata_copy_bytes,
+                    value.size());
+        if (bytes_.capacity() != previous_capacity)
+            copied_previous(previous_size);
+        if (model_payload)
+            model_bytes_ += value.size();
     }
     std::string take() {
+        ledger::add(ledger::Stage::application, ledger::Metric::encoded_bytes, bytes_.size());
         return std::move(bytes_);
     }
 
   private:
     std::string bytes_;
+    std::size_t model_bytes_{};
+    void copied_previous(std::size_t previous_size) {
+        ledger::add(ledger::Stage::application, ledger::Metric::model_copy_bytes, model_bytes_);
+        ledger::add(ledger::Stage::application,
+                    ledger::Metric::metadata_copy_bytes,
+                    previous_size - model_bytes_);
+    }
 };
+class EncodedSize {
+  public:
+    void number() {
+        add(8);
+    }
+    void text(std::string_view value) {
+        number();
+        add(value.size());
+    }
+    std::size_t size() const noexcept {
+        return size_;
+    }
+
+  private:
+    std::size_t size_{};
+    void add(std::size_t value) {
+        if (value > std::string{}.max_size() - size_)
+            throw std::length_error("Record application image is too large");
+        size_ += value;
+    }
+};
+void size_info(EncodedSize& size, const DocumentInfo& info) {
+    for (const auto* text : {&info.document.id.value,
+                             &info.document.epoch.value,
+                             &info.content_state,
+                             &info.name,
+                             &info.project_id,
+                             &info.saved_path,
+                             &info.saved_content_state})
+        size.text(*text);
+    for (int index = 0; index < 4; ++index)
+        size.number();
+}
+void size_receipt(EncodedSize& size, const ChangeReceipt& receipt) {
+    size.text(receipt.transaction.value);
+    size.number();
+    size.number();
+    size.text(receipt.current_content_state);
+    size.text(receipt.primary_entity.value);
+}
 class Reader {
   public:
     explicit Reader(std::string_view bytes) : bytes_(bytes) {}
@@ -127,11 +204,17 @@ SharedStoreBytes record_bytes(const Record& record) {
     return SharedStoreBytes(record, &record->encoded());
 }
 SharedStoreBytes encode_history(const RecordHistoryImage& h, RecordStats* stats = nullptr) {
-    Writer w;
+    const auto changes = encode_record_changes(h.changes, stats);
+    EncodedSize size;
+    size.text(h.transaction.value);
+    size.text(h.label);
+    size.text(h.content_state);
+    size.text(changes);
+    Writer w(size.size());
     w.text(h.transaction.value);
     w.text(h.label);
     w.text(h.content_state);
-    w.text(encode_record_changes(h.changes, stats));
+    w.text(changes, true);
     if (stats)
         for (const auto& change : h.changes.records)
             stats->model_bytes_copied += (change.before ? (*change.before)->encoded().size() : 0) +
@@ -139,7 +222,12 @@ SharedStoreBytes encode_history(const RecordHistoryImage& h, RecordStats* stats 
     return bytes(w.take());
 }
 SharedStoreBytes encode_operation(const RecordOperationImage& o) {
-    Writer w;
+    EncodedSize size;
+    size.text("QCAE-OPERATION-FACT");
+    size.number();
+    size.text(o.signature);
+    size_receipt(size, o.receipt);
+    Writer w(size.size());
     w.text("QCAE-OPERATION-FACT");
     w.number(1);
     w.text(o.signature);
@@ -147,7 +235,10 @@ SharedStoreBytes encode_operation(const RecordOperationImage& o) {
     return bytes(w.take());
 }
 SharedStoreBytes encode_host(const RecordHostImage& h) {
-    Writer w;
+    EncodedSize size;
+    size.text(h.signature);
+    size_info(size, h.result);
+    Writer w(size.size());
     w.text(h.signature);
     write_info(w, h.result);
     return bytes(w.take());
@@ -181,7 +272,7 @@ std::shared_ptr<const OwnedRowImage> prepare_owned(const OwnedRowImage& row,
     w.number(1);
     w.text(row.owner);
     w.number(row.schema_version);
-    w.text(*row.payload);
+    w.text(*row.payload, true);
     result->encoded = bytes(w.take());
     return result;
 }
@@ -207,7 +298,28 @@ std::shared_ptr<const OwnedRowImage> decode_owned(const StoreKey& key,
     return result;
 }
 SharedStoreBytes encode_metadata(const RecordStateImage& d) {
-    Writer w;
+    EncodedSize size;
+    size.text("QCAE-RECORD-WORKSPACE");
+    size.text(d.application_nonce);
+    size.text(d.initial_content_state);
+    for (int index = 0; index < 7; ++index)
+        size.number();
+    if (d.document)
+        size_info(size, *d.document);
+    for (const auto& history : d.history)
+        size.text(history->transaction.value);
+    if (d.save_intent) {
+        const auto& intent = *d.save_intent;
+        for (const auto* text : {&intent.host_key,
+                                 &intent.signature,
+                                 &intent.path,
+                                 &intent.token,
+                                 &intent.project_id,
+                                 &intent.snapshot})
+            size.text(*text);
+        size.number();
+    }
+    Writer w(size.size());
     w.text("QCAE-RECORD-WORKSPACE");
     w.number(1);
     w.text(d.application_nonce);
@@ -253,7 +365,7 @@ void verify_image(RecordStateImage& d, Limits limits) {
     if (d.document->content_state !=
         (d.cursor ? d.history[d.cursor - 1]->content_state : d.initial_content_state))
         throw RecordError(ErrorCode::schema_unsupported, "History content state mismatch");
-    d.records = d.records.with_version({d.document->document, d.document->revision});
+    set_record_version(d);
     d.records.validate();
     auto replay = d.records;
     for (std::size_t i = d.cursor; i > 0; --i)
@@ -420,7 +532,7 @@ std::string encode_record_rows(std::span<const StoredRow> rows) {
     for (const auto& row : rows) {
         w.number(static_cast<unsigned>(row.key.space));
         w.text(row.key.identity);
-        w.text(*row.value);
+        w.text(*row.value, true);
     }
     return w.take();
 }
@@ -442,6 +554,30 @@ std::vector<StoredRow> decode_record_rows(std::string_view payload) {
 }
 
 namespace record_detail {
+SharedStoreBytes encode_operation_record(const RecordedOperation& operation) {
+    return encode_operation(operation);
+}
+Data copy_data(const Data& source) {
+    // DocumentView's central copy hook counts this same inline RecordVersion.
+    std::uint64_t bytes = sizeof(Data) - sizeof(RecordVersion) + source.application_nonce.size() +
+                          source.initial_content_state.size() +
+                          source.history.size() * sizeof(decltype(source.history)::value_type);
+    const auto info_bytes = [](const DocumentInfo& info) {
+        return info.document.id.value.size() + info.document.epoch.value.size() +
+               info.content_state.size() + info.name.size() + info.project_id.size() +
+               info.saved_path.size() + info.saved_content_state.size();
+    };
+    if (source.document)
+        bytes += info_bytes(*source.document);
+    for (const auto& [key, preview] : source.previews) {
+        (void)preview;
+        bytes += sizeof(decltype(source.previews)::value_type) + key.size();
+    }
+    for (const auto& mutation : source.pending)
+        bytes += sizeof(RowMutation) + mutation.key.identity.size();
+    ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, bytes);
+    return source;
+}
 std::string nonce() {
     std::random_device source;
     std::ostringstream out;
@@ -458,7 +594,7 @@ void update_document(Data& d) {
     const auto& clean = d.document->saved_content_state.empty() ? d.initial_content_state
                                                                 : d.document->saved_content_state;
     d.document->dirty = d.document->content_state != clean;
-    d.records = d.records.with_version({d.document->document, d.document->revision});
+    set_record_version(d);
 }
 std::optional<Diagnostic> validate_candidate(const DocumentView& view, const Data& d) {
     try {
@@ -480,14 +616,14 @@ std::string encode_project(Data& d, const std::string& project_id) {
     w.text(d.document->content_state);
     w.number(d.records.size());
     d.records.visit([&](const Record& record) {
-        w.text(record->encoded());
+        w.text(record->encoded(), true);
         d.stats.model_bytes_copied += record->encoded().size();
     });
     w.number(d.owned_rows->size());
     for (const auto& [key, row] : *d.owned_rows) {
         w.number(static_cast<unsigned>(key.space));
         w.text(key.identity);
-        w.text(*row->encoded);
+        w.text(*row->encoded, true);
     }
     note_whole_model_serialization(&d.stats);
     return w.take();
@@ -674,6 +810,17 @@ std::shared_ptr<const HistoryEntry> make_history(TransactionId transaction,
                                                  RecordChangeSet changes,
                                                  std::string content,
                                                  RecordStats* stats) {
+    std::uint64_t metadata = sizeof(HistoryEntry) + sizeof(RecordChangeSet) +
+                             transaction.value.size() + label.size() + content.size();
+    for (const auto& change : changes.records)
+        metadata += sizeof(RecordChange) + change.key.identity.size() +
+                    change.fields.size() * sizeof(decltype(change.fields)::value_type);
+    // lvalue arguments own one copied string/vector payload at this boundary;
+    // SSO moves can additionally copy the short in-object characters.
+    for (const auto* value : {&transaction.value, &label, &content})
+        if (value->size() <= std::string{}.capacity())
+            metadata += value->size();
+    ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, metadata);
     auto h = std::make_shared<HistoryEntry>();
     h->transaction = std::move(transaction);
     h->label = std::move(label);
@@ -694,15 +841,32 @@ persist(Data& candidate, IRecordStore* store, std::uint64_t& generation, bool& p
             if (!h->encoded)
                 throw RecordError(ErrorCode::schema_unsupported, "Unencoded history row");
         }
-        for (auto& [key, o] : candidate.operations)
+        for (const auto& [key, o] : candidate.operations)
             if (!o.encoded) {
-                o.encoded = encode_operation(o);
-                candidate.pending.push_back({{StoreSpace::operation_fact, key}, o.encoded});
+                auto encoded = o;
+                encoded.encoded = encode_operation(o);
+                candidate.pending.push_back({{StoreSpace::operation_fact, key}, encoded.encoded});
+                ledger::add(ledger::Stage::application,
+                            ledger::Metric::metadata_copy_bytes,
+                            o.signature.size() + o.receipt.transaction.value.size() +
+                                o.receipt.current_content_state.size() +
+                                o.receipt.primary_entity.value.size());
+                candidate.operations.replace(key, std::move(encoded));
             }
-        for (auto& [key, h] : candidate.host_operations)
+        for (const auto& [key, h] : candidate.host_operations)
             if (!h.encoded) {
-                h.encoded = encode_host(h);
-                candidate.pending.push_back({{StoreSpace::host_operation_fact, key}, h.encoded});
+                auto encoded = h;
+                encoded.encoded = encode_host(h);
+                candidate.pending.push_back(
+                    {{StoreSpace::host_operation_fact, key}, encoded.encoded});
+                ledger::add(ledger::Stage::application,
+                            ledger::Metric::metadata_copy_bytes,
+                            h.signature.size() + h.result.document.id.value.size() +
+                                h.result.document.epoch.value.size() +
+                                h.result.content_state.size() + h.result.name.size() +
+                                h.result.project_id.size() + h.result.saved_path.size() +
+                                h.result.saved_content_state.size());
+                candidate.host_operations.replace(key, std::move(encoded));
             }
         // Last mutation wins when replacing a record set during explicit open.
         std::map<StoreKey, SharedStoreBytes> unique;

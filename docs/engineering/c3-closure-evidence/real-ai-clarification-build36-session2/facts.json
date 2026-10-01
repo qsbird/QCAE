@@ -1,0 +1,2013 @@
+{
+  "schema_version": 1,
+  "purpose": "real_same_session_unit_clarification_partial_TST_I01",
+  "formal_acceptance": false,
+  "real_solver_run": false,
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "xhigh",
+  "engine_sha256": "b4269e3f42c6f037869a55c2a9f130635578e7ac42f5b476ceffb875a35a656d",
+  "cli_sha256": "78f32e39651588b9fd77aefb85e56dfabb82d2c25222c3531a9e8217fc583825",
+  "bridge_sha256": "4961ece82b1ae537133442e37aaa9cdb3595974b4d435a9c49f4a582b8f7c4e0",
+  "harness_sha256": "698e0cd766112dfd8f5bfa2f04d8d2f879e8b2d1727d785b3e053359afcf1c88",
+  "client_version": "codex-cli 0.159.2",
+  "source_binding": "mutable_tree_diagnostic",
+  "ephemeral_ai_session": true,
+  "data_destination": "OpenAI model service receives only synthetic prompts and QCAE schemas/results",
+  "limitations": [
+    "material unit cycle only; geometry/force units, GUI and export equivalence pending",
+    "app-server process config overrides; existing auth is used without copying it"
+  ],
+  "thread_id": "01a0f44d-2e03-71a2-b6f5-a9b761fbc5bd",
+  "clarification_output_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "needs_input",
+          "success"
+        ]
+      },
+      "missing": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "status",
+      "missing"
+    ]
+  },
+  "missing_unit_turn": {
+    "turn_id": "01a0f44d-2e5a-7c73-85b7-0b7e62d660e5",
+    "calls": [
+      {
+        "type": "mcpToolCall",
+        "id": "exec-d226d2e5-c772-41b2-8824-5b84ee2bc762",
+        "server": "qcae",
+        "tool": "capabilities.list",
+        "status": "completed",
+        "arguments": {},
+        "appContext": null,
+        "mcpAppUi": null,
+        "pluginId": null,
+        "readOnlyHint": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"data\":{\"configured_solver_profiles\":[],\"declared_solver_profiles\":[{\"analysis_kind\":\"linear_static\",\"cards\":[\"GRID\",\"CBAR\",\"PBAR\",\"MAT1\",\"FORCE\",\"SPC1\",\"INCLUDE\"],\"codec_available\":true,\"codec_scope\":\"strict free-field SOL 101 beam subset; no solver binary validation\",\"configured\":false,\"implementation_fingerprint\":\"sha256:5f80cff1ec5e134e4dfa0df73dc7a125f4d7c6a274290d8fb5ad9cd267205ac3\",\"profile_ref\":{\"definition_digest\":\"sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc\",\"profile_id\":\"qcae.nastran.linear-static\",\"profile_version\":\"0.2.0\"},\"solver_family\":\"Nastran\",\"unit_system\":\"mm-N-MPa\",\"validated\":false}],\"durable\":true,\"implementation_scope\":\"Shared record services, analysis checks, resource deltas; optional Nastran artifact publication and fixture results; no solver execution or AI bridge\",\"max_name_bytes\":1024,\"operations\":[{\"available\":true,\"description\":\"Discover supported operations, cards, analyses and optional graphics\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"CapabilityFilter\",\"name\":\"capabilities.list\",\"output_type\":\"CapabilityCatalog\",\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"supported_scope\":\"global_catalog_only\",\"target_context\":\"optional_profile\"},{\"available\":true,\"description\":\"Create a new recoverable work document\",\"effect\":\"project_write\",\"implementation_status\":\"partial\",\"input_type\":\"CreateProject\",\"name\":\"project.create\",\"output_type\":\"DocumentContext\",\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Open a saved snapshot or explicitly recover a working document\",\"effect\":\"project_write\",\"implementation_status\":\"partial\",\"input_type\":\"OpenProject\",\"name\":\"project.open\",\"output_type\":\"DocumentContext\",\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Explicitly close a document with a declared save/recovery/discard policy\",\"effect\":\"project_write\",\"implementation_status\":\"partial\",\"input_type\":\"CloseProject\",\"name\":\"project.close\",\"output_type\":\"CloseReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Read saved state and project metadata\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"ProjectStatusQuery\",\"name\":\"project.status\",\"output_type\":\"ProjectStatus\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Publish a consistent saved snapshot\",\"effect\":\"project_write\",\"implementation_status\":\"partial\",\"input_type\":\"SaveProject\",\"name\":\"project.save\",\"output_type\":\"SaveReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Publish a new project identity without a model edit\",\"effect\":\"project_write\",\"implementation_status\":\"partial\",\"input_type\":\"SaveProjectAs\",\"name\":\"project.save_as\",\"output_type\":\"SaveReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":false,\"description\":\"Parse supported input into a candidate and atomically submit\",\"effect\":\"job_start\",\"implementation_status\":\"planned\",\"input_type\":\"ImportModel\",\"name\":\"model.import\",\"output_type\":\"JobReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"source_profile\"},{\"available\":true,\"description\":\"Read model and analysis completeness summaries\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"SummaryQuery\",\"name\":\"model.summary\",\"output_type\":\"ModelSummary\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Evaluate a typed scoped query\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"EntityQuery\",\"name\":\"entity.query\",\"output_type\":\"SelectionResult\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"conditional\"},{\"available\":true,\"description\":\"Read dependencies and all shared-property consumers\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"ReferenceQuery\",\"name\":\"entity.references\",\"output_type\":\"ReferenceResult\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":false,\"description\":\"Read quantities, facts, assumptions and missing inputs\",\"effect\":\"query\",\"implementation_status\":\"planned\",\"input_type\":\"AnalysisQuery\",\"name\":\"analysis.get_setup\",\"output_type\":\"AnalysisSetup\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"analysis\"},{\"available\":false,\"description\":\"Validate and commit supported analysis inputs\",\"effect\":\"model_write\",\"implementation_status\":\"planned\",\"input_type\":\"AnalysisInputUpdate\",\"name\":\"analysis.update_inputs\",\"output_type\":\"ChangeReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":true,\"requires_revision\":true,\"target_context\":\"analysis\"},{\"available\":true,\"description\":\"Freeze command targets, impact and base version\",\"effect\":\"preview\",\"implementation_status\":\"partial\",\"input_type\":\"PreviewChange\",\"name\":\"changes.preview\",\"output_type\":\"ChangePreview\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"supported_commands\":[\"material.create\",\"material.set_young_modulus\",\"part.upsert\",\"assembly.upsert\",\"set.upsert\",\"node.move\",\"entity.delete\",\"model.import\"],\"target_context\":\"conditional\"},{\"available\":true,\"description\":\"Commit a frozen preview exactly once per logical intent\",\"effect\":\"model_write\",\"implementation_status\":\"partial\",\"input_type\":\"CommitPreview\",\"name\":\"changes.commit\",\"output_type\":\"ChangeReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"from_preview\"},{\"available\":true,\"description\":\"Resolve host lifecycle or document operation outcomes in an authorized stable actor scope\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"OperationLookup\",\"name\":\"operations.get\",\"output_type\":\"OperationOutcome\",\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"supported_scope\":\"host_lifecycle_and_document_change_outcomes\",\"target_context\":\"none\"},{\"available\":true,\"description\":\"Read bounded undo history and saved content state\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"HistoryQuery\",\"name\":\"history.list\",\"output_type\":\"HistorySummary\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Undo through the same atomic commit path\",\"effect\":\"model_write\",\"implementation_status\":\"partial\",\"input_type\":\"HistoryMove\",\"name\":\"history.undo\",\"output_type\":\"ChangeReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"from_history\"},{\"available\":true,\"description\":\"Redo through the same atomic commit path\",\"effect\":\"model_write\",\"implementation_status\":\"partial\",\"input_type\":\"HistoryMove\",\"name\":\"history.redo\",\"output_type\":\"ChangeReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"from_history\"},{\"available\":false,\"description\":\"Run checks on a frozen model or analysis\",\"effect\":\"job_start\",\"implementation_status\":\"planned\",\"input_type\":\"ValidationRequest\",\"name\":\"validation.run\",\"output_type\":\"JobReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"conditional\"},{\"available\":false,\"description\":\"Read versioned diagnostics with evidence\",\"effect\":\"query\",\"implementation_status\":\"planned\",\"input_type\":\"IssueQuery\",\"name\":\"validation.get_issues\",\"output_type\":\"IssuePage\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":false,\"description\":\"Read result provenance, availability and input match\",\"effect\":\"query\",\"implementation_status\":\"planned\",\"input_type\":\"ResultQuery\",\"name\":\"analysis.results\",\"output_type\":\"AnalysisResults\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"from_run\"},{\"available\":false,\"description\":\"Read a permitted job and its original input context\",\"effect\":\"query\",\"implementation_status\":\"planned\",\"input_type\":\"JobQuery\",\"name\":\"jobs.get\",\"output_type\":\"JobStatus\",\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":false,\"description\":\"Request cancellation without claiming it is complete\",\"effect\":\"job_control\",\"implementation_status\":\"planned\",\"input_type\":\"CancelJob\",\"name\":\"jobs.cancel\",\"output_type\":\"JobStatus\",\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":false,\"description\":\"Render explicitly described view if graphics capability is available\",\"effect\":\"job_start\",\"implementation_status\":\"planned\",\"input_type\":\"SnapshotRequest\",\"name\":\"view.render_snapshot\",\"output_type\":\"JobReceipt\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":true,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Encode a frozen supported model into an in-memory artifact plan and loss report; does not publish files\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"ExportPreview\",\"name\":\"model.export_preview\",\"output_type\":\"ArtifactPlanPreview\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":true,\"requires_revision\":true,\"target_context\":\"analysis\"},{\"available\":true,\"description\":\"Read the active document identity, revision, persistence mode and saved metadata\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"CurrentProject\",\"name\":\"project.current\",\"output_type\":\"DocumentContext\",\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Create a caller-owned view for an explicit model version and hidden-entity set\",\"effect\":\"session_write\",\"implementation_status\":\"partial\",\"input_type\":\"CreateView\",\"name\":\"view.create\",\"output_type\":\"ViewSession\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Update hidden entities and camera fingerprint, invalidating older view selections\",\"effect\":\"session_write\",\"implementation_status\":\"partial\",\"input_type\":\"UpdateView\",\"name\":\"view.update\",\"output_type\":\"ViewSession\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Read a versioned display packet with true entity identity mappings\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"RenderDataQuery\",\"name\":\"view.render_data\",\"output_type\":\"RenderPacket\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Evaluate typed predicates within an explicit visibility and candidate scope\",\"effect\":\"session_write\",\"implementation_status\":\"partial\",\"input_type\":\"SelectionQuery\",\"name\":\"selection.evaluate\",\"output_type\":\"SelectionHandle\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Combine compatible versioned selections by union, intersection or difference\",\"effect\":\"session_write\",\"implementation_status\":\"partial\",\"input_type\":\"SelectionCombination\",\"name\":\"selection.combine\",\"output_type\":\"SelectionHandle\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Read a bounded page from a caller-owned selection, rejecting stale model or view versions\",\"effect\":\"query\",\"implementation_status\":\"partial\",\"input_type\":\"SelectionPageQuery\",\"name\":\"selection.get\",\"output_type\":\"SelectionPage\",\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Versioned local display resource\",\"effect\":\"query\",\"implementation_status\":\"implemented\",\"input_type\":\"RenderResourceQuery\",\"name\":\"view.render_resource\",\"output_type\":\"ResourceManifest\",\"requested_version\":1,\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Versioned local display resource\",\"effect\":\"query\",\"implementation_status\":\"implemented\",\"input_type\":\"ResourceReference\",\"name\":\"resources.describe\",\"output_type\":\"ResourceManifest\",\"requested_version\":1,\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Versioned local display resource\",\"effect\":\"query\",\"implementation_status\":\"implemented\",\"input_type\":\"ResourceChunkQuery\",\"name\":\"resources.read\",\"output_type\":\"ResourceChunk\",\"requested_version\":1,\"requires_document\":true,\"requires_epoch\":true,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":true,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Versioned local display resource\",\"effect\":\"query\",\"implementation_status\":\"implemented\",\"input_type\":\"ResourceReference\",\"name\":\"resources.release\",\"output_type\":\"ResourceRelease\",\"requested_version\":1,\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Bounded disposable event feed with explicit resynchronization\",\"effect\":\"query\",\"implementation_status\":\"implemented\",\"input_type\":\"EventCursor\",\"name\":\"events.subscribe\",\"output_type\":\"EventSubscription\",\"requested_version\":1,\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"description\":\"Bounded disposable event feed with explicit resynchronization\",\"effect\":\"query\",\"implementation_status\":\"implemented\",\"input_type\":\"EventCursor\",\"name\":\"events.read\",\"output_type\":\"EventBatch\",\"requested_version\":1,\"requires_document\":false,\"requires_epoch\":false,\"requires_idempotency_key\":false,\"requires_profile_match\":false,\"requires_revision\":false,\"target_context\":\"none\"},{\"available\":true,\"effect\":\"auxiliary_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"analysis_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"}],\"implementation_status\":\"implemented\",\"name\":\"analysis.check\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.analysis.check.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"name\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":true,\"name\":\"load_case_ids\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id_array\"}],\"implementation_status\":\"implemented\",\"name\":\"analysis.create\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":true,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.analysis.create.v1\",\"version\":1},{\"available\":true,\"effect\":\"read_only\",\"fields\":[{\"allow_empty\":false,\"name\":\"check_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"analysis.get_issues\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":false,\"requires_revision\":false,\"schema_id\":\"qcae.operation.analysis.get_issues.v1\",\"version\":1},{\"available\":true,\"effect\":\"read_only\",\"fields\":[{\"allow_empty\":false,\"name\":\"run_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"analysis.get_run\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":false,\"requires_revision\":false,\"schema_id\":\"qcae.operation.analysis.get_run.v1\",\"version\":1},{\"available\":false,\"effect\":\"background_task\",\"fields\":[{\"allow_empty\":false,\"name\":\"analysis_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"artifact_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":false,\"name\":\"run_config_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"unavailable\",\"name\":\"analysis.start\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":true,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.analysis.start.v1\",\"version\":1},{\"available\":true,\"effect\":\"read_only\",\"fields\":[{\"allow_empty\":false,\"name\":\"artifact_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"artifact.get\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":false,\"requires_revision\":false,\"schema_id\":\"qcae.operation.artifact.get.v1\",\"version\":1},{\"available\":true,\"effect\":\"auxiliary_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"artifact_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"artifact.reconcile\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.artifact.reconcile.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"beam_ids\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id_array\"},{\"allow_empty\":false,\"name\":\"section_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"}],\"implementation_status\":\"implemented\",\"name\":\"beam.assign_section\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.beam.assign_section.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"node_ids\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id_array\"},{\"allow_empty\":false,\"name\":\"dofs\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"constraint.create\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.constraint.create.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"node_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"x\",\"required\":true,\"units\":[\"N\",\"kN\"],\"wire_type\":\"quantity\"},{\"allow_empty\":false,\"name\":\"y\",\"required\":true,\"units\":[\"N\",\"kN\"],\"wire_type\":\"quantity\"},{\"allow_empty\":false,\"name\":\"z\",\"required\":true,\"units\":[\"N\",\"kN\"],\"wire_type\":\"quantity\"}],\"implementation_status\":\"implemented\",\"name\":\"force.create\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.force.create.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"start_mm\",\"required\":true,\"units\":[\"mm\"],\"wire_type\":\"vector3_mm\"},{\"allow_empty\":false,\"name\":\"end_mm\",\"required\":true,\"units\":[\"mm\"],\"wire_type\":\"vector3_mm\"}],\"implementation_status\":\"implemented\",\"name\":\"geometry.create_line\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.geometry.create_line.v1\",\"version\":1},{\"available\":true,\"effect\":\"read_only\",\"fields\":[{\"allow_empty\":false,\"name\":\"geometry_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"u\",\"required\":true,\"units\":[\"1\"],\"wire_type\":\"finite_number\"}],\"implementation_status\":\"implemented\",\"name\":\"geometry.evaluate_line\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":false,\"requires_revision\":false,\"schema_id\":\"qcae.operation.geometry.evaluate_line.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"geometry_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"end_mm\",\"required\":true,\"units\":[\"mm\"],\"wire_type\":\"vector3_mm\"}],\"implementation_status\":\"implemented\",\"name\":\"geometry.move_endpoint\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.geometry.move_endpoint.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"name\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":true,\"name\":\"force_ids\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id_array\"},{\"allow_empty\":true,\"name\":\"constraint_ids\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id_array\"}],\"implementation_status\":\"implemented\",\"name\":\"load_case.create\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.load_case.create.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"load_case_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":true,\"name\":\"force_ids\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id_array\"},{\"allow_empty\":true,\"name\":\"constraint_ids\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id_array\"}],\"implementation_status\":\"implemented\",\"name\":\"load_case.set_references\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.load_case.set_references.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"name\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":false,\"name\":\"young_modulus\",\"required\":true,\"units\":[\"Pa\",\"kPa\",\"MPa\",\"GPa\"],\"wire_type\":\"quantity\"},{\"allow_empty\":false,\"name\":\"poisson_ratio\",\"required\":false,\"units\":[\"1\"],\"wire_type\":\"finite_number\"}],\"implementation_status\":\"implemented\",\"name\":\"material.create\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.material.create.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"entity_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"young_modulus\",\"required\":true,\"units\":[\"Pa\",\"kPa\",\"MPa\",\"GPa\"],\"wire_type\":\"quantity\"}],\"implementation_status\":\"implemented\",\"name\":\"material.set_young_modulus\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.material.set_young_modulus.v1\",\"version\":1},{\"available\":true,\"effect\":\"background_task\",\"fields\":[{\"allow_empty\":false,\"name\":\"geometry_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"segments\",\"required\":true,\"units\":[],\"wire_type\":\"positive_uint32\"}],\"implementation_status\":\"implemented\",\"name\":\"mesh.generate_line\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.mesh.generate_line.v1\",\"version\":1},{\"available\":true,\"effect\":\"background_task\",\"fields\":[{\"allow_empty\":false,\"name\":\"mesh_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"segments\",\"required\":true,\"units\":[],\"wire_type\":\"positive_uint32\"},{\"allow_empty\":false,\"name\":\"replacement_policy\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"mesh.regenerate_line\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.mesh.regenerate_line.v1\",\"version\":1},{\"available\":true,\"effect\":\"background_task\",\"fields\":[{\"allow_empty\":false,\"name\":\"analysis_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"output_directory\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"model.export\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":true,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.model.export.v1\",\"version\":1},{\"available\":true,\"effect\":\"read_only\",\"fields\":[],\"implementation_status\":\"implemented\",\"name\":\"nastran.ui\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":false,\"requires_epoch\":false,\"requires_expected_profile\":false,\"requires_idempotency_key\":false,\"requires_revision\":false,\"schema_id\":\"qcae.operation.nastran.ui.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"entity_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"position_mm\",\"required\":true,\"units\":[\"mm\"],\"wire_type\":\"vector3_mm\"}],\"implementation_status\":\"implemented\",\"name\":\"node.move\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.node.move.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"source_path\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":false,\"name\":\"old_profile_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":false,\"name\":\"old_profile_version\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":false,\"name\":\"old_definition_digest\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"project.migrate_profile\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":false,\"requires_epoch\":false,\"requires_expected_profile\":true,\"requires_idempotency_key\":true,\"requires_revision\":false,\"schema_id\":\"qcae.operation.project.migrate_profile.v1\",\"version\":1},{\"available\":true,\"effect\":\"read_only\",\"fields\":[{\"allow_empty\":false,\"name\":\"result_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"results.get\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":false,\"requires_revision\":false,\"schema_id\":\"qcae.operation.results.get.v1\",\"version\":1},{\"available\":true,\"effect\":\"auxiliary_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"artifact_id\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":false,\"name\":\"fixture_json\",\"required\":true,\"units\":[],\"wire_type\":\"string\"}],\"implementation_status\":\"implemented\",\"name\":\"results.read_fixture\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.results.read_fixture.v1\",\"version\":1},{\"available\":true,\"effect\":\"document_write\",\"fields\":[{\"allow_empty\":false,\"name\":\"name\",\"required\":true,\"units\":[],\"wire_type\":\"string\"},{\"allow_empty\":false,\"name\":\"material_id\",\"required\":true,\"units\":[],\"wire_type\":\"entity_id\"},{\"allow_empty\":false,\"name\":\"area_mm2\",\"required\":true,\"units\":[\"mm2\"],\"wire_type\":\"finite_number\"},{\"allow_empty\":false,\"name\":\"i1_mm4\",\"required\":true,\"units\":[\"mm4\"],\"wire_type\":\"finite_number\"},{\"allow_empty\":false,\"name\":\"i2_mm4\",\"required\":true,\"units\":[\"mm4\"],\"wire_type\":\"finite_number\"},{\"allow_empty\":false,\"name\":\"torsion_mm4\",\"required\":true,\"units\":[\"mm4\"],\"wire_type\":\"finite_number\"}],\"implementation_status\":\"implemented\",\"name\":\"section.create\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"requires_idempotency_key\":true,\"requires_revision\":true,\"schema_id\":\"qcae.operation.section.create.v1\",\"version\":1},{\"available\":true,\"effect\":\"read_only\",\"fields\":[],\"implementation_status\":\"implemented\",\"name\":\"solver.configuration\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":false,\"requires_epoch\":false,\"requires_expected_profile\":false,\"requires_idempotency_key\":false,\"requires_revision\":false,\"schema_id\":\"qcae.operation.solver.configuration.v1\",\"version\":1},{\"available\":true,\"implementation_status\":\"implemented\",\"name\":\"task.status\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"version\":1},{\"available\":true,\"implementation_status\":\"implemented\",\"name\":\"task.cancel\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"version\":1},{\"available\":true,\"implementation_status\":\"implemented\",\"name\":\"task.reconcile\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"version\":1},{\"available\":true,\"implementation_status\":\"implemented\",\"name\":\"entity.fields\",\"omitted_version_policy\":\"installed_version\",\"requested_version_field\":\"requested_version\",\"requires_document\":true,\"requires_epoch\":true,\"requires_expected_profile\":false,\"version\":1}],\"recovery_available\":false,\"storage_mode\":\"sqlite\",\"supported_pressure_units\":[\"Pa\",\"kPa\",\"MPa\",\"GPa\"]},\"request_id\":\"mcp-05b5806f-b908-453f-a550-e75dc46cda20\",\"status\":\"success\"}"
+            }
+          ],
+          "structuredContent": {
+            "data": {
+              "configured_solver_profiles": [],
+              "declared_solver_profiles": [
+                {
+                  "analysis_kind": "linear_static",
+                  "cards": [
+                    "GRID",
+                    "CBAR",
+                    "PBAR",
+                    "MAT1",
+                    "FORCE",
+                    "SPC1",
+                    "INCLUDE"
+                  ],
+                  "codec_available": true,
+                  "codec_scope": "strict free-field SOL 101 beam subset; no solver binary validation",
+                  "configured": false,
+                  "implementation_fingerprint": "sha256:5f80cff1ec5e134e4dfa0df73dc7a125f4d7c6a274290d8fb5ad9cd267205ac3",
+                  "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                  },
+                  "solver_family": "Nastran",
+                  "unit_system": "mm-N-MPa",
+                  "validated": false
+                }
+              ],
+              "durable": true,
+              "implementation_scope": "Shared record services, analysis checks, resource deltas; optional Nastran artifact publication and fixture results; no solver execution or AI bridge",
+              "max_name_bytes": 1024,
+              "operations": [
+                {
+                  "available": true,
+                  "description": "Discover supported operations, cards, analyses and optional graphics",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "CapabilityFilter",
+                  "name": "capabilities.list",
+                  "output_type": "CapabilityCatalog",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "supported_scope": "global_catalog_only",
+                  "target_context": "optional_profile"
+                },
+                {
+                  "available": true,
+                  "description": "Create a new recoverable work document",
+                  "effect": "project_write",
+                  "implementation_status": "partial",
+                  "input_type": "CreateProject",
+                  "name": "project.create",
+                  "output_type": "DocumentContext",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Open a saved snapshot or explicitly recover a working document",
+                  "effect": "project_write",
+                  "implementation_status": "partial",
+                  "input_type": "OpenProject",
+                  "name": "project.open",
+                  "output_type": "DocumentContext",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Explicitly close a document with a declared save/recovery/discard policy",
+                  "effect": "project_write",
+                  "implementation_status": "partial",
+                  "input_type": "CloseProject",
+                  "name": "project.close",
+                  "output_type": "CloseReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Read saved state and project metadata",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "ProjectStatusQuery",
+                  "name": "project.status",
+                  "output_type": "ProjectStatus",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Publish a consistent saved snapshot",
+                  "effect": "project_write",
+                  "implementation_status": "partial",
+                  "input_type": "SaveProject",
+                  "name": "project.save",
+                  "output_type": "SaveReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Publish a new project identity without a model edit",
+                  "effect": "project_write",
+                  "implementation_status": "partial",
+                  "input_type": "SaveProjectAs",
+                  "name": "project.save_as",
+                  "output_type": "SaveReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": false,
+                  "description": "Parse supported input into a candidate and atomically submit",
+                  "effect": "job_start",
+                  "implementation_status": "planned",
+                  "input_type": "ImportModel",
+                  "name": "model.import",
+                  "output_type": "JobReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "source_profile"
+                },
+                {
+                  "available": true,
+                  "description": "Read model and analysis completeness summaries",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "SummaryQuery",
+                  "name": "model.summary",
+                  "output_type": "ModelSummary",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Evaluate a typed scoped query",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "EntityQuery",
+                  "name": "entity.query",
+                  "output_type": "SelectionResult",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "conditional"
+                },
+                {
+                  "available": true,
+                  "description": "Read dependencies and all shared-property consumers",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "ReferenceQuery",
+                  "name": "entity.references",
+                  "output_type": "ReferenceResult",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": false,
+                  "description": "Read quantities, facts, assumptions and missing inputs",
+                  "effect": "query",
+                  "implementation_status": "planned",
+                  "input_type": "AnalysisQuery",
+                  "name": "analysis.get_setup",
+                  "output_type": "AnalysisSetup",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "analysis"
+                },
+                {
+                  "available": false,
+                  "description": "Validate and commit supported analysis inputs",
+                  "effect": "model_write",
+                  "implementation_status": "planned",
+                  "input_type": "AnalysisInputUpdate",
+                  "name": "analysis.update_inputs",
+                  "output_type": "ChangeReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": true,
+                  "requires_revision": true,
+                  "target_context": "analysis"
+                },
+                {
+                  "available": true,
+                  "description": "Freeze command targets, impact and base version",
+                  "effect": "preview",
+                  "implementation_status": "partial",
+                  "input_type": "PreviewChange",
+                  "name": "changes.preview",
+                  "output_type": "ChangePreview",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "supported_commands": [
+                    "material.create",
+                    "material.set_young_modulus",
+                    "part.upsert",
+                    "assembly.upsert",
+                    "set.upsert",
+                    "node.move",
+                    "entity.delete",
+                    "model.import"
+                  ],
+                  "target_context": "conditional"
+                },
+                {
+                  "available": true,
+                  "description": "Commit a frozen preview exactly once per logical intent",
+                  "effect": "model_write",
+                  "implementation_status": "partial",
+                  "input_type": "CommitPreview",
+                  "name": "changes.commit",
+                  "output_type": "ChangeReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "from_preview"
+                },
+                {
+                  "available": true,
+                  "description": "Resolve host lifecycle or document operation outcomes in an authorized stable actor scope",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "OperationLookup",
+                  "name": "operations.get",
+                  "output_type": "OperationOutcome",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "supported_scope": "host_lifecycle_and_document_change_outcomes",
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Read bounded undo history and saved content state",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "HistoryQuery",
+                  "name": "history.list",
+                  "output_type": "HistorySummary",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Undo through the same atomic commit path",
+                  "effect": "model_write",
+                  "implementation_status": "partial",
+                  "input_type": "HistoryMove",
+                  "name": "history.undo",
+                  "output_type": "ChangeReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "from_history"
+                },
+                {
+                  "available": true,
+                  "description": "Redo through the same atomic commit path",
+                  "effect": "model_write",
+                  "implementation_status": "partial",
+                  "input_type": "HistoryMove",
+                  "name": "history.redo",
+                  "output_type": "ChangeReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "from_history"
+                },
+                {
+                  "available": false,
+                  "description": "Run checks on a frozen model or analysis",
+                  "effect": "job_start",
+                  "implementation_status": "planned",
+                  "input_type": "ValidationRequest",
+                  "name": "validation.run",
+                  "output_type": "JobReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "conditional"
+                },
+                {
+                  "available": false,
+                  "description": "Read versioned diagnostics with evidence",
+                  "effect": "query",
+                  "implementation_status": "planned",
+                  "input_type": "IssueQuery",
+                  "name": "validation.get_issues",
+                  "output_type": "IssuePage",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": false,
+                  "description": "Read result provenance, availability and input match",
+                  "effect": "query",
+                  "implementation_status": "planned",
+                  "input_type": "ResultQuery",
+                  "name": "analysis.results",
+                  "output_type": "AnalysisResults",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "from_run"
+                },
+                {
+                  "available": false,
+                  "description": "Read a permitted job and its original input context",
+                  "effect": "query",
+                  "implementation_status": "planned",
+                  "input_type": "JobQuery",
+                  "name": "jobs.get",
+                  "output_type": "JobStatus",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": false,
+                  "description": "Request cancellation without claiming it is complete",
+                  "effect": "job_control",
+                  "implementation_status": "planned",
+                  "input_type": "CancelJob",
+                  "name": "jobs.cancel",
+                  "output_type": "JobStatus",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": false,
+                  "description": "Render explicitly described view if graphics capability is available",
+                  "effect": "job_start",
+                  "implementation_status": "planned",
+                  "input_type": "SnapshotRequest",
+                  "name": "view.render_snapshot",
+                  "output_type": "JobReceipt",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": true,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Encode a frozen supported model into an in-memory artifact plan and loss report; does not publish files",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "ExportPreview",
+                  "name": "model.export_preview",
+                  "output_type": "ArtifactPlanPreview",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": true,
+                  "requires_revision": true,
+                  "target_context": "analysis"
+                },
+                {
+                  "available": true,
+                  "description": "Read the active document identity, revision, persistence mode and saved metadata",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "CurrentProject",
+                  "name": "project.current",
+                  "output_type": "DocumentContext",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Create a caller-owned view for an explicit model version and hidden-entity set",
+                  "effect": "session_write",
+                  "implementation_status": "partial",
+                  "input_type": "CreateView",
+                  "name": "view.create",
+                  "output_type": "ViewSession",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Update hidden entities and camera fingerprint, invalidating older view selections",
+                  "effect": "session_write",
+                  "implementation_status": "partial",
+                  "input_type": "UpdateView",
+                  "name": "view.update",
+                  "output_type": "ViewSession",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Read a versioned display packet with true entity identity mappings",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "RenderDataQuery",
+                  "name": "view.render_data",
+                  "output_type": "RenderPacket",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Evaluate typed predicates within an explicit visibility and candidate scope",
+                  "effect": "session_write",
+                  "implementation_status": "partial",
+                  "input_type": "SelectionQuery",
+                  "name": "selection.evaluate",
+                  "output_type": "SelectionHandle",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Combine compatible versioned selections by union, intersection or difference",
+                  "effect": "session_write",
+                  "implementation_status": "partial",
+                  "input_type": "SelectionCombination",
+                  "name": "selection.combine",
+                  "output_type": "SelectionHandle",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Read a bounded page from a caller-owned selection, rejecting stale model or view versions",
+                  "effect": "query",
+                  "implementation_status": "partial",
+                  "input_type": "SelectionPageQuery",
+                  "name": "selection.get",
+                  "output_type": "SelectionPage",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Versioned local display resource",
+                  "effect": "query",
+                  "implementation_status": "implemented",
+                  "input_type": "RenderResourceQuery",
+                  "name": "view.render_resource",
+                  "output_type": "ResourceManifest",
+                  "requested_version": 1,
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Versioned local display resource",
+                  "effect": "query",
+                  "implementation_status": "implemented",
+                  "input_type": "ResourceReference",
+                  "name": "resources.describe",
+                  "output_type": "ResourceManifest",
+                  "requested_version": 1,
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Versioned local display resource",
+                  "effect": "query",
+                  "implementation_status": "implemented",
+                  "input_type": "ResourceChunkQuery",
+                  "name": "resources.read",
+                  "output_type": "ResourceChunk",
+                  "requested_version": 1,
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": true,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Versioned local display resource",
+                  "effect": "query",
+                  "implementation_status": "implemented",
+                  "input_type": "ResourceReference",
+                  "name": "resources.release",
+                  "output_type": "ResourceRelease",
+                  "requested_version": 1,
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Bounded disposable event feed with explicit resynchronization",
+                  "effect": "query",
+                  "implementation_status": "implemented",
+                  "input_type": "EventCursor",
+                  "name": "events.subscribe",
+                  "output_type": "EventSubscription",
+                  "requested_version": 1,
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "description": "Bounded disposable event feed with explicit resynchronization",
+                  "effect": "query",
+                  "implementation_status": "implemented",
+                  "input_type": "EventCursor",
+                  "name": "events.read",
+                  "output_type": "EventBatch",
+                  "requested_version": 1,
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_idempotency_key": false,
+                  "requires_profile_match": false,
+                  "requires_revision": false,
+                  "target_context": "none"
+                },
+                {
+                  "available": true,
+                  "effect": "auxiliary_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "analysis_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "analysis.check",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.analysis.check.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "name",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": true,
+                      "name": "load_case_ids",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id_array"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "analysis.create",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": true,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.analysis.create.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "read_only",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "check_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "analysis.get_issues",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": false,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.analysis.get_issues.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "read_only",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "run_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "analysis.get_run",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": false,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.analysis.get_run.v1",
+                  "version": 1
+                },
+                {
+                  "available": false,
+                  "effect": "background_task",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "analysis_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "artifact_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "run_config_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "unavailable",
+                  "name": "analysis.start",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": true,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.analysis.start.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "read_only",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "artifact_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "artifact.get",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": false,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.artifact.get.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "auxiliary_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "artifact_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "artifact.reconcile",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.artifact.reconcile.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "beam_ids",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id_array"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "section_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "beam.assign_section",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.beam.assign_section.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "node_ids",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id_array"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "dofs",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "constraint.create",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.constraint.create.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "node_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "x",
+                      "required": true,
+                      "units": [
+                        "N",
+                        "kN"
+                      ],
+                      "wire_type": "quantity"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "y",
+                      "required": true,
+                      "units": [
+                        "N",
+                        "kN"
+                      ],
+                      "wire_type": "quantity"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "z",
+                      "required": true,
+                      "units": [
+                        "N",
+                        "kN"
+                      ],
+                      "wire_type": "quantity"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "force.create",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.force.create.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "start_mm",
+                      "required": true,
+                      "units": [
+                        "mm"
+                      ],
+                      "wire_type": "vector3_mm"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "end_mm",
+                      "required": true,
+                      "units": [
+                        "mm"
+                      ],
+                      "wire_type": "vector3_mm"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "geometry.create_line",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.geometry.create_line.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "read_only",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "geometry_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "u",
+                      "required": true,
+                      "units": [
+                        "1"
+                      ],
+                      "wire_type": "finite_number"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "geometry.evaluate_line",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": false,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.geometry.evaluate_line.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "geometry_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "end_mm",
+                      "required": true,
+                      "units": [
+                        "mm"
+                      ],
+                      "wire_type": "vector3_mm"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "geometry.move_endpoint",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.geometry.move_endpoint.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "name",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": true,
+                      "name": "force_ids",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id_array"
+                    },
+                    {
+                      "allow_empty": true,
+                      "name": "constraint_ids",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id_array"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "load_case.create",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.load_case.create.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "load_case_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": true,
+                      "name": "force_ids",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id_array"
+                    },
+                    {
+                      "allow_empty": true,
+                      "name": "constraint_ids",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id_array"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "load_case.set_references",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.load_case.set_references.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "name",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "young_modulus",
+                      "required": true,
+                      "units": [
+                        "Pa",
+                        "kPa",
+                        "MPa",
+                        "GPa"
+                      ],
+                      "wire_type": "quantity"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "poisson_ratio",
+                      "required": false,
+                      "units": [
+                        "1"
+                      ],
+                      "wire_type": "finite_number"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "material.create",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.material.create.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "entity_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "young_modulus",
+                      "required": true,
+                      "units": [
+                        "Pa",
+                        "kPa",
+                        "MPa",
+                        "GPa"
+                      ],
+                      "wire_type": "quantity"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "material.set_young_modulus",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.material.set_young_modulus.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "background_task",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "geometry_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "segments",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "positive_uint32"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "mesh.generate_line",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.mesh.generate_line.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "background_task",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "mesh_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "segments",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "positive_uint32"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "replacement_policy",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "mesh.regenerate_line",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.mesh.regenerate_line.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "background_task",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "analysis_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "output_directory",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "model.export",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": true,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.model.export.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "read_only",
+                  "fields": [],
+                  "implementation_status": "implemented",
+                  "name": "nastran.ui",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": false,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.nastran.ui.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "entity_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "position_mm",
+                      "required": true,
+                      "units": [
+                        "mm"
+                      ],
+                      "wire_type": "vector3_mm"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "node.move",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.node.move.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "source_path",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "old_profile_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "old_profile_version",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "old_definition_digest",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "project.migrate_profile",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_expected_profile": true,
+                  "requires_idempotency_key": true,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.project.migrate_profile.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "read_only",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "result_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "results.get",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": false,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.results.get.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "auxiliary_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "artifact_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "fixture_json",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "results.read_fixture",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.results.read_fixture.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "document_write",
+                  "fields": [
+                    {
+                      "allow_empty": false,
+                      "name": "name",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "string"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "material_id",
+                      "required": true,
+                      "units": [],
+                      "wire_type": "entity_id"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "area_mm2",
+                      "required": true,
+                      "units": [
+                        "mm2"
+                      ],
+                      "wire_type": "finite_number"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "i1_mm4",
+                      "required": true,
+                      "units": [
+                        "mm4"
+                      ],
+                      "wire_type": "finite_number"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "i2_mm4",
+                      "required": true,
+                      "units": [
+                        "mm4"
+                      ],
+                      "wire_type": "finite_number"
+                    },
+                    {
+                      "allow_empty": false,
+                      "name": "torsion_mm4",
+                      "required": true,
+                      "units": [
+                        "mm4"
+                      ],
+                      "wire_type": "finite_number"
+                    }
+                  ],
+                  "implementation_status": "implemented",
+                  "name": "section.create",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": true,
+                  "requires_revision": true,
+                  "schema_id": "qcae.operation.section.create.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "effect": "read_only",
+                  "fields": [],
+                  "implementation_status": "implemented",
+                  "name": "solver.configuration",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": false,
+                  "requires_epoch": false,
+                  "requires_expected_profile": false,
+                  "requires_idempotency_key": false,
+                  "requires_revision": false,
+                  "schema_id": "qcae.operation.solver.configuration.v1",
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "implementation_status": "implemented",
+                  "name": "task.status",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "implementation_status": "implemented",
+                  "name": "task.cancel",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "implementation_status": "implemented",
+                  "name": "task.reconcile",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "version": 1
+                },
+                {
+                  "available": true,
+                  "implementation_status": "implemented",
+                  "name": "entity.fields",
+                  "omitted_version_policy": "installed_version",
+                  "requested_version_field": "requested_version",
+                  "requires_document": true,
+                  "requires_epoch": true,
+                  "requires_expected_profile": false,
+                  "version": 1
+                }
+              ],
+              "recovery_available": false,
+              "storage_mode": "sqlite",
+              "supported_pressure_units": [
+                "Pa",
+                "kPa",
+                "MPa",
+                "GPa"
+              ]
+            },
+            "request_id": "mcp-05b5806f-b908-453f-a550-e75dc46cda20",
+            "status": "success"
+          },
+          "_meta": null
+        },
+        "error": null,
+        "durationMs": 8
+      },
+      {
+        "type": "mcpToolCall",
+        "id": "exec-7af33795-77cb-4898-addc-8b0981ccd080",
+        "server": "qcae",
+        "tool": "project.current",
+        "status": "completed",
+        "arguments": {},
+        "appContext": null,
+        "mcpAppUi": null,
+        "pluginId": null,
+        "readOnlyHint": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"data\":{\"content_state\":\"state-07c1bceaf4c2865e2088b39d44b11085-3\",\"dirty\":false,\"document_epoch\":\"epoch-07c1bceaf4c2865e2088b39d44b11085-2\",\"document_id\":\"doc-07c1bceaf4c2865e2088b39d44b11085-1\",\"durable\":true,\"material_count\":0,\"name\":\"Synthetic unit clarification\",\"project_id\":\"\",\"revision\":\"0\",\"saved_content_state\":\"\",\"saved_path\":\"\"},\"request_id\":\"mcp-fd597ba0-580c-4c3a-88bd-357b10e8e239\",\"revision\":\"0\",\"status\":\"success\"}"
+            }
+          ],
+          "structuredContent": {
+            "data": {
+              "content_state": "state-07c1bceaf4c2865e2088b39d44b11085-3",
+              "dirty": false,
+              "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+              "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+              "durable": true,
+              "material_count": 0,
+              "name": "Synthetic unit clarification",
+              "project_id": "",
+              "revision": "0",
+              "saved_content_state": "",
+              "saved_path": ""
+            },
+            "request_id": "mcp-fd597ba0-580c-4c3a-88bd-357b10e8e239",
+            "revision": "0",
+            "status": "success"
+          },
+          "_meta": null
+        },
+        "error": null,
+        "durationMs": 0
+      }
+    ],
+    "final": {
+      "status": "needs_input",
+      "missing": [
+        "请明确弹性模量210的单位：Pa、kPa、MPa或GPa。"
+      ]
+    }
+  },
+  "verified_before_units": {
+    "context": {
+      "content_state": "state-07c1bceaf4c2865e2088b39d44b11085-3",
+      "dirty": false,
+      "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+      "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+      "durable": true,
+      "material_count": 0,
+      "name": "Synthetic unit clarification",
+      "project_id": "",
+      "revision": "0",
+      "saved_content_state": "",
+      "saved_path": ""
+    },
+    "summary": {
+      "data": {
+        "analysis_count": 0,
+        "assembly_count": 0,
+        "beam_count": 0,
+        "content_state": "state-07c1bceaf4c2865e2088b39d44b11085-3",
+        "dirty": false,
+        "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+        "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+        "durable": true,
+        "geometry_count": 0,
+        "include_count": 0,
+        "material_count": 0,
+        "materials": [],
+        "mesh_count": 0,
+        "name": "Synthetic unit clarification",
+        "node_count": 0,
+        "part_count": 0,
+        "project_id": "",
+        "revision": "0",
+        "saved_content_state": "",
+        "saved_path": "",
+        "section_count": 0,
+        "set_count": 0
+      },
+      "request_id": "diagnostic-1790805115446697000",
+      "revision": "0",
+      "status": "success"
+    }
+  },
+  "units_supplied_output_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "needs_input",
+          "success"
+        ]
+      },
+      "normalized_modulus_mpa": {
+        "type": "number"
+      },
+      "material_count": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "status",
+      "normalized_modulus_mpa",
+      "material_count"
+    ]
+  },
+  "units_supplied_turn": {
+    "turn_id": "01a0f44d-8243-7422-a55a-0ef45d932f3c",
+    "calls": [
+      {
+        "type": "mcpToolCall",
+        "id": "exec-495f4340-0ad4-41fa-a628-33171d1c49df",
+        "server": "qcae",
+        "tool": "project.current",
+        "status": "completed",
+        "arguments": {},
+        "appContext": null,
+        "mcpAppUi": null,
+        "pluginId": null,
+        "readOnlyHint": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"data\":{\"content_state\":\"state-07c1bceaf4c2865e2088b39d44b11085-3\",\"dirty\":false,\"document_epoch\":\"epoch-07c1bceaf4c2865e2088b39d44b11085-2\",\"document_id\":\"doc-07c1bceaf4c2865e2088b39d44b11085-1\",\"durable\":true,\"material_count\":0,\"name\":\"Synthetic unit clarification\",\"project_id\":\"\",\"revision\":\"0\",\"saved_content_state\":\"\",\"saved_path\":\"\"},\"request_id\":\"mcp-803a003e-c758-44bb-af02-8fe153c00d31\",\"revision\":\"0\",\"status\":\"success\"}"
+            }
+          ],
+          "structuredContent": {
+            "data": {
+              "content_state": "state-07c1bceaf4c2865e2088b39d44b11085-3",
+              "dirty": false,
+              "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+              "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+              "durable": true,
+              "material_count": 0,
+              "name": "Synthetic unit clarification",
+              "project_id": "",
+              "revision": "0",
+              "saved_content_state": "",
+              "saved_path": ""
+            },
+            "request_id": "mcp-803a003e-c758-44bb-af02-8fe153c00d31",
+            "revision": "0",
+            "status": "success"
+          },
+          "_meta": null
+        },
+        "error": null,
+        "durationMs": 0
+      },
+      {
+        "type": "mcpToolCall",
+        "id": "exec-798688a4-dab1-4b42-976d-5ca42bc0e42d",
+        "server": "qcae",
+        "tool": "material.create",
+        "status": "completed",
+        "arguments": {
+          "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+          "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+          "expected_revision": "0",
+          "idempotency_key": "human-unit-material",
+          "parameters": {
+            "name": "Steel",
+            "young_modulus": {
+              "value": 210,
+              "unit": "GPa"
+            },
+            "poisson_ratio": 0.3
+          }
+        },
+        "appContext": null,
+        "mcpAppUi": null,
+        "pluginId": null,
+        "readOnlyHint": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"data\":{\"committed_revision\":\"1\",\"current_revision\":\"1\",\"entity_id\":\"entity-07c1bceaf4c2865e2088b39d44b11085-4\",\"replayed\":false,\"transaction_id\":\"transaction-07c1bceaf4c2865e2088b39d44b11085-6\"},\"request_id\":\"mcp-338b4308-34c6-4b93-ac49-fd5258061393\",\"revision\":\"1\",\"status\":\"success\"}"
+            }
+          ],
+          "structuredContent": {
+            "data": {
+              "committed_revision": "1",
+              "current_revision": "1",
+              "entity_id": "entity-07c1bceaf4c2865e2088b39d44b11085-4",
+              "replayed": false,
+              "transaction_id": "transaction-07c1bceaf4c2865e2088b39d44b11085-6"
+            },
+            "request_id": "mcp-338b4308-34c6-4b93-ac49-fd5258061393",
+            "revision": "1",
+            "status": "success"
+          },
+          "_meta": null
+        },
+        "error": null,
+        "durationMs": 4
+      },
+      {
+        "type": "mcpToolCall",
+        "id": "exec-f464bc66-7005-4d81-88cf-870c63251e6e",
+        "server": "qcae",
+        "tool": "entity.fields",
+        "status": "completed",
+        "arguments": {
+          "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+          "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+          "expected_revision": "1",
+          "parameters": {
+            "entity_id": "entity-07c1bceaf4c2865e2088b39d44b11085-4"
+          }
+        },
+        "appContext": null,
+        "mcpAppUi": null,
+        "pluginId": null,
+        "readOnlyHint": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"data\":{\"entity_id\":\"entity-07c1bceaf4c2865e2088b39d44b11085-4\",\"fields\":{\"name\":\"Steel\",\"poisson_ratio\":0.3,\"young_modulus_mpa\":210000},\"kind\":\"material\",\"revision\":\"1\"},\"request_id\":\"mcp-aa37e8da-6c39-48e7-83bc-4524d7aad0f0\",\"revision\":\"1\",\"status\":\"success\"}"
+            }
+          ],
+          "structuredContent": {
+            "data": {
+              "entity_id": "entity-07c1bceaf4c2865e2088b39d44b11085-4",
+              "fields": {
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "young_modulus_mpa": 210000
+              },
+              "kind": "material",
+              "revision": "1"
+            },
+            "request_id": "mcp-aa37e8da-6c39-48e7-83bc-4524d7aad0f0",
+            "revision": "1",
+            "status": "success"
+          },
+          "_meta": null
+        },
+        "error": null,
+        "durationMs": 1
+      },
+      {
+        "type": "mcpToolCall",
+        "id": "exec-a90e6892-77f2-43e9-acf6-3a6de0e2c221",
+        "server": "qcae",
+        "tool": "project.current",
+        "status": "completed",
+        "arguments": {},
+        "appContext": null,
+        "mcpAppUi": null,
+        "pluginId": null,
+        "readOnlyHint": null,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"data\":{\"content_state\":\"state-07c1bceaf4c2865e2088b39d44b11085-7\",\"dirty\":true,\"document_epoch\":\"epoch-07c1bceaf4c2865e2088b39d44b11085-2\",\"document_id\":\"doc-07c1bceaf4c2865e2088b39d44b11085-1\",\"durable\":true,\"material_count\":1,\"name\":\"Synthetic unit clarification\",\"project_id\":\"\",\"revision\":\"1\",\"saved_content_state\":\"\",\"saved_path\":\"\"},\"request_id\":\"mcp-50d48304-0129-4b7e-8072-20e92059b28e\",\"revision\":\"1\",\"status\":\"success\"}"
+            }
+          ],
+          "structuredContent": {
+            "data": {
+              "content_state": "state-07c1bceaf4c2865e2088b39d44b11085-7",
+              "dirty": true,
+              "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+              "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+              "durable": true,
+              "material_count": 1,
+              "name": "Synthetic unit clarification",
+              "project_id": "",
+              "revision": "1",
+              "saved_content_state": "",
+              "saved_path": ""
+            },
+            "request_id": "mcp-50d48304-0129-4b7e-8072-20e92059b28e",
+            "revision": "1",
+            "status": "success"
+          },
+          "_meta": null
+        },
+        "error": null,
+        "durationMs": 0
+      }
+    ],
+    "final": {
+      "status": "success",
+      "normalized_modulus_mpa": 210000,
+      "material_count": 1
+    }
+  },
+  "verified_after_units": {
+    "context": {
+      "content_state": "state-07c1bceaf4c2865e2088b39d44b11085-7",
+      "dirty": true,
+      "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+      "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+      "durable": true,
+      "material_count": 1,
+      "name": "Synthetic unit clarification",
+      "project_id": "",
+      "revision": "1",
+      "saved_content_state": "",
+      "saved_path": ""
+    },
+    "summary": {
+      "data": {
+        "analysis_count": 0,
+        "assembly_count": 0,
+        "beam_count": 0,
+        "content_state": "state-07c1bceaf4c2865e2088b39d44b11085-7",
+        "dirty": true,
+        "document_epoch": "epoch-07c1bceaf4c2865e2088b39d44b11085-2",
+        "document_id": "doc-07c1bceaf4c2865e2088b39d44b11085-1",
+        "durable": true,
+        "geometry_count": 0,
+        "include_count": 0,
+        "material_count": 1,
+        "materials": [
+          {
+            "entity_id": "entity-07c1bceaf4c2865e2088b39d44b11085-4",
+            "name": "Steel",
+            "young_modulus_mpa": 210000
+          }
+        ],
+        "mesh_count": 0,
+        "name": "Synthetic unit clarification",
+        "node_count": 0,
+        "part_count": 0,
+        "project_id": "",
+        "revision": "1",
+        "saved_content_state": "",
+        "saved_path": "",
+        "section_count": 0,
+        "set_count": 0
+      },
+      "request_id": "diagnostic-1790805155696428000",
+      "revision": "1",
+      "status": "success"
+    }
+  },
+  "actual_completed_mcp_calls": 6,
+  "passed": true,
+  "elapsed_seconds": 61.913863042136654
+}

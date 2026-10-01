@@ -1,6 +1,7 @@
 #include "qcae/edit_session.hpp"
 #include "qcae/records.hpp"
 #include "qcae/records_model_bridge.hpp"
+#include "qcae/operation_ledger.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -58,6 +59,102 @@ Model legacy_model() {
                              "GRID",
                              27});
     return model;
+}
+
+void version_copy_ledger() {
+    const RecordVersion expected{
+        {DocumentId(std::string(80, 'd')), DocumentEpoch(std::string(90, 'e'))}, 17};
+    const DocumentView view(make_record_registry(), expected);
+    const auto operation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"record-version-copies", {}, {}, 0});
+    {
+        ledger::Scope scope(operation);
+        auto first = view.version();
+        const auto second = view.version();
+        first.document.id.value.front() = 'x';
+        check(second.document.id == expected.document.id &&
+                  second.document.epoch == expected.document.epoch &&
+                  second.revision == expected.revision,
+              "version() must still return independent owned fields with the same values");
+    }
+    const auto counted =
+        operation->snapshot().values[static_cast<std::size_t>(ledger::Stage::records)]
+                                    [static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)];
+    check(counted == 2 * (sizeof(RecordVersion) + 80 + 90),
+          "Each actual owned RecordVersion return must be counted exactly once at source");
+    check(view.version().document.id == expected.document.id,
+          "Modifying a returned version must leave its immutable document unchanged");
+}
+
+void implicit_view_copy_ledger() {
+    const RecordVersion expected{
+        {DocumentId(std::string(80, 'd')), DocumentEpoch(std::string(90, 'e'))}, 17};
+    const DocumentView view(make_record_registry(), expected);
+    DocumentView assigned(make_record_registry());
+    const auto operation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"implicit-view-copies", {}, {}, 0});
+    {
+        ledger::Scope scope(operation);
+        auto copied = view;
+        assigned = view;
+        const auto& same = assigned;
+        assigned = same;
+        auto moved = std::move(copied);
+        check(moved.registry() == view.registry() && assigned.registry() == view.registry(),
+              "Copies and moves must retain the same immutable record registry");
+    }
+    const auto counted =
+        operation->snapshot().values[static_cast<std::size_t>(ledger::Stage::records)]
+                                    [static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)];
+    check(counted == 2 * (sizeof(RecordVersion) + 80 + 90),
+          "Copy construction/assignment each clone version fields; self copy/move do not");
+    check(same_record_version(assigned.version(), expected),
+          "Copy assignment must preserve complete document identity, epoch and revision");
+}
+
+void borrowed_version_guard_and_replacement() {
+    const RecordVersion expected{
+        {DocumentId(std::string(80, 'd')), DocumentEpoch(std::string(90, 'e'))}, 17};
+    const DocumentView view(make_record_registry(), expected);
+    RecordVersion replacement{expected.document, 18};
+    const auto operation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"borrowed-version-guards", {}, {}, 0});
+    {
+        ledger::Scope scope(operation);
+        check(view.matches_version(expected) && !view.matches_version(replacement),
+              "Borrowed guards must still compare document, epoch and revision");
+        const auto newer = view.with_version(std::move(replacement));
+        check(newer.registry() == view.registry() && !newer.matches_version(expected) &&
+                  view.matches_version(expected),
+              "Version replacement must share records without modifying the original version");
+        validate_record_candidate(view, view, {});
+    }
+    const auto snapshot = operation->snapshot();
+    check(snapshot.values[static_cast<std::size_t>(ledger::Stage::records)]
+                         [static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)] == 0,
+          "Borrowed guards and moved replacement must not create an unused old version clone");
+}
+
+void edit_key_copy_ledger() {
+    const auto registry = make_record_registry();
+    const DocumentView base(registry, version());
+    const std::string identity(80, 'n');
+    const auto node = registry->make(r::Node{id(identity), {0, 0, 0}, std::nullopt});
+    const auto operation =
+        std::make_shared<ledger::OperationLedger>(ledger::Identity{"edit-key-copies", {}, {}, 0});
+    {
+        ledger::Scope scope(operation);
+        EditSession edit(base);
+        edit.put(node);
+        edit.put(node);
+        check(edit.find(RecordTraits<r::Node>::type_id, identity) == node,
+              "Observed keys must preserve replacement and lookup semantics");
+    }
+    const auto counted =
+        operation->snapshot().values[static_cast<std::size_t>(ledger::Stage::records)]
+                                    [static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)];
+    check(counted == sizeof(RecordVersion) + 3 + 5 + 5 * (sizeof(RecordKey) + identity.size()),
+          "First put copies three keys, repeat put one key, and find one temporary key");
 }
 
 void schemas_and_registration() {
@@ -306,6 +403,10 @@ int main() {
         schemas_and_registration();
         stable_changes_and_bridges();
         geometry_and_ownership();
+        version_copy_ledger();
+        implicit_view_copy_ledger();
+        borrowed_version_guard_and_replacement();
+        edit_key_copy_ledger();
         locality();
         std::cout << "PASS: typed records, schema negatives, stable-key history, legacy bridge, "
                      "geometry ownership\n";

@@ -22,13 +22,19 @@ void run() {
     seed.put(records::Node{EntityId("a"), {0, 0, 0}, {}});
     seed.put(records::Node{EntityId("b"), {10, 0, 0}, {}});
     seed.put(records::GeometryLine{records::GeometryId("g"), {0, 1, 0}, {10, 1, 0}, 1});
+    seed.put(records::Beam{EntityId("e"), {}, {EntityId("a"), EntityId("b")}, {0, 1, 0}, {}});
     seed.put(records::Material{EntityId("m"), "Steel", 210000, .3});
     const auto initial = seed.prepare().candidate;
     ViewSession view{"view", doc, initial.version().revision, 1, {EntityId("b")}, {}};
     RenderProjector projector;
     auto full = good(projector.update(initial, view));
-    check(full.full && full.full->points.size() == 1 && full.full->geometry_lines.size() == 1,
-          "initial full with hidden point and geometry");
+    check(full.full && full.full->points.size() == 2 && full.full->geometry_lines.size() == 1,
+          "initial full retains hidden point coordinates and geometry");
+    check(!full.full->points[1].visible && full.full->beams.empty() &&
+              full.full->cells.size() == 1 &&
+              full.full->cells[0].kind == RenderCellKind::polyline &&
+              full.full->cells[0].points == std::vector<std::size_t>({0, 1}),
+          "hidden beam endpoint is retained independently of node visibility");
     EditSession edit(initial);
     edit.update<records::Node>(EntityId("a"), [](auto& node) { node.position[1] = 2; });
     auto prepared = edit.prepare();
@@ -63,8 +69,33 @@ void run() {
           "nonvisual change advances versions without model projection");
     view.hidden_ids.clear();
     ++view.view_revision;
-    check(good(projector.update(material_change.candidate, view)).full.has_value(),
-          "visibility change rebuilds");
+    auto shown = good(projector.update(material_change.candidate, view));
+    check(!shown.full && shown.delta.visibility.size() == 1 &&
+              shown.delta.visibility[0].entity == EntityId("b") &&
+              shown.delta.visibility[0].visible && shown.work.full_rebuilds == 0,
+          "hidden isolated points are shown by local visibility delta");
+    view.hidden_ids = {EntityId("a"), EntityId("e"), EntityId("g")};
+    ++view.view_revision;
+    auto hidden = good(projector.update(material_change.candidate, view));
+    check(!hidden.full && hidden.delta.visibility.size() == 3 && hidden.delta.points.empty() &&
+              hidden.delta.geometry_lines.empty() && hidden.work.projected_records == 0 &&
+              hidden.work.full_rebuilds == 0,
+          "point/beam/geometry hiding changes no coordinate or scene topology");
+    check(hidden.delta.visibility[1].primitive == RenderPrimitive::cell ||
+              hidden.delta.visibility[2].primitive == RenderPrimitive::cell,
+          "Line2 visibility uses the generic cell carrier");
+    auto invalid_visibility = view;
+    invalid_visibility.hidden_ids.push_back(EntityId("missing"));
+    ++invalid_visibility.view_revision;
+    check(!projector.update(material_change.candidate, invalid_visibility).ok(),
+          "unknown hidden identity rejected atomically");
+    auto unchanged_visibility = good(projector.update(material_change.candidate, view));
+    check(unchanged_visibility.delta.visibility.empty(),
+          "rejected visibility left baseline intact");
+    view.hidden_ids.clear();
+    ++view.view_revision;
+    check(good(projector.update(material_change.candidate, view)).delta.visibility.size() == 3,
+          "all retained primitives can be shown without rebuilding");
     auto old = initial;
     auto wrong_view = view;
     wrong_view.model_revision = initial.version().revision;
@@ -79,6 +110,31 @@ void run() {
     RenderProjector extension(std::move(custom));
     check(good(extension.update(material_change.candidate, view)).full->points.size() == 1,
           "independent registered render contribution works");
+    EditSession area_seed(material_change.candidate);
+    area_seed.put(records::Node{EntityId("c"), {10, 10, 0}, {}});
+    area_seed.put(records::Node{EntityId("d"), {0, 10, 0}, {}});
+    const auto area = area_seed.prepare().candidate;
+    auto area_view = view;
+    area_view.model_revision = area.version().revision;
+    RenderContributions variable;
+    variable.add(
+        {RecordTraits<records::Node>::type_id, "point", [](const Record& record) -> RenderItem {
+             const auto& point = record->get<records::Node>();
+             return RenderPoint{point.id, point.position, true};
+         }});
+    variable.add(
+        {RecordTraits<records::Material>::type_id, "area", [](const Record& record) -> RenderItem {
+             return RenderCellSource{record->get<records::Material>().id,
+                                     RenderCellKind::polygon,
+                                     {EntityId("a"), EntityId("b"), EntityId("c"), EntityId("d")}};
+         }});
+    variable.freeze();
+    RenderProjector area_projector(std::move(variable));
+    const auto area_packet = good(area_projector.update(area, area_view)).full;
+    check(area_packet && area_packet->cells.size() == 1 &&
+              area_packet->cells[0].kind == RenderCellKind::polygon &&
+              area_packet->cells[0].points.size() == 4,
+          "independent variable-arity contribution reaches a generic area cell");
     check(record_activity_counters().whole_model_materializations == 0 &&
               record_activity_counters().whole_model_serializations == 0,
           "no legacy model bridge");

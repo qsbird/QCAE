@@ -1,0 +1,3401 @@
+{
+  "schema": "qcae.qt-ft-hash-bounded-diagnostic/1",
+  "status": "actual native64 and independent headless insertion/growth/detach/negative diagnostics completed",
+  "target_acceptance": "SK-12 copy-coverage diagnostic only; no formal SK-12/P0 completion",
+  "evidence": [
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-runtime.json",
+      "sha256": "9a9a5fe7ec52997418c0eb8082adf501b4083f2fcd86890a9bc81e8eb154d86d"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-source-inventory.json",
+      "sha256": "e386c263d4b8eceb6144eb687fe79d5bdd7f4528ced65410b11fbf1249858de3"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-headless.json",
+      "sha256": "8ed1c4c929ca1d17b11ffc642c1ed10fd1eba7d5f23c6275c915ec4d907dd33f"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-headless.log",
+      "sha256": "5f8d08189965bbcb12d5e1126c82c4d07c21d6addbd17b36eca071a173313d45"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-causal-64.json",
+      "sha256": "488822b5fd4e08522a3cb151a09a7564679128c28fbe93b5b674ec9b0814a5cc"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-causal-64.log",
+      "sha256": "17120cd6f42f733dd6c293536322aca00f80229121e30b6e66e444be578c0d3e"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-actual-source-facts.json",
+      "sha256": "76f462908761e8b8be4df4f2449680f267e49e31afa553bdbe0aa57be344bfee"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-preparation-red.json",
+      "sha256": "04e9a16f1f7b5c640b8aab068129ae999644ea8186a298810c609c589acf0bef"
+    },
+    {
+      "path": "build-c3-qt-observed/tranche7/qt-observer-manifest.json",
+      "sha256": "b8d8d635385fca442745b6ecadd5d96bbadd9754eb5bfeeb11153965feb0168c"
+    },
+    {
+      "path": "build-c3-qt-observed/tranche7/object-reuse.json",
+      "sha256": "7762537569ce1aa3300fde4a0041e3bb7d6e7dc54296308a26f3fff1e538fc9f"
+    },
+    {
+      "path": "build-c3-qt-observed/tranche7/loader.json",
+      "sha256": "81cc56c333539c711fe27287888b6f06e4d7caf7294c389911f6dab8d4295444"
+    },
+    {
+      "path": "build-c3-qt-observed/tranche7/headless-compile.json",
+      "sha256": "6f46cd901cb73d0d1672974a9d86fbb16f81a3bb62cef0739d085389211cbb5e"
+    },
+    {
+      "path": "build-c3-qt-observed/tranche7/native-probe-compile.json",
+      "sha256": "480d7b177ed742a88937aba8c4ea14181a019955d57df4d7c9a13d2dfae0a37a"
+    },
+    {
+      "path": "build-c3-qt-observed/tranche7/source-replay.json",
+      "sha256": "2bc57bf3691199e96f770a1b6ded8c13caaddb463e83a3f957c420aae2dd626b"
+    },
+    {
+      "path": "tests/prepare_c3_qt_freetype_hash_tranche.py",
+      "sha256": "6b20637163ae678f3021d3b8a2e91024c974143e7ae593757dc7a49989176518"
+    },
+    {
+      "path": "tests/qt_freetype_hash_probe.cpp",
+      "sha256": "c3e2edbaca4e5ab708df8124b1e7c41089b025d9d831bcd1da1ea304ed3ac42a"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-notes.md",
+      "sha256": "d2adc95769d08428315a78bc3bbfeed749cb79a4ea6dd263a409a6c94f1feb38"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-headless-first.json",
+      "sha256": "892cec1dff0f2a8d4703b2385fdd0b846b536244507f088c52e80756f7a6af20"
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche7-headless-first.log",
+      "sha256": "5f8d08189965bbcb12d5e1126c82c4d07c21d6addbd17b36eca071a173313d45"
+    },
+    {
+      "path": "build-c3-qt-observed/tranche7/headless-first-compile.json",
+      "sha256": "65d1366366b11a04122cf86b258906d88b201d4af9e143994d8765051d432ce6"
+    }
+  ],
+  "compilation": {
+    "Qt_sites": 309,
+    "added_cache_sites": 56,
+    "recompiled_sources": [
+      {
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-ft-hash-sources/src/corelib/global/qglobal.cpp",
+        "sha256": "fccfbb89aabbdfa5fb88ada9efdc36456320b03b77815584cf2bed006260fc75"
+      },
+      {
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-ft-hash-sources/src/gui/text/freetype/qfontengine_ft.cpp",
+        "sha256": "1942305a79c56fdecfdb42e9eb75b7e94601f1891e411548beeee9efe7fa456d"
+      }
+    ],
+    "reused_frozen_objects": 494,
+    "Qt_original_Cxx17_Release_ABI_flags_retained": true,
+    "new_FT_flags": "only -I isolated shadow header search",
+    "max_build_threads": 2,
+    "native_probe_has_shadow_QHash_headers": false,
+    "headless_probe_has_shadow_QHash_headers": true,
+    "loader_single_prefix": true,
+    "prepared_sdk_refuses_overwrite": true
+  },
+  "original_once_and_dedup": {
+    "parent_operations": "entry/completion facts contain zero bytes; no wrapper whole-method byte bound",
+    "bulk": "original memcpy/memset invoked exactly once with the original byte argument; memcpy relocation has no per-field child copy emissions",
+    "typed_nodes": "actual placement node creation/detach/rehash bound by destination sizeof(Node), not allocated capacity; each reached statement is one child fact",
+    "typed_field_destinations": "actual scalar/pointer/default-member initialization stores are distinct cache-owned destinations; default values and subsequent assignments are distinct writes",
+    "FT_key_temporary": "one original glyph key constructor, original by-value QFixedPoint plus member initialization; the subsequent Node key copy is a distinct destination",
+    "FT_parent_existing_stores": "FT6 Glyph/bitmap/metrics stores target Glyph objects; the map child targets key/pointer/index storage and never recounts bitmap/Glyph bytes",
+    "excluded_shared_handles": "unchanged shared hash guard/ref increments and borrowed Bucket/iterator stack descriptors are not deep payload copies; no allocator-size/OS footprint estimate is added",
+    "scope": "only actual FT glyph_data.insert and setGlyphMissing callsites activate the hook; unrelated Qt hashes remain inactive; exact bound types fixed by SHA-bound qfontengine_ft_p.h"
+  },
+  "actual_native_cache_subset": {
+    "glyph_admitted_and_known_complete": 705,
+    "missing_admitted_and_known_complete": 2,
+    "parent_completion_unknown": 0,
+    "all_added_unknown_callback_count": 0,
+    "totals": {
+      "entry_calls": 1414,
+      "copy_calls": 1418,
+      "copy_bytes": 35644,
+      "write_calls": 6019,
+      "write_bytes": 24592,
+      "unsupported_calls": 0
+    },
+    "actual_span_bulk_growth": {
+      "copy_bytes": "4608",
+      "copy_calls": "4",
+      "entry_calls": "0",
+      "site": "ft_hash/span_storage_relocate_bytes",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    "native_data_rehash_or_shared_detach": "not reached in this64 run; covered by actual independent headless causal cases, not assumed performed",
+    "whole_freeType_cache_coverage": "unclosed outside these insertion scopes"
+  },
+  "headless_protection": {
+    "growth_span_relocation_and_rehash_actual": true,
+    "shared1000nodes_detach_copies_exact": 1000,
+    "duplicate100_existing_value_assignments_exact": 100,
+    "missing_same_key_inserted_twice_size_remains1": true,
+    "nontrivial_QString_key_actual_unknown": true,
+    "32byte_observer_limit_actual_unknown_original_hash_preserved": true,
+    "observer_limit_not_Qt_allocator_failure": true,
+    "finished_scope_without_Node_action_unknown": true,
+    "actual_sites_all_manifest_declared": true,
+    "Qt_impossible_capacity_original_bad_alloc_empty_cache_preserved": true
+  },
+  "frozen64_comparison": {
+    "comparison": "All raw exact field outcomes are retained. One explicit original-index bijection of full glyph-run payloads also matches all six parallel arrays, with no field/value ignored. This is finite permutation equivalence, not raw order equality.",
+    "previous_frozen_prefix_modified": false,
+    "cases": [
+      {
+        "case_id": "SFNS/14/ascii_material",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/14/ascii_revision",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/14/latin_combining",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/14/greek_cjk",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNS/14/arabic",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNS/14/devanagari",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/14/emoji",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/14/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNS/18/ascii_material",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/18/ascii_revision",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/18/latin_combining",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/18/greek_cjk",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNS/18/arabic",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNS/18/devanagari",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/18/emoji",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNS/18/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_material",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_revision",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/latin_combining",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/greek_cjk",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/arabic",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/devanagari",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/emoji",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/14/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_material",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_revision",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/latin_combining",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/greek_cjk",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/arabic",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 2
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/devanagari",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/emoji",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "SFNSMono/18/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/14/ascii_material",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/14/ascii_revision",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/14/latin_combining",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/14/greek_cjk",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/14/arabic",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/14/devanagari",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_general/14/emoji",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/14/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 5
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 3
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 3,
+            "tranche7_run": 4
+          },
+          {
+            "frozen6_run": 4,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 5,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/18/ascii_material",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_general/18/ascii_revision",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_general/18/latin_combining",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_general/18/greek_cjk",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/18/arabic",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_general/18/devanagari",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_general/18/emoji",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_general/18/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 3,
+            "tranche7_run": 3
+          },
+          {
+            "frozen6_run": 4,
+            "tranche7_run": 5
+          },
+          {
+            "frozen6_run": 5,
+            "tranche7_run": 4
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/14/ascii_material",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/14/ascii_revision",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/14/latin_combining",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/14/greek_cjk",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/14/arabic",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/14/devanagari",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/14/emoji",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/14/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/18/ascii_material",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/18/ascii_revision",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/18/latin_combining",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/18/greek_cjk",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/18/arabic",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/18/devanagari",
+        "raw_case_exact": true,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": true,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": true,
+          "glyph_count": true,
+          "glyph_ids": true,
+          "glyph_runs": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": true,
+          "string_indexes": true
+        }
+      },
+      {
+        "case_id": "system_fixed/18/emoji",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 1
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      },
+      {
+        "case_id": "system_fixed/18/mixed_rtl",
+        "raw_case_exact": false,
+        "all_scalar_and_non_run_fields_exact": {
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "glyph_count": true,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true
+        },
+        "full_run_bijection": [
+          {
+            "frozen6_run": 0,
+            "tranche7_run": 2
+          },
+          {
+            "frozen6_run": 1,
+            "tranche7_run": 0
+          },
+          {
+            "frozen6_run": 2,
+            "tranche7_run": 1
+          }
+        ],
+        "parallel_array_same_bijection": {
+          "glyph_runs": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "font_identities": true,
+          "actual_engines": true
+        },
+        "raw_fields_exact": {
+          "actual_engines": false,
+          "ascii_backend_required": true,
+          "case_id": true,
+          "expected_ascii_backend": true,
+          "failure_only_post_draw_glyph_bitmaps": true,
+          "font_identities": false,
+          "glyph_count": true,
+          "glyph_ids": false,
+          "glyph_runs": false,
+          "input": true,
+          "metrics": true,
+          "missing_glyph_count": true,
+          "pixels": true,
+          "positions": false,
+          "string_indexes": false
+        }
+      }
+    ],
+    "all_input_metrics_pixel_fields_exact": true,
+    "full_run_bijection_count": 64,
+    "raw_case_exact_count": 34
+  },
+  "remaining_actual_native_unsupported": [
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "system_harfbuzz::buffer_and_shape_internal",
+      "unsupported_calls": "576",
+      "write_bytes": "0",
+      "write_calls": "0"
+    }
+  ],
+  "remaining_scopes": [
+    "FreeType2.14.3 internal loader/raster/outline/color/cache payload copies are uninstrumented",
+    "Qt FT LCD conversion/contour/path/transformed-cache and non-insertion hash operations are outside this finite enumeration",
+    "Qt/HB other entry placeholders and source-owned fonts/layout/shaping stores remain unclosed",
+    "Cocoa font database immutable asset versus model text provenance classification remains unresolved",
+    "Default CoreText owned/internal copy gap remains unknown; product remains default Mac backend"
+  ],
+  "raw_contract_total_contribution": false,
+  "coverage_complete": false,
+  "product_default_changed": false,
+  "old_frozen_prefixes_modified": false,
+  "formal_acceptance_claimed": false,
+  "checks": {
+    "strict_independent_Cxx20_probe_compile": true,
+    "actual_native64_exit0": true,
+    "actual_headless_exit0": true,
+    "marker_exact_dispatch_valid_no_unexpected": true,
+    "readability_source_replay_exact": true,
+    "python_compile": true,
+    "cpp_format_227": true,
+    "design": true,
+    "diff_check": true
+  },
+  "QG02_self_review": "Entry: SHA-verified official headers/frozen6 source \u2192 isolated insertion scopes \u2192 original Node/Span/Data statements \u2192 strict raw collector. All original call outputs preserved; every unsupported type, exhausted observer budget or missing/multiple Node action stays sticky unknown. Helpers carry observation state only and no application authority. build() reuses frozen objects and changes no global installation. Refactored preparation into named header/compile/framework steps; replayed linked shadow header/helper bytes exactly after readability edits. Independent parent review and formal integration are still separate.",
+  "prefix_frozen": true
+}

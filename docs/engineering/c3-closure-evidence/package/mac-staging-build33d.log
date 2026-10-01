@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 189, in <module>
+    stage(parser.parse_args())
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 154, in stage
+    command("codesign", "--force", "--sign", "-", "--timestamp=none", binary)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 20, in command
+    return subprocess.check_output([str(value) for value in arguments], stderr=subprocess.STDOUT, text=True)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 472, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['codesign', '--force', '--sign', '-', '--timestamp=none', '/Users/qs/Documents/ChatGPT/QCAE/out/package-build33d/QCAE.app/Contents/MacOS/qcae-desktop']' returned non-zero exit status 1.

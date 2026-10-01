@@ -267,8 +267,18 @@ struct TaskService::State {
             };
             std::shared_ptr<const TaskPayload> payload;
             std::optional<Diagnostic> failure_reason;
+            std::optional<TaskCompletion> completion;
             try {
                 payload = entry->work(control);
+                if (payload)
+                    completion = payload->completion();
+                if (completion && completion->state != TaskState::failed &&
+                    completion->state != TaskState::cancelled &&
+                    completion->state != TaskState::interrupted &&
+                    completion->state != TaskState::outcome_unknown) {
+                    completion.reset();
+                    throw std::invalid_argument("Worker terminal override cannot certify success");
+                }
             } catch (const TaskCancelled&) {
             } catch (const TaskBudgetExceeded& error) {
                 failure_reason = Diagnostic{ErrorCode::resource_limit, error.what(), identity};
@@ -281,7 +291,9 @@ struct TaskService::State {
             {
                 std::lock_guard lock(mutex);
                 if (!blocked) {
-                    if (entry->cancelled.load() || stopping)
+                    if (completion)
+                        finish(entry, completion->state, std::move(completion->diagnostic));
+                    else if (entry->cancelled.load() || stopping)
                         finish(entry, TaskState::cancelled);
                     else if (failure_reason || !payload)
                         finish(entry,

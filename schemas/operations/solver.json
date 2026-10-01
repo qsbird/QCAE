@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "status": "local_process_admission_without_real_nastran_result_acceptance",
+  "operations": [
+    {
+      "operation_id": "analysis.start",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.start.v1",
+      "type_name": "AnalysisStartInput",
+      "effect": "background_task",
+      "context": {"document": true, "epoch": true, "expected_revision": true, "idempotency_key": true, "expected_profile": true},
+      "fields": [
+        {"field_id": 1, "name": "analysis_id", "type": "entity_id"},
+        {"field_id": 2, "name": "artifact_id", "type": "string"},
+        {"field_id": 3, "name": "run_config_id", "type": "string"}
+      ]
+    },
+    {
+      "operation_id": "analysis.get_run",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.get_run.v1",
+      "type_name": "AnalysisGetRunInput",
+      "effect": "read_only",
+      "context": {"document": true, "epoch": true, "expected_revision": false, "idempotency_key": false},
+      "fields": [{"field_id": 1, "name": "run_id", "type": "string"}]
+    },
+    {
+      "operation_id": "analysis.get_result",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.get_result.v1",
+      "type_name": "AnalysisGetResultInput",
+      "effect": "read_only",
+      "context": {"document": true, "epoch": true, "expected_revision": false, "idempotency_key": false},
+      "fields": [{"field_id": 1, "name": "run_id", "type": "string"}]
+    },
+    {
+      "operation_id": "analysis.reconcile_result",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.reconcile_result.v1",
+      "type_name": "AnalysisReconcileResultInput",
+      "effect": "auxiliary_write",
+      "context": {"document": true, "epoch": true, "expected_revision": true, "idempotency_key": true},
+      "fields": [{"field_id": 1, "name": "run_id", "type": "string"}]
+    },
+    {
+      "operation_id": "analysis.validate_result",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.validate_result.v1",
+      "type_name": "AnalysisValidateResultInput",
+      "effect": "auxiliary_write",
+      "context": {"document": true, "epoch": true, "expected_revision": true, "idempotency_key": true, "expected_profile": true},
+      "fields": [{"field_id": 1, "name": "run_id", "type": "string"}]
+    },
+    {
+      "operation_id": "solver.configuration",
+      "version": 1,
+      "schema_id": "qcae.operation.solver.configuration.v1",
+      "type_name": "SolverConfigurationInput",
+      "effect": "read_only",
+      "context": {"document": false, "epoch": false, "expected_revision": false, "idempotency_key": false},
+      "fields": []
+    }
+  ]
+}

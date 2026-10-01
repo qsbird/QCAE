@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/source-build37/solver_run_ipc_tests.py", line 625, in <module>
+    main()
+    ~~~~^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/source-build37/solver_run_ipc_tests.py", line 621, in main
+    print(json.dumps(run(str(Path(args.engine).resolve()), args.evidence_dir), indent=2))
+                     ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/source-build37/solver_run_ipc_tests.py", line 604, in run
+    cases = [scenario(engine, root / mode, mode, transcripts)
+             ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/source-build37/solver_run_ipc_tests.py", line 471, in scenario
+    context, profile, parameters = prepare(host, capabilities, root)
+                                   ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/source-build37/solver_run_ipc_tests.py", line 127, in prepare
+    resources = [{"path": name, "text": (fixtures / name).read_text()} for name in paths]
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 792, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 776, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/source-build37/fixtures/nastran/cantilever.bdf'

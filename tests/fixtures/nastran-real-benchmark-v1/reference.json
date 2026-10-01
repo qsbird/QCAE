@@ -1,0 +1,74 @@
+{
+  "schema": "qcae.cantilever.numeric-reference.v1",
+  "status": "preregistered_before_real_solver_run",
+  "real_solver_run_performed": false,
+  "unit_system": "mm-N-MPa",
+  "case_label": "QCAE-CANTILEVER-REAL-V1",
+  "subcase": 1,
+  "assumptions": [
+    "Euler-Bernoulli straight beam",
+    "linear elastic small displacement",
+    "PBAR K1/K2 blank: no transverse shear flexibility",
+    "basic global coordinates only",
+    "20 uniform CBAR spans; 21 unique GRID points",
+    "one end all six DOF constrained; tip force -Y 1 N"
+  ],
+  "parameters": {
+    "E_mpa": "210000",
+    "I1_mm4": "833.333",
+    "I2_mm4": "833.333",
+    "L_mm": "1000",
+    "P_n": "1"
+  },
+  "expected": {
+    "tip_translation_mm": [
+      "0",
+      "-1.904762666666971428693333382095257600008",
+      "0"
+    ],
+    "tip_rotation_rad": [
+      "0",
+      "0",
+      "-0.002857144000000457143040000073142886400012"
+    ],
+    "support_force_n": [
+      "0",
+      "1",
+      "0"
+    ],
+    "support_moment_n_mm": [
+      "0",
+      "0",
+      "1000"
+    ]
+  },
+  "tolerance": {
+    "translation": {
+      "absolute": "0.00001",
+      "relative": "0.0001"
+    },
+    "rotation": {
+      "absolute": "0.00000001",
+      "relative": "0.0001"
+    },
+    "force": {
+      "absolute": "0.000001",
+      "relative": "0.0001"
+    },
+    "moment": {
+      "absolute": "0.001",
+      "relative": "0.0001"
+    }
+  },
+  "comparison": "abs(actual-expected) <= absolute + relative*abs(expected); all components mandatory",
+  "nodal_reference": {
+    "translation_y": "-P*x*x*(3*L-x)/(6*E*I2)",
+    "rotation_z": "-P*x*(2*L-x)/(2*E*I2)"
+  },
+  "files": {
+    "beams.bdf": "23673e83453112caddbd7b71a24b9ec05dee49a4094f9e084797a10884be93fa",
+    "cantilever.bdf": "689d67e3160975b95b0e429bf3ad5126abeebcdf27e7fd5e5f6b7f6327c3e1cc",
+    "nodes.bdf": "40d80f36f26016511a57ce3a704221ee21a53719df8938b517310ab2e6cad514",
+    "properties.bdf": "0d51ea43eac6cb3e1f8f73b19d205f7132b7d266dccac820da1fb7cf3788aef6"
+  }
+}

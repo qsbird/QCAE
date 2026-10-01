@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "status": "implemented_analysis_and_check_handlers",
+  "operations": [
+    {
+      "operation_id": "force.create",
+      "version": 1,
+      "schema_id": "qcae.operation.force.create.v1",
+      "type_name": "ForceCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "node_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "x",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 3,
+          "name": "y",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 4,
+          "name": "z",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "force.set_vector",
+      "version": 1,
+      "schema_id": "qcae.operation.force.set_vector.v1",
+      "type_name": "ForceSetVectorInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "force_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "x",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 3,
+          "name": "y",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 4,
+          "name": "z",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "force.preview_vector",
+      "version": 1,
+      "schema_id": "qcae.operation.force.preview_vector.v1",
+      "type_name": "ForcePreviewVectorInput",
+      "effect": "preview",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "force_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "x",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 3,
+          "name": "y",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 4,
+          "name": "z",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "constraint.create",
+      "version": 1,
+      "schema_id": "qcae.operation.constraint.create.v1",
+      "type_name": "ConstraintCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "node_ids",
+          "type": "entity_id_array"
+        },
+        {
+          "field_id": 2,
+          "name": "dofs",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "operation_id": "load_case.create",
+      "version": 1,
+      "schema_id": "qcae.operation.load_case.create.v1",
+      "type_name": "LoadCaseCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "force_ids",
+          "type": "entity_id_array",
+          "allow_empty": true
+        },
+        {
+          "field_id": 3,
+          "name": "constraint_ids",
+          "type": "entity_id_array",
+          "allow_empty": true
+        }
+      ]
+    },
+    {
+      "operation_id": "load_case.set_references",
+      "version": 1,
+      "schema_id": "qcae.operation.load_case.set_references.v1",
+      "type_name": "LoadCaseSetReferencesInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "load_case_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "force_ids",
+          "type": "entity_id_array",
+          "allow_empty": true
+        },
+        {
+          "field_id": 3,
+          "name": "constraint_ids",
+          "type": "entity_id_array",
+          "allow_empty": true
+        }
+      ]
+    },
+    {
+      "operation_id": "analysis.create",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.create.v1",
+      "type_name": "AnalysisCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true,
+        "expected_profile": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "load_case_ids",
+          "type": "entity_id_array",
+          "allow_empty": true
+        }
+      ]
+    },
+    {
+      "operation_id": "analysis.check",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.check.v1",
+      "type_name": "AnalysisCheckInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "analysis_id",
+          "type": "entity_id"
+        }
+      ]
+    },
+    {
+      "operation_id": "analysis.get_issues",
+      "version": 1,
+      "schema_id": "qcae.operation.analysis.get_issues.v1",
+      "type_name": "AnalysisGetIssuesInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "check_id",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}

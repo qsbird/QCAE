@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "baseline_commit": "62e2b1d",
-  "branch": "codex/c2-entry-consistency",
+  "baseline_commit": "9e0a56b",
+  "branch": "codex/c3-resource-sync",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-09-27T13:51:12.257226+00:00",
-  "status": "completed_to_NEXT_03",
+  "updated_utc": "2026-10-01T01:16:59.538371+00:00",
+  "status": "C3_closure_in_progress",
   "phases": {
     "R0": "partial_committed",
     "R1": "committed",
@@ -91,6 +91,36 @@
       "reasoning": "xhigh",
       "agent": "next_acceptance",
       "status": "completed"
+    },
+    {
+      "task": "C3 operation ledger, generic record/fact copy reduction and library audit",
+      "agent": "skeleton_gap_plan",
+      "status": "in_progress"
+    },
+    {
+      "task": "C3 lean desktop/render refresh and guarded GUI integration",
+      "agent": "c4_readiness_plan",
+      "status": "in_progress"
+    },
+    {
+      "task": "Analysis/check and frozen fixture result provenance",
+      "agent": "analysis_check_slice",
+      "status": "implementation_completed_final_release_pending"
+    },
+    {
+      "task": "Build ownership, host assembly, shared integration, evidence and C4 freeze",
+      "agent": "root",
+      "status": "in_progress"
+    },
+    {
+      "task": "Independent 220 fault records and BP representative fixtures",
+      "agent": "skeleton_validation",
+      "status": "diagnostic_evidence_completed_final_uniform_run_pending"
+    },
+    {
+      "task": "Independent domain QG-02 review and artifact/profile damage repairs",
+      "agent": "lean_refresh_review",
+      "status": "scoped_repairs_and_affected_tests_passed_final_diff_pending"
     }
   ],
   "verified_evidence": [
@@ -166,31 +196,47 @@
       "passed": 20,
       "total": 20,
       "evidence": "docs/engineering/evidence/next/record-store-repeat-20.log"
+    },
+    {
+      "scope": "C3 sync archived full Release",
+      "passed": 52,
+      "total": 52,
+      "evidence": "docs/engineering/evidence/c3-sync/release-tests.log",
+      "note": "Archived baseline evidence; not a rerun of the new closure source."
+    },
+    {
+      "scope": "C3 sync archived pure core Release",
+      "passed": 28,
+      "total": 28,
+      "evidence": "docs/engineering/evidence/c3-sync/core-final-tests.log"
+    },
+    {
+      "scope": "C3 sync archived IPC Debug",
+      "passed": 35,
+      "total": 35,
+      "evidence": "docs/engineering/evidence/c3-sync/local-tests.log"
     }
   ],
   "notes": [
-    "C2 excluded .idea; subsequent synchronization committed six portable project files at 7c8f2eb, keeping local caches/runtime settings ignored.",
-    "C2 completed; the user subsequently authorized NEXT-01/02/03 in parallel. No C3/C4 execution. Full SK gates remain unclaimed.",
-    "C3 WIP archived on codex/skeleton-c3-wip; not release-validated.",
-    "One C1 SQLite child-lock assertion failure did not reproduce in 192 targeted runs; cause remains unidentified. Raw failure and case diagnostics retained.",
-    "ASan/UBSan initial run, fixture correction and affected rechecks are reported separately, not as one uninterrupted passing run.",
-    "Final handoff portability review changed only the Unix workflow temp root; full 36-test Release suite then passed again.",
-    "New geometry/mesh tools are CLI/IPC only; no new GUI, actual solver, external AI, billion-scale or full P0 acceptance.",
-    "NEXT integration preserved one 39/40 Release failure: macOS child-side-fork SQLite/logging SIGSEGV. Changed only test subprocess fixtures to spawn fresh executable images; exact abrupt-exit and recovery/WAL assertions retained. Final 40/40 and affected sanitizer recheck passed; this does not resolve the distinct historical C1 lock failure."
+    "C3 display/tool and resource/event/local-display slices delivered; full quantitative SK gates remain unclaimed.",
+    "The current closure run must collect new evidence on its own final source; archived C2/NEXT/C3 evidence remains unchanged.",
+    "Nastran now publishes verified local BDF files and artifact receipts; actual solver, real external AI, headless graphical selection, large-model performance and full SK/P0 remain unvalidated."
   ],
-  "selected_stop_checkpoint": "NEXT-03",
+  "selected_stop_checkpoint": null,
   "checkpoint_contract": "docs/engineering/checkpoints-c1-c2.md",
   "checkpoints": {
     "C1": "passed",
     "C2": "passed",
-    "C3": "deferred",
-    "C4": "deferred"
+    "C3": "slices_delivered_full_gate_pending",
+    "C4": "pending_independent_extensions"
   },
   "commits": {
     "module_ownership": "fa79d52",
     "legacy_reference_freeze": "94d856b",
     "deferred_wip": "b8379a2",
-    "c1": "92b115124e26454fe1204ec410bee83f6a5774ac"
+    "c1": "92b115124e26454fe1204ec410bee83f6a5774ac",
+    "c3_display": "393f52e",
+    "c3_sync": "9e0a56b"
   },
   "model_policy": {
     "complex": "gpt-6-astra xhigh",
@@ -201,13 +247,820 @@
     "C1": "checkpoint/c1",
     "C2": "checkpoint/c2"
   },
-  "validation_report": "docs/engineering/next-validation.md",
+  "validation_report": "docs/engineering/c3-sync-validation.md",
   "follow_up": {
-    "base_commit": "7c8f2eb",
+    "base_commit": "9e0a56b",
     "NEXT-01": "completed",
     "NEXT-02": "completed",
     "NEXT-03": "completed",
-    "next": "C3 geometry display and stable-ID picking",
-    "scope": "Entry consistency only; no full SK gate or C3/C4 acceptance."
+    "next": "Complete same-operation end-to-end byte accounting and local visibility/organization refresh",
+    "scope": "User authorized the dependency-ordered continuation; full SK/P0 acceptance remains subject to original gates.",
+    "C3-display": "delivered_slice",
+    "C3-sync": "delivered_slice",
+    "C3-closure": "in_progress",
+    "plan": "docs/engineering/c3-closure-plan.md",
+    "analysis-check": "implemented_affected_tests_passed_final_release_pending",
+    "nastran-artifacts": "implemented_native_package_tests_gui_workflow_in_progress",
+    "fixture-results": "implemented_fixture_provenance_tests_passed_final_release_pending"
+  },
+  "historical_stop": {
+    "baseline_commit": "62e2b1d",
+    "branch": "codex/c2-entry-consistency",
+    "updated_utc": "2026-09-27T13:51:12.257226+00:00",
+    "selected_stop_checkpoint": "NEXT-03",
+    "validation_report": "docs/engineering/next-validation.md"
+  },
+  "historical_notes": [
+    "C2 excluded .idea; subsequent synchronization committed six portable project files at 7c8f2eb, keeping local caches/runtime settings ignored.",
+    "C2 completed; the user subsequently authorized NEXT-01/02/03 in parallel. No C3/C4 execution. Full SK gates remain unclaimed.",
+    "C3 WIP archived on codex/skeleton-c3-wip; not release-validated.",
+    "One C1 SQLite child-lock assertion failure did not reproduce in 192 targeted runs; cause remains unidentified. Raw failure and case diagnostics retained.",
+    "ASan/UBSan initial run, fixture correction and affected rechecks are reported separately, not as one uninterrupted passing run.",
+    "Final handoff portability review changed only the Unix workflow temp root; full 36-test Release suite then passed again.",
+    "New geometry/mesh tools are CLI/IPC only; no new GUI, actual solver, external AI, billion-scale or full P0 acceptance.",
+    "NEXT integration preserved one 39/40 Release failure: macOS child-side-fork SQLite/logging SIGSEGV. Changed only test subprocess fixtures to spawn fresh executable images; exact abrupt-exit and recovery/WAL assertions retained. Final 40/40 and affected sanitizer recheck passed; this does not resolve the distinct historical C1 lock failure."
+  ],
+  "current_diagnostics": {
+    "source_binding": "mutable_tree_diagnostics_not_final_release_acceptance",
+    "release_build": "docs/engineering/c3-closure-evidence/build32.log",
+    "generic_render_regressions": {
+      "passed": 6,
+      "total": 6,
+      "log": "docs/engineering/c3-closure-evidence/package/ctest-render-build26.log"
+    },
+    "representative_cpp": {
+      "passed": 5,
+      "total": 5,
+      "path": "docs/engineering/c3-closure-evidence/representatives/mechanisms-fourth"
+    },
+    "remaining": [
+      "final same-source workflows after common baseline and extensions",
+      "lean refresh contract and fully audited copy budgets at all three model sizes",
+      "common C4 baseline freeze and independent extensions",
+      "uniform final Release regression and 97 metric report",
+      "real Nastran executable/configuration, real result reader and numerical validation; full real AI acceptance sessions"
+    ],
+    "protected_ast": {
+      "translation_units": 17,
+      "direct_entity_type_references": 0,
+      "negative_alias_rejected": true,
+      "report": "docs/engineering/c3-closure-evidence/ast-protected-build32.json"
+    },
+    "partial_workflows": {
+      "CLI_passed": 3,
+      "GUI_passed": 3,
+      "MIX_passed": 3,
+      "expected_each": 3,
+      "final_same_source_binding": false,
+      "semantic_difference_count": 0,
+      "compared_checkpoints": 72,
+      "comparison_report": "docs/engineering/c3-closure-evidence/representatives/workflow-comparison-nine-current.json"
+    },
+    "local_edit_diagnostic": {
+      "models": [
+        1000
+      ],
+      "samples": 20,
+      "known_counter_bounds_passed": 20,
+      "node_bounds_passed": 10,
+      "material_bounds_passed": 10,
+      "whole_sdk_copy_coverage": "unknown",
+      "material_contract_copy_range_bytes": [
+        64898,
+        66584
+      ],
+      "material_limit_bytes": 69632,
+      "node_contract_copy_range_bytes": [
+        121349,
+        131411
+      ],
+      "report": "docs/engineering/c3-closure-evidence/ledger-lean-build32-diagnostic.json",
+      "final_same_source_binding": false,
+      "previous_diagnostics": [
+        {
+          "models": [
+            1000
+          ],
+          "samples": 20,
+          "known_counter_bounds_passed": 10,
+          "node_bounds_passed": 10,
+          "material_bounds_passed": 0,
+          "whole_sdk_copy_coverage": "unknown",
+          "material_contract_copy_range_bytes": [
+            84719,
+            88501
+          ],
+          "material_limit_bytes": 69632,
+          "node_contract_copy_range_bytes": [
+            222391,
+            235863
+          ],
+          "report": "docs/engineering/c3-closure-evidence/ledger-lean-build31-diagnostic.json",
+          "final_same_source_binding": false
+        }
+      ],
+      "complete_counter_coverage_samples": 0,
+      "interpretation": "Known totals omit sticky-unknown SDK stages; cannot compare as complete totals or declare budget pass",
+      "sdk_observation_same_run_samples": 20,
+      "missing_library_stages": [
+        "desktop.socket_receive.library_internal_copy_bytes",
+        "desktop.vtk_apply.library_internal_copy_bytes"
+      ]
+    },
+    "core_regression": {
+      "passed": 34,
+      "total": 34,
+      "log": "docs/engineering/c3-closure-evidence/core-ctest-build28.log",
+      "final_same_source_binding": false
+    },
+    "affected_regression": {
+      "passed": 10,
+      "total": 11,
+      "log": "docs/engineering/c3-closure-evidence/package/lean-targeted-build29.log",
+      "failed_case": "render_service",
+      "failure_reason": "Test prepared operation signature did not match the normalized input signature.",
+      "corrected_case_passed": true,
+      "corrected_case_log": "docs/engineering/c3-closure-evidence/package/render-service-signature-ctest.log",
+      "final_same_source_binding": false
+    },
+    "lean_refresh_review_findings": {
+      "status": "scoped_source_repairs_reviewed_common_build_gui_regression_pending",
+      "findings": [
+        {
+          "scope": "model revision during pending view.update",
+          "failure": "Confirmed hidden state can overwrite the latest queued user hidden/isolate intent.",
+          "validation": "repaired source independently reviewed; common-build held-response regression pending"
+        },
+        {
+          "scope": "same-context createView responses and camera changes",
+          "failure": "An older create response can overwrite a newer camera/view recovery.",
+          "validation": "repaired source independently reviewed; common-build held-response regression pending"
+        },
+        {
+          "scope": "malformed changed_ids in invalid changed-row fallback",
+          "failure": "Missing or wrong-type IDs can become an empty list and stamp stale tree rows at the new revision.",
+          "validation": "repaired source independently reviewed; common-build malformed-response regression pending"
+        }
+      ],
+      "final_same_source_binding": false,
+      "additional_legacy_packet_findings": [
+        "non-numeric or non-finite coordinates must reject before installation",
+        "duplicate entity IDs must reject before installation",
+        "failed same-revision legacy render must trigger explicit recovery"
+      ],
+      "additional_intent_findings": [
+        "legacy installation must drain the latest queued camera and hidden intents",
+        "pick admission and held selection publication must share the current camera fence"
+      ],
+      "pre_fix_negative_samples": {
+        "failed": 2,
+        "total": 2,
+        "log": "docs/engineering/c3-closure-evidence/package/lean-bad-packet-red-build30.log"
+      },
+      "source_review": "docs/engineering/c3-lean-refresh-readability-review.md",
+      "repaired_negative_samples": {
+        "passed": 2,
+        "total": 2,
+        "log": "docs/engineering/c3-closure-evidence/package/lean-bad-packet-green-build31.log"
+      },
+      "new_gui_filter_diagnostic": {
+        "qt_rows_passed": 29,
+        "qt_rows_failed": 21,
+        "log": "docs/engineering/c3-closure-evidence/package/lean-new-gui-filters-build31.log",
+        "failure_reason": "Independent processes confirmed incorrect test preconditions: three organization rows were expected as two, and the initial top camera was set to top again.",
+        "test_fixture_correction": "three_authoritative_ids_and_distinct_initial_camera_product_source_unchanged",
+        "corrected_run_pending": false,
+        "corrected_affected_rows_passed": 21,
+        "corrected_log": "docs/engineering/c3-closure-evidence/package/lean-fixture-green-build31.log"
+      },
+      "full_gui_regression": {
+        "ctest_passed": 1,
+        "ctest_total": 1,
+        "qt_rows_passed": 61,
+        "qt_rows_failed": 0,
+        "log": "docs/engineering/c3-closure-evidence/package/desktop-selection-full-green-build31.log",
+        "passed": true,
+        "final_same_source_binding": false,
+        "initial_failed_run": {
+          "qt_rows_passed": 59,
+          "qt_rows_failed": 2,
+          "log": "docs/engineering/c3-closure-evidence/package/desktop-selection-full-build31.log",
+          "failures": [
+            "latestTreeSelectionSurvivesViewRefreshAndEnablesMeshTools",
+            "newerSelectionWinsWhenEvaluateAndGetRepliesAreReordered"
+          ],
+          "failure_reason": "Independent diagnosis confirmed initial clicks before the real pipeline idle barrier; tests now wait for actual readiness, preserving all single-click race assertions.",
+          "corrected_affected_log": "docs/engineering/c3-closure-evidence/package/legacy-pick-setup-green-build31.log"
+        }
+      }
+    },
+    "stable_data_regression": {
+      "passed": 9,
+      "total": 9,
+      "log": "docs/engineering/c3-closure-evidence/package/data-mcp-targeted-build32.log",
+      "scope": "record/version, event stream/client, JSON, render service, actual widget observers, two MCP transports",
+      "whole_sdk_copy_coverage": "unknown",
+      "final_same_source_binding": false
+    },
+    "host_parser_business_regression": {
+      "passed": 13,
+      "total": 13,
+      "log": "docs/engineering/c3-closure-evidence/package/ipc-mcp-targeted-build32.log",
+      "final_same_source_binding": false
+    },
+    "host_generated_frame_ledger": {
+      "passed": true,
+      "log": "docs/engineering/c3-closure-evidence/package/host-frame-ledger-build31.log",
+      "scope": "object-only errors, oversize original and fallback encodings, actual bounded response trace and queued-abort accounting",
+      "model_acceptance_sample": false
+    },
+    "mcp_protocol_regression": {
+      "passed": 3,
+      "total": 3,
+      "log": "docs/engineering/c3-closure-evidence/package/mcp-final-build32.log",
+      "scope": "memory/SQLite shared engine and five malformed/lost peer scenarios; no automatic write retry",
+      "formal_m5_acceptance": false
+    },
+    "real_ai_diagnostic": {
+      "passed": true,
+      "client": "codex-cli 0.159.2",
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh",
+      "completed_mcp_calls": 11,
+      "failed_mcp_calls": 0,
+      "non_mcp_actions": 0,
+      "final_revision": "3",
+      "material_count": 1,
+      "young_modulus_mpa": 210000,
+      "evidence": "docs/engineering/c3-closure-evidence/real-ai-mcp-smoke2-build31",
+      "first_attempt_failure_preserved": "docs/engineering/c3-closure-evidence/real-ai-mcp-smoke-build31",
+      "source_binding": "mutable_tree_engine_build31_not_final_acceptance",
+      "formal_m5_acceptance": false
+    },
+    "macos_local_package_build33e": {
+      "status": "dependency_closure_signature_gui_ipc_recovery_mcp_passed_diagnostic",
+      "manifest": "out/package-build33e/QCAE-manifest.json",
+      "macho_files": 144,
+      "files": 418,
+      "gui_facts": "docs/engineering/c3-closure-evidence/package/mac-gui-smoke-build33e/facts.json",
+      "complete_p0_release": false,
+      "final_same_source_binding": false,
+      "python_bundled": false,
+      "public_notarization": false
+    },
+    "exact_qt_source_probe_build34": {
+      "status": "passed_scoped_source_observation_whole_sdk_unknown",
+      "report": "docs/engineering/c3-closure-evidence/package/qt-source-copy-report-build34.json",
+      "ctest_passed": 1,
+      "ctest_total": 1,
+      "source_sites_observed": 27,
+      "remaining_unsupported_calls": 39,
+      "coverage_complete": false,
+      "final_same_source_binding": false
+    },
+    "m4_local_process_binding_build34": {
+      "status": "actual_test_only_process_admission_recovery_cancellation_passed",
+      "ctest_passed": 10,
+      "ctest_total": 10,
+      "log": "docs/engineering/c3-closure-evidence/package/solver-and-sdk-targeted-build34.log",
+      "transcript": "docs/engineering/c3-closure-evidence/package/solver-run-ipc-transcript-build34.json",
+      "real_nastran_execution": false,
+      "real_result_validation": false,
+      "final_same_source_binding": false
+    },
+    "nastran_f06_reader_build34": {
+      "status": "independent_boundary_review_fixed_synthetic_parser_and_production_codec_import_passed",
+      "ctest_passed": 1,
+      "ctest_total": 1,
+      "log": "docs/engineering/c3-closure-evidence/nastran-static-reader-test-build34d.log",
+      "build_log": "docs/engineering/c3-closure-evidence/nastran-static-reader-review-build34d.log",
+      "original_test_evidence": {
+        "status": "synthetic_paged_parser_and_negative_input_passed",
+        "ctest_passed": 1,
+        "ctest_total": 1,
+        "log": "docs/engineering/c3-closure-evidence/package/nastran-static-reader-build34.log",
+        "real_result_validation": false,
+        "production_result_publication": false,
+        "preregistered_reference": "tests/fixtures/nastran-real-benchmark-v1/reference.json"
+      },
+      "original_independent_failures": "docs/engineering/c3-closure-evidence/package/nastran-static-original-review-failures-build34.log",
+      "fixed_independent_review": "docs/engineering/c3-closure-evidence/package/nastran-static-independent-review-build34d.log",
+      "fixed_asa_review": "docs/engineering/c3-closure-evidence/package/nastran-static-asa-review-build34d.log",
+      "preregistered_reference": "tests/fixtures/nastran-real-benchmark-v3/reference.json",
+      "input_production_codec_import_passed": true,
+      "real_nastran_execution": false,
+      "real_result_validation": false,
+      "production_result_publication": false,
+      "real_f06_compatibility_verified": false,
+      "final_same_source_binding": false
+    },
+    "architecture_build34": {
+      "passed": true,
+      "production_units": 66,
+      "configured_boundaries": 32,
+      "report": "docs/engineering/c3-closure-evidence/architecture-build34.json",
+      "final_same_source_binding": false
+    },
+    "qt_source_same_run_build34": {
+      "status": "actual_native_e2e_source_fragments_collected_material_known_budget_failed_sdk_coverage_unknown",
+      "report": "docs/engineering/c3-closure-evidence/ledger-qt-source-build34-diagnostic.json",
+      "samples": 20,
+      "models": [
+        1000
+      ],
+      "error": "",
+      "both_process_manifests_and_run_ids_verified": true,
+      "source_collector_complete_samples": 20,
+      "source_observations_in_contract_total": false,
+      "whole_pipeline_owned_copy_coverage": "unknown",
+      "node": {
+        "samples": 10,
+        "known_bounds_passed": 10,
+        "contract_copy_range_bytes": [
+          126026,
+          136969
+        ],
+        "complete_coverage_samples": 0
+      },
+      "material": {
+        "samples": 10,
+        "known_bounds_passed": 0,
+        "contract_copy_range_bytes": [
+          70571,
+          73113
+        ],
+        "complete_coverage_samples": 0
+      },
+      "material_limit_bytes": 69632,
+      "source_binding": "mutable_source_diagnostic_not_final_release_acceptance"
+    },
+    "harfbuzz_source_probe_build34": {
+      "status": "actual_observed_library_shaping_matches_existing_library_scoped_sources_passed",
+      "report": "docs/engineering/c3-closure-evidence/package/harfbuzz-source-copy-report-build34.json",
+      "ctest_passed": 1,
+      "ctest_total": 1,
+      "coverage_complete": false,
+      "whole_pipeline_owned_copy_coverage": "unknown",
+      "final_same_source_binding": false
+    },
+    "qt_harfbuzz_tranche2_build35": {
+      "status": "actual_native_same_run_fragments_and_four_causal_tests_passed_whole_sdk_still_unknown",
+      "report": "docs/engineering/c3-closure-evidence/ledger-qt-harfbuzz-tranche2-build35-diagnostic.json",
+      "samples": 20,
+      "models": [
+        1000
+      ],
+      "error": "",
+      "ctest_passed": 4,
+      "ctest_total": 4,
+      "test_log": "docs/engineering/c3-closure-evidence/qt-harfbuzz-tranche2-tests-build35.log",
+      "both_process_manifests_and_run_ids_verified": true,
+      "collector_complete_samples": 20,
+      "raw_source_totals_in_contract_total": false,
+      "whole_pipeline_owned_copy_coverage": "unknown",
+      "native_text_or_font_unsupported_calls_present": true,
+      "source_totals": {
+        "node": {
+          "qt_source_observation": {
+            "actual_entries": [
+              335,
+              3833
+            ],
+            "copy_upper_bound_bytes": [
+              198,
+              1190
+            ],
+            "write_upper_bound_bytes": [
+              7013,
+              85356
+            ],
+            "unsupported_calls": [
+              194,
+              1657
+            ]
+          },
+          "harfbuzz_source_observation": {
+            "actual_entries": [
+              176,
+              3531
+            ],
+            "copy_upper_bound_bytes": [
+              0,
+              0
+            ],
+            "write_upper_bound_bytes": [
+              4016,
+              37104
+            ],
+            "unsupported_calls": [
+              4,
+              136
+            ]
+          }
+        },
+        "material": {
+          "qt_source_observation": {
+            "actual_entries": [
+              359,
+              359
+            ],
+            "copy_upper_bound_bytes": [
+              216,
+              216
+            ],
+            "write_upper_bound_bytes": [
+              7462,
+              7462
+            ],
+            "unsupported_calls": [
+              210,
+              210
+            ]
+          },
+          "harfbuzz_source_observation": {
+            "actual_entries": [
+              184,
+              184
+            ],
+            "copy_upper_bound_bytes": [
+              0,
+              0
+            ],
+            "write_upper_bound_bytes": [
+              4336,
+              4336
+            ],
+            "unsupported_calls": [
+              4,
+              4
+            ]
+          }
+        }
+      },
+      "final_same_source_binding": false
+    },
+    "core_build35_first_attempt": {
+      "release_ctest_passed": 35,
+      "release_ctest_total": 36,
+      "release_log": "docs/engineering/c3-closure-evidence/core-ctest-build35.log",
+      "sanitizer_ctest_passed": 34,
+      "sanitizer_ctest_total": 36,
+      "sanitizer_log": "docs/engineering/c3-closure-evidence/core-sanitizers-ctest-build35.log",
+      "failures": [
+        "cpp_format checked active unformatted core.cpp edit",
+        "ASan intercepted test-only SIGSEGV and reported SIGABRT; signal-specific fixture under correction"
+      ],
+      "final_same_source_binding": false,
+      "repeat_after_owned_source_freeze_pending": true
+    },
+    "version_integration_build36": {
+      "passed": 11,
+      "total": 11,
+      "seconds": 32.68,
+      "log": "docs/engineering/c3-closure-evidence/package/solver-version-integration-tests-build36.log",
+      "source_binding": "mutable_tree_version_only_checkpoint_before_result_publication",
+      "actual_nastran": false
+    },
+    "vtk_auto_observer_build35": {
+      "headless_passed": 2,
+      "headless_total": 2,
+      "desktop_selection_passed": 1,
+      "desktop_selection_seconds": 94.51,
+      "desktop_log": "docs/engineering/c3-closure-evidence/package/desktop-selection-vtk-observer-build35.log",
+      "source_audit": "docs/engineering/c3-closure-evidence/package/vtk-auto-shift-source-audit.json",
+      "whole_pipeline_coverage": "unknown"
+    },
+    "core_revalidation_build36": {
+      "release_passed": 35,
+      "release_total": 36,
+      "release_seconds": 45.07,
+      "sanitizers_passed": 35,
+      "sanitizers_total": 36,
+      "sanitizers_seconds": 136.14,
+      "failed_gate": "cpp_format on concurrently edited solver_result_store.cpp; all 35 executable behavior/generator gates passed",
+      "logs": [
+        "docs/engineering/c3-closure-evidence/package/core-ctest-build36.log",
+        "docs/engineering/c3-closure-evidence/package/core-sanitizers-ctest-build36.log"
+      ],
+      "uniform_final_gate_passed": false
+    },
+    "data_copy_reduction_build35": {
+      "schema": 1,
+      "scope": "independent same-layer material application/record probes, not IPC or GUI closure",
+      "application_copy_reduction_bytes": [
+        4480,
+        4890
+      ],
+      "records_copy_reduction_bytes": 938,
+      "combined_measured_copy_reduction_bytes": 5828,
+      "independent_regressions_passed": 4,
+      "same_source_release_acceptance": false,
+      "files": [
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/data-optimization-build35-copy-probe-before.log",
+          "sha256": "3d00f98a65a551ad8e048d284e8f12bb89c8817c274731913ab608bd1e766309"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/data-optimization-build35-copy-probe-after.log",
+          "sha256": "18a26135b28d40a08bedff6c20b6aff256bb40898bb52b03716fe2f7bd19038a"
+        },
+        {
+          "path": "docs/engineering/c3-closure-evidence/package/data-optimization-build35-final-tests-corrected.log",
+          "sha256": "b8931bae8662e79ebeea481736ad87d16d2a4e719e48396959df5fd073686cd1"
+        }
+      ]
+    },
+    "qt_tranche3_build36_initial": {
+      "passed": 5,
+      "total": 6,
+      "failed_test": "qt_source_bridge",
+      "reason": "Mixed QtDBus image from Homebrew: QtGui external LC_RPATH before local loader path",
+      "log": "docs/engineering/c3-closure-evidence/package/qt-harfbuzz-tranche3-tests-build36.log",
+      "dyld_log": "docs/engineering/c3-closure-evidence/package/qt-harfbuzz-tranche3-offscreen-loaded-failure-build36.log",
+      "tranche3_prefix_preserved": true,
+      "tranche3b_loader_preparation": "docs/engineering/c3-closure-evidence/package/qt-tranche3b-loader-preparation.json",
+      "same_run_revalidation_pending": true
+    },
+    "font_backend_behavior_build36": {
+      "default_mac_cases": 64,
+      "default_backend_verified": true,
+      "freetype_captured_cases": 6,
+      "freetype_probe_completed": false,
+      "freetype_failure": "White background for SFNS/14/emoji; cause unverified",
+      "reports": [
+        "docs/engineering/c3-closure-evidence/package/font-backend-mac-build36.json",
+        "docs/engineering/c3-closure-evidence/package/font-backend-freetype-build36.json"
+      ],
+      "product_default_changed": false,
+      "font_copy_coverage_closed": false,
+      "causal_audit": "package/font-backend-freetype-emoji-causal-audit.json",
+      "white_image_cause": "FT non-scalable emoji fallback hhea design units interpreted using ppem caused 391px line height and clipping; glyph pixels existed"
+    },
+    "scene_report_transport_build37": {
+      "core_focused_tests": "3/3 passed, 0.65 seconds",
+      "asan_ubsan_scene_tests": "2/2 passed, 1.65 seconds",
+      "common_tests": "10/11 passed, 20.06 seconds; typed_host new test metadata mismatch",
+      "typed_host_repaired": "1/1 passed, 0.67 seconds; dedicated read-only test trait",
+      "solver_result_ipc": "actual production IPC passed; 5 parsed scenarios plus 6 existing execution scenarios and 3 environment declarations; synthetic test_process only",
+      "logs": [
+        "package/m4-focused-common-build37.log",
+        "package/typed-host-test-fix-tests37.log",
+        "package/scene-sanitizers-tests-build37b.log",
+        "package/solver-result-ipc-build37c.log"
+      ],
+      "real_nastran": false,
+      "uniform_final_acceptance": false
+    },
+    "qt_tranche3b_build37": {
+      "source_headless_tests": "6/6 passed, 36.44 seconds",
+      "native_diagnostic": "20 same-run N1000 samples, all known bounds passed; coverage 0/20",
+      "material_contract_copy_bytes": [
+        67834,
+        69464
+      ],
+      "node_contract_copy_bytes": [
+        447141,
+        457966
+      ],
+      "summary": "package/qt-harfbuzz-tranche3b-summary-build37.json",
+      "complete_sk12": false,
+      "native_font_copy_coverage": "unknown",
+      "raw_source_dedup": "pending"
+    },
+    "real_ai_clarification_build36": {
+      "actual_client": "Codex CLI 0.159.2 app-server; model gpt-6.1-sol",
+      "session1": "failed fixed status schema; original evidence retained",
+      "session2": "passed; 6 completed MCP calls, 61.913863 seconds; no write before units, one material E=210000 MPa after explicit 210 GPa",
+      "facts": "real-ai-clarification-build36-session2/facts.json",
+      "scope": "TST-I01 material clarification subset only",
+      "full_real_ai_acceptance": false,
+      "real_solver": false
+    },
+    "common_build38": {
+      "core_release": "37/37 passed; 20.73 seconds",
+      "focused_engine_integration": "15/15 passed; 28.90 seconds",
+      "logs": [
+        "package/core-tests-build38.log",
+        "package/solver-result-reconcile-common-tests38.log"
+      ],
+      "ast": "17 translation units; 0 entity references; negative alias self-test passed",
+      "architecture": "initial no-refresh stale evidence rejected; refreshed check pending",
+      "uniform_final_acceptance": false
+    },
+    "static_comparison_build38": {
+      "components": 132,
+      "profile_binding": "full registered ProfileRef supplied by adapter",
+      "release": "1/1 passed; 0.60 seconds",
+      "asan_ubsan": "1/1 passed; 0.72 seconds",
+      "independent_decimal90_checks": "517/517 passed",
+      "logs": [
+        "package/static-validation-tests-build38e.log",
+        "package/static-validation-sanitizers-tests-build38e.log",
+        "package/static-reference-independent-517-build38.log"
+      ],
+      "real_solver": false,
+      "numerical_acceptance": false,
+      "production_persistence": "next slice in progress"
+    },
+    "font_freetype_metrics_tranche5": {
+      "diagnostic_report": "package/font-backend-tranche5-diagnostic-report.json",
+      "mac4_vs_mac5": "64/64 metrics and pixels identical; 29 raw glyph-run order differences preserved with explicit bijections",
+      "freetype5": "64/64 original-canvas draws complete, 8 emoji cases inside canvas",
+      "mac5_vs_freetype5": "64/64 metrics/pixels differ; exact equivalence false",
+      "default_product_backend_changed": false,
+      "complete_font_copy_coverage": false
+    },
+    "owned_auxiliary_fences_build39": {
+      "indexed_read_release": "1/1 passed; 0.67 seconds",
+      "indexed_read_sanitizers": "1/1 passed; 1.96 seconds",
+      "write_revision_release": "1/1 passed; fixture signature failure preserved before correction",
+      "write_revision_sanitizers": "1/1 passed",
+      "contracts": "prefix limit 1..32, immutable payload borrowing; doc/epoch/revision admission and row CAS under one mutex",
+      "logs": [
+        "package/owned-prefix-read-tests39.log",
+        "package/owned-prefix-read-sanitizers-tests39.log",
+        "package/owned-write-fence-tests39.log",
+        "package/owned-write-fence-tests39b.log",
+        "package/owned-write-fence-sanitizers-tests39b.log"
+      ],
+      "uniform_final_acceptance": false
+    },
+    "mcp_parameter_contracts_build39": {
+      "tests": "4/4 passed; 3.40 seconds; actual ephemeral/durable engine and malformed peer scenarios",
+      "log": "package/mcp-contracts-tests39.log",
+      "source_scope": "Release, local solver adapter disabled for isolated contract diagnostic",
+      "contracts": "authoritative legacy read parameters schemas and intrinsic identity fields; no bridge business state",
+      "uniform_final_acceptance": false
+    },
+    "desktop_build38_initial": {
+      "tests": "3/4 passed; desktop workflows failed six GUI/MIX rows with empty issue display",
+      "log": "package/desktop-scene-report-tests-build38.log",
+      "cause": "positive rule_version int64 was a canonical decimal JSON string; issue retrieval transport success differs from stored report outcome",
+      "repair": "source slice in progress; dedicated GUI-M-0 and 52 local-wire rows passed",
+      "uniform_final_acceptance": false
+    },
+    "real_ai_units_workflow_initial_failures": {
+      "session1": "54 actual MCP calls; argument contract failures",
+      "session2": "74 actual MCP calls; entity.query/entity.fields/model.summary argument failures and missing analysis.check allowlist entry",
+      "logs": [
+        "package/real-ai-units-workflow-build37-session1.log",
+        "package/real-ai-units-workflow-build38-session2.log"
+      ],
+      "new_session": "contracts39 session4 passed complete model/units/check/export verification, 72 actual MCP calls, 290.230886 seconds; GUI display and three-success-session requirement pending",
+      "formal_acceptance": false,
+      "session3": "36 successful actual MCP calls; final unit scenario success; harness verification KeyError for nonexistent artifact.get manifest_sha256 preserved"
+    },
+    "real_ai_physics_build38": {
+      "actual_model": "gpt-6.1-sol, xhigh, CLI 0.159.2 app-server; synthetic model data only",
+      "physics_clarification": "passed subset; 15 calls, no physical write until actual identities/global force supplied",
+      "shared_preview": "passed subset; 8 calls, actual 20 reference identities and no model writes",
+      "shared_unsupported": "passed subset; 17 calls, explicit unsupported, complete model/history unchanged",
+      "report": "real-ai-physics-build38/README.md",
+      "actual_gui_rotation": false,
+      "three_independent_sessions_per_scenario": false,
+      "formal_acceptance": false
+    },
+    "font_freetype_tranche6": {
+      "report": "package/qt-freetype-tranche6-causal-report.json",
+      "warning_cause": "actual AAT intermediate deleted glyph 65535 during shape advance; final glyph 192, not draw failure",
+      "render_behavior": "64/64 metrics/pixels match frozen FT5; complete glyph-run bijections, original order differences preserved",
+      "cache_unknown_events": 707,
+      "default_product_backend_changed": false,
+      "complete_font_copy_coverage": false
+    },
+    "common_build39": {
+      "headless_release": "71/72 passed; 132.45 seconds; outdated unavailable status test preserved; corrected actual-profile rejection test passed separately",
+      "native_desktop": "4/4 passed; 215.44 seconds; all six GUI/MIX rows passed plus diagnostic report boundaries",
+      "public_consumers": "73/73 independently compiled",
+      "architecture": "71 production units / 29 configured target boundaries passed",
+      "ast": "17 translation units / 0 persistent type references; injected alias negative test rejected",
+      "mcp_metadata_hardening": "14 fake-peer cases passed; no partial catalog publication, no forwarding after failed discovery, stdio ping survives",
+      "logs": [
+        "package/headless-release-tests39.log",
+        "package/ipc-unavailable-tests39e.log",
+        "package/desktop-scene-report-tests39.log",
+        "package/public-consumers-build39.log",
+        "package/architecture-headless39.json",
+        "package/ast-protected-build39.json",
+        "package/mcp-metadata-ipc-tests39d.log"
+      ],
+      "uniform_final_acceptance": false
+    },
+    "real_ai_units_contracts39_independent_sessions": {
+      "passed_sessions": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_mcp_calls": [
+        72,
+        36,
+        47,
+        56
+      ],
+      "engine_sha256": "2b633c21b8eaf46935f3e6fb023d7f770462f3c8d2917465ff265247b8a9a380",
+      "real_solver_run": false,
+      "formal_acceptance": false,
+      "evidence": [
+        "real-ai-units-workflow-contracts39-session4/facts.json",
+        "real-ai-units-workflow-contracts39-session5/facts.json",
+        "real-ai-units-workflow-contracts39-session6/facts.json",
+        "real-ai-units-workflow-contracts39-session7/facts.json"
+      ],
+      "limits": [
+        "Three native readonly unit/camera checks passed separately; GUI stale callback repair and common-source regression pending",
+        "Other TST-I cases and real solver acceptance remain incomplete"
+      ]
+    },
+    "numerical_summary_wire_quota39": {
+      "private_red": "numerical-persistence-review-build39/README.md",
+      "public_get_result_green": "numerical-persistence-review-build39/fixed-three-source-receipt.json",
+      "unit_green": "package/numerical-json-wire39/unit.log",
+      "integrated_green": "package/numerical-json-wire-integrated-tests39g.log",
+      "actual_history_byte_limit": 32768,
+      "codec": "same production typed_json_array writer",
+      "original_components_verified": 132,
+      "read_writes": 0,
+      "formal_acceptance": false,
+      "scratch_encoding_ledger_green": "package/quota-scratch-ledger-tests40.log",
+      "scratch_encoding_ledger_scope": "Exact Qt compact JSON scratch encoded_bytes and metadata_copy_bytes; no added socket/frame bytes"
+    },
+    "force_vector_transaction40": {
+      "operations": [
+        "force.set_vector.v1",
+        "force.preview_vector.v1"
+      ],
+      "core_green": "package/force-vector-core-tests40d.log",
+      "ipc_green": "package/force-vector-ipc-tests40b.log",
+      "actual_cli_requests": 140,
+      "actual_script_requests": 140,
+      "evidence": "force-vector-ipc40b",
+      "gui_pending": false,
+      "independent_readability_review_pending": false,
+      "interim_failures_preserved": [
+        "package/force-vector-core-build40.log",
+        "package/force-vector-core-tests40b.log",
+        "package/force-vector-core-tests40c.log",
+        "package/force-vector-ipc-tests40.log"
+      ],
+      "formal_acceptance": false,
+      "gui_evidence": "ai-units-native-gui-build39/receipt.json",
+      "independent_review": "package/force-vector-independent40/review.md",
+      "gui_stale_callback_regression_pending": false
+    },
+    "sdk7_collector_exception_review": {
+      "evidence": "package/qt-freetype-tranche7-independent-review/review.md",
+      "actual_collector_bad_alloc_probe": "RED: dispatch/depth remains poisoned after collector throws",
+      "reentry_probe": "GREEN",
+      "two_thread_probe": "GREEN: 200 separate scopes",
+      "coverage": "finite counters verified; QG03 collector exception and whole copy coverage remain open",
+      "complete_sk12_passed": false
+    },
+    "sanitizer_common39": {
+      "core_tests_passed": 37,
+      "core_tests_total": 37,
+      "core_log": "package/core-sanitizers-tests39.log",
+      "focused_ipc_tests_passed": 10,
+      "focused_ipc_tests_total": 10,
+      "focused_ipc_log": "package/numerical-sanitizers-tests39.log",
+      "same_as_new_force40_source": false,
+      "formal_acceptance": false
+    },
+    "real_ai_units_native_gui40": {
+      "ai_sessions": [
+        5,
+        6,
+        7
+      ],
+      "evidence": "ai-units-native-gui-build39/README.md",
+      "typed_gui_force_preview_commit_undo_recovery": "GREEN: one model revision/one history entry; actual kill/recover",
+      "unit_readonly_camera": "GREEN: full model DTO/force vector/revision/history preserved in three native sessions",
+      "formal_m5_passed": false,
+      "common_source_matrix_pending": true,
+      "limitations": [
+        "GUI-to-AI undo handoff not yet executed",
+        "Other AI cases and real Nastran remain incomplete"
+      ]
+    },
+    "gui_property_resync_fence40": {
+      "status": "scoped actual wire/widget repair passed; final common commit matrix pending",
+      "evidence": "property-response-fence40/receipt.json",
+      "old_native_cases_failed": 3,
+      "green_wire_widget_cases": 43,
+      "model_overwrite_proven": false,
+      "final_force_positive_seconds": 10.509,
+      "original_matrix_source_binding_retained": true,
+      "formal_acceptance": false
+    },
+    "common40_precommit": {
+      "core": "37/38 passed; only cpp_format on in-progress GUI test failed, original log retained",
+      "sqlite_headless": "43/44 passed; same in-progress cpp_format failure retained",
+      "sqlite_asan_ubsan": "44/44 passed; 165.74 seconds before final GUI fence source",
+      "public_headers": "73 independent consumers built; 184 Ninja steps, exit 0",
+      "architecture": "71 production translation units / 32 configured boundaries, passed",
+      "protected_ast": "17 translation units / 0 direct persistent entity references, passed including injected-negative self-test",
+      "final_same_commit_matrix_passed": false
+    }
   }
 }

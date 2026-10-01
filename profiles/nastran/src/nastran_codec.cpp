@@ -554,11 +554,12 @@ struct Reader {
 } // namespace
 
 NastranCodec::NastranCodec() {
-    definition_ = {{"qcae.nastran.linear-static", "0.1.0", std::string(nastran_definition_digest)},
+    definition_ = {{"qcae.nastran.linear-static", "0.2.0", std::string(nastran_definition_digest)},
                    "Nastran",
                    "linear_static",
                    false,
-                   false};
+                   false,
+                   std::string(nastran_implementation_fingerprint)};
 }
 
 ImportOutcome NastranCodec::decode(const ImportRequest& request) const {

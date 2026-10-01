@@ -12,7 +12,8 @@
       ],
       "private_include_dirs": [],
       "public_headers": [
-        "modules/foundation/include/qcae/types.hpp"
+        "modules/foundation/include/qcae/types.hpp",
+        "modules/foundation/include/qcae/operation_ledger.hpp"
       ],
       "sources": [],
       "public_dependencies": [],
@@ -36,7 +37,8 @@
         "modules/contracts/include/qcae/workspace_store.hpp",
         "modules/contracts/include/qcae/record_store.hpp",
         "modules/contracts/include/qcae/view_session.hpp",
-        "modules/contracts/include/qcae/resource.hpp"
+        "modules/contracts/include/qcae/resource.hpp",
+        "modules/contracts/include/qcae/solver_runner.hpp"
       ],
       "sources": [],
       "public_dependencies": [
@@ -100,7 +102,8 @@
         "modules/application/src"
       ],
       "public_headers": [
-        "modules/application/include/qcae/record_application.hpp"
+        "modules/application/include/qcae/record_application.hpp",
+        "modules/application/include/qcae/immutable_fact_map.hpp"
       ],
       "sources": [
         "modules/application/src/core.cpp",
@@ -160,10 +163,14 @@
         "profiles/nastran/src"
       ],
       "public_headers": [
-        "profiles/nastran/include/qcae/nastran_codec.hpp"
+        "profiles/nastran/include/qcae/nastran_codec.hpp",
+        "profiles/nastran/include/qcae/nastran_package.hpp",
+        "profiles/nastran/include/qcae/nastran_static_result.hpp"
       ],
       "sources": [
-        "profiles/nastran/src/nastran_codec.cpp"
+        "profiles/nastran/src/nastran_codec.cpp",
+        "profiles/nastran/src/nastran_package.cpp",
+        "profiles/nastran/src/nastran_static_result.cpp"
       ],
       "public_dependencies": [
         "qcae_document",
@@ -198,6 +205,9 @@
       "external_dependencies": [
         "SQLite3::SQLite3",
         "SQLite::SQLite3"
+      ],
+      "private_headers": [
+        "adapters/storage_sqlite/src/ledger_vfs.hpp"
       ]
     },
     {
@@ -211,7 +221,8 @@
       "private_include_dirs": [],
       "public_headers": [
         "adapters/transport_local/include/qcae/local_endpoint.hpp",
-        "adapters/transport_local/include/qcae/render_wire.hpp"
+        "adapters/transport_local/include/qcae/render_wire.hpp",
+        "adapters/transport_local/include/qcae/json_ledger.hpp"
       ],
       "sources": [],
       "public_dependencies": [
@@ -244,7 +255,14 @@
         "adapters/engine_api/include/qcae/engine_contributions.hpp",
         "adapters/engine_api/include/qcae/resource_store.hpp",
         "adapters/engine_api/include/qcae/event_stream.hpp",
-        "adapters/engine_api/include/qcae/render_service.hpp"
+        "adapters/engine_api/include/qcae/render_service.hpp",
+        "adapters/engine_api/include/qcae/result_api.hpp",
+        "adapters/engine_api/include/qcae/nastran_contribution.hpp",
+        "adapters/engine_api/include/qcae/solver_contribution.hpp",
+        "adapters/engine_api/include/qcae/solver_run_record.hpp",
+        "adapters/engine_api/include/qcae/solver_version.hpp",
+        "adapters/engine_api/include/qcae/solver_result.hpp",
+        "adapters/engine_api/include/qcae/solver_result_reader.hpp"
       ],
       "sources": [
         "adapters/engine_api/src/ipc_api.cpp",
@@ -254,7 +272,14 @@
         "adapters/engine_api/src/engine_contributions.cpp",
         "adapters/engine_api/src/resource_store.cpp",
         "adapters/engine_api/src/event_stream.cpp",
-        "adapters/engine_api/src/render_service.cpp"
+        "adapters/engine_api/src/render_service.cpp",
+        "adapters/engine_api/src/result_api.cpp",
+        "adapters/engine_api/src/nastran_contribution.cpp",
+        "adapters/engine_api/src/solver_contribution.cpp",
+        "adapters/engine_api/src/solver_run_record.cpp",
+        "adapters/engine_api/src/solver_version_probe.cpp",
+        "adapters/engine_api/src/solver_result_store.cpp",
+        "adapters/engine_api/src/solver_validation_store.cpp"
       ],
       "public_dependencies": [
         "qcae_legacy_api",
@@ -266,7 +291,11 @@
         "qcae_mesh_editing",
         "qcae_geometry_features",
         "qcae_mesh_generation",
-        "qcae_task_application"
+        "qcae_task_application",
+        "qcae_analysis_features",
+        "qcae_result_features",
+        "qcae_artifacts_local",
+        "qcae_nastran"
       ],
       "private_dependencies": [
         "qcae_transport_local"
@@ -275,8 +304,17 @@
         "Qt6::Core"
       ],
       "private_headers": [
-        "adapters/engine_api/src/typed_values.hpp"
-      ]
+        "adapters/engine_api/src/typed_values.hpp",
+        "adapters/engine_api/src/solver_version_probe.hpp",
+        "adapters/engine_api/src/solver_result_store.hpp",
+        "adapters/engine_api/src/solver_validation_store.hpp",
+        "adapters/engine_api/src/typed_json.hpp"
+      ],
+      "conditional_public_dependencies": {
+        "QCAE_BUILD_SOLVER_LOCAL": [
+          "qcae_solver_local"
+        ]
+      }
     },
     {
       "target": "qcae_desktop_client",
@@ -316,7 +354,9 @@
         "adapters/rendering_vtk/src"
       ],
       "public_headers": [
-        "adapters/rendering_vtk/include/qcae/vtk_view.hpp"
+        "adapters/rendering_vtk/include/qcae/vtk_view.hpp",
+        "adapters/rendering_vtk/include/qcae/sdk_copy_observation.hpp",
+        "adapters/rendering_vtk/include/qcae/sdk_copy_tracker.hpp"
       ],
       "sources": [
         "adapters/rendering_vtk/src/vtk_view.cpp"
@@ -332,6 +372,10 @@
         "Qt6::Widgets",
         "Qt6::OpenGLWidgets",
         "${VTK_LIBRARIES}"
+      ],
+      "private_headers": [
+        "adapters/rendering_vtk/src/coordinate_range_observer.hpp",
+        "adapters/rendering_vtk/src/shift_scale_copy_observer.hpp"
       ]
     },
     {
@@ -350,7 +394,9 @@
       ],
       "sources": [
         "ui/desktop/src/desktop.cpp",
-        "ui/desktop/src/modeling_tools.cpp"
+        "ui/desktop/src/modeling_tools.cpp",
+        "ui/desktop/src/analysis_tools.cpp",
+        "ui/desktop/src/shortcut_preferences.cpp"
       ],
       "public_dependencies": [
         "qcae_desktop_client",
@@ -359,7 +405,10 @@
       "private_dependencies": [],
       "external_dependencies": [],
       "private_headers": [
-        "ui/desktop/src/modeling_tools.hpp"
+        "ui/desktop/src/modeling_tools.hpp",
+        "ui/desktop/src/analysis_tools.hpp",
+        "ui/desktop/src/shortcut_preferences.hpp",
+        "ui/desktop/src/sdk_copy_widgets.hpp"
       ]
     },
     {
@@ -699,6 +748,135 @@
           "qcae_sqlite"
         ]
       }
+    },
+    {
+      "target": "qcae_analysis_features",
+      "path": "features/analysis",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "features/analysis/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "features/analysis/include/qcae/analysis_features.hpp",
+        "features/analysis/include/qcae/analysis_input.hpp"
+      ],
+      "sources": [
+        "features/analysis/src/analysis_operations.cpp",
+        "features/analysis/src/analysis_checks.cpp",
+        "features/analysis/src/check_report.cpp",
+        "features/analysis/src/analysis_input.cpp",
+        "features/analysis/src/analysis_input_codec.cpp",
+        "features/analysis/src/cantilever_checks.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_application",
+        "qcae_operations",
+        "qcae_parameters"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": [],
+      "private_headers": [
+        "features/analysis/src/cantilever_checks.hpp"
+      ]
+    },
+    {
+      "target": "qcae_artifacts_local",
+      "path": "adapters/artifacts_local",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "adapters/artifacts_local/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "adapters/artifacts_local/include/qcae/artifacts_local.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "adapters/artifacts_local/src/artifacts_local.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_document"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae_result_features",
+      "path": "features/results",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "features/results/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "features/results/include/qcae/result_fixture.hpp",
+        "features/results/include/qcae/result_service.hpp",
+        "features/results/include/qcae/static_validation.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "features/results/src/result_fixture.cpp",
+        "features/results/src/result_codec.cpp",
+        "features/results/src/result_service.cpp",
+        "features/results/src/static_validation.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_analysis_features"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
+      "target": "qcae-mcp",
+      "path": "apps/mcp",
+      "kind": "EXECUTABLE",
+      "option": "QCAE_BUILD_IPC",
+      "public_include_dirs": [],
+      "private_include_dirs": [],
+      "public_headers": [],
+      "sources": [
+        "apps/mcp/main.cpp"
+      ],
+      "runtime_sources": [
+        "apps/mcp/bridge.py"
+      ],
+      "public_dependencies": [],
+      "private_dependencies": [
+        "Qt6::Core"
+      ],
+      "external_dependencies": [
+        "Qt6::Core"
+      ]
+    },
+    {
+      "target": "qcae_solver_local",
+      "path": "adapters/solver_local",
+      "kind": "STATIC",
+      "option": "QCAE_BUILD_SOLVER_LOCAL",
+      "public_include_dirs": [
+        "adapters/solver_local/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "adapters/solver_local/include/qcae/solver_local.hpp"
+      ],
+      "sources": [
+        "adapters/solver_local/src/solver_local.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_contracts",
+        "qcae_artifacts_local"
+      ],
+      "private_dependencies": [
+        "Threads::Threads"
+      ],
+      "external_dependencies": [
+        "Threads::Threads"
+      ]
     }
   ]
 }

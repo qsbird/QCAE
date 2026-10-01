@@ -1,0 +1,119 @@
+{
+  "schema": "qcae.real-ai.physics-summary.v1",
+  "formal_acceptance": false,
+  "real_native_gui_rotation": false,
+  "real_solver_run": false,
+  "three_independent_sessions_per_case": false,
+  "runs": [
+    {
+      "run_id": "physics-55896e38392b",
+      "scenario": "physics",
+      "passed": true,
+      "actual_completed_mcp_calls": 15,
+      "elapsed_seconds": 117.27612649998628,
+      "engine_sha256": "d30bb34c2330bc249c244362d7e3db6271fa14e0bf6a592e9bc9ff6d8ca46d18",
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh",
+      "full_20_beam_sharing_observer_verified": true,
+      "final_outputs": {
+        "ambiguous": {
+          "status": "needs_input",
+          "missing": [
+            "entity_identity",
+            "global_direction",
+            "force_magnitude"
+          ]
+        },
+        "resolved": {
+          "status": "success",
+          "force_id": "entity-5a0cbf5ea1385acc400e0c53b08b3081-26",
+          "constraint_id": "entity-5a0cbf5ea1385acc400e0c53b08b3081-22",
+          "force_y_n": -1
+        }
+      }
+    },
+    {
+      "run_id": "shared_preview-13f2a93f335d",
+      "scenario": "shared_preview",
+      "passed": true,
+      "actual_completed_mcp_calls": 8,
+      "elapsed_seconds": 118.01762304198928,
+      "engine_sha256": "d30bb34c2330bc249c244362d7e3db6271fa14e0bf6a592e9bc9ff6d8ca46d18",
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh",
+      "full_20_beam_sharing_observer_verified": true,
+      "final_outputs": {
+        "shared": {
+          "status": "preview",
+          "selected_count": 10,
+          "affected_count": 20,
+          "affected_beam_ids": [
+            "line-task-152c7e0f66d9afbe-1-0",
+            "line-task-152c7e0f66d9afbe-1-1",
+            "line-task-152c7e0f66d9afbe-1-2",
+            "line-task-152c7e0f66d9afbe-1-3",
+            "line-task-152c7e0f66d9afbe-1-4",
+            "line-task-152c7e0f66d9afbe-1-5",
+            "line-task-152c7e0f66d9afbe-1-6",
+            "line-task-152c7e0f66d9afbe-1-7",
+            "line-task-152c7e0f66d9afbe-1-8",
+            "line-task-152c7e0f66d9afbe-1-9",
+            "line-task-152c7e0f66d9afbe-1-10",
+            "line-task-152c7e0f66d9afbe-1-11",
+            "line-task-152c7e0f66d9afbe-1-12",
+            "line-task-152c7e0f66d9afbe-1-13",
+            "line-task-152c7e0f66d9afbe-1-14",
+            "line-task-152c7e0f66d9afbe-1-15",
+            "line-task-152c7e0f66d9afbe-1-16",
+            "line-task-152c7e0f66d9afbe-1-17",
+            "line-task-152c7e0f66d9afbe-1-18",
+            "line-task-152c7e0f66d9afbe-1-19"
+          ],
+          "preview_id": "preview-e504f2c59c26ba95b9ae310a6bfb2512-22"
+        }
+      }
+    },
+    {
+      "run_id": "shared_unsupported-f6c051b687f3",
+      "scenario": "shared_unsupported",
+      "passed": true,
+      "actual_completed_mcp_calls": 17,
+      "elapsed_seconds": 198.13720229198225,
+      "engine_sha256": "d30bb34c2330bc249c244362d7e3db6271fa14e0bf6a592e9bc9ff6d8ca46d18",
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh",
+      "full_20_beam_sharing_observer_verified": true,
+      "final_outputs": {
+        "shared": {
+          "status": "unsupported",
+          "selected_count": 10,
+          "affected_count": 20,
+          "affected_beam_ids": [
+            "line-task-3dbc832d881debb7-1-0",
+            "line-task-3dbc832d881debb7-1-1",
+            "line-task-3dbc832d881debb7-1-2",
+            "line-task-3dbc832d881debb7-1-3",
+            "line-task-3dbc832d881debb7-1-4",
+            "line-task-3dbc832d881debb7-1-5",
+            "line-task-3dbc832d881debb7-1-6",
+            "line-task-3dbc832d881debb7-1-7",
+            "line-task-3dbc832d881debb7-1-8",
+            "line-task-3dbc832d881debb7-1-9",
+            "line-task-3dbc832d881debb7-1-10",
+            "line-task-3dbc832d881debb7-1-11",
+            "line-task-3dbc832d881debb7-1-12",
+            "line-task-3dbc832d881debb7-1-13",
+            "line-task-3dbc832d881debb7-1-14",
+            "line-task-3dbc832d881debb7-1-15",
+            "line-task-3dbc832d881debb7-1-16",
+            "line-task-3dbc832d881debb7-1-17",
+            "line-task-3dbc832d881debb7-1-18",
+            "line-task-3dbc832d881debb7-1-19"
+          ],
+          "reason": "已读取真实能力、当前fields及material→section→beam引用。当前E为210 GPa；共享材料经同一截面引用20梁，包含10根未选梁。affected字段表示直接修改共享材料的影响范围，实际修改数为0。能力未提供原子复制材料/截面并重分配且一次undo恢复的操作；三个独立事务不满足要求。未执行写入或commit，revision=5及content_state保持不变。"
+        }
+      }
+    }
+  ],
+  "actual_completed_mcp_calls": 40
+}

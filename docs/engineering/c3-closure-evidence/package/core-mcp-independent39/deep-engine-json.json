@@ -1,0 +1,12 @@
+{
+  "scenario": "deep-engine-json",
+  "exit_code": 1,
+  "tools_list_response": null,
+  "engine_business_requests": [
+    "capabilities.list"
+  ],
+  "stderr": "Traceback (most recent call last):\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 302, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 297, in main\n    return serve(Bridge(Engine(args.endpoint, args.timeout)))\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 277, in serve\n    response = bridge.dispatch(request)\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 257, in dispatch\n    return {\"jsonrpc\": \"2.0\", \"id\": request[\"id\"], \"result\": self.invoke(request)}\n                                                             ~~~~~~~~~~~^^^^^^^^^\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 226, in invoke\n    self.discover()\n    ~~~~~~~~~~~~~^^\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 181, in discover\n    response = self.engine.call(\"capabilities.list\", {})\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 97, in call\n    return self.exchange(stream, request)\n           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 71, in exchange\n    response = finite_json(raw)\n  File \"/private/tmp/qcae-core-mcp-readonly-review/bridge-reviewed-source.py\", line 39, in finite_json\n    value = json.loads(raw, parse_constant=reject, parse_float=number)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py\", line 359, in loads\n    return cls(**kw).decode(s)\n           ~~~~~~~~~~~~~~~~^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py\", line 345, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py\", line 361, in raw_decode\n    obj, end = self.scan_once(s, idx)\n               ~~~~~~~~~~~~~~^^^^^^^^\nRecursionError: Stack overflow (used 3906 kB) while decoding a JSON object from a unicode string\n",
+  "real_engine": false,
+  "business_model": false,
+  "writes": 0
+}

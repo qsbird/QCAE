@@ -1,0 +1,10 @@
+PasteBoard: Error creating pasteboard: com.apple.pasteboard.clipboard [-4960]
+PasteBoard: Error creating pasteboard: com.apple.pasteboard.find [-4960]
+2026-10-01 07:05:00.701 qcae_c3_desktop_workflow_tests[33579:41307159] Error received in message reply handler: Connection invalid
+2026-10-01 07:05:00.701 qcae_c3_desktop_workflow_tests[33579:41307166] Connection Invalid error for service com.apple.hiservices-xpcservice.
+2026-10-01 07:05:00.715 qcae_c3_desktop_workflow_tests[33579:41307159] Failure on line 688 in function id scheduleApplicationNotification(LSNotificationCode, NSWorkspaceNotificationCenter *): noErr == _LSModifyNotification(notificationID, 1, &code, 0, NULL, NULL, NULL)
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+Received signal 11 (SIGSEGV), code SEGV_ACCERR, at instruction address 0x000000010627c660, accessing address 0x0000000000000008
+         guiCreatesChecksRepairsAndPublishesM function time: 32ms, total time: 33ms

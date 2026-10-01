@@ -1,0 +1,49 @@
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+-- Could NOT find WrapVulkanHeaders (missing: Vulkan_INCLUDE_DIR) 
+CMake Warning at /opt/homebrew/lib/cmake/Qt6/QtPublicDependencyHelpers.cmake:339 (message):
+  This project is using headers of the GuiPrivate module and will therefore
+  be tied to this specific Qt module build version.  Running this project
+  against other versions of the Qt modules may crash at any arbitrary point.
+  This is not a bug, but a result of using Qt internals.  You have been
+  warned!
+
+  You can disable this warning by setting QT_NO_PRIVATE_MODULE_WARNING to ON.
+Call Stack (most recent call first):
+  /opt/homebrew/opt/qt/lib/cmake/Qt6GuiPrivate/Qt6GuiPrivateConfig.cmake:48 (_qt_internal_show_private_module_warning)
+  /opt/homebrew/opt/qt/lib/cmake/Qt6/Qt6Config.cmake:253 (find_package)
+  CMakeLists.txt:334 (find_package)
+
+
+-- Configuring done (1.2s)
+-- Generating done (0.2s)
+-- Build files have been written to: /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-desktop
+[0/4] Re-checking globbed directories...
+[1/7] Building CXX object profiles/nastran/CMakeFiles/qcae_nastran.dir/src/nastran_static_result.cpp.o
+FAILED: [code=1] profiles/nastran/CMakeFiles/qcae_nastran.dir/src/nastran_static_result.cpp.o 
+/usr/bin/c++  -I/Users/qs/Documents/ChatGPT/QCAE/profiles/nastran/include -I/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-desktop/profiles/nastran/generated -I/Users/qs/Documents/ChatGPT/QCAE/modules/document/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/foundation/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/contracts/include -I/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-desktop/generated -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -Werror -MD -MT profiles/nastran/CMakeFiles/qcae_nastran.dir/src/nastran_static_result.cpp.o -MF profiles/nastran/CMakeFiles/qcae_nastran.dir/src/nastran_static_result.cpp.o.d -o profiles/nastran/CMakeFiles/qcae_nastran.dir/src/nastran_static_result.cpp.o -c /Users/qs/Documents/ChatGPT/QCAE/profiles/nastran/src/nastran_static_result.cpp
+/Users/qs/Documents/ChatGPT/QCAE/profiles/nastran/src/nastran_static_result.cpp:186:33: error: redefinition of 'row' with a different type: 'NastranStaticGridValues' vs 'const bool'
+  186 |         NastranStaticGridValues row{nodes.at(*id), *id, {}};
+      |                                 ^
+/Users/qs/Documents/ChatGPT/QCAE/profiles/nastran/src/nastran_static_result.cpp:167:20: note: previous definition is here
+  167 |         const bool row = (initial >= '0' && initial <= '9') || initial == '+' || initial == '-' ||
+      |                    ^
+/Users/qs/Documents/ChatGPT/QCAE/profiles/nastran/src/nastran_static_result.cpp:187:48: error: member reference base type 'const bool' is not a structure or union
+  187 |         for (std::size_t index = 0; index < row.components.size(); ++index) {
+      |                                             ~~~^~~~~~~~~~~
+/Users/qs/Documents/ChatGPT/QCAE/profiles/nastran/src/nastran_static_result.cpp:193:16: error: member reference base type 'const bool' is not a structure or union
+  193 |             row.components[index] = *value;
+      |             ~~~^~~~~~~~~~~
+/Users/qs/Documents/ChatGPT/QCAE/profiles/nastran/src/nastran_static_result.cpp:196:14: error: no matching member function for call to 'push_back'
+  196 |         rows.push_back(std::move(row));
+      |         ~~~~~^~~~~~~~~
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__vector/vector.h:455:60: note: candidate function not viable: no known conversion from '__libcpp_remove_reference_t<const bool &>' (aka 'const bool') to 'const value_type' (aka 'const qcae::NastranStaticGridValues') for 1st argument
+  455 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI void push_back(const_reference __x) { emplace_back(__x); }
+      |                                                            ^         ~~~~~~~~~~~~~~~~~~~
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__vector/vector.h:457:60: note: candidate function not viable: no known conversion from '__libcpp_remove_reference_t<const bool &>' (aka 'const bool') to 'value_type' (aka 'qcae::NastranStaticGridValues') for 1st argument
+  457 |   _LIBCPP_CONSTEXPR_SINCE_CXX20 _LIBCPP_HIDE_FROM_ABI void push_back(value_type&& __x) { emplace_back(std::move(__x)); }
+      |                                                            ^         ~~~~~~~~~~~~~~~~
+4 errors generated.
+[2/7] Building CXX object profiles/nastran/CMakeFiles/qcae_nastran_static_result_tests.dir/__/__/tests/nastran_static_result_tests.cpp.o
+ninja: build stopped: subcommand failed.

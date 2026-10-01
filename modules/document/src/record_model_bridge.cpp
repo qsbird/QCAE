@@ -149,8 +149,20 @@ Model model_from_records(const DocumentView& view, RecordStats* stats) {
         result.constraints.push_back({value.id, value.nodes, value.dofs});
     });
     visit_typed<records::AnalysisDefinition>(view, [&](const auto& value) {
-        result.analyses.push_back(
-            {value.id, value.name, value.target, value.forces, value.constraints});
+        AnalysisDefinition projected{
+            value.id, value.name, value.target, value.forces, value.constraints};
+        if (value.load_cases) {
+            for (const auto& id : *value.load_cases) {
+                const auto record = view.find<records::LoadCase>(id);
+                if (!record)
+                    throw RecordError(
+                        ErrorCode::invalid_input, "Analysis load case is missing", id.value);
+                const auto& load_case = record->template get<records::LoadCase>();
+                projected.forces = load_case.forces;
+                projected.constraints = load_case.constraints;
+            }
+        }
+        result.analyses.push_back(std::move(projected));
     });
     visit_typed<records::SourceIdentifier>(view, [&](const auto& value) {
         result.sources.push_back({value.entity,

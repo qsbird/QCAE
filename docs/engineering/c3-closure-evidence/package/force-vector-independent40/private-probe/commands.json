@@ -1,0 +1,41 @@
+{
+  "compile": [
+    "/usr/bin/c++",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/features/analysis/include",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/modules/application/include",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/modules/document/include",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/modules/foundation/include",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/modules/contracts/include",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-core/generated",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/modules/operations/include",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/modules/parameters/include",
+    "-I/Users/qs/Documents/ChatGPT/QCAE/features/legacy_api/include",
+    "-O3",
+    "-DNDEBUG",
+    "-std=c++20",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-o",
+    "/private/tmp/qcae-force-vector-independent40/unit.o",
+    "-c",
+    "/private/tmp/qcae-force-vector-independent40/boundary-probe.cpp"
+  ],
+  "link": [
+    "/usr/bin/c++",
+    "-O3",
+    "-DNDEBUG",
+    "-Wl,-search_paths_first",
+    "-Wl,-headerpad_max_install_names",
+    "/private/tmp/qcae-force-vector-independent40/unit.o",
+    "-o",
+    "/private/tmp/qcae-force-vector-independent40/unit",
+    "/private/tmp/qcae-force-vector-independent40/dependencies/features/analysis/libqcae_analysis_features.a",
+    "/private/tmp/qcae-force-vector-independent40/dependencies/features/legacy_api/libqcae_legacy_api.a",
+    "/private/tmp/qcae-force-vector-independent40/dependencies/modules/operations/libqcae_operations.a",
+    "/private/tmp/qcae-force-vector-independent40/dependencies/modules/application/libqcae_application.a",
+    "/private/tmp/qcae-force-vector-independent40/dependencies/modules/parameters/libqcae_parameters.a",
+    "/private/tmp/qcae-force-vector-independent40/dependencies/modules/document/libqcae_document.a"
+  ]
+}

@@ -1,4 +1,8 @@
 #include "qcae/sqlite_store.hpp"
+#ifdef QCAE_C3_SQLITE_INSTRUMENTED
+#include "c3_sqlite_copy_bridge.h"
+#include "qcae/operation_ledger.hpp"
+#endif
 
 #include <sqlite3.h>
 
@@ -126,6 +130,82 @@ void test_rows_and_generation() {
     assert(reopened.load_rows().generation == 2);
     assert(*reopened.load_rows().rows[0].value == "replacement");
     assert(fails([&] { reopened.load(); }));
+}
+
+void test_large_history_is_not_a_search_key() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    const std::string history(2 * 1024 * 1024, 'h');
+    SqliteWorkspaceStore store(path);
+    store.commit_rows({0,
+                       "seed",
+                       {row(StoreSpace::history_entry, "old-seed", history),
+                        row(StoreSpace::document_record, "node/1", "before")}});
+    // Warm the exact prepared statements and cursor paths before observation.
+    store.commit_rows({1, "warm", {row(StoreSpace::document_record, "node/1", "warm")}});
+#ifdef QCAE_C3_SQLITE_INSTRUMENTED
+    auto operation = std::make_shared<qcae::ledger::OperationLedger>(
+        qcae::ledger::Identity{"large-history-key", {}, {}, 0});
+    qcae::ledger::activate(operation);
+    assert(qcae_c3_sqlite_observer_begin());
+#endif
+    const auto receipt =
+        store.commit_rows({2,
+                           "local",
+                           {row(StoreSpace::document_record, "node/1", "after"),
+                            row(StoreSpace::operation_fact, "new-fact", "receipt")}});
+    assert(receipt.rows_written == 2 && receipt.payload_bytes == 12);
+#ifdef QCAE_C3_SQLITE_INSTRUMENTED
+    qcae::ledger::activate({});
+    const auto copied =
+        operation->snapshot()
+            .values[static_cast<std::size_t>(qcae::ledger::Stage::sqlite)]
+                   [static_cast<std::size_t>(qcae::ledger::Metric::driver_internal_copy_bytes)];
+    assert(copied && *copied < history.size() / 2);
+    std::cout << "Observed local-store driver copies with retained 2MiB history: " << *copied
+              << " bytes\n";
+#endif
+    const auto loaded = store.load_rows();
+    assert(loaded.rows.size() == 3 && loaded.generation == 3);
+    for (const auto& item : loaded.rows)
+        if (item.key.space == StoreSpace::history_entry)
+            assert(item.key.identity == "old-seed" && *item.value == history);
+}
+
+void test_without_rowid_store_remains_supported() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    {
+        SqliteWorkspaceStore store(path);
+        store.commit_rows({0,
+                           "old-physical-layout",
+                           {row(StoreSpace::document_record, "node/1", "old bytes"),
+                            row(StoreSpace::history_entry, "1", "unchanged history")}});
+    }
+    // This unit fixture exercises both supported physical table layouts; it
+    // is not represented as a frozen legacy-encoder acceptance fixture.
+    sqlite3* database{};
+    assert(sqlite3_open(path.c_str(), &database) == SQLITE_OK);
+    assert(sqlite3_exec(database,
+                        "BEGIN;ALTER TABLE store_rows RENAME TO original_rows;"
+                        "CREATE TABLE store_rows(space INTEGER NOT NULL CHECK(space BETWEEN 1 AND "
+                        "7),identity TEXT NOT NULL CHECK(length(identity)>0),value BLOB NOT NULL,"
+                        "PRIMARY KEY(space,identity)) WITHOUT ROWID;"
+                        "INSERT INTO store_rows SELECT space,identity,value FROM original_rows;"
+                        "DROP TABLE original_rows;COMMIT",
+                        nullptr,
+                        nullptr,
+                        nullptr) == SQLITE_OK);
+    sqlite3_close(database);
+    SqliteWorkspaceStore reopened(path);
+    const auto loaded = reopened.load_rows();
+    assert(loaded.generation == 1 && loaded.rows.size() == 2);
+    assert(*loaded.rows[0].value == "old bytes" && *loaded.rows[1].value == "unchanged history");
+    reopened.commit_rows(
+        {1, "old-layout-edit", {row(StoreSpace::document_record, "node/1", "new bytes")}});
+    const auto updated = reopened.load_rows();
+    assert(updated.generation == 2 && updated.rows.size() == 2);
+    assert(*updated.rows[0].value == "new bytes" && *updated.rows[1].value == "unchanged history");
 }
 
 void test_legacy_detection_is_read_only() {
@@ -482,6 +562,8 @@ int main(int argc, char** argv) {
     if (argc == 4 && std::string(argv[1]) == "--store-child")
         return child_commit(argv[2], argv[3]);
     test_rows_and_generation();
+    test_large_history_is_not_a_search_key();
+    test_without_rowid_store_remains_supported();
     test_legacy_detection_is_read_only();
     test_invalid_batches_and_quotas();
     test_failure_windows();

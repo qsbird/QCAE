@@ -1,0 +1,95 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-core
+      Start  2: architecture_gate_unit
+      Start 38: solver_local
+ 1/38 Test #38: solver_local .....................   Passed    2.33 sec
+      Start  7: operation_generation
+ 2/38 Test  #7: operation_generation .............   Passed    4.91 sec
+      Start 28: record_document
+ 3/38 Test  #2: architecture_gate_unit ...........   Passed    9.62 sec
+      Start 12: cpp_format
+ 4/38 Test #12: cpp_format .......................***Failed    1.40 sec
+/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp:153:42: error: code should be clang-formatted [-Wclang-format-violations]
+                const bool property_row = operation == "entity.query" && ids == QJsonArray{force_id};
+                                         ^
+/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp:164:43: error: code should be clang-formatted [-Wclang-format-violations]
+    bool listen(const QString& endpoint) { return server_.listen(endpoint); }
+                                          ^
+/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp:164:76: error: code should be clang-formatted [-Wclang-format-violations]
+    bool listen(const QString& endpoint) { return server_.listen(endpoint); }
+                                                                           ^
+
+      Start 20: entity_generation
+ 5/38 Test #28: record_document ..................   Passed    4.37 sec
+      Start 34: result_fixture
+ 6/38 Test #20: entity_generation ................   Passed    0.90 sec
+      Start 33: analysis_checks
+ 7/38 Test #34: result_fixture ...................   Passed    0.46 sec
+      Start  9: model_operations
+ 8/38 Test #33: analysis_checks ..................   Passed    0.62 sec
+      Start  4: record_application
+ 9/38 Test  #4: record_application ...............   Passed    0.07 sec
+      Start  1: acceptance_checker
+10/38 Test  #1: acceptance_checker ...............   Passed    0.16 sec
+      Start 24: design
+11/38 Test  #9: model_operations .................   Passed    0.92 sec
+      Start  5: operation_registry
+12/38 Test #24: design ...........................   Passed    0.37 sec
+      Start 23: allocation_atomicity
+13/38 Test  #5: operation_registry ...............   Passed    0.23 sec
+      Start 29: generated_entities
+14/38 Test #29: generated_entities ...............   Passed    0.08 sec
+      Start 19: profile_identity
+15/38 Test #19: profile_identity .................   Passed    0.07 sec
+      Start  6: generated_operation_inputs
+16/38 Test  #6: generated_operation_inputs .......   Passed    0.04 sec
+      Start 18: generated_profile
+17/38 Test #18: generated_profile ................   Passed    0.03 sec
+      Start 25: generated_contract
+18/38 Test #25: generated_contract ...............   Passed    0.03 sec
+      Start 35: static_validation
+19/38 Test #23: allocation_atomicity .............   Passed    0.61 sec
+      Start 31: geometry_mesh
+20/38 Test #35: static_validation ................   Passed    0.91 sec
+      Start 37: artifacts_local
+21/38 Test #37: artifacts_local ..................   Passed    0.01 sec
+      Start 26: change_events
+22/38 Test #31: geometry_mesh ....................   Passed    1.13 sec
+      Start 32: line_mesh_regeneration
+23/38 Test #26: change_events ....................   Passed    0.90 sec
+      Start 17: query
+24/38 Test #32: line_mesh_regeneration ...........   Passed    1.31 sec
+      Start 30: runtime
+25/38 Test #17: query ............................   Passed    1.32 sec
+      Start 36: nastran_static_result
+26/38 Test #30: runtime ..........................   Passed    1.17 sec
+      Start 13: model
+27/38 Test #36: nastran_static_result ............   Passed    1.17 sec
+      Start 16: persistence
+28/38 Test #13: model ............................   Passed    1.34 sec
+      Start 21: core
+29/38 Test #16: persistence ......................   Passed    1.35 sec
+      Start 14: nastran
+30/38 Test #21: core .............................   Passed    1.36 sec
+      Start 10: quantity_entry_consistency
+31/38 Test #14: nastran ..........................   Passed    1.35 sec
+      Start 11: record_query
+32/38 Test #11: record_query .....................   Passed    0.01 sec
+      Start 27: render_projector
+33/38 Test #27: render_projector .................   Passed    0.01 sec
+      Start  8: parameters
+34/38 Test  #8: parameters .......................   Passed    0.00 sec
+      Start 15: delta
+35/38 Test #10: quantity_entry_consistency .......   Passed    0.67 sec
+      Start 22: contracts
+36/38 Test #15: delta ............................   Passed    0.70 sec
+      Start  3: c4_freeze_contract
+37/38 Test #22: contracts ........................   Passed    0.91 sec
+38/38 Test  #3: c4_freeze_contract ...............   Passed   36.30 sec
+
+97% tests passed, 1 tests failed out of 38
+
+Total Test time (real) =  57.52 sec
+
+The following tests FAILED:
+	 12 - cpp_format (Failed)
+Errors while running CTest

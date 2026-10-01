@@ -1,0 +1,24 @@
+{
+  "compile": [
+    "clang++",
+    "-std=c++20",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-F/opt/homebrew/opt/qt/lib",
+    "-I/opt/homebrew/opt/qt/lib/QtCore.framework/Headers",
+    "-framework",
+    "QtCore",
+    "-Wl,-rpath,/opt/homebrew/opt/qt/lib",
+    "/private/tmp/qcae-gui-quota-independent40/property-fence-probe.cpp",
+    "-o",
+    "/private/tmp/qcae-gui-quota-independent40/property-fence-probe"
+  ],
+  "compile_exit": 0,
+  "probe": [
+    "/private/tmp/qcae-gui-quota-independent40/property-fence-probe"
+  ],
+  "probe_exit": 1,
+  "execution_kind": "QtCore-only extracted production predicate; no GUI/engine/socket"
+}

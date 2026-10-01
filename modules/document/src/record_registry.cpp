@@ -1,4 +1,5 @@
 #include "qcae/record_registry.hpp"
+#include "qcae/operation_ledger.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -13,14 +14,24 @@ thread_local RecordActivityCounters activity_counters;
     throw RecordError(ErrorCode::invalid_input, message);
 }
 void append_number(std::string& bytes, std::uint64_t value, unsigned width) {
-    for (unsigned index = 0; index < width; ++index)
+    for (unsigned index = 0; index < width; ++index) {
+        const auto previous_size = bytes.size();
+        const auto previous_capacity = bytes.capacity();
         bytes.push_back(static_cast<char>((value >> (index * 8)) & 255));
+        if (bytes.capacity() != previous_capacity)
+            ledger::add(ledger::Stage::records, ledger::Metric::model_copy_bytes, previous_size);
+    }
 }
 void append_text(std::string& bytes, std::string_view value) {
     if (value.size() > record_wire::maximum_record_bytes)
         malformed("Record text exceeds size limit");
     append_number(bytes, value.size(), 4);
+    const auto previous_size = bytes.size();
+    const auto previous_capacity = bytes.capacity();
     bytes.append(value);
+    ledger::add(ledger::Stage::records, ledger::Metric::model_copy_bytes, value.size());
+    if (bytes.capacity() != previous_capacity)
+        ledger::add(ledger::Stage::records, ledger::Metric::model_copy_bytes, previous_size);
 }
 class Reader {
   public:
@@ -45,6 +56,7 @@ class Reader {
     }
     std::string text() {
         const auto count = number(4);
+        ledger::add(ledger::Stage::records, ledger::Metric::model_copy_bytes, count);
         return std::string(take(static_cast<std::size_t>(count)));
     }
     std::size_t remaining() const noexcept {
@@ -116,11 +128,13 @@ RecordActivityCounters record_activity_counters() noexcept {
     return activity_counters;
 }
 void note_whole_model_serialization(RecordStats* stats) noexcept {
+    ledger::add(ledger::Stage::records, ledger::Metric::full_model_serializations, 1);
     ++activity_counters.whole_model_serializations;
     if (stats)
         ++stats->whole_model_serializations;
 }
 void note_whole_model_materialization(RecordStats* stats) noexcept {
+    ledger::add(ledger::Stage::records, ledger::Metric::full_model_materializations, 1);
     ++activity_counters.whole_model_materializations;
     if (stats)
         ++stats->whole_model_materializations;
@@ -216,6 +230,9 @@ Record RecordRegistry::make_erased(RecordTypeId type,
         throw RecordError(ErrorCode::schema_unsupported, "Unknown record type");
     const auto& descriptor = *found->second;
     auto input = descriptor.encode(object.get());
+    ledger::add(ledger::Stage::records,
+                ledger::Metric::model_copy_bytes,
+                descriptor.owned_bytes(object.get()));
     check_input(input, descriptor);
     auto result = std::make_shared<RecordImage>();
     result->key_ = input.key;
@@ -223,6 +240,10 @@ Record RecordRegistry::make_erased(RecordTypeId type,
     result->descriptor_ = found->second;
     result->object_ = std::move(object);
     result->encoded_ = record_wire::encode(input, stats);
+    ledger::cover(ledger::Stage::records);
+    ledger::add(ledger::Stage::records,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(RecordImage) + input.key.identity.size());
     if (result->encoded_.size() > descriptor.maximum_encoded_bytes)
         throw RecordError(ErrorCode::resource_limit,
                           "Encoded record exceeds its schema byte limit");
@@ -284,6 +305,7 @@ std::string encode(const RecordInput& input, RecordStats* stats) {
         stats->model_bytes_encoded += result.size();
         stats->model_bytes_copied += result.size();
     }
+    ledger::add(ledger::Stage::records, ledger::Metric::encoded_bytes, result.size());
     return result;
 }
 RecordInput decode(std::string_view bytes) {
@@ -329,6 +351,7 @@ const RecordFieldInput& require(const RecordInput& input, RecordFieldId id) {
 std::string text(std::string_view value) {
     if (value.size() > maximum_record_bytes || value.find('\0') != std::string_view::npos)
         malformed("Invalid record text");
+    ledger::add(ledger::Stage::records, ledger::Metric::model_copy_bytes, value.size());
     return std::string(value);
 }
 std::string number(std::uint64_t value) {
@@ -349,6 +372,7 @@ std::string vector3(const std::array<double, 3>& value) {
     result.reserve(24);
     for (double component : value)
         result += real(component);
+    ledger::add(ledger::Stage::records, ledger::Metric::model_copy_bytes, 24);
     return result;
 }
 std::string strings(std::span<const std::string> values) {

@@ -434,6 +434,37 @@ void output_contract() {
     check(result.status == Status::conflict && result.error &&
               result.error->code == ErrorCode::revision_conflict && !result.value,
           "registry preserves structured service conflict without model authority");
+    OperationRegistry reports;
+    Status report_status = Status::needs_input;
+    good(reports.register_typed<MaterialCreateInput>(
+             InputTraits<MaterialCreateInput>::definition(),
+             [&](const OperationContext&, const auto&) -> Result<Value> {
+                 return {report_status,
+                         Value(Value::Object{{"check_id", Value("retained-report")}}),
+                         Diagnostic{ErrorCode::missing_input, "Missing physical facts.", "forces"}};
+             }),
+         "install diagnostic report handler");
+    for (const auto status : {Status::needs_input, Status::failed, Status::conflict}) {
+        report_status = status;
+        const auto report = reports.invoke("material.create", context, material_input());
+        check(report.status == status && report.error && report.value &&
+                  std::get<std::string>(
+                      std::get<Value::Object>(report.value->data).at("check_id").data) ==
+                      "retained-report",
+              "non-success envelope retains its immutable diagnostic report");
+    }
+    OperationRegistry malformed_report;
+    good(malformed_report.register_typed<MaterialCreateInput>(
+             InputTraits<MaterialCreateInput>::definition(),
+             [](const OperationContext&, const auto&) -> Result<Value> {
+                 return {Status::failed,
+                         Value(42),
+                         Diagnostic{ErrorCode::missing_input, "Missing physical facts.", "forces"}};
+             }),
+         "install malformed diagnostic report handler");
+    bad(malformed_report.invoke("material.create", context, material_input()),
+        ErrorCode::invalid_input,
+        "non-success report must still be an object");
 }
 void receipt_projection() {
     ChangeReceipt receipt{TransactionId("transaction-1"),
@@ -455,6 +486,59 @@ void receipt_projection() {
     receipt.primary_entity = EntityId{};
     check(!std::get<Value::Object>(change_receipt_value(receipt).data).contains("entity_id"),
           "receipt without a primary entity does not fabricate an identity");
+}
+void owned_value_copy_ledger() {
+    Value::Object object;
+    object.emplace("label", Value(std::string(80, 'x')));
+    object.emplace("number", Value(1.25));
+    const Value source(std::move(object));
+    Value assigned;
+    const auto operation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"owned-value-copies", {}, {}, 0});
+    {
+        ledger::Scope scope(operation);
+        auto copied = source;
+        assigned = source;
+        const auto& same = assigned;
+        assigned = same;
+        auto moved = std::move(copied);
+        check(moved == source && assigned == source, "Value copy/move preserves the exact tree");
+    }
+    const auto measured = operation->snapshot();
+    const auto& values = measured.values[static_cast<std::size_t>(ledger::Stage::application)];
+    check(values[static_cast<std::size_t>(ledger::Metric::model_copy_bytes)] ==
+              2 * (80 + sizeof(double)),
+          "Each deep copy clones one owned string and numeric leaf; container move reuses nodes");
+    check(values[static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)] ==
+              2 * (2 * sizeof(std::string) + 5 + 6),
+          "Each map clone owns new keys, without a second recursive payload sum");
+    auto& copied_string =
+        std::get<std::string>(std::get<Value::Object>(assigned.data).at("label").data);
+    copied_string.front() = 'z';
+    check(std::get<std::string>(std::get<Value::Object>(source.data).at("label").data).front() ==
+              'x',
+          "Metered Value copies still own independent string storage");
+
+    ChangeReceipt receipt{
+        TransactionId("transaction"), 17, 18, "content", false, EntityId("entity")};
+    const auto receipt_operation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"receipt-value-scope", {}, {}, 0});
+    {
+        ledger::Scope scope(receipt_operation);
+        const auto output = change_receipt_value(receipt);
+        const Value numeric(1.25);
+        check(std::get<Value::Object>(output.data).size() == 5 &&
+                  std::get<double>(numeric.data) == 1.25,
+              "Receipt projection and next physical Value retain their original data");
+    }
+    const auto receipt_values =
+        receipt_operation->snapshot().values[static_cast<std::size_t>(ledger::Stage::application)];
+    check(
+        receipt_values[static_cast<std::size_t>(ledger::Metric::model_copy_bytes)] ==
+                sizeof(double) &&
+            receipt_values[static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)].value_or(
+                0) > 0,
+        "Receipt source scope records transaction H and restores physical Value classification");
 }
 void parameterless_contract() {
     OperationRegistry registry;
@@ -486,6 +570,7 @@ int main() {
         context_validation_and_isolation();
         output_contract();
         receipt_projection();
+        owned_value_copy_ledger();
         parameterless_contract();
         std::cout
             << "PASS: typed operation registry, availability and mechanical wire validation\n";

@@ -1,0 +1,89 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-sanitizers
+      Start 27: record_document
+      Start  2: architecture_gate_unit
+ 1/36 Test  #2: architecture_gate_unit ...........   Passed   11.86 sec
+      Start  6: operation_generation
+ 2/36 Test  #6: operation_generation .............   Passed    5.52 sec
+      Start 22: allocation_atomicity
+ 3/36 Test #22: allocation_atomicity .............   Passed    2.56 sec
+      Start 30: geometry_mesh
+ 4/36 Test #30: geometry_mesh ....................   Passed    1.67 sec
+      Start  3: record_application
+ 5/36 Test  #3: record_application ...............   Passed    2.94 sec
+      Start 29: runtime
+ 6/36 Test #29: runtime ..........................   Passed    0.97 sec
+      Start 33: result_fixture
+ 7/36 Test #33: result_fixture ...................   Passed    0.93 sec
+      Start 19: entity_generation
+ 8/36 Test #19: entity_generation ................   Passed    1.42 sec
+      Start 25: change_events
+ 9/36 Test #25: change_events ....................   Passed    1.21 sec
+      Start 35: artifacts_local
+10/36 Test #35: artifacts_local ..................   Passed    0.94 sec
+      Start 16: query
+11/36 Test #16: query ............................   Passed    1.06 sec
+      Start  8: model_operations
+12/36 Test  #8: model_operations .................   Passed    1.11 sec
+      Start 12: model
+13/36 Test #12: model ............................   Passed    1.09 sec
+      Start 15: persistence
+14/36 Test #15: persistence ......................   Passed    1.12 sec
+      Start 20: core
+15/36 Test #20: core .............................   Passed    1.14 sec
+      Start 11: cpp_format
+16/36 Test #11: cpp_format .......................***Failed    1.29 sec
+/Users/qs/Documents/ChatGPT/QCAE/modules/application/src/core.cpp:481:30: error: code should be clang-formatted [-Wclang-format-violations]
+    const auto computed_key = direct_key ? std::string{} : scoped_key(caller, operation_name, idempotency_key);
+                             ^
+
+      Start  9: quantity_entry_consistency
+17/36 Test  #9: quantity_entry_consistency .......   Passed    0.94 sec
+      Start 10: record_query
+18/36 Test #10: record_query .....................   Passed    1.09 sec
+      Start 26: render_projector
+19/36 Test #26: render_projector .................   Passed    1.11 sec
+      Start 13: nastran
+20/36 Test #13: nastran ..........................   Passed    1.20 sec
+      Start  4: operation_registry
+21/36 Test  #4: operation_registry ...............   Passed    0.99 sec
+      Start 14: delta
+22/36 Test #14: delta ............................   Passed    0.91 sec
+      Start  7: parameters
+23/36 Test  #7: parameters .......................   Passed    0.96 sec
+      Start 21: contracts
+24/36 Test #21: contracts ........................   Passed    0.94 sec
+      Start 32: analysis_checks
+25/36 Test #32: analysis_checks ..................   Passed    1.38 sec
+      Start  1: acceptance_checker
+26/36 Test  #1: acceptance_checker ...............   Passed    0.16 sec
+      Start 28: generated_entities
+27/36 Test #28: generated_entities ...............   Passed    0.10 sec
+      Start 18: profile_identity
+28/36 Test #18: profile_identity .................   Passed    0.10 sec
+      Start 23: design
+29/36 Test #23: design ...........................   Passed    0.27 sec
+      Start  5: generated_operation_inputs
+30/36 Test  #5: generated_operation_inputs .......   Passed    0.05 sec
+      Start 17: generated_profile
+31/36 Test #17: generated_profile ................   Passed    0.05 sec
+      Start 24: generated_contract
+32/36 Test #24: generated_contract ...............   Passed    0.04 sec
+      Start 31: line_mesh_regeneration
+33/36 Test #31: line_mesh_regeneration ...........   Passed    1.28 sec
+      Start 34: nastran_static_result
+34/36 Test #34: nastran_static_result ............   Passed    0.93 sec
+      Start 36: solver_local
+35/36 Test #36: solver_local .....................***Failed    5.18 sec
+Cancellation replaced a natural failure or successful exit fact
+Test-only evidence retained at "/private/var/folders/vf/j_dmv8cd4yb3dt0sqw_29w940000gn/T/qcae-solver-test-78536"
+
+36/36 Test #27: record_document ..................   Passed   96.33 sec
+
+94% tests passed, 2 tests failed out of 36
+
+Total Test time (real) =  96.34 sec
+
+The following tests FAILED:
+	 11 - cpp_format (Failed)
+	 36 - solver_local (Failed)
+Errors while running CTest

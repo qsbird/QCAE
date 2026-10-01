@@ -5,7 +5,60 @@
 #include <set>
 
 namespace qcae::operations {
+namespace detail {
 namespace {
+thread_local ledger::Metric active_value_metric = ledger::Metric::model_copy_bytes;
+}
+ledger::Metric value_copy_metric() noexcept {
+    return active_value_metric;
+}
+MetadataValueCopies::MetadataValueCopies() noexcept : previous_(active_value_metric) {
+    active_value_metric = ledger::Metric::metadata_copy_bytes;
+}
+MetadataValueCopies::~MetadataValueCopies() {
+    active_value_metric = previous_;
+}
+} // namespace detail
+namespace {
+void observe_string_move(const std::string& value) noexcept {
+#if defined(_LIBCPP_VERSION)
+    // libc++'s allocator-free string move transfers long storage and copies the short rep.
+    if (value.capacity() <= std::string{}.capacity())
+        ledger::add(ledger::Stage::application, detail::value_copy_metric(), value.size());
+#else
+    ledger::unknown(ledger::Stage::application, ledger::Metric::model_copy_bytes);
+#endif
+}
+void observe_shallow(const Value::Storage& value, bool moved) noexcept {
+    if (value.valueless_by_exception()) {
+        ledger::unknown(ledger::Stage::application, detail::value_copy_metric());
+        return;
+    }
+    std::visit(
+        [moved](const auto& item) {
+            using T = std::decay_t<decltype(item)>;
+            if constexpr (std::is_same_v<T, std::string>) {
+                if (moved)
+                    observe_string_move(item);
+                else
+                    ledger::add(
+                        ledger::Stage::application, detail::value_copy_metric(), item.size());
+            } else if constexpr (std::is_arithmetic_v<T>) {
+                ledger::add(ledger::Stage::application, detail::value_copy_metric(), sizeof(T));
+            } else if constexpr (std::is_same_v<T, Value::Object>) {
+                if (!moved)
+                    for (const auto& [key, unused] : item) {
+                        (void)unused;
+                        wire::observe_key(key);
+                    }
+            }
+        },
+        value);
+}
+void unknown_value_copy() noexcept {
+    ledger::unknown(ledger::Stage::application, ledger::Metric::model_copy_bytes);
+    ledger::unknown(ledger::Stage::application, ledger::Metric::metadata_copy_bytes);
+}
 template <class T>
 Result<T>
 failure(ErrorCode code, std::string message, std::string field, Status status = Status::failed) {
@@ -17,7 +70,20 @@ template <class T> Result<T> success(T value) {
 }
 
 std::string child_field(std::string_view parent, std::string_view name) {
-    return parent.empty() ? std::string(name) : std::string(parent) + "." + std::string(name);
+    std::string result;
+    const auto append = [&](std::string_view part) {
+        const auto size = result.size(), capacity = result.capacity();
+        result.append(part);
+        ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, part.size());
+        if (capacity != result.capacity())
+            ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, size);
+    };
+    if (!parent.empty()) {
+        append(parent);
+        append(".");
+    }
+    append(name);
+    return result;
 }
 
 Result<bool> valid_context(const ContextRequirements& required, const OperationContext& context) {
@@ -63,6 +129,7 @@ Result<bool> valid_definition(const OperationDefinition& definition) {
     case OperationEffect::document_write:
     case OperationEffect::preview:
     case OperationEffect::background_task:
+    case OperationEffect::auxiliary_write:
         break;
     default:
         return failure<bool>(ErrorCode::invalid_input, "Unknown operation effect.", "effect");
@@ -82,6 +149,10 @@ Result<bool> valid_definition(const OperationDefinition& definition) {
                                  "Input field identity/name/type is missing or duplicated.",
                                  "fields");
         }
+        if (field.allow_empty && field.wire_type != "entity_id_array")
+            return failure<bool>(ErrorCode::invalid_input,
+                                 "Empty collections are supported only for entity ID arrays.",
+                                 "fields");
         std::set<std::string> units;
         for (const auto& unit : field.units) {
             if (unit.empty() || !units.insert(unit).second) {
@@ -94,6 +165,72 @@ Result<bool> valid_definition(const OperationDefinition& definition) {
     return success(true);
 }
 } // namespace
+
+Value::Value(bool value) : data(value) {
+    ledger::add(ledger::Stage::application, detail::value_copy_metric(), sizeof(value));
+}
+Value::Value(double value) : data(value) {
+    ledger::add(ledger::Stage::application, detail::value_copy_metric(), sizeof(value));
+}
+Value::Value(const std::string& value) try : data(value) {
+    observe_shallow(data, false);
+} catch (...) {
+    unknown_value_copy();
+    throw;
+}
+Value::Value(std::string&& value) : data(std::move(value)) {
+    observe_shallow(data, true);
+}
+Value::Value(std::string_view value) try : data(std::string(value)) {
+    ledger::add(ledger::Stage::application, detail::value_copy_metric(), value.size());
+    observe_shallow(data, true);
+} catch (...) {
+    unknown_value_copy();
+    throw;
+}
+Value::Value(const char* value) : Value(std::string_view(value)) {}
+Value::Value(const Array& value) try : data(value) {
+    // The actual child Value constructors observe each scalar/string, without another tree sum.
+} catch (...) {
+    unknown_value_copy();
+    throw;
+}
+Value::Value(Array&& value) : data(std::move(value)) {}
+Value::Value(const Object& value) try : data(value) {
+    observe_shallow(data, false);
+} catch (...) {
+    unknown_value_copy();
+    throw;
+}
+Value::Value(Object&& value) : data(std::move(value)) {}
+Value::Value(const Value& value) try : data(value.data) {
+    observe_shallow(data, false);
+} catch (...) {
+    unknown_value_copy();
+    throw;
+}
+Value& Value::operator=(const Value& value) {
+    if (this != &value) {
+        try {
+            data = value.data;
+            observe_shallow(data, false);
+        } catch (...) {
+            unknown_value_copy();
+            throw;
+        }
+    }
+    return *this;
+}
+Value::Value(Value&& value) noexcept : data(std::move(value.data)) {
+    observe_shallow(data, true);
+}
+Value& Value::operator=(Value&& value) noexcept {
+    if (this != &value) {
+        data = std::move(value.data);
+        observe_shallow(data, true);
+    }
+    return *this;
+}
 
 namespace wire {
 Result<const Value::Object*> object_fields(const Value& value,
@@ -135,7 +272,9 @@ Result<std::string> string_value(const Value& value, std::string_view field) {
         return failure<std::string>(
             ErrorCode::invalid_input, "Expected a nonempty string.", std::string(field));
     }
-    return success(*string);
+    auto copy = *string;
+    observe_input_copy(copy, copy);
+    return success(std::move(copy));
 }
 
 Result<double> finite_number(const Value& value, std::string_view field) {
@@ -159,6 +298,7 @@ Result<double> finite_number(const Value& value, std::string_view field) {
                                "Number must be finite and within the normal double range.",
                                std::string(field));
     }
+    observe_input_copy(number);
     return success(number);
 }
 
@@ -167,14 +307,19 @@ Result<EntityId> entity_id(const Value& value, std::string_view field) {
     if (!string.ok()) {
         return {string.status, std::nullopt, string.error};
     }
-    return success(EntityId{*string.value});
+    EntityId result{*string.value};
+    observe_input_copy(result, result);
+    return success(std::move(result));
 }
 
-Result<std::vector<EntityId>> entity_id_array(const Value& value, std::string_view field) {
+Result<std::vector<EntityId>>
+entity_id_array(const Value& value, std::string_view field, bool allow_empty) {
     const auto* array = std::get_if<Value::Array>(&value.data);
-    if (!array || array->empty()) {
-        return failure<std::vector<EntityId>>(
-            ErrorCode::invalid_input, "Expected a nonempty entity ID array.", std::string(field));
+    if (!array || (!allow_empty && array->empty())) {
+        return failure<std::vector<EntityId>>(ErrorCode::invalid_input,
+                                              allow_empty ? "Expected an entity ID array."
+                                                          : "Expected a nonempty entity ID array.",
+                                              std::string(field));
     }
     std::vector<EntityId> identities;
     identities.reserve(array->size());
@@ -185,12 +330,16 @@ Result<std::vector<EntityId>> entity_id_array(const Value& value, std::string_vi
         if (!identity.ok()) {
             return {identity.status, std::nullopt, identity.error};
         }
-        if (!unique.insert(identity.value->value).second) {
+        const auto inserted = unique.insert(identity.value->value).second;
+        if (inserted)
+            observe_key(identity.value->value);
+        if (!inserted) {
             return failure<std::vector<EntityId>>(ErrorCode::invalid_input,
                                                   "Entity ID array contains duplicates.",
                                                   std::string(field));
         }
         identities.push_back(*identity.value);
+        observe_input_copy(*identity.value, *identity.value);
     }
     return success(std::move(identities));
 }
@@ -225,7 +374,9 @@ Result<Quantity> quantity(const Value& value,
     if (!number.ok()) {
         return {number.status, std::nullopt, number.error};
     }
-    return success(Quantity{*number.value, *unit});
+    Quantity result{*number.value, *unit};
+    observe_input_copy(result, result);
+    return success(std::move(result));
 }
 
 Result<std::array<double, 3>> vector3(const Value& value, std::string_view field) {
@@ -267,7 +418,12 @@ Value to_value(const std::vector<EntityId>& identities) {
 }
 
 Value to_value(const Quantity& quantity) {
-    return Value(Value::Object{{"value", Value(quantity.value)}, {"unit", Value(quantity.unit)}});
+    Value::Object object;
+    object.emplace("value", Value(quantity.value));
+    observe_key("value");
+    object.emplace("unit", Value(quantity.unit));
+    observe_key("unit");
+    return Value(std::move(object));
 }
 
 Value to_value(const std::array<double, 3>& vector) {
@@ -365,11 +521,21 @@ Result<Value> OperationRegistry::invoke(std::string_view operation_id,
             ErrorCode::unsupported_capability, found->second.unavailable_reason, "operation_id");
     }
     auto invocation = context;
+    std::size_t bytes = sizeof(OperationContext) + context.caller.principal.size() +
+                        context.idempotency_key.size() + context.request_id.size();
+    if (context.document)
+        bytes += context.document->id.value.size() + context.document->epoch.value.size();
+    if (context.expected_profile)
+        bytes += context.expected_profile->profile_id.size() +
+                 context.expected_profile->profile_version.size() +
+                 context.expected_profile->definition_digest.size();
+    ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, bytes);
     invocation.requested_version = requested_version;
     const auto result = found->second.handler(invocation, input);
     if (!result.ok()) {
-        if (result.error && result.status != Status::success) {
-            return {result.status, std::nullopt, result.error};
+        if (result.error && result.status != Status::success &&
+            (!result.value || std::holds_alternative<Value::Object>(result.value->data))) {
+            return result;
         }
         return failure<Value>(ErrorCode::invalid_input,
                               "Handler returned an inconsistent result envelope.",

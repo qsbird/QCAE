@@ -10,7 +10,10 @@ namespace qcae::ipc {
 // Disposable display projections. The application and view service remain authoritative.
 class RenderService {
   public:
-    RenderService(RecordApplication&, SelectionService&, ResourceStore&);
+    RenderService(RecordApplication&,
+                  SelectionService&,
+                  ResourceStore&,
+                  RenderContributions = default_render_contributions());
     bool supports(const QString&) const;
     QJsonObject dispatch(const QJsonObject&, const Caller&);
 
@@ -18,6 +21,7 @@ class RenderService {
     RecordApplication& app_;
     SelectionService& selections_;
     ResourceStore& resources_;
+    RenderContributions contributions_;
     std::map<std::string, RenderProjector> projectors_;
     std::optional<DocumentRef> document_;
 };

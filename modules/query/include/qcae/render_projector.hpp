@@ -13,7 +13,12 @@ struct RenderLine2 {
     EntityId entity;
     std::array<EntityId, 2> nodes;
 };
-using RenderItem = std::variant<RenderPoint, RenderLine2, RenderGeometryLine>;
+struct RenderCellSource {
+    EntityId entity;
+    RenderCellKind kind{RenderCellKind::polyline};
+    std::vector<EntityId> nodes;
+};
+using RenderItem = std::variant<RenderPoint, RenderLine2, RenderGeometryLine, RenderCellSource>;
 struct RenderContribution {
     RecordTypeId record_type;
     std::string topology;
@@ -46,6 +51,7 @@ struct RenderUpdate {
     std::optional<RenderPacket> full;
     RenderDelta delta;
     RenderProjectionStats work;
+    bool legacy_line2_compatible{true};
 };
 // A disposable display index. Ordinary updates inspect only committed changed records.
 class RenderProjector {
@@ -65,7 +71,8 @@ class RenderProjector {
     RenderContributions contributions_;
     std::size_t max_entities_;
     std::optional<ViewSession> view_;
-    std::map<std::string, std::size_t> point_indices_, geometry_indices_;
+    std::map<std::string, std::size_t> point_indices_, cell_indices_, geometry_indices_;
     RenderProjectionStats stats_;
+    bool legacy_line2_compatible_{true};
 };
 } // namespace qcae

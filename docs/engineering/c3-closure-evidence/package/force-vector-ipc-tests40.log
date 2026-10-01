@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/force_vector_ipc_tests.py", line 169, in <module>
+    main()
+    ~~~~^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/force_vector_ipc_tests.py", line 165, in main
+    run(args, mode)
+    ~~~^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/force_vector_ipc_tests.py", line 129, in run
+    assert start()["recovery_available"]
+           ~~~~~^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/force_vector_ipc_tests.py", line 42, in start
+    return client.call("capabilities.list")
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/analysis_check_ipc_tests.py", line 33, in call
+    assert completed.stdout, completed.stderr
+           ^^^^^^^^^^^^^^^^
+AssertionError: Engine is not available: QLocalSocket::connectToServer: Connection refused
+

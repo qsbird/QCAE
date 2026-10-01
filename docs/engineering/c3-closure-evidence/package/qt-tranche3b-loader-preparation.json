@@ -1,0 +1,158 @@
+{
+  "schema": "qcae.qt-tranche3b-loader-closure/1",
+  "status": "source prepared; actual root runtime pending",
+  "original_prefix": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/qt-prefix",
+  "isolated_prefix": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix",
+  "cause": {
+    "QtGui_actual_rpaths_before": [
+      "/opt/homebrew/lib",
+      "@loader_path/../../.."
+    ],
+    "external_first_match": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtDBus.framework",
+    "loaded_failure_evidence": "docs/engineering/c3-closure-evidence/package/qt-harfbuzz-tranche3-offscreen-loaded-failure-build36.log",
+    "original_prior_mixed_harfbuzz_possible": true
+  },
+  "change": "Remove only QtGui /opt/homebrew/lib LC_RPATH; local @loader_path/../../.. remains. NonQt external dependencies already absolute. Retarget copied CMake/pkg-config/prl metadata.",
+  "original_prefix_unchanged": true,
+  "unchanged_source_site_manifests": {
+    "qt": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/qt-observer-manifest.json",
+    "qt_sha256": "8a7158a1f54af297b28ba970e95ffd06fcf045b1de94d50e79d2079e8087b2c9",
+    "harfbuzz": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/harfbuzz-observer-manifest.json",
+    "harfbuzz_sha256": "c73d9029932d767b931bc8df581958862ea14cf9ca48963a9087da76d345043b"
+  },
+  "unchanged_compile_object_evidence": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3/object-reuse.json",
+  "copied_metadata_files": [
+    "lib/cmake/Qt6BuildInternals/QtBuildInternalsExtra.cmake",
+    "lib/pkgconfig/Qt6Platform.pc",
+    "lib/pkgconfig/Qt6Concurrent.pc",
+    "lib/pkgconfig/Qt6Xml.pc",
+    "lib/pkgconfig/Qt6OpenGLWidgets.pc",
+    "lib/pkgconfig/Qt6PrintSupport.pc",
+    "lib/pkgconfig/Qt6Core.pc",
+    "lib/pkgconfig/Qt6Gui.pc",
+    "lib/pkgconfig/Qt6OpenGL.pc",
+    "lib/pkgconfig/Qt6Test.pc",
+    "lib/pkgconfig/Qt6Network.pc",
+    "lib/pkgconfig/Qt6Sql.pc",
+    "lib/pkgconfig/Qt6DBus.pc",
+    "lib/pkgconfig/Qt6Widgets.pc"
+  ],
+  "framework_images": [
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtConcurrent.framework/Versions/A/QtConcurrent",
+      "sha256": "4eb760f52274640a3fe1cd10d7cb68f79790f98c82e8d026a9f8ebf3953977b5",
+      "original_sha256": "4eb760f52274640a3fe1cd10d7cb68f79790f98c82e8d026a9f8ebf3953977b5",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+      "sha256": "e8b497711f390605b59c13df48ce2e811513fab2d4141ad5158afe31125b86dd",
+      "original_sha256": "e8b497711f390605b59c13df48ce2e811513fab2d4141ad5158afe31125b86dd",
+      "payload_unchanged": true,
+      "rpaths": [
+        "/opt/homebrew/lib",
+        "@loader_path/../../.."
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtDBus.framework/Versions/A/QtDBus",
+      "sha256": "7e51e4623f7fc8974155dc46caa9bb1ff78e47ca3da71edec8345c32e12513ac",
+      "original_sha256": "7e51e4623f7fc8974155dc46caa9bb1ff78e47ca3da71edec8345c32e12513ac",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+      "sha256": "2bcd6bf55fc0895d0c3006f0e7821c9eb238240d292dc95fab0b7faa1fe47dda",
+      "original_sha256": "22342e622d3f813c6c3dd60d873fce10022083be1a93011f86ff8a70d2c6b359",
+      "payload_unchanged": false,
+      "rpaths": [
+        "@loader_path/../../.."
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtNetwork.framework/Versions/A/QtNetwork",
+      "sha256": "ba4ef76a84f5f888c688184d1d4310edf6fd5da6439bb86b53f12525e8e03162",
+      "original_sha256": "ba4ef76a84f5f888c688184d1d4310edf6fd5da6439bb86b53f12525e8e03162",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtOpenGL.framework/Versions/A/QtOpenGL",
+      "sha256": "4f8b431b30a4a6dbc0d874950c936f20bc15fad16dbfd6ac4137ba7f3f39ddff",
+      "original_sha256": "4f8b431b30a4a6dbc0d874950c936f20bc15fad16dbfd6ac4137ba7f3f39ddff",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtOpenGLWidgets.framework/Versions/A/QtOpenGLWidgets",
+      "sha256": "0bf2284a7d94c0ebf17be18196d529b960a118b1434f996cce2119f5bf4cb75e",
+      "original_sha256": "0bf2284a7d94c0ebf17be18196d529b960a118b1434f996cce2119f5bf4cb75e",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtPrintSupport.framework/Versions/A/QtPrintSupport",
+      "sha256": "ebede4f8b6efa77e01284ba21b5b690d6743f9aba32b2f630aada539b6228d66",
+      "original_sha256": "ebede4f8b6efa77e01284ba21b5b690d6743f9aba32b2f630aada539b6228d66",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtSql.framework/Versions/A/QtSql",
+      "sha256": "e96b1f4907ab996f2ce9780cea4f66ee3eee6a4887fdce14b0dd9e9418b18658",
+      "original_sha256": "e96b1f4907ab996f2ce9780cea4f66ee3eee6a4887fdce14b0dd9e9418b18658",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtTest.framework/Versions/A/QtTest",
+      "sha256": "b7d76a424e74d0f7be150462bd931f82b02a304ce1c163a2cd7732a46a8c1e34",
+      "original_sha256": "b7d76a424e74d0f7be150462bd931f82b02a304ce1c163a2cd7732a46a8c1e34",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtWidgets.framework/Versions/A/QtWidgets",
+      "sha256": "64a1f7c52068c6a97415adf56cbaa0d90685721f8279b8c739f9369ee626971d",
+      "original_sha256": "64a1f7c52068c6a97415adf56cbaa0d90685721f8279b8c739f9369ee626971d",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/QtXml.framework/Versions/A/QtXml",
+      "sha256": "7953250df837701b103ad798befa5729730eb9ab9af3634c3dd597f291d6ddcc",
+      "original_sha256": "7953250df837701b103ad798befa5729730eb9ab9af3634c3dd597f291d6ddcc",
+      "payload_unchanged": true,
+      "rpaths": [
+        "@loader_path/../../../"
+      ]
+    }
+  ],
+  "harfbuzz_image": {
+    "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche3b/qt-prefix/lib/libharfbuzz.dylib",
+    "sha256": "191ce31cdee473cf1a69abc14d1b49377e9e67a0b138a6e6f20fe334717c8cb1",
+    "unchanged_from_tranche3": true
+  },
+  "runtime_tests_executed": false,
+  "copy_coverage_complete": false
+}

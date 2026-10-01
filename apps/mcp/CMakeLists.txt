@@ -1,0 +1,5 @@
+add_executable(qcae-mcp main.cpp)
+target_link_libraries(qcae-mcp PRIVATE Qt6::Core)
+target_compile_definitions(qcae-mcp PRIVATE QCAE_MCP_PYTHON="${Python3_EXECUTABLE}")
+configure_file(bridge.py "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/qcae_mcp_bridge.py" COPYONLY)
+qcae_warnings(qcae-mcp)

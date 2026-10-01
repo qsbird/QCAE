@@ -29,10 +29,14 @@ class DesktopClient : public QObject {
     [[nodiscard]] bool ready() const {
         return ready_;
     }
+    [[nodiscard]] qsizetype pendingRequests() const {
+        return pending_.size();
+    }
     [[nodiscard]] QString request(const QString& operation,
                                   const QJsonObject& parameters,
                                   const QJsonObject& context,
-                                  Reply callback);
+                                  Reply callback,
+                                  qsizetype max_reply_bytes = 0);
     [[nodiscard]] QString endpoint() const {
         return options_.endpoint;
     }
@@ -41,6 +45,21 @@ class DesktopClient : public QObject {
     }
     [[nodiscard]] bool supportsResources() const {
         return supports_resources_;
+    }
+    [[nodiscard]] bool supportsInlineEmptyRender() const {
+        return supports_inline_empty_render_;
+    }
+    [[nodiscard]] unsigned renderWireVersion() const {
+        return render_wire_version_;
+    }
+    [[nodiscard]] bool supportsEventsDocumentSummary() const {
+        return supports_events_document_summary_;
+    }
+    [[nodiscard]] bool supportsRenderModelRebase() const {
+        return supports_render_model_rebase_;
+    }
+    [[nodiscard]] bool supportsRenderChangedRows() const {
+        return supports_render_changed_rows_;
     }
     [[nodiscard]] QString engineInstanceId() const {
         return engine_instance_id_;
@@ -61,13 +80,14 @@ class DesktopClient : public QObject {
     struct Pending {
         Reply callback;
         qint64 deadline_ms{};
+        qsizetype max_reply_bytes{};
     };
     void connectNow();
     void launchEngine();
     void onConnected();
     void onDisconnected();
     void consume();
-    void deliver(const QJsonObject& response);
+    void deliver(const QJsonObject& response, qsizetype frame_bytes);
     void deliverEvent(const QJsonObject& event);
     void requireEventResync(const QString& reason, quint64 sequence);
     void postReply(Reply callback, QJsonObject response);
@@ -89,6 +109,11 @@ class DesktopClient : public QObject {
     bool launched_{false};
     bool supports_events_{false};
     bool supports_resources_{false};
+    bool supports_inline_empty_render_{false};
+    bool supports_events_document_summary_{false};
+    bool supports_render_model_rebase_{false};
+    bool supports_render_changed_rows_{false};
+    unsigned render_wire_version_{2};
     bool events_need_resync_{true};
     QString engine_instance_id_;
     quint64 event_sequence_{};

@@ -1,0 +1,467 @@
+{
+  "engine_sha256": "2b633c21b8eaf46935f3e6fb023d7f770462f3c8d2917465ff265247b8a9a380",
+  "source_kind": "actual_local_engine",
+  "isolated_workspace": true,
+  "read_negative_cases": 16,
+  "capabilities": {
+    "entity.query": {
+      "available": true,
+      "description": "Evaluate a typed scoped query",
+      "effect": "query",
+      "implementation_status": "partial",
+      "input_type": "EntityQuery",
+      "name": "entity.query",
+      "output_type": "SelectionResult",
+      "parameters_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ids": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "kind": {
+            "description": "Case-sensitive query kind, for example node or beam.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 1000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "name_contains": {
+            "type": "string"
+          },
+          "offset": {
+            "maximum": 100000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "owner_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "view": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_idempotency_key": false,
+      "requires_profile_match": false,
+      "requires_revision": false,
+      "target_context": "conditional"
+    },
+    "entity.references": {
+      "available": true,
+      "description": "Read dependencies and all shared-property consumers",
+      "effect": "query",
+      "implementation_status": "partial",
+      "input_type": "ReferenceQuery",
+      "name": "entity.references",
+      "output_type": "ReferenceResult",
+      "parameters_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "direction": {
+            "enum": [
+              "incoming",
+              "outgoing"
+            ],
+            "type": "string"
+          },
+          "entity_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_id"
+        ],
+        "type": "object"
+      },
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_idempotency_key": false,
+      "requires_profile_match": false,
+      "requires_revision": false,
+      "target_context": "none"
+    },
+    "model.summary": {
+      "available": true,
+      "description": "Read model and analysis completeness summaries",
+      "effect": "query",
+      "implementation_status": "partial",
+      "input_type": "SummaryQuery",
+      "name": "model.summary",
+      "output_type": "ModelSummary",
+      "parameters_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_idempotency_key": false,
+      "requires_profile_match": false,
+      "requires_revision": false,
+      "target_context": "none"
+    },
+    "project.status": {
+      "available": true,
+      "description": "Read saved state and project metadata",
+      "effect": "query",
+      "implementation_status": "partial",
+      "input_type": "ProjectStatusQuery",
+      "name": "project.status",
+      "output_type": "ProjectStatus",
+      "parameters_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_idempotency_key": false,
+      "requires_profile_match": false,
+      "requires_revision": false,
+      "target_context": "none"
+    },
+    "entity.fields": {
+      "available": true,
+      "fields": [
+        {
+          "allow_empty": false,
+          "name": "entity_id",
+          "required": true,
+          "units": [],
+          "wire_type": "string"
+        }
+      ],
+      "implementation_status": "implemented",
+      "name": "entity.fields",
+      "omitted_version_policy": "installed_version",
+      "requested_version_field": "requested_version",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_expected_profile": false,
+      "version": 1
+    },
+    "task.status": {
+      "available": true,
+      "fields": [
+        {
+          "allow_empty": false,
+          "name": "task_id",
+          "required": true,
+          "units": [],
+          "wire_type": "string"
+        }
+      ],
+      "implementation_status": "implemented",
+      "name": "task.status",
+      "omitted_version_policy": "installed_version",
+      "requested_version_field": "requested_version",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_expected_profile": false,
+      "version": 1
+    },
+    "task.cancel": {
+      "available": true,
+      "fields": [
+        {
+          "allow_empty": false,
+          "name": "task_id",
+          "required": true,
+          "units": [],
+          "wire_type": "string"
+        }
+      ],
+      "implementation_status": "implemented",
+      "name": "task.cancel",
+      "omitted_version_policy": "installed_version",
+      "requested_version_field": "requested_version",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_expected_profile": false,
+      "version": 1
+    },
+    "task.reconcile": {
+      "available": true,
+      "fields": [],
+      "implementation_status": "implemented",
+      "name": "task.reconcile",
+      "omitted_version_policy": "installed_version",
+      "parameters_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "requested_version_field": "requested_version",
+      "requires_document": true,
+      "requires_epoch": true,
+      "requires_expected_profile": false,
+      "version": 1
+    }
+  },
+  "cases": [
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "limit": 0,
+        "offset": 100000
+      },
+      "expected": "success",
+      "response": {
+        "entities": [],
+        "limit": 0,
+        "offset": 100000,
+        "revision": "0",
+        "total": 0
+      }
+    },
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "limit": 1001
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Invalid pagination"
+        },
+        "request_id": "c3-sync-8",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "offset": 100001
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Invalid pagination"
+        },
+        "request_id": "c3-sync-10",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "limit": 1.5
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Invalid pagination"
+        },
+        "request_id": "c3-sync-12",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "limit": true
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Invalid pagination"
+        },
+        "request_id": "c3-sync-14",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "kind": ""
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Expected string: kind"
+        },
+        "request_id": "c3-sync-16",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "ids": [
+          42
+        ]
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Invalid entity ID"
+        },
+        "request_id": "c3-sync-18",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.query",
+      "parameters": {
+        "entity_type": "Node"
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Unexpected field: entity_type"
+        },
+        "request_id": "c3-sync-20",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.references",
+      "parameters": {
+        "entity_id": "missing",
+        "direction": "sideways"
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Unknown reference direction"
+        },
+        "request_id": "c3-sync-22",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "model.summary",
+      "parameters": {
+        "analysis_id": "unexpected"
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Unexpected field: analysis_id"
+        },
+        "request_id": "c3-sync-24",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "project.status",
+      "parameters": {
+        "unexpected": false
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Unexpected field: unexpected"
+        },
+        "request_id": "c3-sync-26",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "task.reconcile",
+      "parameters": {
+        "unexpected": false
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Task reconciliation requires document context and empty parameters"
+        },
+        "request_id": "c3-sync-28",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "task.reconcile",
+      "parameters": [
+        "wrong-object-type"
+      ],
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "parameters must be an object"
+        },
+        "request_id": "c3-sync-30",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "entity.fields",
+      "parameters": {
+        "entity_id": "missing",
+        "extra": 1
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Entity fields requires document context and only entity_id"
+        },
+        "request_id": "c3-sync-32",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "task.status",
+      "parameters": {
+        "task_id": "missing",
+        "extra": 1
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Task requests require document context and only task_id"
+        },
+        "request_id": "c3-sync-34",
+        "status": "failed"
+      }
+    },
+    {
+      "operation": "task.cancel",
+      "parameters": {
+        "task_id": "missing",
+        "extra": 1
+      },
+      "expected": "failed",
+      "response": {
+        "error": {
+          "code": "INVALID_INPUT",
+          "message": "Task requests require document context and only task_id"
+        },
+        "request_id": "c3-sync-36",
+        "status": "failed"
+      }
+    }
+  ],
+  "no_model_change": true,
+  "no_real_solver": true
+}

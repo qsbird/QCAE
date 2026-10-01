@@ -1,0 +1,23 @@
+[0/2] Re-checking globbed directories...
+[1/13] Generating ../../generated/qcae/operation_inputs.hpp
+[2/13] Building CXX object features/legacy_api/CMakeFiles/qcae_legacy_api.dir/src/legacy_state.cpp.o
+[3/13] Building CXX object features/legacy_api/CMakeFiles/qcae_legacy_api.dir/src/core.cpp.o
+[4/13] Building CXX object features/legacy_api/CMakeFiles/qcae_legacy_api.dir/src/legacy_migration.cpp.o
+[5/13] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/analysis_checks.cpp.o
+[6/13] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/analysis_operations.cpp.o
+[7/13] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/cantilever_checks.cpp.o
+[8/13] Building CXX object features/analysis/CMakeFiles/qcae_analysis_features.dir/src/check_report.cpp.o
+[9/13] Linking CXX static library features/analysis/libqcae_analysis_features.a
+[10/13] Linking CXX static library features/legacy_api/libqcae_legacy_api.a
+[11/13] Building CXX object features/analysis/CMakeFiles/qcae_analysis_check_tests.dir/__/__/tests/analysis_check_tests.cpp.o
+FAILED: [code=1] features/analysis/CMakeFiles/qcae_analysis_check_tests.dir/__/__/tests/analysis_check_tests.cpp.o 
+/usr/bin/c++  -I/Users/qs/Documents/ChatGPT/QCAE/features/analysis/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/application/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/document/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/foundation/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/contracts/include -I/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-core/generated -I/Users/qs/Documents/ChatGPT/QCAE/modules/operations/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/parameters/include -I/Users/qs/Documents/ChatGPT/QCAE/features/legacy_api/include -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -Werror -MD -MT features/analysis/CMakeFiles/qcae_analysis_check_tests.dir/__/__/tests/analysis_check_tests.cpp.o -MF features/analysis/CMakeFiles/qcae_analysis_check_tests.dir/__/__/tests/analysis_check_tests.cpp.o.d -o features/analysis/CMakeFiles/qcae_analysis_check_tests.dir/__/__/tests/analysis_check_tests.cpp.o -c /Users/qs/Documents/ChatGPT/QCAE/tests/analysis_check_tests.cpp
+/Users/qs/Documents/ChatGPT/QCAE/tests/analysis_check_tests.cpp:289:21: error: loop variable 'target' creates a copy from type 'qcae::Id<qcae::EntityTag> const' [-Werror,-Wrange-loop-construct]
+  289 |     for (const auto target : {EntityId("absent-force"), EntityId("material")}) {
+      |                     ^
+/Users/qs/Documents/ChatGPT/QCAE/tests/analysis_check_tests.cpp:289:10: note: use reference type 'qcae::Id<qcae::EntityTag> const &' to prevent copying
+  289 |     for (const auto target : {EntityId("absent-force"), EntityId("material")}) {
+      |          ^~~~~~~~~~~~~~~~~~~
+      |                     &
+1 error generated.
+ninja: build stopped: subcommand failed.

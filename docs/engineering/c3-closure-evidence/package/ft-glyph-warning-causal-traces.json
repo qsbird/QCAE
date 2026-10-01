@@ -1,0 +1,370 @@
+{
+    "fixed_probe_exit_code": 0,
+    "library_or_product_modified": false,
+    "original_probe_called_once": true,
+    "schema": "qcae.ft-glyph-warning-stack/1",
+    "warning_forwarded_once": true,
+    "warning_traces": [
+        {
+            "frames": [
+                {
+                    "address": "102c6764c",
+                    "demangled": "(anonymous namespace)::traceWarning(QtMsgType, QMessageLogContext const&, QString const&)",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "f64c",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 0,
+                    "symbol": "_ZN12_GLOBAL__N_112traceWarningE9QtMsgTypeRK18QMessageLogContextRK7QString",
+                    "symbol_offset": "d8"
+                },
+                {
+                    "address": "103efcfc8",
+                    "demangled": "qt_message_print(QtMsgType, QMessageLogContext const&, QString const&)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+                    "image_offset": "28fc8",
+                    "image_sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e",
+                    "index": 1,
+                    "symbol": "_ZL16qt_message_print9QtMsgTypeRK18QMessageLogContextRK7QString",
+                    "symbol_offset": "130"
+                },
+                {
+                    "address": "103ef8f54",
+                    "demangled": "qt_message(QtMsgType, QMessageLogContext const&, char const*, char*)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+                    "image_offset": "24f54",
+                    "image_sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e",
+                    "index": 2,
+                    "symbol": "_ZL10qt_message9QtMsgTypeRK18QMessageLogContextPKcPc",
+                    "symbol_offset": "54"
+                },
+                {
+                    "address": "10422f878",
+                    "demangled": "QMessageLogger::warning(char const*, ...) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+                    "image_offset": "35b878",
+                    "image_sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e",
+                    "index": 3,
+                    "symbol": "_ZNK14QMessageLogger7warningEPKcz",
+                    "symbol_offset": "38"
+                },
+                {
+                    "address": "103b59fd4",
+                    "demangled": "QFontEngineFT::loadGlyph(QFontEngineFT::QGlyphSet*, unsigned int, QFixedPoint const&, QColor, QFontEngine::GlyphFormat, bool, bool) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "465fd4",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 4,
+                    "symbol": "_ZNK13QFontEngineFT9loadGlyphEPNS_9QGlyphSetEjRK11QFixedPoint6QColorN11QFontEngine11GlyphFormatEbb",
+                    "symbol_offset": "f9c"
+                },
+                {
+                    "address": "103b5bfa0",
+                    "demangled": "QFontEngineFT::recalcAdvances(QGlyphLayout*, QFlags<QFontEngine::ShaperFlag>) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "467fa0",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 5,
+                    "symbol": "_ZNK13QFontEngineFT14recalcAdvancesEP12QGlyphLayout6QFlagsIN11QFontEngine10ShaperFlagEE",
+                    "symbol_offset": "1a8"
+                },
+                {
+                    "address": "103b2067c",
+                    "demangled": "_hb_qt_font_get_glyph_h_advance(hb_font_t*, void*, unsigned int, void*)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "42c67c",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 6,
+                    "symbol": "_ZL31_hb_qt_font_get_glyph_h_advanceP9hb_font_tPvjS1_",
+                    "symbol_offset": "98"
+                },
+                {
+                    "address": "10320d39c",
+                    "demangled": "hb_font_get_glyph_h_advances_default(hb_font_t*, void*, unsigned int, unsigned int const*, unsigned int, int*, unsigned int, void*)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "1139c",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 7,
+                    "symbol": "_ZL36hb_font_get_glyph_h_advances_defaultP9hb_font_tPvjPKjjPijS1_",
+                    "symbol_offset": "f8"
+                },
+                {
+                    "address": "1032a39c0",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "a79c0",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 8,
+                    "symbol": "_hb_ot_shape",
+                    "symbol_offset": "bbc"
+                },
+                {
+                    "address": "1032a9244",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "ad244",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 9,
+                    "symbol": "hb_shape_plan_execute",
+                    "symbol_offset": "108"
+                },
+                {
+                    "address": "1032a9480",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "ad480",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 10,
+                    "symbol": "hb_shape_full",
+                    "symbol_offset": "148"
+                },
+                {
+                    "address": "103a314bc",
+                    "demangled": "QTextEngine::shapeTextWithHarfbuzzNG(QScriptItem const&, unsigned short const*, int, int, int, QFontEngine*, QSpan<unsigned int, 18446744073709551615ul>, bool, bool, QMap<QFont::Tag, unsigned int> const&) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "33d4bc",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 11,
+                    "symbol": "_ZNK11QTextEngine23shapeTextWithHarfbuzzNGERK11QScriptItemPKtiiiP11QFontEngine5QSpanIjLm18446744073709551615EEbbRK4QMapIN5QFont3TagEjE",
+                    "symbol_offset": "440"
+                },
+                {
+                    "address": "103a2f960",
+                    "demangled": "QTextEngine::shapeText(int) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "33b960",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 12,
+                    "symbol": "_ZNK11QTextEngine9shapeTextEi",
+                    "symbol_offset": "ba4"
+                },
+                {
+                    "address": "103a5f370",
+                    "demangled": "QTextLine::layout_helper(int)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "36b370",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 13,
+                    "symbol": "_ZN9QTextLine13layout_helperEi",
+                    "symbol_offset": "2f4"
+                },
+                {
+                    "address": "102c5d984",
+                    "demangled": "(anonymous namespace)::observeCase((anonymous namespace)::FontRequest const&, (anonymous namespace)::TextCase const&, int, QString const&)",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "5984",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 14,
+                    "symbol": "_ZN12_GLOBAL__N_111observeCaseERKNS_11FontRequestERKNS_8TextCaseEiRK7QString",
+                    "symbol_offset": "ec"
+                },
+                {
+                    "address": "102c5abe4",
+                    "demangled": "qcae_fixed_font_probe_main(int, char**)",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "2be4",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 15,
+                    "symbol": "_Z26qcae_fixed_font_probe_mainiPPc",
+                    "symbol_offset": "22f4"
+                },
+                {
+                    "address": "102c66544",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "e544",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 16,
+                    "symbol": "main",
+                    "symbol_offset": "58"
+                },
+                {
+                    "address": "183f644e4",
+                    "image": "/usr/lib/dyld",
+                    "image_offset": "204e4",
+                    "image_sha256": "373fce2b3689c2113d5341a6bba735e9f970401ba64896c0a6379680192f1cdf",
+                    "index": 17,
+                    "symbol": "start",
+                    "symbol_offset": "1b50"
+                }
+            ],
+            "original_warning": "load glyph failed err=6 face=0x72f6fea00, glyph=65535"
+        },
+        {
+            "frames": [
+                {
+                    "address": "102c6764c",
+                    "demangled": "(anonymous namespace)::traceWarning(QtMsgType, QMessageLogContext const&, QString const&)",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "f64c",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 0,
+                    "symbol": "_ZN12_GLOBAL__N_112traceWarningE9QtMsgTypeRK18QMessageLogContextRK7QString",
+                    "symbol_offset": "d8"
+                },
+                {
+                    "address": "103efcfc8",
+                    "demangled": "qt_message_print(QtMsgType, QMessageLogContext const&, QString const&)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+                    "image_offset": "28fc8",
+                    "image_sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e",
+                    "index": 1,
+                    "symbol": "_ZL16qt_message_print9QtMsgTypeRK18QMessageLogContextRK7QString",
+                    "symbol_offset": "130"
+                },
+                {
+                    "address": "103ef8f54",
+                    "demangled": "qt_message(QtMsgType, QMessageLogContext const&, char const*, char*)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+                    "image_offset": "24f54",
+                    "image_sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e",
+                    "index": 2,
+                    "symbol": "_ZL10qt_message9QtMsgTypeRK18QMessageLogContextPKcPc",
+                    "symbol_offset": "54"
+                },
+                {
+                    "address": "10422f878",
+                    "demangled": "QMessageLogger::warning(char const*, ...) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+                    "image_offset": "35b878",
+                    "image_sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e",
+                    "index": 3,
+                    "symbol": "_ZNK14QMessageLogger7warningEPKcz",
+                    "symbol_offset": "38"
+                },
+                {
+                    "address": "103b59fd4",
+                    "demangled": "QFontEngineFT::loadGlyph(QFontEngineFT::QGlyphSet*, unsigned int, QFixedPoint const&, QColor, QFontEngine::GlyphFormat, bool, bool) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "465fd4",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 4,
+                    "symbol": "_ZNK13QFontEngineFT9loadGlyphEPNS_9QGlyphSetEjRK11QFixedPoint6QColorN11QFontEngine11GlyphFormatEbb",
+                    "symbol_offset": "f9c"
+                },
+                {
+                    "address": "103b5bfa0",
+                    "demangled": "QFontEngineFT::recalcAdvances(QGlyphLayout*, QFlags<QFontEngine::ShaperFlag>) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "467fa0",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 5,
+                    "symbol": "_ZNK13QFontEngineFT14recalcAdvancesEP12QGlyphLayout6QFlagsIN11QFontEngine10ShaperFlagEE",
+                    "symbol_offset": "1a8"
+                },
+                {
+                    "address": "103b2067c",
+                    "demangled": "_hb_qt_font_get_glyph_h_advance(hb_font_t*, void*, unsigned int, void*)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "42c67c",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 6,
+                    "symbol": "_ZL31_hb_qt_font_get_glyph_h_advanceP9hb_font_tPvjS1_",
+                    "symbol_offset": "98"
+                },
+                {
+                    "address": "10320d39c",
+                    "demangled": "hb_font_get_glyph_h_advances_default(hb_font_t*, void*, unsigned int, unsigned int const*, unsigned int, int*, unsigned int, void*)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "1139c",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 7,
+                    "symbol": "_ZL36hb_font_get_glyph_h_advances_defaultP9hb_font_tPvjPKjjPijS1_",
+                    "symbol_offset": "f8"
+                },
+                {
+                    "address": "1032a39c0",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "a79c0",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 8,
+                    "symbol": "_hb_ot_shape",
+                    "symbol_offset": "bbc"
+                },
+                {
+                    "address": "1032a9244",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "ad244",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 9,
+                    "symbol": "hb_shape_plan_execute",
+                    "symbol_offset": "108"
+                },
+                {
+                    "address": "1032a9480",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+                    "image_offset": "ad480",
+                    "image_sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b",
+                    "index": 10,
+                    "symbol": "hb_shape_full",
+                    "symbol_offset": "148"
+                },
+                {
+                    "address": "103a314bc",
+                    "demangled": "QTextEngine::shapeTextWithHarfbuzzNG(QScriptItem const&, unsigned short const*, int, int, int, QFontEngine*, QSpan<unsigned int, 18446744073709551615ul>, bool, bool, QMap<QFont::Tag, unsigned int> const&) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "33d4bc",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 11,
+                    "symbol": "_ZNK11QTextEngine23shapeTextWithHarfbuzzNGERK11QScriptItemPKtiiiP11QFontEngine5QSpanIjLm18446744073709551615EEbbRK4QMapIN5QFont3TagEjE",
+                    "symbol_offset": "440"
+                },
+                {
+                    "address": "103a2f960",
+                    "demangled": "QTextEngine::shapeText(int) const",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "33b960",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 12,
+                    "symbol": "_ZNK11QTextEngine9shapeTextEi",
+                    "symbol_offset": "ba4"
+                },
+                {
+                    "address": "103a5f370",
+                    "demangled": "QTextLine::layout_helper(int)",
+                    "image": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+                    "image_offset": "36b370",
+                    "image_sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac",
+                    "index": 13,
+                    "symbol": "_ZN9QTextLine13layout_helperEi",
+                    "symbol_offset": "2f4"
+                },
+                {
+                    "address": "102c5d984",
+                    "demangled": "(anonymous namespace)::observeCase((anonymous namespace)::FontRequest const&, (anonymous namespace)::TextCase const&, int, QString const&)",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "5984",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 14,
+                    "symbol": "_ZN12_GLOBAL__N_111observeCaseERKNS_11FontRequestERKNS_8TextCaseEiRK7QString",
+                    "symbol_offset": "ec"
+                },
+                {
+                    "address": "102c5abe4",
+                    "demangled": "qcae_fixed_font_probe_main(int, char**)",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "2be4",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 15,
+                    "symbol": "_Z26qcae_fixed_font_probe_mainiPPc",
+                    "symbol_offset": "22f4"
+                },
+                {
+                    "address": "102c66544",
+                    "image": "/private/tmp/qcae_ft_glyph_causal_probe5",
+                    "image_offset": "e544",
+                    "image_sha256": "8d1e8267c7afe9421be7adbf1b72bb2af460057389e02707d64ea0b766d3a188",
+                    "index": 16,
+                    "symbol": "main",
+                    "symbol_offset": "58"
+                },
+                {
+                    "address": "183f644e4",
+                    "image": "/usr/lib/dyld",
+                    "image_offset": "204e4",
+                    "image_sha256": "373fce2b3689c2113d5341a6bba735e9f970401ba64896c0a6379680192f1cdf",
+                    "index": 17,
+                    "symbol": "start",
+                    "symbol_offset": "1b50"
+                }
+            ],
+            "original_warning": "load glyph failed err=6 face=0x72f6fea00, glyph=65535"
+        }
+    ],
+    "whole_copy_coverage": "unknown"
+}

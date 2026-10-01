@@ -18,6 +18,7 @@ import sys
 PRODUCTION_DIRS = ("modules", "features", "profiles", "adapters", "ui", "apps")
 SOURCE_SUFFIXES = {".cpp", ".cc", ".cxx", ".c"}
 HEADER_SUFFIXES = {".hpp", ".h", ".hh", ".hxx"}
+RUNTIME_SUFFIXES = {".py"}
 FRAMEWORK = re.compile(r"(?:^|[/ :])(?:Qt[0-9]*(?:::|/)|Q[A-Z][a-z][A-Za-z0-9_]*(?:[/.]|$)|vtk|VTK|sqlite|SQLite|MCP)")
 INCLUDE = re.compile(r'^\s*#\s*include\s*[<"]([^">]+)[">]', re.MULTILINE)
 SCOPE = {"PUBLIC", "PRIVATE", "INTERFACE"}
@@ -84,9 +85,10 @@ def enabled(row: dict, cache: dict) -> bool:
 
 def links(row: dict, cache: dict) -> set[str]:
     result = set(row.get("public_dependencies", []) + row.get("private_dependencies", []))
-    for option, names in row.get("conditional_dependencies", {}).items():
-        if enabled({"option": option}, cache):
-            result.update(names)
+    for field in ("conditional_dependencies", "conditional_public_dependencies"):
+        for option, names in row.get(field, {}).items():
+            if enabled({"option": option}, cache):
+                result.update(names)
     return result
 
 
@@ -104,7 +106,7 @@ def core(row: dict) -> bool:
 
 
 def client(row: dict) -> bool:
-    return row["path"].startswith(("modules/clients", "ui/", "apps/cli", "apps/desktop"))
+    return row["path"].startswith(("modules/clients", "ui/", "apps/cli", "apps/desktop", "apps/mcp"))
 
 
 def domain_or_storage(row: dict) -> bool:
@@ -126,7 +128,7 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
     owners: dict[str, str] = {}
     public: dict[str, str] = {}
     for name, row in targets.items():
-        for key in ("sources", "public_headers", "private_headers"):
+        for key in ("sources", "public_headers", "private_headers", "runtime_sources"):
             for filename in row.get(key, []):
                 if filename in owners:
                     reject("ownership", f"{filename} owned by {owners[filename]} and {name}")
@@ -146,7 +148,7 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
                         reject("private-include", f"{name} public include root exposes {filename}")
     production = {str(path.relative_to(root)) for directory in PRODUCTION_DIRS
                   for path in (root / directory).rglob("*")
-                  if path.is_file() and path.suffix in SOURCE_SUFFIXES | HEADER_SUFFIXES}
+                  if path.is_file() and path.suffix in SOURCE_SUFFIXES | HEADER_SUFFIXES | RUNTIME_SUFFIXES}
     for filename in sorted(production - owners.keys()):
         reject("ownership", f"unregistered production file: {filename}")
 
@@ -201,6 +203,9 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
         for dependency in sorted(literal - direct[name]):
             reject("manifest-link", f"{name} declares absent direct dependency {dependency}")
         expected_public = {d for d in row.get("public_dependencies", []) if not d.startswith("${")}
+        for option, names in row.get("conditional_public_dependencies", {}).items():
+            if enabled({"option": option}, cache):
+                expected_public.update(names)
         for dependency in sorted(expected_public - public_links[name]):
             reject("public-api", f"{name} does not export declared public dependency {dependency}")
         for dependency in sorted(public_links[name] - expected_public):
@@ -249,6 +254,9 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
     # including file's own directory. Private filenames are never global roots.
     public_graph = {name: {d for d in row.get("public_dependencies", []) if d in targets}
                     for name, row in targets.items()}
+    for name, row in targets.items():
+        for names in row.get("conditional_public_dependencies", {}).values():
+            public_graph[name].update(d for d in names if d in targets)
     public_roots = [root / p for row in targets.values() for p in row["public_include_dirs"]]
     for filename, owner in sorted(owners.items()):
         path = root / filename
@@ -277,6 +285,8 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
                 # Static scanning sees all preprocessor branches, including
                 # includes guarded by disabled adapter options.
                 for conditional in targets[owner].get("conditional_dependencies", {}).values():
+                    allowed.update(conditional)
+                for conditional in targets[owner].get("conditional_public_dependencies", {}).values():
                     allowed.update(conditional)
                 for direct_dependency in list(allowed):
                     allowed.update(closure(public_graph, direct_dependency))

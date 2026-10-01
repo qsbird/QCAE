@@ -98,6 +98,21 @@ add_subdirectory(modules/operations)
         self.assertEqual(self.header.stat().st_mtime_ns, timestamp,
                          "unchanged schemas should not regenerate")
 
+    def test_allow_empty_requires_boolean_entity_array_schema(self):
+        probe = self.write_probe_schema()
+        for kind, allowed in (("entity_id_array", "true"), ("string", True)):
+            with self.subTest(kind=kind, allowed=allowed):
+                schema = json.loads(probe.read_text())
+                schema["operations"][0]["fields"] = [{"field_id": 1, "name": "items",
+                                                     "type": kind, "allow_empty": allowed}]
+                probe.write_text(json.dumps(schema))
+                result = subprocess.run(["cmake", "--build", str(self.build), "--target",
+                                         "qcae_generated_operation_inputs"],
+                                        capture_output=True, text=True, check=False)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("allow_empty must be a boolean on an entity ID array",
+                              result.stdout + result.stderr)
+
     def test_parameterless_input_compiles_and_checks_object_shape(self):
         self.write_probe_schema()
         self.generate()

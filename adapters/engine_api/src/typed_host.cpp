@@ -1,8 +1,11 @@
 #include "qcae/typed_host.hpp"
+#include "qcae/json_ledger.hpp"
 #include "typed_values.hpp"
+#include "typed_json.hpp"
 #include "qcae/ipc_api.hpp"
 #include "qcae/operations.hpp"
 #include <algorithm>
+#include <QJsonDocument>
 #include "qcae/query.hpp"
 #include <charconv>
 #include <cmath>
@@ -23,13 +26,15 @@ bool intrinsic(std::string_view operation) {
            intrinsic_operations.end();
 }
 QString qs(std::string_view value) {
-    return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
+    return transport::json_ledger::from_utf8(value);
 }
 std::string string(const QJsonObject& object, const char* key) {
     const auto value = object.value(QLatin1String(key));
-    if (!value.isString() || value.toString().trimmed().isEmpty())
+    if (!value.isString())
         throw std::invalid_argument(std::string("Expected nonempty string: ") + key);
-    return value.toString().toStdString();
+    if (transport::json_ledger::trimmed_empty(value.toStringView()))
+        throw std::invalid_argument(std::string("Expected nonempty string: ") + key);
+    return transport::json_ledger::utf8(value.toStringView());
 }
 Value decode(const QJsonValue& value) {
     if (value.isBool())
@@ -43,7 +48,7 @@ Value decode(const QJsonValue& value) {
         return Value(number);
     }
     if (value.isString())
-        return Value(value.toString().toStdString());
+        return Value(transport::json_ledger::utf8(value.toStringView()));
     if (value.isArray()) {
         Value::Array result;
         for (const auto& item : value.toArray())
@@ -53,8 +58,9 @@ Value decode(const QJsonValue& value) {
     if (value.isObject()) {
         Value::Object result;
         const auto object = value.toObject();
-        for (auto it = object.begin(); it != object.end(); ++it)
-            result.emplace(it.key().toStdString(), decode(it.value()));
+        for (auto it = object.begin(); it != object.end(); ++it) {
+            result.emplace(transport::json_ledger::utf8(it.keyView()), decode(it.value()));
+        }
         return Value(std::move(result));
     }
     throw std::invalid_argument("Null parameters are unsupported; omit optional fields");
@@ -66,16 +72,18 @@ QJsonValue encode(const Value& value) {
             if constexpr (std::is_same_v<T, std::string>)
                 return qs(item);
             else if constexpr (std::is_same_v<T, std::int64_t>)
-                return QString::number(item);
+                return transport::json_ledger::number(item);
             else if constexpr (std::is_same_v<T, Value::Array>) {
-                QJsonArray result;
-                for (const auto& child : item)
-                    result.append(encode(child));
-                return result;
+                return detail::typed_json_array(item);
             } else if constexpr (std::is_same_v<T, Value::Object>) {
                 QJsonObject result;
-                for (const auto& [key, child] : item)
-                    result.insert(qs(key), encode(child));
+                transport::json_ledger::ObjectCopies copies;
+                for (const auto& [key, child] : item) {
+                    const auto value = encode(child);
+                    const auto name = qs(key);
+                    result.insert(name, value);
+                    copies.insert(name, value, true, false);
+                }
                 return result;
             } else
                 return item;
@@ -91,14 +99,27 @@ QJsonObject response(const QString& id, const Result<Value>& result) {
         auto error = output.value("error").toObject();
         error.insert("field", qs(result.error->field));
         output.insert("error", error);
+        if (result.value) {
+            const auto data = encode(*result.value).toObject();
+            output.insert("data", data);
+            transport::json_ledger::ObjectCopies copies;
+            copies.insert(QLatin1StringView("data"), data);
+        }
         return output;
     }
     const auto data = encode(*result.value).toObject();
     QJsonObject output{{"request_id", id}, {"status", "success"}, {"data", data}};
-    if (data.contains("current_revision"))
+    transport::json_ledger::ObjectCopies copies;
+    copies.insert(QLatin1StringView("request_id"), id);
+    copies.insert(QLatin1StringView("status"), QStringLiteral("success"));
+    copies.insert(QLatin1StringView("data"), data);
+    if (data.contains("current_revision")) {
         output.insert("revision", data.value("current_revision"));
-    else if (data.contains("revision"))
+        copies.insert(QLatin1StringView("revision"), data.value("current_revision"), false);
+    } else if (data.contains("revision")) {
         output.insert("revision", data.value("revision"));
+        copies.insert(QLatin1StringView("revision"), data.value("revision"), false);
+    }
     return output;
 }
 OperationContext context(const QJsonObject& request, const Caller& caller) {
@@ -187,18 +208,43 @@ void checked(const Result<bool>& result) {
 }
 } // namespace
 
+QJsonArray detail::typed_json_array(const operations::Value::Array& values) {
+    QJsonArray array;
+    transport::json_ledger::ObjectCopies copies;
+    for (const auto& child : values) {
+        const auto value = encode(child);
+        array.append(value);
+        copies.append(value);
+    }
+    return array;
+}
+std::size_t detail::typed_json_array_bytes(const operations::Value::Array& values) {
+    const auto array = typed_json_array(values);
+    const auto bytes = QJsonDocument(array).toJson(QJsonDocument::Compact);
+    transport::json_ledger::encoding(bytes, array.size());
+    ledger::add(ledger::Stage::socket_send, ledger::Metric::encoded_bytes, bytes.size());
+    ledger::add(ledger::Stage::socket_send, ledger::Metric::metadata_copy_bytes, bytes.size());
+    return static_cast<std::size_t>(bytes.size());
+}
+
 TypedHost::TypedHost(RecordApplication& app, std::function<bool(const ProfileRef&)> supported)
     : TypedHost(app, std::move(supported), default_operations()) {}
 TypedHost::TypedHost(RecordApplication& app,
                      std::function<bool(const ProfileRef&)> supported,
                      OperationContributor contributor)
-    : app_(app), profile_supported_(std::move(supported)), state_(std::make_unique<State>()) {
+    : TypedHost(app, std::move(supported), std::move(contributor), {}) {}
+TypedHost::TypedHost(RecordApplication& app,
+                     std::function<bool(const ProfileRef&)> supported,
+                     OperationContributor contributor,
+                     TaskPublisherFactory publisher_factory)
+    : app_(app), profile_supported_(std::move(supported)),
+      publisher_factory_(std::move(publisher_factory)), state_(std::make_unique<State>()) {
     if (!contributor)
         throw std::invalid_argument("Operation contributor is empty");
     checked(contributor(state_->registry, app_, [this]() -> TaskService& { return tasks(); }));
     for (const auto& descriptor : state_->registry.descriptors()) {
         const auto& id = descriptor.definition.operation_id;
-        if (intrinsic(id) || find_operation(id) || id == "runtime.handshake")
+        if (intrinsic(id) || compatibility_operation_supported(id) || id == "runtime.handshake")
             throw std::invalid_argument("Operation contribution conflicts with host operation: " +
                                         id);
     }
@@ -209,7 +255,9 @@ TaskService& TypedHost::tasks() {
         if (app_.recovery_available())
             throw RecordError(ErrorCode::storage_uncertain,
                               "Explicit application recovery is required before task access");
-        tasks_ = std::make_unique<TaskService>(record_task_publisher(app_, profile_supported_));
+        tasks_ = std::make_unique<TaskService>(
+            publisher_factory_ ? publisher_factory_(app_, profile_supported_)
+                               : record_task_publisher(app_, profile_supported_));
     }
     return *tasks_;
 }
@@ -236,13 +284,15 @@ QJsonArray TypedHost::capabilities() const {
             fields.append(QJsonObject{{"name", qs(field.name)},
                                       {"wire_type", qs(field.wire_type)},
                                       {"required", field.required},
+                                      {"allow_empty", field.allow_empty},
                                       {"units", units}});
         }
         const auto effect =
-            definition.effect == OperationEffect::background_task  ? "background_task"
-            : definition.effect == OperationEffect::document_write ? "document_write"
-            : definition.effect == OperationEffect::preview        ? "preview"
-                                                                   : "read_only";
+            definition.effect == OperationEffect::background_task   ? "background_task"
+            : definition.effect == OperationEffect::document_write  ? "document_write"
+            : definition.effect == OperationEffect::preview         ? "preview"
+            : definition.effect == OperationEffect::auxiliary_write ? "auxiliary_write"
+                                                                    : "read_only";
         result.append(QJsonObject{
             {"name", qs(definition.operation_id)},
             {"effect", effect},
@@ -259,16 +309,32 @@ QJsonArray TypedHost::capabilities() const {
             {"omitted_version_policy", "installed_version"},
             {"fields", fields}});
     }
-    for (const auto name : intrinsic_operations)
-        result.append(QJsonObject{{"name", qs(name)},
-                                  {"version", 1},
-                                  {"requested_version_field", "requested_version"},
-                                  {"omitted_version_policy", "installed_version"},
-                                  {"available", true},
-                                  {"implementation_status", "implemented"},
-                                  {"requires_expected_profile", false},
-                                  {"requires_document", true},
-                                  {"requires_epoch", true}});
+    for (const auto name : intrinsic_operations) {
+        const auto identity_field = name == "entity.fields" ? "entity_id" : "task_id";
+        QJsonArray fields;
+        if (name != "task.reconcile")
+            fields.append(QJsonObject{{"name", identity_field},
+                                      {"wire_type", "string"},
+                                      {"required", true},
+                                      {"allow_empty", false},
+                                      {"units", QJsonArray{}}});
+        QJsonObject entry{{"name", qs(name)},
+                          {"version", 1},
+                          {"requested_version_field", "requested_version"},
+                          {"omitted_version_policy", "installed_version"},
+                          {"available", true},
+                          {"implementation_status", "implemented"},
+                          {"requires_expected_profile", false},
+                          {"requires_document", true},
+                          {"requires_epoch", true},
+                          {"fields", fields}};
+        if (name == "task.reconcile")
+            entry.insert("parameters_schema",
+                         QJsonObject{{"type", "object"},
+                                     {"properties", QJsonObject{}},
+                                     {"additionalProperties", false}});
+        result.append(entry);
+    }
     return result;
 }
 QJsonObject TypedHost::dispatch(const QJsonObject& request, const Caller& caller) {

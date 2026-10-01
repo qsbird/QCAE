@@ -1,0 +1,42 @@
+Command: ["/Library/Frameworks/Python.framework/Versions/3.14/bin/python3", "tests/test_c4_freeze.py", "-v"]
+test_agents_diff_without_optin_rejected (__main__.FreezeContract.test_agents_diff_without_optin_rejected) ... ok
+test_agents_user_diff_only_explicitly_excluded (__main__.FreezeContract.test_agents_user_diff_only_explicitly_excluded) ... ok
+test_changed_raw_log_rejected (__main__.FreezeContract.test_changed_raw_log_rejected) ... ok
+test_commit_packet_and_protection_integrity (__main__.FreezeContract.test_commit_packet_and_protection_integrity) ... ok
+test_committed_additional_generic_header_protected (__main__.FreezeContract.test_committed_additional_generic_header_protected) ... FAIL
+test_committed_lower_copy_threshold_rejected (__main__.FreezeContract.test_committed_lower_copy_threshold_rejected) ... ok
+test_credential_path_rejected_before_read (__main__.FreezeContract.test_credential_path_rejected_before_read) ... ok
+test_dirty_nonsource_rejected (__main__.FreezeContract.test_dirty_nonsource_rejected) ... ok
+test_dirty_source_even_assume_unchanged_rejected (__main__.FreezeContract.test_dirty_source_even_assume_unchanged_rejected) ... ok
+test_failed_quality_and_absent_matrix_rejected (__main__.FreezeContract.test_failed_quality_and_absent_matrix_rejected) ... ok
+test_fixture_threshold_cannot_be_exempted_as_evidence (__main__.FreezeContract.test_fixture_threshold_cannot_be_exempted_as_evidence) ... ok
+test_initial_delivery_byte_limit_rejected (__main__.FreezeContract.test_initial_delivery_byte_limit_rejected) ... ok
+test_initial_utf8_invalid_rejected (__main__.FreezeContract.test_initial_utf8_invalid_rejected) ... ok
+test_missing_matrix_rejected (__main__.FreezeContract.test_missing_matrix_rejected) ... ok
+test_output_self_reference_rejected_without_write (__main__.FreezeContract.test_output_self_reference_rejected_without_write) ... ok
+test_packet_file_missing_from_commit_rejected (__main__.FreezeContract.test_packet_file_missing_from_commit_rejected) ... ok
+test_packet_source_missing_rejected (__main__.FreezeContract.test_packet_source_missing_rejected) ... ok
+test_protection_denominator_rejected (__main__.FreezeContract.test_protection_denominator_rejected) ... ok
+test_symlink_source_rejected (__main__.FreezeContract.test_symlink_source_rejected) ... ok
+test_tree_and_environment_binding_rejected (__main__.FreezeContract.test_tree_and_environment_binding_rejected) ... ok
+test_untracked_source_rejected (__main__.FreezeContract.test_untracked_source_rejected) ... ok
+test_wrong_commit_and_null_rejected (__main__.FreezeContract.test_wrong_commit_and_null_rejected) ... ok
+test_wrong_environment_binding_rejected (__main__.FreezeContract.test_wrong_environment_binding_rejected) ... ok
+test_wrong_sanitizer_configuration_rejected (__main__.FreezeContract.test_wrong_sanitizer_configuration_rejected) ... ok
+
+======================================================================
+FAIL: test_committed_additional_generic_header_protected (__main__.FreezeContract.test_committed_additional_generic_header_protected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/test_c4_freeze.py", line 166, in test_committed_additional_generic_header_protected
+    self.assertEqual(process.returncode, 0, process.stderr + process.stdout)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : {"mechanism_frozen": false, "output": "/private/tmp/qc4-freeze-cx4j89ts/manifest.json", "complete_sk12_passed": false, "complete_c3_passed": false}
+
+
+----------------------------------------------------------------------
+Ran 24 tests in 30.646s
+
+FAILED (failures=1)
+
+Exit code: 1

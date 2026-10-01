@@ -1,0 +1,180 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-headless
+      Start  1: acceptance_checker
+ 1/72 Test  #1: acceptance_checker ...............   Passed    0.24 sec
+      Start  2: architecture_gate_unit
+ 2/72 Test  #2: architecture_gate_unit ...........   Passed   17.46 sec
+      Start  3: record_application
+ 3/72 Test  #3: record_application ...............   Passed    0.58 sec
+      Start  4: operation_registry
+ 4/72 Test  #4: operation_registry ...............   Passed    0.47 sec
+      Start  5: generated_operation_inputs
+ 5/72 Test  #5: generated_operation_inputs .......   Passed    0.08 sec
+      Start  6: operation_generation
+ 6/72 Test  #6: operation_generation .............   Passed    6.93 sec
+      Start  7: parameters
+ 7/72 Test  #7: parameters .......................   Passed    0.47 sec
+      Start  8: model_operations
+ 8/72 Test  #8: model_operations .................   Passed    0.50 sec
+      Start  9: quantity_entry_consistency
+ 9/72 Test  #9: quantity_entry_consistency .......   Passed    0.49 sec
+      Start 10: record_query
+10/72 Test #10: record_query .....................   Passed    0.48 sec
+      Start 11: cpp_format
+11/72 Test #11: cpp_format .......................   Passed    2.52 sec
+      Start 12: model
+12/72 Test #12: model ............................   Passed    0.50 sec
+      Start 13: nastran
+13/72 Test #13: nastran ..........................   Passed    0.47 sec
+      Start 14: delta
+14/72 Test #14: delta ............................   Passed    0.48 sec
+      Start 15: persistence
+15/72 Test #15: persistence ......................   Passed    0.50 sec
+      Start 16: query
+16/72 Test #16: query ............................   Passed    0.49 sec
+      Start 17: generated_profile
+17/72 Test #17: generated_profile ................   Passed    0.05 sec
+      Start 18: profile_identity
+18/72 Test #18: profile_identity .................   Passed    0.11 sec
+      Start 19: entity_generation
+19/72 Test #19: entity_generation ................   Passed    1.77 sec
+      Start 20: core
+20/72 Test #20: core .............................   Passed    0.60 sec
+      Start 21: contracts
+21/72 Test #21: contracts ........................   Passed    0.59 sec
+      Start 22: allocation_atomicity
+22/72 Test #22: allocation_atomicity .............   Passed    0.62 sec
+      Start 23: design
+23/72 Test #23: design ...........................   Passed    0.57 sec
+      Start 24: generated_contract
+24/72 Test #24: generated_contract ...............   Passed    0.06 sec
+      Start 25: sqlite
+25/72 Test #25: sqlite ...........................   Passed    0.60 sec
+      Start 26: record_store
+26/72 Test #26: record_store .....................   Passed    0.61 sec
+      Start 27: geometry_mesh_sqlite
+27/72 Test #27: geometry_mesh_sqlite .............   Passed    0.85 sec
+      Start 28: nastran_package
+28/72 Test #28: nastran_package ..................   Passed    0.55 sec
+      Start 29: skeleton_fault_application
+29/72 Test #29: skeleton_fault_application .......   Passed    2.82 sec
+      Start 30: skeleton_representatives
+30/72 Test #30: skeleton_representatives .........   Passed    0.53 sec
+      Start 31: legacy_migration
+31/72 Test #31: legacy_migration .................   Passed    0.58 sec
+      Start 32: json_ledger
+32/72 Test #32: json_ledger ......................   Passed    0.51 sec
+      Start 33: render_service
+33/72 Test #33: render_service ...................   Passed    0.62 sec
+      Start 34: engine_assembly
+34/72 Test #34: engine_assembly ..................   Passed    0.63 sec
+      Start 35: ipc
+35/72 Test #35: ipc ..............................***Failed    1.19 sec
+FAIL: operation analysis.start has invalid implementation_status 'unavailable'
+engine stderr log:
+QCAE engine ready: /private/tmp/qip-fy3pnijw/engine.sock (memory; data lost on exit)
+
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 699, in main
+    integration_scenario(str(root / "engine.sock"), engine_log, engine_log)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 203, in integration_scenario
+    check(implementation in {"implemented", "partial", "planned"},
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          f"operation {name} has invalid implementation_status {implementation!r}")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 34, in check
+    raise CheckFailure(message)
+CheckFailure: operation analysis.start has invalid implementation_status 'unavailable'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 716, in main
+    raise CheckFailure(f"{exc}\nengine stderr log:\n{log_text or '(empty)'}") from exc
+CheckFailure: operation analysis.start has invalid implementation_status 'unavailable'
+engine stderr log:
+QCAE engine ready: /private/tmp/qip-fy3pnijw/engine.sock (memory; data lost on exit)
+
+
+      Start 36: m1_ipc
+36/72 Test #36: m1_ipc ...........................   Passed    1.14 sec
+      Start 37: mcp_bridge
+37/72 Test #37: mcp_bridge .......................   Passed    0.97 sec
+      Start 38: mcp_protocol
+38/72 Test #38: mcp_protocol .....................   Passed    1.52 sec
+      Start 39: mcp_bridge_durable
+39/72 Test #39: mcp_bridge_durable ...............   Passed    0.22 sec
+      Start 40: analysis_check_ipc
+40/72 Test #40: analysis_check_ipc ...............   Passed    3.39 sec
+      Start 41: skeleton_fault_client
+41/72 Test #41: skeleton_fault_client ............   Passed    6.40 sec
+      Start 42: geometry_binding_ipc
+42/72 Test #42: geometry_binding_ipc .............   Passed    0.17 sec
+      Start 43: skeleton_workflow_cli
+43/72 Test #43: skeleton_workflow_cli ............   Passed    8.89 sec
+      Start 44: nastran_artifact_ipc
+44/72 Test #44: nastran_artifact_ipc .............   Passed    0.46 sec
+      Start 45: result_fixture_ipc
+45/72 Test #45: result_fixture_ipc ...............   Passed    4.39 sec
+      Start 46: solver_run_ipc
+46/72 Test #46: solver_run_ipc ...................   Passed   10.36 sec
+      Start 47: c3_display_ipc
+47/72 Test #47: c3_display_ipc ...................   Passed    1.09 sec
+      Start 48: entity_query_ipc
+48/72 Test #48: entity_query_ipc .................   Passed    3.34 sec
+      Start 49: engine_contributions_ipc
+49/72 Test #49: engine_contributions_ipc .........   Passed    1.86 sec
+      Start 50: m23_ipc
+50/72 Test #50: m23_ipc ..........................   Passed    0.65 sec
+      Start 51: c2_workflow
+51/72 Test #51: c2_workflow ......................   Passed   17.15 sec
+      Start 52: change_events
+52/72 Test #52: change_events ....................   Passed    0.89 sec
+      Start 53: render_projector
+53/72 Test #53: render_projector .................   Passed    0.44 sec
+      Start 54: event_stream
+54/72 Test #54: event_stream .....................   Passed    0.52 sec
+      Start 55: render_wire
+55/72 Test #55: render_wire ......................   Passed    0.43 sec
+      Start 56: c3_sync_ipc
+56/72 Test #56: c3_sync_ipc ......................   Passed    0.29 sec
+      Start 57: record_document
+57/72 Test #57: record_document ..................   Passed    4.75 sec
+      Start 58: generated_entities
+58/72 Test #58: generated_entities ...............   Passed    0.09 sec
+      Start 59: runtime
+59/72 Test #59: runtime ..........................   Passed    0.44 sec
+      Start 60: geometry_mesh
+60/72 Test #60: geometry_mesh ....................   Passed    0.57 sec
+      Start 61: line_mesh_regeneration
+61/72 Test #61: line_mesh_regeneration ...........   Passed    0.50 sec
+      Start 62: analysis_checks
+62/72 Test #62: analysis_checks ..................   Passed    0.47 sec
+      Start 63: result_fixture
+63/72 Test #63: result_fixture ...................   Passed    0.56 sec
+      Start 64: static_validation
+64/72 Test #64: static_validation ................   Passed    0.44 sec
+      Start 65: nastran_static_result
+65/72 Test #65: nastran_static_result ............   Passed    0.46 sec
+      Start 66: artifacts_local
+66/72 Test #66: artifacts_local ..................   Passed    0.45 sec
+      Start 67: solver_local
+67/72 Test #67: solver_local .....................   Passed    2.24 sec
+      Start 68: typed_host
+68/72 Test #68: typed_host .......................   Passed    0.54 sec
+      Start 69: resources
+69/72 Test #69: resources ........................   Passed    0.99 sec
+      Start 70: solver_version_probe
+70/72 Test #70: solver_version_probe .............   Passed    7.47 sec
+      Start 71: solver_result_store
+71/72 Test #71: solver_result_store ..............   Passed    0.51 sec
+      Start 72: solver_numerical_validation
+72/72 Test #72: solver_numerical_validation ......   Passed    0.85 sec
+
+99% tests passed, 1 tests failed out of 72
+
+Total Test time (real) = 132.45 sec
+
+The following tests FAILED:
+	 35 - ipc (Failed)
+Errors while running CTest

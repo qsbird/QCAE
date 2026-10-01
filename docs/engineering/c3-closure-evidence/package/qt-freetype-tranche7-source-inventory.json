@@ -1,0 +1,932 @@
+{
+  "schema": "qcae.qt-ft-hash-source-inventory/1",
+  "archive_sha256": "d9594a31228aa23ad6b531719a29b45f0f3989fe6c136d45767ea179f233c1ac",
+  "manifest_sha256": "b8d8d635385fca442745b6ecadd5d96bbadd9754eb5bfeeb11153965feb0168c",
+  "source_rows": [
+    {
+      "path": "src/corelib/tools/qhash.h",
+      "prior_frozen_sha256": "8087b45297c64fb3545c35eaf15f4ced65ea36ed56e4c2e54725dcde6958a4e4",
+      "instrumented_body_sha256": "8da8eb7c28750118b0812fe0e6a3c56fc67ee2bef0bdf83e205617ab231815c4"
+    },
+    {
+      "path": "src/gui/text/freetype/qfontengine_ft.cpp",
+      "prior_frozen_path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-metrics-sources/src/gui/text/freetype/qfontengine_ft.cpp",
+      "prior_frozen_sha256": "03d36b58ab1a516b33b9aab09fdd83d43e9b6285d0d6253e26e79179647753f3",
+      "instrumented_body_sha256": "1942305a79c56fdecfdb42e9eb75b7e94601f1891e411548beeee9efe7fa456d"
+    },
+    {
+      "path": "src/gui/text/freetype/qfontengine_ft_p.h",
+      "prior_frozen_sha256": "78ec158fb5d34f04b36fa9376b1b37d326a184918e29b43ee5efb986254440d0",
+      "instrumented_body_sha256": "27a78f7126196689bf5eb1ce1f99c08ac3d0067ba1bd6e87f14b8ef8899f34ca"
+    }
+  ],
+  "helper_and_shadow_header_hashes": [
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qcae-ft-hash-observer.hpp",
+      "sha256": "e88049819577df6eb1fac219b585963248f4ebafcaeea8f379f7d0f210d3d4e9"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-headers/QtCore/qhash.h",
+      "sha256": "8da8eb7c28750118b0812fe0e6a3c56fc67ee2bef0bdf83e205617ab231815c4"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-ft-hash-sources/src/gui/text/freetype/qfontengine_ft_p.h",
+      "sha256": "27a78f7126196689bf5eb1ce1f99c08ac3d0067ba1bd6e87f14b8ef8899f34ca"
+    }
+  ],
+  "added_site_count": 56,
+  "added_sites": [
+    {
+      "site": "ft_hash/data_copy_defaults",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "ref={{1}}; spans=nullptr;",
+      "proof": "default member destinations not overridden by this initializer list",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_copy_initializer",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "Data(const Data &other) : size(other.size), numBuckets(other.numBuckets), seed(other.seed)\n    {",
+      "proof": "actual constructor member copies, not node relocation or span initialization",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_default_members",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "numBuckets = GrowthPolicy::bucketsForCapacity(reserve);",
+      "proof": "original statement once; typed original destination only; no parent byte charge",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_detach_node_copy",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "new (newNode) Node(n);",
+      "proof": "original statement once; typed original destination only; no parent byte charge",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_insert_size",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "++size;",
+      "proof": "actual insertion count field write, never an element-count byte estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:1",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "numBuckets = GrowthPolicy::bucketsForCapacity(reserve);",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:10",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "spans = allocateSpans(newBucketCount).spans;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:11",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "numBuckets = newBucketCount;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:2",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "spans = allocateSpans(numBuckets).spans;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:3",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "seed = QHashSeed::globalSeed();",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:4",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "spans = r.spans;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:5",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "numBuckets = GrowthPolicy::bucketsForCapacity(qMax(size, reserved));",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:6",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "spans = allocateSpans(numBuckets).spans;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:7",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "spans = nullptr;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:8",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "size = 0;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_owned_field:9",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "numBuckets = 0;",
+      "proof": "original persistent Data scalar/pointer store once; distinct from copied Node payload",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_rehash_node_move",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "new (newNode) Node(std::move(n));",
+      "proof": "original statement once; typed original destination only; no parent byte charge",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_reserved_defaults",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "ref={{1}}; numBuckets=0; spans=nullptr;",
+      "proof": "only default-member destinations not overridden by this initializer list",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/data_reserved_initializer",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "Data(const Data &other, size_t reserved) : size(other.size), seed(other.seed)\n    {",
+      "proof": "actual copy constructor initialized fields, separate from its fresh-node copies",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/emplace_key_temporary",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "Key copy = key; // Needs to be explicit for MSVC 2019",
+      "proof": "original statement once; typed original destination only; no parent byte charge",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/glyph_key_constructor",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "GlyphAndSubPixelPosition(glyph_t g, const QFixedPoint spp) : glyph(g), subPixelPosition(spp) {}",
+      "proof": "original glyph scalar member and two distinct QFixedPoint owned copies: by-value spp and member initializer; original constructor once",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/glyph_operation",
+      "kind": "actual_entry",
+      "original_statement": "glyph_data.insert(GlyphAndSubPixelPosition(index, subPixelPosition), glyph);",
+      "proof": "parent operation admission only; children own all copy/write bytes",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/glyph_operation_complete",
+      "kind": "actual_conditional_coverage",
+      "original_statement": "glyph_data.insert(GlyphAndSubPixelPosition(index, subPixelPosition), glyph);",
+      "proof": "only finished original call with exactly one observed compatible node action and no limit/type gap; otherwise kind3",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/hash_detach_pointer",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "inline void detach() { if (!d || d->ref.isShared()) d = Data::detached(d); }",
+      "proof": "original owning cache-data handle store once; no charge for shared guard or borrowed iterators",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/missing_operation",
+      "kind": "actual_entry",
+      "original_statement": "set->setGlyphMissing(glyph);",
+      "proof": "parent operation admission only; children own all copy/write bytes",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/missing_operation_complete",
+      "kind": "actual_conditional_coverage",
+      "original_statement": "set->setGlyphMissing(glyph);",
+      "proof": "only finished original call with exactly one observed compatible node action and no limit/type gap; otherwise kind3",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/node_create_copy",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "{ new (n) Node{ Key(k), T(std::forward<Args>(args)...) }; }",
+      "proof": "placement aggregate executes once; sizeof Node bounds actual typed representation, no element-count estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/node_create_move",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "{ new (n) Node{ std::move(k), T(std::forward<Args>(args)...) }; }",
+      "proof": "placement aggregate executes once; sizeof Node bounds actual typed representation, no element-count estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/node_value_assign",
+      "kind": "actual_typed_field_copy",
+      "original_statement": "        value = T(std::forward<Args>(args)...);",
+      "proof": "original statement once; typed original destination only; no parent byte charge",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/observer_byte_limit",
+      "kind": "actual_reached_unknown",
+      "original_statement": "observer_byte_limit",
+      "proof": "sticky per-operation failure; never replaced by known zero or lowered threshold",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/set_node_create_copy",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "{ new (n) Node{ k }; }",
+      "proof": "placement aggregate executes once; sizeof Node bounds actual typed representation, no element-count estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/set_node_create_move",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "{ new (n) Node{ std::move(k) }; }",
+      "proof": "placement aggregate executes once; sizeof Node bounds actual typed representation, no element-count estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/set_node_existing_no_payload",
+      "kind": "actual_known_empty_value_action",
+      "original_statement": "    void emplaceValue(Args &&...)\n    {\n    }",
+      "proof": "original empty dummy-value body has no payload store; action proves this branch was reached",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_default_members",
+      "kind": "actual_owned_field_initialization_upper_bound",
+      "original_statement": "Entry *entries = nullptr; unsigned char allocated = 0; unsigned char nextFree = 0;",
+      "proof": "one actual Span constructor: typed default-member destinations; offsets counted separately",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_grow_move_nonrelocatable",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "new (&newEntries[i].node()) Node(std::move(entries[i].node()));",
+      "proof": "original statement once; typed original destination only; no parent byte charge",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_move_nonrelocatable",
+      "kind": "actual_typed_aggregate_copy_upper_bound",
+      "original_statement": "new (&toEntry.node()) Node(std::move(fromEntry.node()));",
+      "proof": "original statement once; typed original destination only; no parent byte charge",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_offsets_initialize",
+      "kind": "actual_bulk_argument_bytes",
+      "original_statement": "memset(offsets, SpanConstants::UnusedEntry, sizeof(offsets));",
+      "proof": "original libc call once with original byte argument; replaces no capacity/allocator estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:1",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "entries = nullptr;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:10",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fromSpan.offsets[fromIndex] = SpanConstants::UnusedEntry;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:11",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fromEntry.nextFree() = fromSpan.nextFree;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:12",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fromSpan.nextFree = static_cast<unsigned char>(fromOffset);",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:13",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "newEntries[i].nextFree() = uchar(i + 1);",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:14",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "entries = newEntries;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:15",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "allocated = uchar(alloc);",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:2",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "nextFree = entries[entry].nextFree();",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:3",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "offsets[i] = entry;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:4",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "offsets[bucket] = SpanConstants::UnusedEntry;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:5",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "nextFree = entry;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:6",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "offsets[to] = offsets[from];",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:7",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "offsets[from] = SpanConstants::UnusedEntry;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:8",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "offsets[to] = nextFree;",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_owned_field:9",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "nextFree = toEntry.nextFree();",
+      "proof": "original owning index/pointer field store once; original loop iterations observed individually",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_relocate_entry",
+      "kind": "actual_bulk_argument_bytes",
+      "original_statement": "memcpy(&toEntry, &fromEntry, sizeof(Entry));",
+      "proof": "original libc call once with original byte argument; replaces no capacity/allocator estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/span_storage_relocate_bytes",
+      "kind": "actual_bulk_argument_bytes",
+      "original_statement": "memcpy(newEntries, entries, allocated * sizeof(Entry));",
+      "proof": "original libc call once with original byte argument; replaces no capacity/allocator estimate",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/unseen_or_multiple_node_action",
+      "kind": "actual_reached_unknown",
+      "original_statement": "unseen_or_multiple_node_action",
+      "proof": "sticky per-operation failure; never replaced by known zero or lowered threshold",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    },
+    {
+      "site": "ft_hash/unsupported_node_type",
+      "kind": "actual_reached_unknown",
+      "original_statement": "unsupported_node_type",
+      "proof": "sticky per-operation failure; never replaced by known zero or lowered threshold",
+      "scope": "only FT glyph_data or missing_glyphs insertion operation; unrelated hashes inactive"
+    }
+  ],
+  "native_reached_added_sites": [
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_default_members",
+      "unsupported_calls": "0",
+      "write_bytes": "2376",
+      "write_calls": "66"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_insert_size",
+      "unsupported_calls": "0",
+      "write_bytes": "5656",
+      "write_calls": "707"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:1",
+      "unsupported_calls": "0",
+      "write_bytes": "528",
+      "write_calls": "66"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:2",
+      "unsupported_calls": "0",
+      "write_bytes": "528",
+      "write_calls": "66"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:3",
+      "unsupported_calls": "0",
+      "write_bytes": "528",
+      "write_calls": "66"
+    },
+    {
+      "copy_bytes": "8",
+      "copy_calls": "2",
+      "entry_calls": "0",
+      "site": "ft_hash/emplace_key_temporary",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "14100",
+      "copy_calls": "705",
+      "entry_calls": "0",
+      "site": "ft_hash/glyph_key_constructor",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "705",
+      "site": "ft_hash/glyph_operation",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "705",
+      "site": "ft_hash/glyph_operation_complete",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/hash_detach_pointer",
+      "unsupported_calls": "0",
+      "write_bytes": "528",
+      "write_calls": "66"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "2",
+      "site": "ft_hash/missing_operation",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "2",
+      "site": "ft_hash/missing_operation_complete",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "16920",
+      "copy_calls": "705",
+      "entry_calls": "0",
+      "site": "ft_hash/node_create_move",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "8",
+      "copy_calls": "2",
+      "entry_calls": "0",
+      "site": "ft_hash/set_node_create_move",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_default_members",
+      "unsupported_calls": "0",
+      "write_bytes": "660",
+      "write_calls": "66"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_offsets_initialize",
+      "unsupported_calls": "0",
+      "write_bytes": "8448",
+      "write_calls": "66"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:13",
+      "unsupported_calls": "0",
+      "write_bytes": "3296",
+      "write_calls": "3296"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:14",
+      "unsupported_calls": "0",
+      "write_bytes": "560",
+      "write_calls": "70"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:15",
+      "unsupported_calls": "0",
+      "write_bytes": "70",
+      "write_calls": "70"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:2",
+      "unsupported_calls": "0",
+      "write_bytes": "707",
+      "write_calls": "707"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:3",
+      "unsupported_calls": "0",
+      "write_bytes": "707",
+      "write_calls": "707"
+    },
+    {
+      "copy_bytes": "4608",
+      "copy_calls": "4",
+      "entry_calls": "0",
+      "site": "ft_hash/span_storage_relocate_bytes",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    }
+  ],
+  "headless_actual_sites": [
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_copy_defaults",
+      "unsupported_calls": "0",
+      "write_bytes": "12",
+      "write_calls": "1"
+    },
+    {
+      "copy_bytes": "24",
+      "copy_calls": "1",
+      "entry_calls": "0",
+      "site": "ft_hash/data_copy_initializer",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_default_members",
+      "unsupported_calls": "0",
+      "write_bytes": "108",
+      "write_calls": "3"
+    },
+    {
+      "copy_bytes": "24000",
+      "copy_calls": "1000",
+      "entry_calls": "0",
+      "site": "ft_hash/data_detach_node_copy",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_insert_size",
+      "unsupported_calls": "0",
+      "write_bytes": "8016",
+      "write_calls": "1002"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:1",
+      "unsupported_calls": "0",
+      "write_bytes": "32",
+      "write_calls": "4"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:10",
+      "unsupported_calls": "0",
+      "write_bytes": "32",
+      "write_calls": "4"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:11",
+      "unsupported_calls": "0",
+      "write_bytes": "32",
+      "write_calls": "4"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:2",
+      "unsupported_calls": "0",
+      "write_bytes": "24",
+      "write_calls": "3"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:3",
+      "unsupported_calls": "0",
+      "write_bytes": "16",
+      "write_calls": "2"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/data_owned_field:4",
+      "unsupported_calls": "0",
+      "write_bytes": "8",
+      "write_calls": "1"
+    },
+    {
+      "copy_bytes": "23040",
+      "copy_calls": "960",
+      "entry_calls": "0",
+      "site": "ft_hash/data_rehash_node_move",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "1105",
+      "site": "ft_hash/glyph_operation",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "1101",
+      "site": "ft_hash/glyph_operation_complete",
+      "unsupported_calls": "4",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/hash_detach_pointer",
+      "unsupported_calls": "0",
+      "write_bytes": "24",
+      "write_calls": "3"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "2",
+      "site": "ft_hash/missing_operation",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "2",
+      "site": "ft_hash/missing_operation_complete",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "24024",
+      "copy_calls": "1001",
+      "entry_calls": "0",
+      "site": "ft_hash/node_create_move",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "800",
+      "copy_calls": "100",
+      "entry_calls": "0",
+      "site": "ft_hash/node_value_assign",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/observer_byte_limit",
+      "unsupported_calls": "52",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "4",
+      "copy_calls": "1",
+      "entry_calls": "0",
+      "site": "ft_hash/set_node_create_move",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "1",
+      "site": "ft_hash/set_node_existing_no_payload",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_default_members",
+      "unsupported_calls": "0",
+      "write_bytes": "490",
+      "write_calls": "49"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_offsets_initialize",
+      "unsupported_calls": "0",
+      "write_bytes": "6144",
+      "write_calls": "48"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:1",
+      "unsupported_calls": "0",
+      "write_bytes": "120",
+      "write_calls": "15"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:13",
+      "unsupported_calls": "0",
+      "write_bytes": "3814",
+      "write_calls": "3814"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:14",
+      "unsupported_calls": "0",
+      "write_bytes": "760",
+      "write_calls": "95"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:15",
+      "unsupported_calls": "0",
+      "write_bytes": "95",
+      "write_calls": "95"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:2",
+      "unsupported_calls": "0",
+      "write_bytes": "2962",
+      "write_calls": "2962"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/span_owned_field:3",
+      "unsupported_calls": "0",
+      "write_bytes": "2962",
+      "write_calls": "2962"
+    },
+    {
+      "copy_bytes": "54144",
+      "copy_calls": "47",
+      "entry_calls": "0",
+      "site": "ft_hash/span_storage_relocate_bytes",
+      "unsupported_calls": "0",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/unseen_or_multiple_node_action",
+      "unsupported_calls": "3",
+      "write_bytes": "0",
+      "write_calls": "0"
+    },
+    {
+      "copy_bytes": "0",
+      "copy_calls": "0",
+      "entry_calls": "0",
+      "site": "ft_hash/unsupported_node_type",
+      "unsupported_calls": "61",
+      "write_bytes": "0",
+      "write_calls": "0"
+    }
+  ],
+  "whole_coverage_complete": false
+}

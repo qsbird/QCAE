@@ -1,0 +1,16 @@
+Bounded result snapshot review, REQ-13/15/20, TST-P06/P07 and TST-I09 helper scope.
+Changed: adapters/engine_api/src/solver_result_store.cpp/.hpp, tests/solver_result_store_tests.cpp.
+Entry: prepare_solver_result -> parsed validation -> codec/artifact helpers; coordinator persisted current run -> validate_solver_result_link.
+Authority: original immutable SolverOwnedRun embedded in parsed result; current persisted run is independently validated. This helper performs no model/database/filesystem writes. File readback/stage/publish tests retain explicit synthetic provenance.
+Origin invariant: persisted startup, process identity, normal zero exit and collected outputs; pre-parse not_run/no artifact/unpublished; sequence 3..UINT64_MAX-2 reserves both intent and publication.
+Link invariant: parsed current durable intent is canonical across artifact/task/path/root/manifest/files, numerical not_run; pending >= origin+1, published >= origin+2; extra reconciliation observations may advance sequence without changing original provenance.
+Errors: RecordError(schema_unsupported) for inconsistent persisted/serialized data; prepare converts invalid provenance to structured failed/invalid_input. No signature bypass or solver re-execution introduced.
+Duplication: same_intent compares exact fields in both owned-row and current cross-row checks. Other provenance checks remain centralized in existing owned-run codec, output_manifest and parsed validation.
+Tests: new regression first actually RED against pre-fix helper; final fresh test/helper/owned-run/version-probe TUs compiled -O3 -DNDEBUG -Wall -Wextra -Wpedantic -Werror. Existing common dependency archives copied to private temp only; this is not a complete common-build or IPC acceptance.
+Final actual result: 60 synthetic file/format/publication checks PASS. Includes pending/published/reconciliation/max sequence positive cases; regressed/no-step/phase/overflow/noncanonical intent/origin and stored row forgery negative cases; original raw file/hash/symlink/FIFO/map/units checks and v1 legacy owned-row roundtrip retained.
+Formatting: owned three files clang-format21 --dry-run --Werror PASS. git diff --check PASS. Design checker PASS 235 JSON, 32 modules, 41 descriptors, 38 acceptance cases. Workspace-wide formatter was invoked while other owner contribution source was active and failed there; no complete-workspace formatting claim made.
+Limit: no external process, real Nastran validation, numerical acceptance, final common CTest, or final IPC workflow executed by this subtask. numerical_validation remains not_run; coordinator storage_uncertain/reconcile is separately owned.
+ae3046142e9ca8decf542d562dcd80db9a2e16d25968bc2a96210f713ed6c56e  adapters/engine_api/src/solver_result_store.cpp
+a3df5895002f6b57bf021e910e29036ec293633cdfdd5d234f9b95a9a8ae4226  adapters/engine_api/src/solver_result_store.hpp
+c3e96a16263ff6899e0a5fefe5ced538e990a0cd5742b4a6d62c5762bc8aa87b  tests/solver_result_store_tests.cpp
+0eb01e34ccb56f2821cf8023086637106038d781868f14410d57d04459c21ac1  adapters/engine_api/src/solver_run_record.cpp

@@ -1,0 +1,10 @@
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+FAIL!  : Workflow::realFailedAnalysisReportRemainsReviewable() Compared values are not the same
+   Actual   (created.value("status").toString()): "failed"
+   Expected (QString("success"))                : "success"
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(622)]
+PASS   : Workflow::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 661ms
+********* Finished testing of Workflow *********

@@ -12,10 +12,21 @@ struct RenderPoint {
 struct RenderBeam {
     EntityId entity;
     std::array<std::size_t, 2> points{};
+    bool visible{true};
 };
 struct RenderGeometryLine {
     EntityId entity;
     std::array<double, 3> start_mm{}, end_mm{};
+    bool visible{true};
+};
+enum class RenderCellKind : std::uint64_t { polyline, polygon };
+inline constexpr std::size_t render_cell_point_limit = 4096;
+// Topology describes a disposable display cell, independent of persistent types.
+struct RenderCell {
+    EntityId entity;
+    RenderCellKind kind{RenderCellKind::polyline};
+    std::vector<std::size_t> points;
+    bool visible{true};
 };
 // Disposable tool preview. Its display points and lines are not model entities.
 struct RenderPreview {
@@ -31,6 +42,7 @@ struct RenderPacket {
     std::vector<RenderPoint> points;
     std::vector<RenderBeam> beams;
     std::vector<RenderGeometryLine> geometry_lines;
+    std::vector<RenderCell> cells{};
 };
 struct RenderPointUpdate {
     std::size_t index{};
@@ -40,7 +52,15 @@ struct RenderGeometryUpdate {
     std::size_t index{};
     RenderGeometryLine line;
 };
-// Applies only to the named installed scene. Topology/visibility changes use a new packet.
+enum class RenderPrimitive { point, beam, geometry_line, cell };
+struct RenderVisibilityUpdate {
+    RenderPrimitive primitive;
+    std::size_t index{};
+    EntityId entity;
+    bool visible{true};
+};
+// Applies only to the named installed scene. Topology changes use a new packet;
+// hidden entities retain coordinates and stable indices for local visibility changes.
 struct RenderDelta {
     DocumentRef document;
     Revision base_revision{}, revision{};
@@ -48,5 +68,6 @@ struct RenderDelta {
     std::uint64_t base_view_revision{}, view_revision{};
     std::vector<RenderPointUpdate> points;
     std::vector<RenderGeometryUpdate> geometry_lines;
+    std::vector<RenderVisibilityUpdate> visibility{};
 };
 } // namespace qcae

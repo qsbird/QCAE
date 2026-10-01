@@ -1,0 +1,50 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-headless
+    Start 35: ipc
+1/5 Test #35: ipc ..............................***Failed    0.19 sec
+FAIL: analysis.start: expected status 'failed', got 'needs_input'; response={'error': {'code': 'MISSING_INPUT', 'field': 'expected_profile', 'message': 'Required operation context is missing.'}, 'request_id': 'ipc-test-5d0dbe27-1f3d-4157-bcc6-3599501a99ce', 'status': 'needs_input'}
+engine stderr log:
+QCAE engine ready: /private/tmp/qip-9jeykr2x/engine.sock (memory; data lost on exit)
+
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 710, in main
+    integration_scenario(str(root / "engine.sock"), engine_log, engine_log)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 228, in integration_scenario
+    unavailable = call(socket_path, "analysis.start", {"artifact_id": "never-start"},
+                       document_id=document_id, document_epoch=epoch, expected_revision="0",
+                       idempotency_key="unconfigured-solver", expected_status="failed")
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 109, in call
+    check(status == expected_status,
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          f"{operation}: expected status {expected_status!r}, got {status!r}; response={response!r}")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 34, in check
+    raise CheckFailure(message)
+CheckFailure: analysis.start: expected status 'failed', got 'needs_input'; response={'error': {'code': 'MISSING_INPUT', 'field': 'expected_profile', 'message': 'Required operation context is missing.'}, 'request_id': 'ipc-test-5d0dbe27-1f3d-4157-bcc6-3599501a99ce', 'status': 'needs_input'}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/ipc_tests.py", line 727, in main
+    raise CheckFailure(f"{exc}\nengine stderr log:\n{log_text or '(empty)'}") from exc
+CheckFailure: analysis.start: expected status 'failed', got 'needs_input'; response={'error': {'code': 'MISSING_INPUT', 'field': 'expected_profile', 'message': 'Required operation context is missing.'}, 'request_id': 'ipc-test-5d0dbe27-1f3d-4157-bcc6-3599501a99ce', 'status': 'needs_input'}
+engine stderr log:
+QCAE engine ready: /private/tmp/qip-9jeykr2x/engine.sock (memory; data lost on exit)
+
+
+    Start 37: mcp_bridge
+2/5 Test #37: mcp_bridge .......................   Passed    0.16 sec
+    Start 38: mcp_protocol
+3/5 Test #38: mcp_protocol .....................   Passed    2.04 sec
+    Start 39: mcp_bridge_durable
+4/5 Test #39: mcp_bridge_durable ...............   Passed    0.16 sec
+    Start 68: typed_host
+5/5 Test #68: typed_host .......................   Passed    0.02 sec
+
+80% tests passed, 1 tests failed out of 5
+
+Total Test time (real) =   2.58 sec
+
+The following tests FAILED:
+	 35 - ipc (Failed)
+Errors while running CTest

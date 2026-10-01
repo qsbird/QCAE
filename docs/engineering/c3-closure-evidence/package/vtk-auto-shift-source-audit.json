@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "vtk_version": "9.7.0",
+  "supported_scope": "single AOS double3 coordinate array; AUTO/DISABLE; identity actor; no environment shader matrix",
+  "product_behavior": "Every original base call executes once. No extra range/matrix/lazy-layout work. Shader queries follow original lookups. Shared VBO upload timestamps deduplicate payload writes.",
+  "bounds": [
+    {
+      "boundary": "AUTO local/retained shift+scale vectors",
+      "actual_trigger": "deduplicated vertexMC upload-time change and enabled audited AUTO branch",
+      "byte_bound": 192,
+      "formula": "4 vectors * (3 pushes + prior prefixes 1+2) * sizeof(double)",
+      "not_added": "GetRange actual/cached copies belong to range observer; shifted float3 worker writes already in PackedVBO 2*tuples*stride"
+    },
+    {
+      "boundary": "mapper inverse transform",
+      "actual_trigger": "original BuildBufferObjects enabled shift branch",
+      "byte_bound": 1696,
+      "formula": "[16+2*(16+3+32)+16+16+32+10+20]*sizeof(double)",
+      "meaning": "typed logical matrix stores including stack temporaries; reference-only transform-list entries excluded; upper bound may include skipped identity/zero translate writes"
+    },
+    {
+      "boundary": "identity actor camera shader correction/uniforms",
+      "actual_trigger": "original SetCameraShaderParameters virtual entry; original branch presence checked after call",
+      "formula": "enabled * (1+MCVC_used)*32*sizeof(double) + 2*[(1+MCVC_used)*16+9*normal_used]*sizeof(float)",
+      "meaning": "Multiply4x4 temporary+destination; float conversion+possible owned uniform-value cache assignment; outer cache vector moves descriptors without deep-copying payload"
+    }
+  ],
+  "unsupported": [
+    "VTK version mismatch",
+    "alternate/manual/camera-dependent shift method",
+    "malformed/nonfinite/nonpositive scale vectors",
+    "nonidentity actor",
+    "environment shader matrix",
+    "missing coordinate/display shader",
+    "original existing scalar/normal/texture/polygon/selection unaudited paths"
+  ],
+  "sources": [
+    {
+      "path": "adapters/rendering_vtk/src/shift_scale_copy_observer.hpp",
+      "sha256": "0f28dfcb789409a80f6dbb4acc4e59bc0d088544a4e3f580b1edddbb8b993aaf"
+    },
+    {
+      "path": "adapters/rendering_vtk/src/vtk_view.cpp",
+      "sha256": "1257237acc76ff178873dbcb1e0c3ef047423dfbff1103be4284e66c1d8eb81f"
+    },
+    {
+      "path": "tests/vtk_shift_scale_copy_tests.cpp",
+      "sha256": "5a13b5b7e33ebec9c0641dc371128a163c389b9034e01117de5719123a33d013"
+    },
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkOpenGLVertexBufferObject.cxx",
+      "sha256": "6a2f24f164ff63e0bf1261b3f939be9c1f7f1fd317991d37a7412278d560f9bc"
+    },
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkOpenGLVertexBufferObjectGroup.cxx",
+      "sha256": "2a542297883b580e26f2e98e079f73af79750d3333b1396a41c48263cf389148"
+    },
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkOpenGLPolyDataMapper.cxx",
+      "sha256": "e0c687184fc2a7fbeb13c03fb773379d18fe8b565d96db922a39b9eb04fb427c"
+    },
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkShaderProgram.cxx",
+      "sha256": "890c632b319399717f8f97ff080027fd636fc5c4c06e8590ad05a99a1ea4c8c1"
+    },
+    {
+      "path": "build-vtk-deps/source/Common/Transforms/vtkTransform.cxx",
+      "sha256": "ed0914f77e7e2621d65fdc030fa23c143fdbfd1479ef1a8c169b1122c689a3d3"
+    },
+    {
+      "path": "build-vtk-deps/source/Common/Transforms/vtkAbstractTransform.cxx",
+      "sha256": "0b3a34af4a77aafb4b757216912fc1a1b117f9b55c55772d446a03cd5b41cd28"
+    },
+    {
+      "path": "build-vtk-deps/source/Common/Math/vtkMatrix4x4.h",
+      "sha256": "e9144ee7d7f1f310d3e8e06778f6f54bb4e297f65d3e9626b6359e166bff1b70"
+    },
+    {
+      "path": "build-vtk-deps/source/Common/Math/vtkMatrix4x4.cxx",
+      "sha256": "7368a71a5db1545f296ed25a5db66b2083d88896036d14bd3e2f93580621208c"
+    }
+  ],
+  "verification": {
+    "headless_actual_probe": "docs/engineering/c3-closure-evidence/package/vtk-shift-scale-headless-first.log",
+    "passed": true,
+    "checks": [
+      "AUTO near-disabled/large-span-enabled/far-enabled/back-near-disabled branches",
+      "original and observed VBO shift/scale/state/mtime/upload unchanged",
+      "actual vtkTransform inverse output",
+      "unsupported actor/environment/alternate shift remain null"
+    ],
+    "production_release_strict_syntax_passed": true,
+    "native_same_run_measurement": "pending root build/runtime",
+    "whole_vtk_copy_coverage": "not claimed"
+  }
+}

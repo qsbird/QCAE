@@ -147,6 +147,46 @@ void canonical_signatures() {
         ErrorCode::resource_limit,
         "bounded recursive encoding rejects excessive nesting");
 }
+void canonical_owned_boundaries() {
+    Value::Object fields;
+    fields.emplace("a", Value(std::int64_t{-9223372036854775807LL - 1}));
+    fields.emplace("b", Value(1.25));
+    fields.emplace("c", Value(std::string("x\0y", 3)));
+    const Value input(std::move(fields));
+    const auto operation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"canonical-builder-copies", {}, {}, 0});
+    Result<std::string> encoded;
+    {
+        ledger::Scope scope(operation);
+        encoded = canonical_value(input);
+    }
+    std::string expected = "QCV1:o3:s1:an20:-9223372036854775808s1:bn4:1.25s1:cs3:";
+    expected.append("x\0y", 3);
+    check(
+        encoded.ok() && *encoded.value == expected,
+        "Canonical builder preserves exact old tags, sorted fields, int64 and embedded NUL bytes");
+    const auto snapshot = operation->snapshot();
+    const auto& measured = snapshot.values[static_cast<std::size_t>(ledger::Stage::application)];
+    check(!measured[static_cast<std::size_t>(ledger::Metric::model_copy_bytes)] &&
+              measured[static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)].value_or(0) >=
+                  expected.size() + 64,
+          "Builder borrows the existing input and counts its own output/numeric scratch as H");
+
+    const auto registry = make_record_registry();
+    const DocumentView base(registry);
+    MaterialCreateInput original{std::string(80, 's'), {210, "GPa"}, .3};
+    auto plan = good(material_features::prepare_create_material(original), "owned material plan");
+    original.name.assign("changed");
+    original.young_modulus = {1, "MPa"};
+    const auto prepared =
+        good(plan.prepare(base, [] { return EntityId("material"); }), "owned material callback");
+    const auto material = prepared.change.candidate.find<records::Material>(EntityId("material"));
+    check(material && material->get<records::Material>().name == std::string(80, 's') &&
+              material->get<records::Material>().young_modulus_mpa == 210000 &&
+              prepared.signature == plan.signature,
+          "Moving canonical storage into the callback retains independent input and identical "
+          "signature");
+}
 void normalizers_and_optional_fields() {
     const auto canonical =
         good(material_features::prepare_create_material({"Steel", {210000, "MPa"}, std::nullopt}),
@@ -515,6 +555,7 @@ void edits_sections_and_reference_failures() {
 int main() {
     try {
         canonical_signatures();
+        canonical_owned_boundaries();
         normalizers_and_optional_fields();
         material_entry_boundary_consistency();
         direct_retry_and_history();

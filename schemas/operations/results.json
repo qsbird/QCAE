@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "implemented_fixture_result_reader_only",
+  "operations": [
+    {
+      "operation_id": "results.read_fixture",
+      "version": 1,
+      "schema_id": "qcae.operation.results.read_fixture.v1",
+      "type_name": "ResultsReadFixtureInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "artifact_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "fixture_json",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "operation_id": "results.get",
+      "version": 1,
+      "schema_id": "qcae.operation.results.get.v1",
+      "type_name": "ResultsGetInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "result_id",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}

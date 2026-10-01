@@ -1,4 +1,5 @@
 #include "qcae/ipc_api.hpp"
+#include "qcae/json_ledger.hpp"
 #include "qcae/ipc_model.hpp"
 #include "qcae/ipc_selection.hpp"
 #include "qcae/operations.hpp"
@@ -6,7 +7,7 @@
 #include "qcae/records.hpp"
 
 #include <QJsonArray>
-#include <QSet>
+#include <algorithm>
 #include <charconv>
 #include <cmath>
 #include <limits>
@@ -15,10 +16,10 @@
 namespace qcae::ipc {
 namespace {
 QString qs(std::string_view value) {
-    return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
+    return transport::json_ledger::from_utf8(value);
 }
 QString number(Revision revision) {
-    return QString::number(static_cast<qulonglong>(revision));
+    return transport::json_ledger::number(revision);
 }
 struct InvalidRequest : std::runtime_error {
     using std::runtime_error::runtime_error;
@@ -26,24 +27,55 @@ struct InvalidRequest : std::runtime_error {
 
 QString string_field(const QJsonObject& object, const char* key, bool allow_empty = false) {
     const auto value = object.value(QLatin1String(key));
-    if (!value.isString() || (!allow_empty && value.toString().isEmpty()))
+    if (!value.isString() || (!allow_empty && value.toStringView().isEmpty()))
         throw InvalidRequest(std::string("Expected a non-empty string: ") + key);
-    return value.toString();
+    return transport::json_ledger::string(value);
 }
 void fields(const QJsonObject& object, std::initializer_list<const char*> allowed) {
-    QSet<QString> names;
-    for (const auto* name : allowed)
-        names.insert(QLatin1String(name));
     for (auto it = object.begin(); it != object.end(); ++it)
-        if (!names.contains(it.key()))
+        if (std::none_of(allowed.begin(), allowed.end(), [&](const char* name) {
+                return it.keyView() == QAnyStringView(QLatin1StringView(name));
+            }))
             throw InvalidRequest("Unexpected field: " + it.key().toStdString());
 }
+// Explicit legacy read contracts use the same names and bounds as dispatch_model.
+// Absence means the legacy contract has not yet been described, not an empty input.
+std::optional<QJsonObject> read_parameters_schema(std::string_view operation) {
+    QJsonObject properties;
+    const QJsonObject identity{{"type", "string"}, {"minLength", 1}};
+    QJsonArray required;
+    if (operation == "entity.query") {
+        properties = QJsonObject{
+            {"kind",
+             QJsonObject{{"type", "string"},
+                         {"minLength", 1},
+                         {"description", "Case-sensitive query kind, for example node or beam."}}},
+            {"name_contains", QJsonObject{{"type", "string"}}},
+            {"ids", QJsonObject{{"type", "array"}, {"items", identity}}},
+            {"view", identity},
+            {"owner_id", identity},
+            {"offset", QJsonObject{{"type", "integer"}, {"minimum", 0}, {"maximum", 100000}}},
+            {"limit", QJsonObject{{"type", "integer"}, {"minimum", 0}, {"maximum", 1000}}}};
+    } else if (operation == "entity.references") {
+        properties = QJsonObject{
+            {"entity_id", identity},
+            {"direction",
+             QJsonObject{{"type", "string"}, {"enum", QJsonArray{"incoming", "outgoing"}}}}};
+        required.append("entity_id");
+    } else if (operation != "model.summary" && operation != "project.status") {
+        return {};
+    }
+    return QJsonObject{{"type", "object"},
+                       {"properties", properties},
+                       {"required", required},
+                       {"additionalProperties", false}};
+}
 DocumentRef document_ref(const QJsonObject& request) {
-    return {DocumentId{string_field(request, "document_id").toStdString()},
-            DocumentEpoch{string_field(request, "document_epoch").toStdString()}};
+    return {DocumentId{transport::json_ledger::utf8(string_field(request, "document_id"))},
+            DocumentEpoch{transport::json_ledger::utf8(string_field(request, "document_epoch"))}};
 }
 WriteContext context(const QJsonObject& request) {
-    const auto text = string_field(request, "expected_revision").toStdString();
+    const auto text = transport::json_ledger::utf8(string_field(request, "expected_revision"));
     Revision revision{};
     const auto parsed = std::from_chars(text.data(), text.data() + text.size(), revision);
     if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())
@@ -61,26 +93,45 @@ Quantity quantity(const QJsonObject& params) {
         object.contains("unit") ? string_field(object, "unit", true).toStdString() : std::string{};
     return {object.value("value").toDouble(), unit};
 }
+} // namespace
 QJsonObject info_json(const DocumentInfo& info) {
-    return {{"document_id", qs(info.document.id.value)},
-            {"document_epoch", qs(info.document.epoch.value)},
-            {"revision", number(info.revision)},
-            {"content_state", qs(info.content_state)},
-            {"name", qs(info.name)},
-            {"material_count", static_cast<qint64>(info.material_count)},
-            {"dirty", info.dirty},
-            {"durable", info.durable},
-            {"project_id", qs(info.project_id)},
-            {"saved_path", qs(info.saved_path)},
-            {"saved_content_state", qs(info.saved_content_state)}};
+    const QJsonObject output{{"document_id", qs(info.document.id.value)},
+                             {"document_epoch", qs(info.document.epoch.value)},
+                             {"revision", number(info.revision)},
+                             {"content_state", qs(info.content_state)},
+                             {"name", qs(info.name)},
+                             {"material_count", static_cast<qint64>(info.material_count)},
+                             {"dirty", info.dirty},
+                             {"durable", info.durable},
+                             {"project_id", qs(info.project_id)},
+                             {"saved_path", qs(info.saved_path)},
+                             {"saved_content_state", qs(info.saved_content_state)}};
+    transport::json_ledger::object(output,
+                                   {"document_id",
+                                    "document_epoch",
+                                    "revision",
+                                    "content_state",
+                                    "name",
+                                    "material_count",
+                                    "dirty",
+                                    "durable",
+                                    "project_id",
+                                    "saved_path",
+                                    "saved_content_state"});
+    return output;
 }
+namespace {
 template <class T, class Convert>
 QJsonObject result_json(const QString& id, const Result<T>& result, Convert convert) {
-    QJsonObject response{{"request_id", id},
-                         {"status", QString::fromLatin1(status_name(result.status))}};
-    if (result.ok())
-        response.insert("data", convert(*result.value));
-    else if (result.error)
+    QJsonObject response{{"request_id", id}, {"status", qs(status_name(result.status))}};
+    transport::json_ledger::ObjectCopies copies;
+    copies.insert(QLatin1StringView("request_id"), id);
+    copies.insert(QLatin1StringView("status"), response.value("status"));
+    if (result.ok()) {
+        const auto data = convert(*result.value);
+        response.insert("data", data);
+        copies.insert(QLatin1StringView("data"), data);
+    } else if (result.error)
         response.insert("error",
                         QJsonObject{{"code", QString::fromLatin1(error_name(result.error->code))},
                                     {"message", qs(result.error->message)},
@@ -110,6 +161,9 @@ bool supported(std::string_view name) {
            name == "capabilities.list";
 }
 } // namespace
+bool compatibility_operation_supported(std::string_view name) {
+    return supported(name);
+}
 
 QJsonObject
 failure(const QString& id, const QString& code, const QString& message, const QString& status) {
@@ -126,8 +180,9 @@ QJsonObject dispatch(MemoryApplication& app,
                      SelectionService* selections,
                      TypedHost* typed,
                      bool display_services) {
-    const QString id =
-        request.value("request_id").isString() ? request.value("request_id").toString() : QString{};
+    const QString id = request.value("request_id").isString()
+                           ? transport::json_ledger::string(request.value("request_id"))
+                           : QString{};
     if (id.toUtf8().size() > 128)
         return failure({}, "INVALID_INPUT", "request_id exceeds 128 UTF-8 bytes");
     try {
@@ -146,7 +201,9 @@ QJsonObject dispatch(MemoryApplication& app,
         if (string_field(request, "api_version") != qs(api_version))
             return failure(
                 id, "API_VERSION_UNSUPPORTED", "Expected API version " + qs(api_version));
-        const auto op = string_field(request, "operation").toStdString();
+        const auto op = transport::json_ledger::utf8(string_field(request, "operation"));
+        if (op == "model.export_preview" && (!codec || !profile))
+            return failure(id, "UNSUPPORTED_CAPABILITY", "No model codec package is enabled");
         if ((!find_operation(op) || !supported(op)) && !(typed && typed->supports(op)))
             return failure(id,
                            "UNSUPPORTED_CAPABILITY",
@@ -170,35 +227,44 @@ QJsonObject dispatch(MemoryApplication& app,
             fields(params, {});
             QJsonArray catalog;
             for (const auto& descriptor : operation_catalog) {
-                QJsonObject entry{
-                    {"name", qs(descriptor.name)},
-                    {"description", qs(descriptor.description)},
-                    {"effect", qs(descriptor.effect)},
-                    {"input_type", qs(descriptor.input_type)},
-                    {"output_type", qs(descriptor.output_type)},
-                    {"target_context", qs(descriptor.target_context)},
-                    {"requires_document", descriptor.requires_document},
-                    {"requires_epoch", descriptor.requires_epoch},
-                    {"requires_revision", descriptor.requires_revision},
-                    {"requires_idempotency_key", descriptor.requires_idempotency_key},
-                    {"requires_profile_match", descriptor.requires_profile_match},
-                    {"implementation_status", supported(descriptor.name) ? "partial" : "planned"}};
+                if (typed && typed->supports(descriptor.name))
+                    continue;
+                bool available = supported(descriptor.name) &&
+                                 (descriptor.name != "model.export_preview" || (codec && profile));
+                QJsonObject entry{{"name", qs(descriptor.name)},
+                                  {"description", qs(descriptor.description)},
+                                  {"effect", qs(descriptor.effect)},
+                                  {"input_type", qs(descriptor.input_type)},
+                                  {"output_type", qs(descriptor.output_type)},
+                                  {"target_context", qs(descriptor.target_context)},
+                                  {"requires_document", descriptor.requires_document},
+                                  {"requires_epoch", descriptor.requires_epoch},
+                                  {"requires_revision", descriptor.requires_revision},
+                                  {"requires_idempotency_key", descriptor.requires_idempotency_key},
+                                  {"requires_profile_match", descriptor.requires_profile_match},
+                                  {"implementation_status", available ? "partial" : "planned"}};
                 if (display_services && (descriptor.name == "view.render_resource" ||
                                          descriptor.name.starts_with("resources.") ||
                                          descriptor.name.starts_with("events."))) {
                     entry.insert("implementation_status", "implemented");
                     entry.insert("requested_version", 1);
+                    available = true;
                 }
-                if (descriptor.name == "changes.preview")
-                    entry.insert("supported_commands",
-                                 QJsonArray{"material.create",
-                                            "material.set_young_modulus",
-                                            "model.import",
-                                            "part.upsert",
-                                            "assembly.upsert",
-                                            "set.upsert",
-                                            "node.move",
-                                            "entity.delete"});
+                entry.insert("available", available);
+                if (const auto schema = read_parameters_schema(descriptor.name))
+                    entry.insert("parameters_schema", *schema);
+                if (descriptor.name == "changes.preview") {
+                    QJsonArray commands{"material.create",
+                                        "material.set_young_modulus",
+                                        "part.upsert",
+                                        "assembly.upsert",
+                                        "set.upsert",
+                                        "node.move",
+                                        "entity.delete"};
+                    if (codec && profile)
+                        commands.append("model.import");
+                    entry.insert("supported_commands", commands);
+                }
                 if (descriptor.name == "operations.get")
                     entry.insert("supported_scope", "host_lifecycle_and_document_change_outcomes");
                 if (descriptor.name == "capabilities.list")
@@ -215,8 +281,8 @@ QJsonObject dispatch(MemoryApplication& app,
                 {"durable", app.durable()},
                 {"recovery_available", app.recovery_available()},
                 {"implementation_scope",
-                 "C2 typed operations and background line mesh; M2 workspace/save/recovery and M3 "
-                 "query/render; no solver execution or "
+                 "Shared record services, analysis checks, resource deltas; optional Nastran "
+                 "artifact publication and fixture results; no solver execution or "
                  "AI bridge"},
                 {"max_name_bytes", 1024},
                 {"configured_solver_profiles", QJsonArray{}},

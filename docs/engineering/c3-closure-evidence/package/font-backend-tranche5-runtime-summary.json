@@ -1,0 +1,48 @@
+{
+  "schema": "qcae.qt5-font-backend-runtime/1",
+  "native_runs_sequential": true,
+  "original_probe_source_sha256": "e594d7a03a21cadbf0fe5bc7eead7eed389f1c82a30ece7262b6b7393f28ad3c",
+  "probe_binary_sha256": "8a68f50a651d0df056ea85bac7be72df1291e6b9f7d8233dc433e472a8bc47c0",
+  "qt_sdk_prefix": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix",
+  "manifest_sha256": "df72dc6116a8c074a705f5fe433737c52f2511db23b3fecb24d5fe7ce23fc93b",
+  "product_default_changed": false,
+  "coverage_complete": false,
+  "results": [
+    {
+      "platform": "cocoa",
+      "command": [
+        "/private/tmp/qcae_qt_font_backend_behavior_probe5",
+        "--output",
+        "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/font-backend-mac-tranche5.json",
+        "--expected-engine",
+        "Mac"
+      ],
+      "returncode": 0,
+      "report": "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/font-backend-mac-tranche5.json",
+      "probe_completed": true,
+      "backend_verified": true,
+      "case_count": 64,
+      "error": null,
+      "equivalence_passed": null
+    },
+    {
+      "platform": "cocoa:fontengine=freetype",
+      "command": [
+        "/private/tmp/qcae_qt_font_backend_behavior_probe5",
+        "--output",
+        "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/font-backend-freetype-tranche5.json",
+        "--expected-engine",
+        "Freetype",
+        "--compare",
+        "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/font-backend-mac-tranche5.json"
+      ],
+      "returncode": 0,
+      "report": "/Users/qs/Documents/ChatGPT/QCAE/docs/engineering/c3-closure-evidence/package/font-backend-freetype-tranche5.json",
+      "probe_completed": true,
+      "backend_verified": true,
+      "case_count": 64,
+      "error": null,
+      "equivalence_passed": false
+    }
+  ]
+}

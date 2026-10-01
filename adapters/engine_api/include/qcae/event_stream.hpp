@@ -3,7 +3,9 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
+#include <QByteArray>
 #include <memory>
+#include <optional>
 
 namespace qcae::ipc {
 struct EventStreamLimits {
@@ -26,6 +28,9 @@ class EventStream {
     bool supports(const QString& operation) const noexcept;
     QJsonObject dispatch(const QJsonObject& request, const QString& connection_id);
     QJsonArray drain(const QString& connection_id, std::size_t limit = 64);
+    // Only an unchanged retained event can borrow its immutable, already
+    // encoded wire frame. Gaps and legacy/modified objects use normal encoding.
+    std::optional<QByteArray> encoded_frame(const QJsonObject&) const;
     void unsubscribe(const QString& connection_id);
     EventStreamStats stats() const;
 

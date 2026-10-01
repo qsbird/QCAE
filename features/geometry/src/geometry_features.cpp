@@ -1,6 +1,21 @@
 #include "qcae/geometry_features.hpp"
+#include <cmath>
+#include <numeric>
 
 namespace qcae {
+std::array<double, 3>
+evaluate_line(const DocumentView& view, const records::GeometryId& id, double u) {
+    if (!std::isfinite(u) || u < 0 || u > 1)
+        throw RecordError(ErrorCode::invalid_input, "Line parameter must be between 0 and 1", "u");
+    const auto record = view.find<records::GeometryLine>(id);
+    if (!record)
+        throw RecordError(ErrorCode::entity_not_found, "Line geometry does not exist", id.value);
+    const auto& line = record->get<records::GeometryLine>();
+    std::array<double, 3> position;
+    for (std::size_t axis = 0; axis < position.size(); ++axis)
+        position[axis] = std::lerp(line.start[axis], line.end[axis], u);
+    return position;
+}
 std::string line_geometry_signature(const LineGeometryInput& input) {
     const std::array fields{std::string("geometry.line.v1:mm"),
                             record_wire::vector3(input.start_mm),

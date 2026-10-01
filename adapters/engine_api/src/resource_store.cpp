@@ -1,4 +1,6 @@
 #include "qcae/resource_store.hpp"
+#include "qcae/json_ledger.hpp"
+#include "qcae/operation_ledger.hpp"
 #include <QCryptographicHash>
 #include <QUuid>
 #include <algorithm>
@@ -17,7 +19,7 @@ template <class T> Result<T> failure(ErrorCode code, const char* message, const 
     return {status, std::nullopt, Diagnostic{code, message, field}};
 }
 QString text(const std::string& value) {
-    return QString::fromStdString(value);
+    return transport::json_ledger::from_utf8(value, ledger::Stage::resource_publish);
 }
 bool valid(const ResourceVersion& version) {
     return !version.document.id.value.empty() && !version.document.epoch.value.empty() &&
@@ -28,24 +30,56 @@ bool valid(const ResourceVersion& version) {
 }
 } // namespace
 QJsonObject resource_manifest_json(const ResourceManifest& manifest) {
-    return {{"resource_id", text(manifest.resource_id)},
-            {"document_id", text(manifest.version.document.id.value)},
-            {"document_epoch", text(manifest.version.document.epoch.value)},
-            {"revision", QString::number(manifest.version.revision)},
-            {"view_session_id", text(manifest.version.view_session_id)},
-            {"view_revision", QString::number(manifest.version.view_revision)},
-            {"byte_length", QString::number(manifest.byte_length)},
-            {"chunk_bytes", static_cast<int>(manifest.chunk_bytes)},
-            {"chunk_count", static_cast<int>(manifest.chunk_count)},
-            {"sha256", text(manifest.sha256)},
-            {"media_type", text(manifest.media_type)}};
+    const QJsonObject output{
+        {"resource_id", text(manifest.resource_id)},
+        {"document_id", text(manifest.version.document.id.value)},
+        {"document_epoch", text(manifest.version.document.epoch.value)},
+        {"revision",
+         transport::json_ledger::number(manifest.version.revision,
+                                        ledger::Stage::resource_publish)},
+        {"view_session_id", text(manifest.version.view_session_id)},
+        {"view_revision",
+         transport::json_ledger::number(manifest.version.view_revision,
+                                        ledger::Stage::resource_publish)},
+        {"byte_length",
+         transport::json_ledger::number(manifest.byte_length, ledger::Stage::resource_publish)},
+        {"chunk_bytes", static_cast<int>(manifest.chunk_bytes)},
+        {"chunk_count", static_cast<int>(manifest.chunk_count)},
+        {"sha256", text(manifest.sha256)},
+        {"media_type", text(manifest.media_type)}};
+    transport::json_ledger::object(output,
+                                   {"resource_id",
+                                    "document_id",
+                                    "document_epoch",
+                                    "revision",
+                                    "view_session_id",
+                                    "view_revision",
+                                    "byte_length",
+                                    "chunk_bytes",
+                                    "chunk_count",
+                                    "sha256",
+                                    "media_type"},
+                                   ledger::Stage::resource_publish);
+    return output;
 }
 QJsonObject resource_chunk_json(const ResourceChunk& chunk) {
-    return {{"manifest", resource_manifest_json(chunk.manifest)},
-            {"offset", QString::number(chunk.offset)},
-            {"raw_length", chunk.bytes.size()},
-            {"encoding", "base64"},
-            {"data_base64", QString::fromLatin1(chunk.bytes.toBase64())}};
+    const auto encoded = chunk.bytes.toBase64();
+    ledger::add(ledger::Stage::resource_publish, ledger::Metric::encoded_bytes, encoded.size());
+    ledger::add(
+        ledger::Stage::resource_publish, ledger::Metric::model_copy_bytes, encoded.size() * 3);
+    // Fresh object observation includes both QCbor string copies and buffer
+    // growth. Base64 and its UTF-16 conversion above are separate boundaries.
+    ledger::add(ledger::Stage::resource_publish, ledger::Metric::library_internal_copy_bytes, 0);
+    const QJsonObject output{
+        {"manifest", resource_manifest_json(chunk.manifest)},
+        {"offset", transport::json_ledger::number(chunk.offset, ledger::Stage::resource_publish)},
+        {"raw_length", chunk.bytes.size()},
+        {"encoding", "base64"},
+        {"data_base64", QString::fromLatin1(encoded)}};
+    transport::json_ledger::object(output,
+                                   {"manifest", "offset", "raw_length", "encoding", "data_base64"},
+                                   ledger::Stage::resource_publish);
+    return output;
 }
 ResourceStore::ResourceStore() : ResourceStore(Limits{}) {}
 ResourceStore::ResourceStore(Limits limits, Clock clock)
@@ -96,13 +130,14 @@ Result<ResourceManifest> ResourceStore::publish(const Caller& caller,
         entries_.erase(oldest);
     }
     ResourceManifest manifest;
-    manifest.resource_id = QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
+    manifest.resource_id =
+        transport::json_ledger::utf8(transport::json_ledger::uuid(ledger::Stage::resource_publish),
+                                     ledger::Stage::resource_publish);
     manifest.version = version;
     manifest.byte_length = length;
     manifest.chunk_count = static_cast<std::uint32_t>(length / resource_chunk_bytes +
                                                       (length % resource_chunk_bytes != 0));
-    manifest.sha256 =
-        QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex().toStdString();
+    manifest.sha256 = transport::json_ledger::sha256_hex(bytes, ledger::Stage::resource_publish);
     manifest.media_type = std::move(media_type);
     entries_.emplace(manifest.resource_id,
                      Entry{manifest,
@@ -112,6 +147,17 @@ Result<ResourceManifest> ResourceStore::publish(const Caller& caller,
                            ++next_order_,
                            true});
     cached_bytes_ += length;
+    ledger::cover(ledger::Stage::resource_publish);
+    ledger::add(ledger::Stage::resource_publish,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(ResourceManifest) + manifest.resource_id.size() + manifest.sha256.size() +
+                    manifest.media_type.size() + version.document.id.value.size() +
+                    version.document.epoch.value.size() + version.view_session_id.size() +
+                    // Initial version assignment, cache key and owner are
+                    // independent owned copies in addition to Entry's manifest.
+                    sizeof(ResourceVersion) + version.document.id.value.size() +
+                    version.document.epoch.value.size() + version.view_session_id.size() +
+                    manifest.resource_id.size() + caller.principal.size());
     return success(std::move(manifest));
 }
 Result<ResourceStore::Entry*> ResourceStore::find(const Caller& caller,
@@ -158,13 +204,25 @@ Result<ResourceChunk> ResourceStore::read(const Caller& caller,
     const auto found = find(caller, resource_id, &current);
     if (!found.ok())
         return {found.status, std::nullopt, found.error};
-    const auto& entry = **found.value;
+    auto& entry = **found.value;
     if (offset >= entry.manifest.byte_length || offset % resource_chunk_bytes != 0)
         return failure<ResourceChunk>(ErrorCode::invalid_input,
                                       "Chunk offset is outside the resource or not aligned",
                                       "offset");
+    if (!entry.leased) {
+        entry.leased = true;
+        entry.expires = clock_() + limits_.lease;
+    }
     const auto size =
         std::min<std::uint64_t>(resource_chunk_bytes, entry.manifest.byte_length - offset);
+    ledger::add(ledger::Stage::resource_publish, ledger::Metric::model_copy_bytes, size);
+    ledger::add(ledger::Stage::resource_publish,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(ResourceManifest) + entry.manifest.resource_id.size() +
+                    entry.manifest.sha256.size() + entry.manifest.media_type.size() +
+                    entry.manifest.version.document.id.value.size() +
+                    entry.manifest.version.document.epoch.value.size() +
+                    entry.manifest.version.view_session_id.size());
     return success(ResourceChunk{
         entry.manifest,
         offset,

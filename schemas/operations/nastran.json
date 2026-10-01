@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "status": "implemented_nastran_artifact_handlers",
+  "operations": [
+    {
+      "operation_id": "project.migrate_profile",
+      "version": 1,
+      "schema_id": "qcae.operation.project.migrate_profile.v1",
+      "type_name": "ProjectMigrateProfileInput",
+      "effect": "document_write",
+      "context": {"document": false, "epoch": false, "expected_revision": false, "idempotency_key": true, "expected_profile": true},
+      "fields": [
+        {"field_id": 1, "name": "source_path", "type": "string"},
+        {"field_id": 2, "name": "old_profile_id", "type": "string"},
+        {"field_id": 3, "name": "old_profile_version", "type": "string"},
+        {"field_id": 4, "name": "old_definition_digest", "type": "string"}
+      ]
+    },
+    {
+      "operation_id": "model.export",
+      "version": 1,
+      "schema_id": "qcae.operation.model.export.v1",
+      "type_name": "ModelExportInput",
+      "effect": "background_task",
+      "context": {"document": true, "epoch": true, "expected_revision": true, "idempotency_key": true, "expected_profile": true},
+      "fields": [
+        {"field_id": 1, "name": "analysis_id", "type": "entity_id"},
+        {"field_id": 2, "name": "output_directory", "type": "string"}
+      ]
+    },
+    {
+      "operation_id": "artifact.get",
+      "version": 1,
+      "schema_id": "qcae.operation.artifact.get.v1",
+      "type_name": "ArtifactGetInput",
+      "effect": "read_only",
+      "context": {"document": true, "epoch": true, "expected_revision": false, "idempotency_key": false},
+      "fields": [{"field_id": 1, "name": "artifact_id", "type": "string"}]
+    },
+    {
+      "operation_id": "artifact.reconcile",
+      "version": 1,
+      "schema_id": "qcae.operation.artifact.reconcile.v1",
+      "type_name": "ArtifactReconcileInput",
+      "effect": "auxiliary_write",
+      "context": {"document": true, "epoch": true, "expected_revision": true, "idempotency_key": true},
+      "fields": [{"field_id": 1, "name": "artifact_id", "type": "string"}]
+    },
+    {
+      "operation_id": "nastran.ui",
+      "version": 1,
+      "schema_id": "qcae.operation.nastran.ui.v1",
+      "type_name": "NastranUiInput",
+      "effect": "read_only",
+      "context": {"document": false, "epoch": false, "expected_revision": false, "idempotency_key": false},
+      "fields": []
+    }
+  ]
+}

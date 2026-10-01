@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 169, in <module>
+    stage(parser.parse_args())
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 101, in stage
+    resolved = resolve(dependency, source, executables[0], paths,
+                       [frameworks, *args.libpath])
+  File "/Users/qs/Documents/ChatGPT/QCAE/tools/stage_macos_package.py", line 58, in resolve
+    raise ValueError(f"unresolved dependency {dependency!r} of {binary}")
+ValueError: unresolved dependency '@rpath/QtPdf.framework/Versions/A/QtPdf' of /Users/qs/Documents/ChatGPT/QCAE/out/package-build32/QCAE.app/Contents/PlugIns/imageformats/libqpdf.dylib

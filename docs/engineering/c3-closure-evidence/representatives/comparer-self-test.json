@@ -1,0 +1,153 @@
+{
+  "kind": "synthetic-comparer-self-test",
+  "actual_workflow_runs": 0,
+  "passed": true,
+  "checks": [
+    {
+      "case": "complete-ID-bijection-and-storage-order",
+      "passed": true
+    },
+    {
+      "case": "organization-name",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[29].name",
+          "expected": "Beam",
+          "actual": "Different name"
+        }
+      ]
+    },
+    {
+      "case": "ordered-beam-connection",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[2].nodes[0]",
+          "expected": "node:00",
+          "actual": "node:01"
+        },
+        {
+          "path": "$[2].nodes[1]",
+          "expected": "node:01",
+          "actual": "node:00"
+        }
+      ]
+    },
+    {
+      "case": "ordered-part-members",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[29].members[0]",
+          "expected": "beam:00",
+          "actual": "beam:09"
+        },
+        {
+          "path": "$[29].members[1]",
+          "expected": "beam:01",
+          "actual": "beam:08"
+        },
+        {
+          "path": "$[29].members[2]",
+          "expected": "beam:02",
+          "actual": "beam:07"
+        },
+        {
+          "path": "$[29].members[3]",
+          "expected": "beam:03",
+          "actual": "beam:06"
+        },
+        {
+          "path": "$[29].members[4]",
+          "expected": "beam:04",
+          "actual": "beam:05"
+        },
+        {
+          "path": "$[29].members[5]",
+          "expected": "beam:05",
+          "actual": "beam:04"
+        },
+        {
+          "path": "$[29].members[6]",
+          "expected": "beam:06",
+          "actual": "beam:03"
+        },
+        {
+          "path": "$[29].members[7]",
+          "expected": "beam:07",
+          "actual": "beam:02"
+        },
+        {
+          "path": "$[29].members[8]",
+          "expected": "beam:08",
+          "actual": "beam:01"
+        },
+        {
+          "path": "$[29].members[9]",
+          "expected": "beam:09",
+          "actual": "beam:00"
+        }
+      ]
+    },
+    {
+      "case": "constraint-reference",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[12].nodes[0]",
+          "expected": "node:00",
+          "actual": "node:01"
+        }
+      ]
+    },
+    {
+      "case": "source-field-removal",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[30].sources",
+          "expected_present": true,
+          "actual_present": false,
+          "expected": [],
+          "actual": null
+        }
+      ]
+    },
+    {
+      "case": "unit-field-addition",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[30].area_unit",
+          "expected_present": false,
+          "actual_present": true,
+          "expected": null,
+          "actual": "cm2"
+        }
+      ]
+    },
+    {
+      "case": "material-reference",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[30].material_id",
+          "expected": "material:00",
+          "actual": "missing-material"
+        }
+      ]
+    },
+    {
+      "case": "boolean-vs-numeric",
+      "passed": true,
+      "actual_differences": [
+        {
+          "path": "$[17].stale",
+          "expected": false,
+          "actual": 0
+        }
+      ]
+    }
+  ]
+}

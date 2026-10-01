@@ -1,0 +1,1157 @@
+{
+  "schema": "qcae.qt-ft-source-store-inventory/1",
+  "status": "bounded actual native diagnostic passed; full coverage remains false",
+  "manifest_sha256": "80f3605e12bef3a55b2005aea46b84a01d2715ecbfa7c41bbbd3f96925aedcf9",
+  "total_Qt_sites": 253,
+  "new_FT_sites": 96,
+  "new_kinds": {
+    "entry_calls": 11,
+    "copy_bytes": 8,
+    "unsupported_calls": 2,
+    "write_bytes": 75
+  },
+  "official_archive_sha256": "d9594a31228aa23ad6b531719a29b45f0f3989fe6c136d45767ea179f233c1ac",
+  "source": "src/gui/text/freetype/qfontengine_ft.cpp",
+  "prior_frozen_source_sha256": "52a66b57007b7137846ff34374f879520f229fe7a48c3f9925f1ca599592e36c",
+  "observed_source_sha256": "03d36b58ab1a516b33b9aab09fdd83d43e9b6285d0d6253e26e79179647753f3",
+  "sites": [
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::QGlyphSet::clear:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::QGlyphSet::setGlyph:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::alphaMapBoundingBox:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::boundingBox:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::boundingBox:2",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::boundingBox:3",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::initializeHeightMetrics:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::loadColrv1Glyph:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::loadGlyph:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::loadGlyphFor:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:QFontEngineFT::recalcAdvances:1",
+      "kind": "actual_entry",
+      "proof": "original body executes unchanged",
+      "counter_kind": "entry_calls",
+      "coverage": "entry only; not full method byte coverage"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_aggregate_copy:1",
+      "kind": "actual_typed_aggregate_copy",
+      "original_statement": "metrics = face->size->metrics;",
+      "destination": "metrics",
+      "proof": "original typed aggregate copy once; sizeof actual destination; no allocator footprint",
+      "counter_kind": "copy_bytes",
+      "coverage": "sizeof actual destination aggregate, original assignment once"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_aggregate_copy:2",
+      "kind": "actual_typed_aggregate_copy",
+      "original_statement": "freetype->matrix = matrix;",
+      "destination": "freetype->matrix",
+      "proof": "original typed aggregate copy once; sizeof actual destination; no allocator footprint",
+      "counter_kind": "copy_bytes",
+      "coverage": "sizeof actual destination aggregate, original assignment once"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_aggregate_copy:3",
+      "kind": "actual_typed_aggregate_copy",
+      "original_statement": "freetype->matrix = matrix;",
+      "destination": "freetype->matrix",
+      "proof": "original typed aggregate copy once; sizeof actual destination; no allocator footprint",
+      "counter_kind": "copy_bytes",
+      "coverage": "sizeof actual destination aggregate, original assignment once"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_aggregate_copy:4",
+      "kind": "actual_typed_aggregate_copy",
+      "original_statement": "gs->transformationMatrix = m;",
+      "destination": "gs->transformationMatrix",
+      "proof": "original typed aggregate copy once; sizeof actual destination; no allocator footprint",
+      "counter_kind": "copy_bytes",
+      "coverage": "sizeof actual destination aggregate, original assignment once"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_hash_cache_growth_unknown:1",
+      "kind": "actual_reached_unknown",
+      "original_statement": "glyph_data.insert(GlyphAndSubPixelPosition(index, subPixelPosition), glyph);",
+      "reason": "Qt hash bucket/key moves and growth are not measured by this FT translation unit",
+      "counter_kind": "unsupported_calls",
+      "coverage": "actual cache mutation but bucket/key relocation not yet measured"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_hash_cache_growth_unknown:2",
+      "kind": "actual_reached_unknown",
+      "original_statement": "set->setGlyphMissing(glyph);",
+      "reason": "Qt hash bucket/key moves and growth are not measured by this FT translation unit",
+      "counter_kind": "unsupported_calls",
+      "coverage": "actual cache mutation but bucket/key relocation not yet measured"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:1",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.linearAdvance = int(face->glyph->linearHoriAdvance >> 10)",
+      "destinations": [
+        "info.linearAdvance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:10",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->height = info.height",
+      "destinations": [
+        "g->height"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:11",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->x = info.x",
+      "destinations": [
+        "g->x"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:12",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->y = info.y",
+      "destinations": [
+        "g->y"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:13",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->advance = info.xOff",
+      "destinations": [
+        "g->advance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:14",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->format = Format_ARGB",
+      "destinations": [
+        "g->format"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:15",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->data = new uchar[info.height * info.width * 4]",
+      "destinations": [
+        "g->data"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:16",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.linearAdvance = slot->linearHoriAdvance >> 10",
+      "destinations": [
+        "info.linearAdvance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:17",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.xOff = TRUNC(ROUND(slot->advance.x))",
+      "destinations": [
+        "info.xOff"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:18",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.yOff = 0",
+      "destinations": [
+        "info.yOff"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:19",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.x = TRUNC(left)",
+      "destinations": [
+        "info.x"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:2",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.xOff = short(TRUNC(ROUND(face->glyph->advance.x)))",
+      "destinations": [
+        "info.xOff"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:20",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.y = TRUNC(top)",
+      "destinations": [
+        "info.y"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:21",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.width = TRUNC(right - left)",
+      "destinations": [
+        "info.width"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:22",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.height = TRUNC(top - bottom)",
+      "destinations": [
+        "info.height"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:23",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->data = nullptr",
+      "destinations": [
+        "g->data"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:24",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->linearAdvance = info.linearAdvance",
+      "destinations": [
+        "g->linearAdvance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:25",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->width = info.width",
+      "destinations": [
+        "g->width"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:26",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->height = info.height",
+      "destinations": [
+        "g->height"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:27",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->x = info.x",
+      "destinations": [
+        "g->x"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:28",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->y = info.y",
+      "destinations": [
+        "g->y"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:29",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->advance = info.xOff",
+      "destinations": [
+        "g->advance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:3",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.x = bounds.left()",
+      "destinations": [
+        "info.x"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:30",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->format = format",
+      "destinations": [
+        "g->format"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:31",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.height = slot->bitmap.rows",
+      "destinations": [
+        "info.height"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:32",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.width = slot->bitmap.width",
+      "destinations": [
+        "info.width"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:33",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.x = slot->bitmap_left",
+      "destinations": [
+        "info.x"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:34",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.y = slot->bitmap_top",
+      "destinations": [
+        "info.y"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:35",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.width = info.width / 3",
+      "destinations": [
+        "info.width"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:36",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.height = info.height / vfactor",
+      "destinations": [
+        "info.height"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:37",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "dst[x] = ((src[x >> 3] & (0x80 >> (x & 7))) ? 0xff : 0x00)",
+      "destinations": [
+        "dst[x]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:38",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "dd[x] = ((src[x >> 3] & (0x80 >> (x & 7))) ? 0xffffffff : 0x00000000)",
+      "destinations": [
+        "dd[x]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:39",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "*dstPixel = qbswap(pixel)",
+      "destinations": [
+        "*dstPixel"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:4",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.y = -bounds.top()",
+      "destinations": [
+        "info.y"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:40",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.linearAdvance = info.xOff = slot->bitmap.width",
+      "destinations": [
+        "info.linearAdvance",
+        "info.xOff"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:41",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->data = nullptr",
+      "destinations": [
+        "g->data"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:42",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->linearAdvance = info.linearAdvance",
+      "destinations": [
+        "g->linearAdvance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:43",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->width = info.width",
+      "destinations": [
+        "g->width"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:44",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->height = info.height",
+      "destinations": [
+        "g->height"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:45",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->x = info.x",
+      "destinations": [
+        "g->x"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:46",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->y = info.y",
+      "destinations": [
+        "g->y"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:47",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->advance = info.xOff",
+      "destinations": [
+        "g->advance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:48",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->format = format",
+      "destinations": [
+        "g->format"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:49",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->data = glyph_buffer.release()",
+      "destinations": [
+        "g->data"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:5",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.width = bounds.width()",
+      "destinations": [
+        "info.width"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:50",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "m_ascent = QFixed::fromFixed(metrics.ascender)",
+      "destinations": [
+        "m_ascent"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:51",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "m_descent = QFixed::fromFixed(-metrics.descender)",
+      "destinations": [
+        "m_descent"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:52",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "m_leading = QFixed::fromFixed(metrics.height - metrics.ascender + metrics.descender)",
+      "destinations": [
+        "m_leading"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:53",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "m_heightMetricsQueried = true",
+      "destinations": [
+        "m_heightMetricsQueried"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:54",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "m_ascent *= scalableBitmapScaleFactor",
+      "destinations": [
+        "m_ascent"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:55",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "m_descent *= scalableBitmapScaleFactor",
+      "destinations": [
+        "m_descent"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:56",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "m_leading *= scalableBitmapScaleFactor",
+      "destinations": [
+        "m_leading"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:57",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "freetype->cmapCache[ucs4] = glyph",
+      "destinations": [
+        "freetype->cmapCache[ucs4]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:58",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->glyphs[glyph_pos] = uc < QFreetypeFace::cmapCacheSize ? freetype->cmapCache[uc] : 0",
+      "destinations": [
+        "glyphs->glyphs[glyph_pos]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:59",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->glyphs[glyph_pos] = glyph",
+      "destinations": [
+        "glyphs->glyphs[glyph_pos]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:6",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "info.height = bounds.height()",
+      "destinations": [
+        "info.height"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:60",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "freetype->cmapCache[uc] = glyph",
+      "destinations": [
+        "freetype->cmapCache[uc]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:61",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->glyphs[glyph_pos] = uc < QFreetypeFace::cmapCacheSize ? freetype->cmapCache[uc] : 0",
+      "destinations": [
+        "glyphs->glyphs[glyph_pos]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:62",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->glyphs[glyph_pos] = glyph",
+      "destinations": [
+        "glyphs->glyphs[glyph_pos]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:63",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "freetype->cmapCache[uc] = glyph",
+      "destinations": [
+        "freetype->cmapCache[uc]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:64",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->advances[i] = design ? QFixed::fromFixed(g->linearAdvance) : QFixed(g->advance)",
+      "destinations": [
+        "glyphs->advances[i]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:65",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->advances[i] = design ? QFixed::fromFixed(g->linearAdvance) : QFixed(g->advance)",
+      "destinations": [
+        "glyphs->advances[i]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:66",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->advances[i] = design ? QFixed::fromFixed(face->glyph->linearHoriAdvance >> 10)\n                                             : QFixed::fromFixed(face->glyph->metrics.horiAdvance).round()",
+      "destinations": [
+        "glyphs->advances[i]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:67",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "glyphs->advances[i] *= scalableBitmapScaleFactor",
+      "destinations": [
+        "glyphs->advances[i]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:68",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fast_glyph_count = 0",
+      "destinations": [
+        "fast_glyph_count"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:69",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fast_glyph_data[i] = nullptr",
+      "destinations": [
+        "fast_glyph_data[i]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:7",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->data = nullptr",
+      "destinations": [
+        "g->data"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:70",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fast_glyph_count = 0",
+      "destinations": [
+        "fast_glyph_count"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:71",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fast_glyph_data[index] = nullptr",
+      "destinations": [
+        "fast_glyph_data[index]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:72",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "fast_glyph_data[index] = glyph",
+      "destinations": [
+        "fast_glyph_data[index]"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:8",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->linearAdvance = info.linearAdvance",
+      "destinations": [
+        "g->linearAdvance"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:ft_typed_owned_store:9",
+      "kind": "actual_owned_field_write_upper_bound",
+      "original_statement": "g->width = info.width",
+      "destinations": [
+        "g->width"
+      ],
+      "proof": "original assignment once; sizeof operands unevaluated; chained destinations counted",
+      "ownership": "Qt glyph record, transient glyph metrics, bitmap output, map/advance output or cache field",
+      "not_observed": "allocator and indirect Qt container growth; FreeType internal stores",
+      "counter_kind": "write_bytes",
+      "coverage": "sizeof typed destination actual executed store; pointer/cache metadata still tagged separately"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:memcpy:3",
+      "kind": "actual_bulk_argument_bytes",
+      "proof": "original bulk call exactly once",
+      "counter_kind": "copy_bytes",
+      "coverage": "original explicit bulk byte argument only"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:memcpy:4",
+      "kind": "actual_bulk_argument_bytes",
+      "proof": "original bulk call exactly once",
+      "counter_kind": "copy_bytes",
+      "coverage": "original explicit bulk byte argument only"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:memcpy:5",
+      "kind": "actual_bulk_argument_bytes",
+      "proof": "original bulk call exactly once",
+      "counter_kind": "copy_bytes",
+      "coverage": "original explicit bulk byte argument only"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:memcpy:6",
+      "kind": "actual_bulk_argument_bytes",
+      "proof": "original bulk call exactly once",
+      "counter_kind": "copy_bytes",
+      "coverage": "original explicit bulk byte argument only"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:memset:1",
+      "kind": "actual_bulk_argument_bytes",
+      "proof": "original bulk call exactly once",
+      "counter_kind": "write_bytes",
+      "coverage": "original explicit initialization byte argument only"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:memset:2",
+      "kind": "actual_bulk_argument_bytes",
+      "proof": "original bulk call exactly once",
+      "counter_kind": "write_bytes",
+      "coverage": "original explicit initialization byte argument only"
+    },
+    {
+      "site": "src/gui/text/freetype/qfontengine_ft.cpp:memset:7",
+      "kind": "actual_bulk_argument_bytes",
+      "proof": "original bulk call exactly once",
+      "counter_kind": "write_bytes",
+      "coverage": "original explicit initialization byte argument only"
+    }
+  ],
+  "actual_calls": "pending; no static call-count inference",
+  "explicit_remaining_gaps": [
+    "QHash glyph_data/GlyphAndSubPixelPosition growth/rehash and missing-glyph set inline mutators",
+    "transformed pointer-cache inline constructor and unenumerated scalar/alias stores",
+    "LCD RGB\u2192ARGB converter, contour/path generation and nested QImage/cache paths outside this finite FT enumeration",
+    "Qt shared-image detach/constructor/template buffer growth requires reached-path source audit; this file is not a full Qt boundary",
+    "installed FreeType 2.14.3 FT_Load_Glyph/Render_Glyph/outline/color/cache owned stores have no source observer",
+    "immutable font-file/table asset versus model-derived character/glyph buffers still requires provenance classification"
+  ],
+  "previous_prefixes_modified": false,
+  "product_default_changed": false,
+  "coverage_complete": false,
+  "contract_total_contribution": "none; diagnostic raw counts only",
+  "actual_calls_evidence": "docs/engineering/c3-closure-evidence/package/qt-freetype-tranche6-actual-source-facts.json",
+  "actual_reached_FT_sites": 66,
+  "actual_summed_counts": {
+    "entry_calls": 8271,
+    "copy_calls": 13030,
+    "copy_bytes": 253019,
+    "write_calls": 29472,
+    "write_bytes": 278445,
+    "unsupported_calls": 707
+  }
+}

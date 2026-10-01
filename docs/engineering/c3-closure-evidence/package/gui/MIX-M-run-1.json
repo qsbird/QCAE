@@ -1,0 +1,4942 @@
+{
+    "M": {
+        "entity-8759b9a37c41d804d3d60615037d66e6-11": {
+            "fields": {
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "young_modulus_mpa": 210000
+            },
+            "kind": "material"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-15": {
+            "fields": {
+                "area_mm2": 100,
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "material": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "torsion_mm4": 1400
+            },
+            "kind": "section"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-24": {
+            "fields": {
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam"
+            },
+            "kind": "part"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-28": {
+            "fields": {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "name": "Assembly"
+            },
+            "kind": "assembly"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-32": {
+            "fields": {
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed"
+            },
+            "kind": "set"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-36": {
+            "fields": {
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded"
+            },
+            "kind": "set"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-4": {
+            "fields": {
+                "end": [
+                    1000,
+                    0,
+                    0
+                ],
+                "geometry_revision": "1",
+                "start": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "kind": "geometry"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-40": {
+            "fields": {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "name": "LC1"
+            },
+            "kind": "load_case"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-44": {
+            "fields": {
+                "constraints": [
+                ],
+                "forces": [
+                ],
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            "kind": "analysis"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-48": {
+            "fields": {
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "node": "node-task-076d14f0330f4e54-1-10"
+            },
+            "kind": "force"
+        },
+        "entity-8759b9a37c41d804d3d60615037d66e6-52": {
+            "fields": {
+                "dofs": "123456",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ]
+            },
+            "kind": "constraint"
+        },
+        "line-task-076d14f0330f4e54-1-0": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-1": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-2": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-3": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-4": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-5": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-6": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-7": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-8": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "line-task-076d14f0330f4e54-1-9": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section": "entity-8759b9a37c41d804d3d60615037d66e6-15"
+            },
+            "kind": "beam"
+        },
+        "mesh-task-076d14f0330f4e54-1": {
+            "fields": {
+                "geometry": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "stale": false
+            },
+            "kind": "mesh"
+        },
+        "node-task-076d14f0330f4e54-1-0": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-1": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    100,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-10": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    1000,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-2": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    200,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-3": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    300,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-4": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    400,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-5": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    500,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-6": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    600,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-7": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    700,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-8": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    800,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-076d14f0330f4e54-1-9": {
+            "fields": {
+                "mesh": "mesh-task-076d14f0330f4e54-1",
+                "position": [
+                    900,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        }
+    },
+    "R": {
+        "case": "LC1",
+        "components": [
+            "X",
+            "Y",
+            "Z"
+        ],
+        "coordinate_basis": "global",
+        "frame": 0,
+        "identities": [
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "namespace": "CBAR",
+                "number": "1"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "namespace": "CBAR",
+                "number": "2"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "namespace": "CBAR",
+                "number": "3"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "namespace": "CBAR",
+                "number": "4"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "namespace": "CBAR",
+                "number": "5"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "namespace": "CBAR",
+                "number": "6"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "namespace": "CBAR",
+                "number": "7"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "namespace": "CBAR",
+                "number": "8"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "namespace": "CBAR",
+                "number": "9"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "namespace": "CBAR",
+                "number": "10"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "namespace": "FORCE",
+                "number": "1"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "namespace": "GRID",
+                "number": "1"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "namespace": "GRID",
+                "number": "2"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "namespace": "GRID",
+                "number": "3"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "namespace": "GRID",
+                "number": "4"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "namespace": "GRID",
+                "number": "5"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "namespace": "GRID",
+                "number": "6"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "namespace": "GRID",
+                "number": "7"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "namespace": "GRID",
+                "number": "8"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "namespace": "GRID",
+                "number": "9"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "namespace": "GRID",
+                "number": "10"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "namespace": "GRID",
+                "number": "11"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "namespace": "MAT1",
+                "number": "1"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "namespace": "PBAR",
+                "number": "1"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "namespace": "SPC1",
+                "number": "1"
+            }
+        ],
+        "input_fingerprint": "2100000015000000514341452d504859534943414c2d494e5055542d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34300d0000006c696e6561725f737461746963720000001a000000716361652e6e61737472616e2e6c696e6561722d73746174696305000000302e322e30470000007368613235363a61363630346261336436393730636262656339353533383935373861306632636661663264613862646134303037333061336238376630653331353935386263080000006d6d2d4e2d4d506132000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d343832000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d35324a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30180000000000000000000000000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31180000000000000000005940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d32180000000000000000006940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d33180000000000000000c07240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d34180000000000000000007940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d35180000000000000000407f40000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d36180000000000000000c08240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d37180000000000000000e08540000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d38180000000000000000008940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d39180000000000000000208c40000000000000000000000000000000004b0000000300000004000000475249441f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000408f40000000000000000000000000000000006e0000000400000004000000535043312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d353226000000010000001e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30060000003132333435367a0000000400000005000000464f5243452a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34381f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000000000000000000000f0bf00000000000000005d00000005000000040000004d4154312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000080a209410700000070726573656e7408000000333333333333d33fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d302a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d301e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d322a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d332a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d362a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d372a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d382a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391800000000000000000000000000000000000000000000000000f03fbd0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d392a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31301800000000000000000000000000000000000000000000000000f03f980000000700000004000000504241522a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000000005940080000008b6ce7fba90a8a40080000008b6ce7fba90a8a40080000000000000000e09540",
+        "location": "node",
+        "quantity": "displacement",
+        "source_kind": "fixture",
+        "unit": "mm",
+        "values": [
+            {
+                "solver_number": "1",
+                "value": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "solver_number": "3",
+                "value": [
+                    0,
+                    -1,
+                    0
+                ]
+            }
+        ]
+    },
+    "external_writes": [
+        {
+            "entry": "CLI",
+            "request": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-2",
+                "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-1",
+                "expected_revision": "2",
+                "idempotency_key": "mixed-material.create",
+                "operation": "material.create",
+                "parameters": {
+                    "name": "Steel",
+                    "poisson_ratio": 0.3,
+                    "young_modulus": {
+                        "unit": "GPa",
+                        "value": 210
+                    }
+                },
+                "request_id": "mixed-request-material.create",
+                "requested_version": 1
+            },
+            "response": {
+                "data": {
+                    "committed_revision": "3",
+                    "current_revision": "3",
+                    "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                    "replayed": false,
+                    "transaction_id": "transaction-8759b9a37c41d804d3d60615037d66e6-13"
+                },
+                "request_id": "mixed-request-material.create",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "entry": "thin_script",
+            "response": {
+                "data": {
+                    "committed_revision": "4",
+                    "current_revision": "4",
+                    "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                    "replayed": false,
+                    "transaction_id": "transaction-8759b9a37c41d804d3d60615037d66e6-17"
+                },
+                "request_id": "mixed-request-section.create",
+                "revision": "4",
+                "status": "success"
+            },
+            "transcript": [
+                {
+                    "request": {
+                        "api_version": "1.1",
+                        "operation": "runtime.handshake",
+                        "request_id": "thin-handshake"
+                    },
+                    "response": {
+                        "data": {
+                            "api_version": "1.1",
+                            "capabilities": {
+                                "events_version": 1,
+                                "render_inline_empty_version": 1,
+                                "render_wire_version": 3,
+                                "resources_version": 1
+                            },
+                            "durable": true,
+                            "engine_instance_id": "9a2039c7-b793-427e-8692-f49cdcaffac9",
+                            "pid": "20666",
+                            "storage_mode": "sqlite"
+                        },
+                        "request_id": "thin-handshake",
+                        "status": "success"
+                    }
+                },
+                {
+                    "request": {
+                        "api_version": "1.1",
+                        "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-2",
+                        "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-1",
+                        "expected_revision": "3",
+                        "idempotency_key": "mixed-section.create",
+                        "operation": "section.create",
+                        "parameters": {
+                            "area_mm2": 100,
+                            "i1_mm4": 833.333,
+                            "i2_mm4": 833.333,
+                            "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                            "name": "M section",
+                            "torsion_mm4": 1400
+                        },
+                        "request_id": "mixed-request-section.create",
+                        "requested_version": 1
+                    },
+                    "response": {
+                        "data": {
+                            "committed_revision": "4",
+                            "current_revision": "4",
+                            "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                            "replayed": false,
+                            "transaction_id": "transaction-8759b9a37c41d804d3d60615037d66e6-17"
+                        },
+                        "request_id": "mixed-request-section.create",
+                        "revision": "4",
+                        "status": "success"
+                    }
+                }
+            ]
+        },
+        {
+            "entry": "thin_script",
+            "response": {
+                "data": {
+                    "committed_revision": "12",
+                    "current_revision": "12",
+                    "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                    "replayed": false,
+                    "transaction_id": "transaction-8759b9a37c41d804d3d60615037d66e6-50"
+                },
+                "request_id": "mixed-request-force.create",
+                "revision": "12",
+                "status": "success"
+            },
+            "transcript": [
+                {
+                    "request": {
+                        "api_version": "1.1",
+                        "operation": "runtime.handshake",
+                        "request_id": "thin-handshake"
+                    },
+                    "response": {
+                        "data": {
+                            "api_version": "1.1",
+                            "capabilities": {
+                                "events_version": 1,
+                                "render_inline_empty_version": 1,
+                                "render_wire_version": 3,
+                                "resources_version": 1
+                            },
+                            "durable": true,
+                            "engine_instance_id": "9a2039c7-b793-427e-8692-f49cdcaffac9",
+                            "pid": "20666",
+                            "storage_mode": "sqlite"
+                        },
+                        "request_id": "thin-handshake",
+                        "status": "success"
+                    }
+                },
+                {
+                    "request": {
+                        "api_version": "1.1",
+                        "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-2",
+                        "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-1",
+                        "expected_revision": "11",
+                        "idempotency_key": "mixed-force.create",
+                        "operation": "force.create",
+                        "parameters": {
+                            "node_id": "node-task-076d14f0330f4e54-1-10",
+                            "x": {
+                                "unit": "N",
+                                "value": 0
+                            },
+                            "y": {
+                                "unit": "N",
+                                "value": -1
+                            },
+                            "z": {
+                                "unit": "N",
+                                "value": 0
+                            }
+                        },
+                        "request_id": "mixed-request-force.create",
+                        "requested_version": 1
+                    },
+                    "response": {
+                        "data": {
+                            "committed_revision": "12",
+                            "current_revision": "12",
+                            "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                            "replayed": false,
+                            "transaction_id": "transaction-8759b9a37c41d804d3d60615037d66e6-50"
+                        },
+                        "request_id": "mixed-request-force.create",
+                        "revision": "12",
+                        "status": "success"
+                    }
+                }
+            ]
+        }
+    ],
+    "initial_entity_count": 0,
+    "manifest": {
+        "analysis_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+        "analysis_kind": "linear_static",
+        "artifact_id": "artifact-task-45414c3b5adf1bf0-1",
+        "case_label": "LC1",
+        "complete": true,
+        "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-74",
+        "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-72",
+        "export_id_map": [
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "namespace": "CBAR",
+                "number": "1"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "namespace": "CBAR",
+                "number": "2"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "namespace": "CBAR",
+                "number": "3"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "namespace": "CBAR",
+                "number": "4"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "namespace": "CBAR",
+                "number": "5"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "namespace": "CBAR",
+                "number": "6"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "namespace": "CBAR",
+                "number": "7"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "namespace": "CBAR",
+                "number": "8"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "namespace": "CBAR",
+                "number": "9"
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "namespace": "CBAR",
+                "number": "10"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "namespace": "FORCE",
+                "number": "1"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "namespace": "GRID",
+                "number": "1"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "namespace": "GRID",
+                "number": "2"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "namespace": "GRID",
+                "number": "3"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "namespace": "GRID",
+                "number": "4"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "namespace": "GRID",
+                "number": "5"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "namespace": "GRID",
+                "number": "6"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "namespace": "GRID",
+                "number": "7"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "namespace": "GRID",
+                "number": "8"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "namespace": "GRID",
+                "number": "9"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "namespace": "GRID",
+                "number": "10"
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "namespace": "GRID",
+                "number": "11"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "namespace": "MAT1",
+                "number": "1"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "namespace": "PBAR",
+                "number": "1"
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "namespace": "SPC1",
+                "number": "1"
+            }
+        ],
+        "files": [
+            {
+                "byte_length": "696",
+                "path": "model.bdf",
+                "sha256": "2b855877c976a981f32d2402f5d9937430f92dc784131df4e02b035a310f352a"
+            }
+        ],
+        "input_sha256": "e7d3abe8865e3f0a31b05f73230198dc3e0bc94071059e644c9414e759edf1c9",
+        "physical_signature_hex": "2100000015000000514341452d504859534943414c2d494e5055542d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34300d0000006c696e6561725f737461746963720000001a000000716361652e6e61737472616e2e6c696e6561722d73746174696305000000302e322e30470000007368613235363a61363630346261336436393730636262656339353533383935373861306632636661663264613862646134303037333061336238376630653331353935386263080000006d6d2d4e2d4d506132000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d343832000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d35324a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30180000000000000000000000000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31180000000000000000005940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d32180000000000000000006940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d33180000000000000000c07240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d34180000000000000000007940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d35180000000000000000407f40000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d36180000000000000000c08240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d37180000000000000000e08540000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d38180000000000000000008940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d39180000000000000000208c40000000000000000000000000000000004b0000000300000004000000475249441f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000408f40000000000000000000000000000000006e0000000400000004000000535043312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d353226000000010000001e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30060000003132333435367a0000000400000005000000464f5243452a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34381f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000000000000000000000f0bf00000000000000005d00000005000000040000004d4154312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000080a209410700000070726573656e7408000000333333333333d33fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d302a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d301e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d322a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d332a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d362a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d372a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d382a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391800000000000000000000000000000000000000000000000000f03fbd0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d392a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31301800000000000000000000000000000000000000000000000000f03f980000000700000004000000504241522a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000000005940080000008b6ce7fba90a8a40080000008b6ce7fba90a8a40080000000000000000e09540",
+        "revision": "0",
+        "root_resource": "model.bdf",
+        "schema_version": "qcae.nastran.artifact.v1",
+        "target_profile": {
+            "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+            "profile_id": "qcae.nastran.linear-static",
+            "profile_version": "0.2.0"
+        },
+        "task_id": "task-45414c3b5adf1bf0-1",
+        "unit_system": "mm-N-MPa"
+    },
+    "mode": "MIX",
+    "observer_writes": 0,
+    "result_current": {
+        "analysis_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+        "artifact_id": "artifact-task-45414c3b5adf1bf0-1",
+        "current_version": {
+            "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-74",
+            "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-72",
+            "revision": "0"
+        },
+        "field": {
+            "case": "LC1",
+            "components": [
+                "X",
+                "Y",
+                "Z"
+            ],
+            "coordinate_basis": "global",
+            "frame": "0",
+            "location": "node",
+            "quantity": "displacement",
+            "unit": "mm",
+            "values": [
+                {
+                    "entity_id": "node-task-076d14f0330f4e54-1-0",
+                    "value": [
+                        0,
+                        0,
+                        0
+                    ]
+                },
+                {
+                    "entity_id": "node-task-076d14f0330f4e54-1-10",
+                    "value": [
+                        0,
+                        -1,
+                        0
+                    ]
+                }
+            ]
+        },
+        "input_fingerprint": "2100000015000000514341452d504859534943414c2d494e5055542d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34300d0000006c696e6561725f737461746963720000001a000000716361652e6e61737472616e2e6c696e6561722d73746174696305000000302e322e30470000007368613235363a61363630346261336436393730636262656339353533383935373861306632636661663264613862646134303037333061336238376630653331353935386263080000006d6d2d4e2d4d506132000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d343832000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d35324a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30180000000000000000000000000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31180000000000000000005940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d32180000000000000000006940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d33180000000000000000c07240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d34180000000000000000007940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d35180000000000000000407f40000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d36180000000000000000c08240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d37180000000000000000e08540000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d38180000000000000000008940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d39180000000000000000208c40000000000000000000000000000000004b0000000300000004000000475249441f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000408f40000000000000000000000000000000006e0000000400000004000000535043312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d353226000000010000001e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30060000003132333435367a0000000400000005000000464f5243452a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34381f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000000000000000000000f0bf00000000000000005d00000005000000040000004d4154312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000080a209410700000070726573656e7408000000333333333333d33fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d302a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d301e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d322a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d332a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d362a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d372a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d382a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391800000000000000000000000000000000000000000000000000f03fbd0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d392a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31301800000000000000000000000000000000000000000000000000f03f980000000700000004000000504241522a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000000005940080000008b6ce7fba90a8a40080000008b6ce7fba90a8a40080000000000000000e09540",
+        "input_version": {
+            "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-74",
+            "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-72",
+            "revision": "0"
+        },
+        "reader_version": "qcae.fixture.displacement.v1",
+        "result_id": "qcae:fixture-result:QCV1:o3:s6:callers10:local-users8:documents39:doc-8759b9a37c41d804d3d60615037d66e6-72s3:keys36:48adb5ba-af26-4d64-a0bf-68f815450ef3",
+        "source_kind": "fixture",
+        "state": "current"
+    },
+    "result_stale": {
+        "analysis_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+        "artifact_id": "artifact-task-45414c3b5adf1bf0-1",
+        "current_version": {
+            "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-74",
+            "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-72",
+            "revision": "1"
+        },
+        "field": {
+            "case": "LC1",
+            "components": [
+                "X",
+                "Y",
+                "Z"
+            ],
+            "coordinate_basis": "global",
+            "frame": "0",
+            "location": "node",
+            "quantity": "displacement",
+            "unit": "mm",
+            "values": [
+                {
+                    "entity_id": "node-task-076d14f0330f4e54-1-0",
+                    "value": [
+                        0,
+                        0,
+                        0
+                    ]
+                },
+                {
+                    "entity_id": "node-task-076d14f0330f4e54-1-10",
+                    "value": [
+                        0,
+                        -1,
+                        0
+                    ]
+                }
+            ]
+        },
+        "input_fingerprint": "2100000015000000514341452d504859534943414c2d494e5055542d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34300d0000006c696e6561725f737461746963720000001a000000716361652e6e61737472616e2e6c696e6561722d73746174696305000000302e322e30470000007368613235363a61363630346261336436393730636262656339353533383935373861306632636661663264613862646134303037333061336238376630653331353935386263080000006d6d2d4e2d4d506132000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d343832000000010000002a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d35324a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30180000000000000000000000000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31180000000000000000005940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d32180000000000000000006940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d33180000000000000000c07240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d34180000000000000000007940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d35180000000000000000407f40000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d36180000000000000000c08240000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d37180000000000000000e08540000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d38180000000000000000008940000000000000000000000000000000004a0000000300000004000000475249441e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d39180000000000000000208c40000000000000000000000000000000004b0000000300000004000000475249441f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000408f40000000000000000000000000000000006e0000000400000004000000535043312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d353226000000010000001e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d30060000003132333435367a0000000400000005000000464f5243452a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d34381f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d3130180000000000000000000000000000000000f0bf00000000000000005d00000005000000040000004d4154312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000080a209410700000070726573656e7408000000333333333333d33fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d302a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d301e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d312a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d311e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d322a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d321e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d332a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d331e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d342a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d341e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d362a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d361e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d372a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d371e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381800000000000000000000000000000000000000000000000000f03fbc0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d382a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d381e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391800000000000000000000000000000000000000000000000000f03fbd0000000600000004000000434241521e0000006c696e652d7461736b2d303736643134663033333066346535342d312d392a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31351e0000006e6f64652d7461736b2d303736643134663033333066346535342d312d391f0000006e6f64652d7461736b2d303736643134663033333066346535342d312d31301800000000000000000000000000000000000000000000000000f03f980000000700000004000000504241522a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d31352a000000656e746974792d38373539623961333763343164383034643364363036313530333764363665362d3131080000000000000000005940080000008b6ce7fba90a8a40080000008b6ce7fba90a8a40080000000000000000e09540",
+        "input_version": {
+            "document_epoch": "epoch-8759b9a37c41d804d3d60615037d66e6-74",
+            "document_id": "doc-8759b9a37c41d804d3d60615037d66e6-72",
+            "revision": "0"
+        },
+        "reader_version": "qcae.fixture.displacement.v1",
+        "result_id": "qcae:fixture-result:QCV1:o3:s6:callers10:local-users8:documents39:doc-8759b9a37c41d804d3d60615037d66e6-72s3:keys36:48adb5ba-af26-4d64-a0bf-68f815450ef3",
+        "source_kind": "fixture",
+        "state": "stale"
+    },
+    "run_id": "MIX-M-1-3f6cd97a-d8aa-4d3f-b0da-d49bbf646177",
+    "semantic_checkpoints": {
+        "M_baseline": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 210000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ],
+        "check_repaired": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 210000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ],
+        "normal_open_M": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 210000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ],
+        "published_M": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 210000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ],
+        "recovered_M": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 210000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ],
+        "selection_applied": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 210000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    1,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ],
+        "selection_undone": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 210000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ],
+        "stale_result_input_M": [
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "kind": "material",
+                "name": "Steel",
+                "poisson_ratio": 0.3,
+                "sources": [
+                ],
+                "young_modulus_mpa": 200000
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-0",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    0,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-1",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    100,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-10",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-2",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    200,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-3",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    300,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-4",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    400,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-5",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    500,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-6",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    600,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-7",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    700,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-8",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    800,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "node-task-076d14f0330f4e54-1-9",
+                "kind": "node",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "position_mm": [
+                    900,
+                    0,
+                    0
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "area_mm2": 100,
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "i1_mm4": 833.333,
+                "i2_mm4": 833.333,
+                "kind": "section",
+                "material_id": "entity-8759b9a37c41d804d3d60615037d66e6-11",
+                "name": "M section",
+                "sources": [
+                ],
+                "torsion_mm4": 1400
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-0",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0",
+                    "node-task-076d14f0330f4e54-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-1",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-1",
+                    "node-task-076d14f0330f4e54-1-2"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-2",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-2",
+                    "node-task-076d14f0330f4e54-1-3"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-3",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-3",
+                    "node-task-076d14f0330f4e54-1-4"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-4",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-4",
+                    "node-task-076d14f0330f4e54-1-5"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-5",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-5",
+                    "node-task-076d14f0330f4e54-1-6"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-6",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-6",
+                    "node-task-076d14f0330f4e54-1-7"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-7",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-7",
+                    "node-task-076d14f0330f4e54-1-8"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-8",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-8",
+                    "node-task-076d14f0330f4e54-1-9"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "line-task-076d14f0330f4e54-1-9",
+                "kind": "beam",
+                "mesh_id": "mesh-task-076d14f0330f4e54-1",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-9",
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ],
+                "section_id": "entity-8759b9a37c41d804d3d60615037d66e6-15",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-24",
+                "kind": "part",
+                "members": [
+                    "line-task-076d14f0330f4e54-1-0",
+                    "line-task-076d14f0330f4e54-1-1",
+                    "line-task-076d14f0330f4e54-1-2",
+                    "line-task-076d14f0330f4e54-1-3",
+                    "line-task-076d14f0330f4e54-1-4",
+                    "line-task-076d14f0330f4e54-1-5",
+                    "line-task-076d14f0330f4e54-1-6",
+                    "line-task-076d14f0330f4e54-1-7",
+                    "line-task-076d14f0330f4e54-1-8",
+                    "line-task-076d14f0330f4e54-1-9"
+                ],
+                "name": "Beam",
+                "sources": [
+                ]
+            },
+            {
+                "children": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-24"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-28",
+                "kind": "assembly",
+                "name": "Assembly",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-32",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "name": "Fixed",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-36",
+                "kind": "set",
+                "members": [
+                    "node-task-076d14f0330f4e54-1-10"
+                ],
+                "name": "Loaded",
+                "sources": [
+                ]
+            },
+            {
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-48",
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "kind": "force",
+                "name": "",
+                "node_id": "node-task-076d14f0330f4e54-1-10",
+                "sources": [
+                ]
+            },
+            {
+                "dofs": "123456",
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-52",
+                "kind": "constraint",
+                "name": "",
+                "nodes": [
+                    "node-task-076d14f0330f4e54-1-0"
+                ],
+                "sources": [
+                ]
+            },
+            {
+                "constraints": [
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-44",
+                "forces": [
+                ],
+                "kind": "analysis",
+                "load_cases": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-40"
+                ],
+                "name": "M static",
+                "profile_ref": {
+                    "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                    "profile_id": "qcae.nastran.linear-static",
+                    "profile_version": "0.2.0"
+                },
+                "sources": [
+                ],
+                "target": {
+                    "analysis_kind": "linear_static",
+                    "profile": {
+                        "definition_digest": "sha256:a6604ba3d6970cbbec955389578a0f2cfaf2da8bda400730a3b87f0e315958bc",
+                        "profile_id": "qcae.nastran.linear-static",
+                        "profile_version": "0.2.0"
+                    }
+                }
+            },
+            {
+                "end_mm": [
+                    1000,
+                    0,
+                    0
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "geometry",
+                "name": "",
+                "sources": [
+                ],
+                "start_mm": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            {
+                "entity_id": "mesh-task-076d14f0330f4e54-1",
+                "geometry_id": "entity-8759b9a37c41d804d3d60615037d66e6-4",
+                "geometry_revision": "1",
+                "kind": "mesh",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "sources": [
+                ],
+                "stale": false
+            },
+            {
+                "constraints": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-52"
+                ],
+                "entity_id": "entity-8759b9a37c41d804d3d60615037d66e6-40",
+                "forces": [
+                    "entity-8759b9a37c41d804d3d60615037d66e6-48"
+                ],
+                "kind": "load_case",
+                "name": "LC1",
+                "sources": [
+                ]
+            }
+        ]
+    },
+    "source_tree_sha256": "mutable-diagnostic"
+}

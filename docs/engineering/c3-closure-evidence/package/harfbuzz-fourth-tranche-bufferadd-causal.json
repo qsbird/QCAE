@@ -1,0 +1,77 @@
+{
+  "passed": true,
+  "qapplication_constructed": false,
+  "coverage_complete": false,
+  "input_utf8_hex": "41c3a9f09f9982",
+  "original_records": [
+    {
+      "codepoint": 65,
+      "mask": 0,
+      "cluster": 0,
+      "var1": 0,
+      "var2": 0
+    },
+    {
+      "codepoint": 233,
+      "mask": 0,
+      "cluster": 1,
+      "var1": 0,
+      "var2": 0
+    },
+    {
+      "codepoint": 128578,
+      "mask": 0,
+      "cluster": 3,
+      "var1": 0,
+      "var2": 0
+    }
+  ],
+  "observed_records": [
+    {
+      "codepoint": 65,
+      "mask": 0,
+      "cluster": 0,
+      "var1": 0,
+      "var2": 0
+    },
+    {
+      "codepoint": 233,
+      "mask": 0,
+      "cluster": 1,
+      "var1": 0,
+      "var2": 0
+    },
+    {
+      "codepoint": 128578,
+      "mask": 0,
+      "cluster": 3,
+      "var1": 0,
+      "var2": 0
+    }
+  ],
+  "all_glyph_record_fields_equal": true,
+  "expected_actual_original_assignments": 9,
+  "actual_alias_assignment_calls": 9,
+  "actual_typed_store_bytes": 36,
+  "facts": [
+    {
+      "site": "harfbuzz/src/hb-buffer.cc:owned_alias_store:1",
+      "kind": 2,
+      "calls": 3,
+      "bytes": 12
+    },
+    {
+      "site": "harfbuzz/src/hb-buffer.cc:owned_alias_store:2",
+      "kind": 2,
+      "calls": 3,
+      "bytes": 12
+    },
+    {
+      "site": "harfbuzz/src/hb-buffer.cc:owned_alias_store:3",
+      "kind": 2,
+      "calls": 3,
+      "bytes": 12
+    }
+  ],
+  "causal_claim": "Three scalar input records each execute codepoint/mask/cluster assignment once; buffer records and UTF8 byte-clusters equal original. Scope contains actual add operation only, without shaping."
+}

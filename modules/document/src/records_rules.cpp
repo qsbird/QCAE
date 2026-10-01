@@ -71,6 +71,15 @@ void validate_record(const Constraint& value, const DocumentView&) {
         std::set<char>(value.dofs.begin(), value.dofs.end()).size() != value.dofs.size())
         invalid("Constraint DOFs must be unique digits 1 through 6", value.id.value);
 }
+void validate_record(const AnalysisDefinition& value, const DocumentView&) {
+    // An absent field denotes the historical direct-reference representation.
+    // A present field is authoritative even when empty: completeness is a check,
+    // while mixing two reference paths would make the physical input ambiguous.
+    if (value.load_cases && (!value.forces.empty() || !value.constraints.empty()))
+        invalid("Analysis cannot mix load cases with historical direct references", value.id.value);
+    if (value.load_cases && value.load_cases->size() > 1)
+        invalid("The controlled static subset supports at most one load case", value.id.value);
+}
 void validate_record(const GeometryLine& value, const DocumentView&) {
     std::array<double, 3> axis{};
     for (std::size_t index = 0; index < axis.size(); ++index)

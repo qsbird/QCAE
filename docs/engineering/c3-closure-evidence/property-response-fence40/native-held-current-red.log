@@ -1,0 +1,15 @@
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+2026-10-01 08:59:29.209 workflow-property-red[14564:41791314] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+FAIL!  : Workflow::propertyRepliesWaitForAuthoritativeRefresh(row-revision) 'editors[1]->text().isEmpty()' returned FALSE. ()
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(652)]
+FAIL!  : Workflow::propertyRepliesWaitForAuthoritativeRefresh(manual-revision) 'preview_id.isEmpty()' returned FALSE. ()
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(650)]
+FAIL!  : Workflow::propertyRepliesWaitForAuthoritativeRefresh(automatic-revision) Compared values are not the same
+   Actual   (proxy.commit_requests): 1
+   Expected (0)                    : 0
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(643)]
+PASS   : Workflow::cleanupTestCase()
+Totals: 2 passed, 3 failed, 0 skipped, 0 blacklisted, 10654ms
+********* Finished testing of Workflow *********

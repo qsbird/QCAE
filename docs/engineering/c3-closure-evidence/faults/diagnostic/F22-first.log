@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/skeleton_fault_ipc_tests.py", line 144, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/skeleton_fault_ipc_tests.py", line 140, in main
+    return run(args)
+  File "/Users/qs/Documents/ChatGPT/QCAE/tests/skeleton_fault_ipc_tests.py", line 33, in run
+    process = subprocess.Popen([args.engine, "--socket", endpoint, "--workspace", str(root / "work.sqlite")],
+                               stdout=log, stderr=log)
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1038, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1970, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-desktop/apps/engine/qcae-engine'

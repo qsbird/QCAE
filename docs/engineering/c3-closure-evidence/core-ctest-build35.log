@@ -1,0 +1,85 @@
+Test project /Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-core
+      Start  2: architecture_gate_unit
+      Start 27: record_document
+ 1/36 Test #27: record_document ..................   Passed    5.64 sec
+      Start  6: operation_generation
+ 2/36 Test  #2: architecture_gate_unit ...........   Passed   10.72 sec
+      Start 31: line_mesh_regeneration
+ 3/36 Test #31: line_mesh_regeneration ...........   Passed    0.49 sec
+      Start 11: cpp_format
+ 4/36 Test  #6: operation_generation .............   Passed    5.91 sec
+      Start 19: entity_generation
+ 5/36 Test #11: cpp_format .......................***Failed    2.24 sec
+/Users/qs/Documents/ChatGPT/QCAE/modules/application/src/core.cpp:481:30: error: code should be clang-formatted [-Wclang-format-violations]
+    const auto computed_key = direct_key ? std::string{} : scoped_key(caller, operation_name, idempotency_key);
+                             ^
+
+      Start 22: allocation_atomicity
+ 6/36 Test #19: entity_generation ................   Passed    1.97 sec
+      Start  3: record_application
+ 7/36 Test #22: allocation_atomicity .............   Passed    0.62 sec
+      Start 33: result_fixture
+ 8/36 Test  #3: record_application ...............   Passed    0.94 sec
+      Start 35: artifacts_local
+ 9/36 Test #33: result_fixture ...................   Passed    0.83 sec
+      Start  8: model_operations
+10/36 Test #35: artifacts_local ..................   Passed    0.87 sec
+      Start 21: contracts
+11/36 Test  #8: model_operations .................   Passed    0.94 sec
+      Start 15: persistence
+12/36 Test #21: contracts ........................   Passed    0.94 sec
+      Start 30: geometry_mesh
+13/36 Test #15: persistence ......................   Passed    0.93 sec
+      Start 25: change_events
+14/36 Test #30: geometry_mesh ....................   Passed    0.95 sec
+      Start 20: core
+15/36 Test #25: change_events ....................   Passed    1.16 sec
+      Start 12: model
+16/36 Test #20: core .............................   Passed    1.14 sec
+      Start 29: runtime
+17/36 Test #12: model ............................   Passed    0.91 sec
+      Start 32: analysis_checks
+18/36 Test #29: runtime ..........................   Passed    0.91 sec
+      Start 10: record_query
+19/36 Test #32: analysis_checks ..................   Passed    1.59 sec
+      Start 16: query
+20/36 Test #10: record_query .....................   Passed    1.61 sec
+      Start  9: quantity_entry_consistency
+21/36 Test #16: query ............................   Passed    0.92 sec
+      Start  4: operation_registry
+22/36 Test  #9: quantity_entry_consistency .......   Passed    0.89 sec
+      Start 26: render_projector
+23/36 Test  #4: operation_registry ...............   Passed    1.50 sec
+      Start 13: nastran
+24/36 Test #26: render_projector .................   Passed    1.51 sec
+      Start 14: delta
+25/36 Test #13: nastran ..........................   Passed    1.47 sec
+      Start  1: acceptance_checker
+26/36 Test  #1: acceptance_checker ...............   Passed    0.16 sec
+      Start 23: design
+27/36 Test #14: delta ............................   Passed    1.49 sec
+      Start 28: generated_entities
+28/36 Test #23: design ...........................   Passed    0.31 sec
+      Start 18: profile_identity
+29/36 Test #18: profile_identity .................   Passed    0.12 sec
+      Start 17: generated_profile
+30/36 Test #28: generated_entities ...............   Passed    0.15 sec
+      Start  5: generated_operation_inputs
+31/36 Test #17: generated_profile ................   Passed    0.06 sec
+      Start 24: generated_contract
+32/36 Test  #5: generated_operation_inputs .......   Passed    0.07 sec
+      Start  7: parameters
+33/36 Test  #7: parameters .......................   Passed    0.01 sec
+      Start 34: nastran_static_result
+34/36 Test #24: generated_contract ...............   Passed    0.06 sec
+      Start 36: solver_local
+35/36 Test #34: nastran_static_result ............   Passed    0.48 sec
+36/36 Test #36: solver_local .....................   Passed    3.74 sec
+
+97% tests passed, 1 tests failed out of 36
+
+Total Test time (real) =  28.78 sec
+
+The following tests FAILED:
+	 11 - cpp_format (Failed)
+Errors while running CTest

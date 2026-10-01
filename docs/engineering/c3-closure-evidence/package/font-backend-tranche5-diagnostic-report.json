@@ -1,0 +1,6241 @@
+{
+  "schema": "qcae.font-backend-metrics-diagnostic/1",
+  "status": "bounded diagnostic completed; no product backend change or whole-copy closure",
+  "official_qt_source_archive_sha256": "d9594a31228aa23ad6b531719a29b45f0f3989fe6c136d45767ea179f233c1ac",
+  "diagnostic_sdk_prefix": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix",
+  "preparation_script": "tests/prepare_c3_qt_freetype_metrics_tranche.py",
+  "preparation_script_sha256": "bc1d49570be76a0d807b7bb548b63aa27e0d46506dce9b95d05669c5d9692bc5",
+  "probe_source": "tests/qt_font_backend_behavior_probe.cpp",
+  "probe_source_sha256": "e594d7a03a21cadbf0fe5bc7eead7eed389f1c82a30ece7262b6b7393f28ad3c",
+  "qt_manifest_sha256": "df72dc6116a8c074a705f5fe433737c52f2511db23b3fecb24d5fe7ce23fc93b",
+  "qt_source_sites": 157,
+  "harfbuzz_source_sites": 377,
+  "diagnostic_repair": {
+    "source": "src/gui/text/freetype/qfontengine_ft.cpp",
+    "original_source_sha256": "2a7920bf9a7a639180e4f39df9f63adaa7d1d2399a840886c0d4c125a3566841",
+    "patched_source_sha256": "52a66b57007b7137846ff34374f879520f229fe7a48c3f9925f1ca599592e36c",
+    "original": "    QFontEngine::initializeHeightMetrics();\n\n    if (scalableBitmapScaleFactor != 1) {",
+    "replacement": "    // Diagnostic SDK only: FT bitmap metrics already use selected-strike\n    // pixels. emSquareSize() is ppem for these faces, not SFNT design UPEM;\n    // applying HHEA/OS2 design metrics here mixes those different units.\n    if (FT_IS_SCALABLE(freetype->face))\n        QFontEngine::initializeHeightMetrics();\n    else\n        m_heightMetricsQueried = true;\n\n    if (scalableBitmapScaleFactor != 1) {",
+    "scope": "non-scalable FT bitmap height metrics only; scalable path and emSquareSize unchanged",
+    "purpose": "preserve native selected-strike pixel metrics before existing bitmap scale",
+    "production_default_backend_changed": false,
+    "observer_sites_added": 0
+  },
+  "compile_reuse": {
+    "recompiled_sources": [
+      {
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-metrics-sources/src/corelib/global/qglobal.cpp",
+        "sha256": "682eb256b13001086f5b132089a16373fb64020ef02e42756245b9e98ed74cc7"
+      },
+      {
+        "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-metrics-sources/src/gui/text/freetype/qfontengine_ft.cpp",
+        "sha256": "52a66b57007b7137846ff34374f879520f229fe7a48c3f9925f1ca599592e36c"
+      }
+    ],
+    "reused_objects": 494,
+    "abi_feature_header_flags_unchanged": true,
+    "exact_command_object_header_inventory": "build-c3-qt-observed/tranche5/object-reuse.json",
+    "inventory_sha256": "c284b633c61d6113f74073824c1b87100e1db99bdc4e97317f4bdc869f627120",
+    "strict_probe_compile_evidence": "build-c3-qt-observed/tranche5/font-probe-compile.json",
+    "strict_control_compile_evidence": "build-c3-qt-observed/tranche5/font-probe4-control-compile.json"
+  },
+  "runtime_reports": {
+    "installed_mac": {
+      "report": "docs/engineering/c3-closure-evidence/package/font-backend-mac-build36.json",
+      "sha256": "ab6075e99ef7cd4f25edf7cab55a28d6daa54878d81989e6781f1cf237aba21c",
+      "run_id": "693f6495-a761-4dc4-a1fe-8c472e17e5ac",
+      "probe_completed": true,
+      "backend_verified": true,
+      "completed_cases": 64,
+      "loaded_sdk_images": [
+        {
+          "path": "/opt/homebrew/Cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+          "sha256": "3e85a7f40549dc2d42d68fcd5b18eefd5a41079d1b5a5933888c585b8e1fed9e"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/harfbuzz/14.4.0/lib/libharfbuzz.0.dylib",
+          "sha256": "377b4eb7626287ca0de0de0af73a154ab15ba035fbf8f02e8b0391efccae5a6e"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtCore.framework/Versions/A/QtCore",
+          "sha256": "79af90e17b1ebefb279d2d6ec3fa5054da1c86827ee6c78fd6fa2562b604aa31"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtDBus.framework/Versions/A/QtDBus",
+          "sha256": "2256744d828093345f963e8b1612b19abb7d89b9b70340e615400a7ea4d21ca5"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtGui.framework/Versions/A/QtGui",
+          "sha256": "19d5426d52d42c3d92c06fcef89adf07dd1a58394c5fff34566fbbb89d2cb7b0"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/qtbase/6.11.1/share/qt/plugins/platforms/libqcocoa.dylib",
+          "sha256": "dd5019779a8de766e4c604637f0f4d1d8c53c2401c3af87119bc7be5d572b703"
+        }
+      ]
+    },
+    "mac4": {
+      "report": "docs/engineering/c3-closure-evidence/package/font-backend-mac-tranche4-control.json",
+      "sha256": "ede3ef7ae4c2a330ae54355870ef85204eae98e946bc34993df7456a65be5d0a",
+      "run_id": "11c97f6f-e354-4e7f-bc98-cc1a654b527a",
+      "probe_completed": true,
+      "backend_verified": true,
+      "completed_cases": 64,
+      "loaded_sdk_images": [
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+          "sha256": "e8b497711f390605b59c13df48ce2e811513fab2d4141ad5158afe31125b86dd"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/qt-prefix/lib/QtDBus.framework/Versions/A/QtDBus",
+          "sha256": "7e51e4623f7fc8974155dc46caa9bb1ff78e47ca3da71edec8345c32e12513ac"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+          "sha256": "2bcd6bf55fc0895d0c3006f0e7821c9eb238240d292dc95fab0b7faa1fe47dda"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/qt-prefix/lib/libharfbuzz.dylib",
+          "sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche4/qt-prefix/plugins/platforms/libqcocoa.dylib",
+          "sha256": "cb11c7452e2e00ab5fdeabdf166c27da3a34c35f391b5096ef511c558598b7aa"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+          "sha256": "3e85a7f40549dc2d42d68fcd5b18eefd5a41079d1b5a5933888c585b8e1fed9e"
+        }
+      ]
+    },
+    "mac5": {
+      "report": "docs/engineering/c3-closure-evidence/package/font-backend-mac-tranche5.json",
+      "sha256": "bc090d2b5ade3db68b8e17f3b19faba10f540cd12ca9b49b84cbf6dfc10043b3",
+      "run_id": "9be35009-995b-4848-bfc0-bb8b7a4d2ad1",
+      "probe_completed": true,
+      "backend_verified": true,
+      "completed_cases": 64,
+      "loaded_sdk_images": [
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+          "sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtDBus.framework/Versions/A/QtDBus",
+          "sha256": "7e51e4623f7fc8974155dc46caa9bb1ff78e47ca3da71edec8345c32e12513ac"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+          "sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+          "sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/plugins/platforms/libqcocoa.dylib",
+          "sha256": "cb11c7452e2e00ab5fdeabdf166c27da3a34c35f391b5096ef511c558598b7aa"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+          "sha256": "3e85a7f40549dc2d42d68fcd5b18eefd5a41079d1b5a5933888c585b8e1fed9e"
+        }
+      ]
+    },
+    "ft5": {
+      "report": "docs/engineering/c3-closure-evidence/package/font-backend-freetype-tranche5.json",
+      "sha256": "755a0f92e7496bd6b5e81a054e3eb171673a217659262d70f2a502232f044422",
+      "run_id": "7a0392b9-adff-4dea-87ae-667a20e45820",
+      "probe_completed": true,
+      "backend_verified": true,
+      "completed_cases": 64,
+      "loaded_sdk_images": [
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtCore.framework/Versions/A/QtCore",
+          "sha256": "b51d786e8bd6df4ba29097b0f9d87a0e78ed813c030e4260d9661de4635eaa5e"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtDBus.framework/Versions/A/QtDBus",
+          "sha256": "7e51e4623f7fc8974155dc46caa9bb1ff78e47ca3da71edec8345c32e12513ac"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/QtGui.framework/Versions/A/QtGui",
+          "sha256": "1bb73b74b4bae018fe44895f25f831022bc3058fbac1dbe80d8c4973f80753ac"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/lib/libharfbuzz.dylib",
+          "sha256": "d7923904ab0e72f8233083098987599b1210f3fbfbc1dae5ecdd7c7776c41d7b"
+        },
+        {
+          "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche5/qt-prefix/plugins/platforms/libqcocoa.dylib",
+          "sha256": "cb11c7452e2e00ab5fdeabdf166c27da3a34c35f391b5096ef511c558598b7aa"
+        },
+        {
+          "path": "/opt/homebrew/Cellar/freetype/2.14.3/lib/libfreetype.6.dylib",
+          "sha256": "3e85a7f40549dc2d42d68fcd5b18eefd5a41079d1b5a5933888c585b8e1fed9e"
+        }
+      ]
+    }
+  },
+  "mac4_to_mac5": {
+    "before_report": "font-backend-mac-tranche4-control.json",
+    "after_report": "font-backend-mac-tranche5.json",
+    "comparison": "exact raw fields, no normalization or tolerance; separate complete-run index bijection is diagnostic only",
+    "environment_equal": {
+      "architecture": true,
+      "os_kernel": true,
+      "os_product": true,
+      "platform": true,
+      "screen": true,
+      "qt_version": true
+    },
+    "case_ids_order_equal": true,
+    "case_count": 64,
+    "exactly_equal_cases": 35,
+    "exact_raw_equivalence_passed": false,
+    "different_field_counts": {
+      "glyph_ids": 29,
+      "positions": 29,
+      "string_indexes": 29,
+      "glyph_runs": 29,
+      "actual_engines": 26,
+      "font_identities": 26
+    },
+    "cases_with_whole_run_bijection": 64,
+    "cases": [
+      {
+        "case_id": "SFNS/14/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/greek_cjk",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/devanagari",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/greek_cjk",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/devanagari",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/greek_cjk",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/devanagari",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/devanagari",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/devanagari",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/greek_cjk",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/devanagari",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/emoji",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/ascii_material",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/ascii_revision",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/latin_combining",
+        "exactly_equal": true,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": true,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      }
+    ]
+  },
+  "installed_mac_to_mac4": {
+    "before_report": "font-backend-mac-build36.json",
+    "after_report": "font-backend-mac-tranche4-control.json",
+    "comparison": "exact raw fields, no normalization or tolerance; separate complete-run index bijection is diagnostic only",
+    "environment_equal": {
+      "architecture": true,
+      "os_kernel": true,
+      "os_product": true,
+      "platform": true,
+      "screen": true,
+      "qt_version": true
+    },
+    "case_ids_order_equal": true,
+    "case_count": 64,
+    "exactly_equal_cases": 0,
+    "exact_raw_equivalence_passed": false,
+    "different_field_counts": {
+      "pixels": 64,
+      "actual_engines": 20,
+      "font_identities": 20,
+      "glyph_ids": 22,
+      "positions": 22,
+      "string_indexes": 22,
+      "glyph_runs": 22
+    },
+    "cases_with_whole_run_bijection": 64,
+    "cases": [
+      {
+        "case_id": "SFNS/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 2
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": true,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": true,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 1
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 2
+          },
+          {
+            "before_run_index": 2,
+            "after_run_index": 0
+          }
+        ]
+      }
+    ]
+  },
+  "mac5_to_freetype5": {
+    "before_report": "font-backend-mac-tranche5.json",
+    "after_report": "font-backend-freetype-tranche5.json",
+    "comparison": "exact raw fields, no normalization or tolerance; separate complete-run index bijection is diagnostic only",
+    "environment_equal": {
+      "architecture": true,
+      "os_kernel": true,
+      "os_product": true,
+      "platform": true,
+      "screen": true,
+      "qt_version": true
+    },
+    "case_ids_order_equal": true,
+    "case_count": 64,
+    "exactly_equal_cases": 0,
+    "exact_raw_equivalence_passed": false,
+    "different_field_counts": {
+      "actual_engines": 64,
+      "positions": 38,
+      "glyph_runs": 50,
+      "metrics": 64,
+      "pixels": 64,
+      "font_identities": 42,
+      "glyph_ids": 28,
+      "string_indexes": 21,
+      "glyph_count": 2
+    },
+    "cases_with_whole_run_bijection": 14,
+    "cases": [
+      {
+        "case_id": "SFNS/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNS/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNS/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "SFNSMono/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "SFNSMono/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": false,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels",
+          "glyph_count"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": false,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels",
+          "glyph_count"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_general/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_general/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/14/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/14/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/14/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/14/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/14/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": false,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "string_indexes",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/18/ascii_material",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/ascii_revision",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/latin_combining",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/greek_cjk",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/18/arabic",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/18/devanagari",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": true,
+          "glyph_ids": true,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": true,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": true,
+        "run_index_bijection": [
+          {
+            "before_run_index": 0,
+            "after_run_index": 0
+          },
+          {
+            "before_run_index": 1,
+            "after_run_index": 1
+          }
+        ]
+      },
+      {
+        "case_id": "system_fixed/18/emoji",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": true,
+          "positions": false,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "positions",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      },
+      {
+        "case_id": "system_fixed/18/mixed_rtl",
+        "exactly_equal": false,
+        "fields_equal": {
+          "input": true,
+          "actual_engines": false,
+          "font_identities": false,
+          "glyph_ids": false,
+          "positions": true,
+          "string_indexes": true,
+          "glyph_runs": false,
+          "metrics": false,
+          "pixels": false,
+          "glyph_count": true,
+          "missing_glyph_count": true
+        },
+        "different_fields": [
+          "actual_engines",
+          "font_identities",
+          "glyph_ids",
+          "glyph_runs",
+          "metrics",
+          "pixels"
+        ],
+        "exact_whole_run_index_bijection_exists": false,
+        "run_index_bijection": null
+      }
+    ]
+  },
+  "glyph_run_order_source": {
+    "source": "src/gui/text/qtextlayout.cpp",
+    "official_source_sha256": "df6fc9652eea6f8ff033fefd08e15bb012f5fd68ffb3e9edabb12966ccd41b88",
+    "qhash_line": 1043,
+    "return_hash_values_line": 1079,
+    "fact": "returned QList order is QHash.values() over engine-pointer/flags keys; all 64 Mac4/Mac5 full-run payloads have an exact bijection",
+    "raw_difference_retained": true
+  },
+  "bitmap_strike_causal_check": {
+    "native_strike_probe": "build-c3-qt-observed/tranche5/ft-native-strike-metrics.json",
+    "native_strike_sha256": "d2b86c74a1ece51f34e7c87ee448aa815dff77257cb4e52b230acc64a47cc490",
+    "actual_native_strike": {
+      "family": "Apple Color Emoji",
+      "face_flags": 150074,
+      "scalable": 0,
+      "face_units_per_em": 800,
+      "selected_strike_height": 26,
+      "selected_x_ppem": 20,
+      "selected_y_ppem": 20,
+      "native_ascent_26_6": 1280,
+      "native_descent_26_6": -400,
+      "native_height_26_6": 1680
+    },
+    "SFNT_design_UPEM": 800,
+    "selected_strike_ppem": 20,
+    "requested_pixel_size": 14,
+    "existing_bitmap_scale_QFixed_raw": 34,
+    "existing_bitmap_scale": 0.53125,
+    "original_hhea_ascent_design_units": 800,
+    "original_hhea_descent_design_units": 250,
+    "original_bad_ascent": 297.5,
+    "original_bad_descent": 92.96875,
+    "patched_native_bitmap_ascent": 10.625,
+    "patched_native_bitmap_descent": 3.3203125,
+    "line_max_includes_other_actual_fallback_font": true,
+    "original_failure_audit": "docs/engineering/c3-closure-evidence/package/font-backend-freetype-emoji-causal-audit.json",
+    "repaired_emoji_cases": [
+      {
+        "case_id": "SFNS/14/emoji",
+        "line_ascent": 13.53125,
+        "line_descent": 3.328125,
+        "line_height": 17,
+        "changed_pixels": "1293",
+        "missing_glyph_count": "0"
+      },
+      {
+        "case_id": "SFNS/18/emoji",
+        "line_ascent": 17.390625,
+        "line_descent": 4.296875,
+        "line_height": 22,
+        "changed_pixels": "2176",
+        "missing_glyph_count": "0"
+      },
+      {
+        "case_id": "SFNSMono/14/emoji",
+        "line_ascent": 13.53125,
+        "line_descent": 3.328125,
+        "line_height": 17,
+        "changed_pixels": "1175",
+        "missing_glyph_count": "0"
+      },
+      {
+        "case_id": "SFNSMono/18/emoji",
+        "line_ascent": 17.390625,
+        "line_descent": 4.296875,
+        "line_height": 22,
+        "changed_pixels": "2048",
+        "missing_glyph_count": "0"
+      },
+      {
+        "case_id": "system_general/14/emoji",
+        "line_ascent": 13.328125,
+        "line_descent": 3.375,
+        "line_height": 17,
+        "changed_pixels": "1332",
+        "missing_glyph_count": "0"
+      },
+      {
+        "case_id": "system_general/18/emoji",
+        "line_ascent": 17.125,
+        "line_descent": 4.328125,
+        "line_height": 22,
+        "changed_pixels": "2268",
+        "missing_glyph_count": "0"
+      },
+      {
+        "case_id": "system_fixed/14/emoji",
+        "line_ascent": 12.984375,
+        "line_descent": 3.328125,
+        "line_height": 17,
+        "changed_pixels": "1330",
+        "missing_glyph_count": "0"
+      },
+      {
+        "case_id": "system_fixed/18/emoji",
+        "line_ascent": 16.703125,
+        "line_descent": 4.296875,
+        "line_height": 21,
+        "changed_pixels": "2291",
+        "missing_glyph_count": "0"
+      }
+    ]
+  },
+  "warnings": {
+    "freetype_invalid_glyph_warning_lines": [
+      "load glyph failed err=6 face=0x74e080000, glyph=65535",
+      "load glyph failed err=6 face=0x74e080000, glyph=65535"
+    ],
+    "count": 2,
+    "public_run_missing_glyphs": 0,
+    "public_run_65535_glyphs": 0,
+    "unresolved": "No source callback proves the internal caller of glyph 65535; finite successful draw is not a no-warning or full-support claim."
+  },
+  "next_bounded_steps": [
+    "If further diagnostic use of FT is authorized, capture the exact internal glyph 65535 call site with original call preserved and no failure relaxation.",
+    "Inventory Qt FT glyph/cache/model-derived stores and pinned FreeType 2.14.3 implementation stores, including indirect/inline growth; 157 Qt and 377 HB sites do not prove this closure.",
+    "Keep HB shape-entry and indirect/scratch/cache growth placeholders until typed actual stores and all reached paths are proved.",
+    "Classify Cocoa font-database immutable font assets separately from copied model UTF16/glyph inputs; default CoreText remains unknown.",
+    "Any candidate environment change still requires the same-run full desktop/select/recovery/Unicode behavior checks and explicit baseline decision. This finite diagnostic is not that decision."
+  ],
+  "product_default_changed": false,
+  "previous_prefixes_modified": false,
+  "default_coretext_copy_gap_closed": false,
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "formal_acceptance_claimed": false
+}

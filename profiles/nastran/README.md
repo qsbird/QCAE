@@ -6,7 +6,7 @@ Public API: `qcae/nastran_codec.hpp`
 
 Direct dependencies: `qcae_document`, `qcae_contracts`
 
-Boundary: Links only document/contracts; no application or GUI implementation. Digest hashes preserve legacy logical input names after file relocation; semantic digest redesign is later work.
+Boundary: Links only document/contracts; no application or GUI implementation. Logical manifest names remain stable after file relocation. Version 0.2.0 separates a lexical semantic digest from an exact-source implementation fingerprint; old references are not hot-replaced.
 
 Minimal consumer: `#include "qcae/nastran_codec.hpp"`; link `qcae_nastran` in CMake.
 

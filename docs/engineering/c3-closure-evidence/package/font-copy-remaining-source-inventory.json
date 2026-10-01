@@ -1,0 +1,263 @@
+{
+  "schema": 1,
+  "status": "finite remaining typed-store inventory, incomplete source/IR closure",
+  "from_tranche": 3,
+  "coverage_complete": false,
+  "entries": [
+    {
+      "path": "src/hb-buffer.cc",
+      "source_sha256": "ae01fba40b2b8758d1bc668e9d9343f3e3a0e14aa9d2348752a46dfa8e81cee3",
+      "line": 370,
+      "statement": "glyph->codepoint = codepoint;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-buffer.cc",
+      "source_sha256": "ae01fba40b2b8758d1bc668e9d9343f3e3a0e14aa9d2348752a46dfa8e81cee3",
+      "line": 371,
+      "statement": "glyph->mask = 0;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-buffer.cc",
+      "source_sha256": "ae01fba40b2b8758d1bc668e9d9343f3e3a0e14aa9d2348752a46dfa8e81cee3",
+      "line": 372,
+      "statement": "glyph->cluster = cluster;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 255,
+      "statement": "info->unicode_props() = props;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 263,
+      "statement": "info->unicode_props() = (unsigned int) gen_cat | (info->unicode_props() & (0xFF & ~UPROPS_MASK_GEN_CAT));",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 283,
+      "statement": "info->unicode_props() = (modified_class<<8) | (info->unicode_props() & 0xFF);",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 303,
+      "statement": "info->unicode_props() = (((unsigned int) s)<<8) | (info->unicode_props() & 0xFF);",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 325,
+      "statement": "info->unicode_props() |= UPROPS_MASK_Cf_VS;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 345,
+      "statement": "info->unicode_props() |= UPROPS_MASK_IGNORABLE;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 350,
+      "statement": "info->unicode_props() &= ~ UPROPS_MASK_IGNORABLE;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 360,
+      "statement": "info->unicode_props() &= ~ UPROPS_MASK_HIDDEN;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 367,
+      "statement": "info->unicode_props() |= UPROPS_MASK_CONTINUATION;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 372,
+      "statement": "info->unicode_props() &= ~ UPROPS_MASK_CONTINUATION;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 422,
+      "statement": "info->unicode_props() |= UPROPS_MASK_Cf_AAT_DELETED;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 423,
+      "statement": "info->unicode_props() |= UPROPS_MASK_HIDDEN;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 454,
+      "statement": "info->lig_props() = 0;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 464,
+      "statement": "info->lig_props() = (lig_id << 5) | IS_LIG_BASE | (lig_num_comps & 0x0F);",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 472,
+      "statement": "info->lig_props() = (lig_id << 5) | (lig_comp & 0x0F);",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 526,
+      "statement": "info->glyph_props() = props;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 594,
+      "statement": "info->glyph_props() &= ~(HB_OT_LAYOUT_GLYPH_PROPS_LIGATED |",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-layout.hh",
+      "source_sha256": "d0dbc459552a15f5077cd1a0760dd4ea017390befc8ec1620f0b19507875ae3f",
+      "line": 601,
+      "statement": "info->glyph_props() &= ~(HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED);",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-shape-normalize.cc",
+      "source_sha256": "df9ef3db73b8898e3f6c5d91c56adadd5f41826b7ea8d803d838f84c9f206244",
+      "line": 89,
+      "statement": "buffer->cur().normalizer_glyph_index() = glyph;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    },
+    {
+      "path": "src/hb-ot-shape-normalize.cc",
+      "source_sha256": "df9ef3db73b8898e3f6c5d91c56adadd5f41826b7ea8d803d838f84c9f206244",
+      "line": 97,
+      "statement": "buffer->cur().normalizer_glyph_index() = glyph;",
+      "ownership": "hb_buffer owned glyph record or buffer record field mutator",
+      "observed_in_current_354_sites": false,
+      "next_observation": "wrap original assignment once; sizeof typed lvalue unevaluated; preserve call/index side effects",
+      "actual_call_count": "unmeasured, not inferred from parent shape-entry placeholder"
+    }
+  ],
+  "other_required_inventory": [
+    "OT layout generated stores and buffer record alias assignments/increments",
+    "scratch/cache vector initialized writes and nontrivial constructor/assignment copies",
+    "backend model-derived data ownership; immutable font assets require type/provenance classification",
+    "Qt layout glyph/cache aliases outside array-specific stores"
+  ],
+  "native_boundary": {
+    "baseline_requirement": "docs/baseline/skeleton-acceptance.md:168: all process-owned model data copy/encoding between command admission and derived display completion; immutable shared references excluded",
+    "existing_audit_boundary": "docs/engineering/c3-byte-ledger-audit.md:132,147: Qt CPU owned text/layout buffers require coverage",
+    "known_inside": "Qt/HB owned character/glyph/advance/position/scratch arrays and their native caller-provided outputs",
+    "not_blanket_model_payload": "immutable font-file/table asset caches independent of document data; need ownership/source proof before classification",
+    "unresolved_inside": "CoreText may own a copy of borrowed model-derived UTF16 or glyph-ID input/temporary output; API surface does not prove those copies occur or give a conservative internal bound",
+    "not_valid_proof": [
+      "caller-provided output bytes alone",
+      "allocator footprint or malloc site count",
+      "memcpy interception that misses scalar/inline stores",
+      "zero private observer callbacks outside instrumented scope",
+      "font raster/visible glyph equality alone"
+    ],
+    "executable_next": [
+      "finish source-visible Qt/HB owned-store/indirect-copy inventory and fresh same-run facts",
+      "test existing Cocoa fontengine=freetype with same fonts, Unicode, actual backend, glyphs/positions/metrics/pixels and original selection behavior; retain default CoreText result",
+      "if alternate environment is considered, instrument pinned FreeType 2.14.3 source and classify native font-database immutable assets separately; do not label default CoreText closed"
+    ]
+  }
+}

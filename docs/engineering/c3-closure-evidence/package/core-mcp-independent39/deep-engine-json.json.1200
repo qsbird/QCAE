@@ -1,0 +1,49 @@
+{
+  "scenario": "deep-engine-json",
+  "exit_code": 0,
+  "tools_list_response": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "result": {
+      "tools": [
+        {
+          "name": "probe.read",
+          "description": "probe.read\nEngine capability: {\"name\":\"probe.read\",\"available\":true,\"fields\":[]}",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "parameters": {
+                "type": "object"
+              },
+              "document_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "document_epoch": {
+                "type": "string",
+                "minLength": 1
+              },
+              "idempotency_key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "expected_revision": {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        }
+      ]
+    }
+  },
+  "engine_business_requests": [
+    "capabilities.list"
+  ],
+  "stderr": "",
+  "real_engine": false,
+  "business_model": false,
+  "writes": 0
+}

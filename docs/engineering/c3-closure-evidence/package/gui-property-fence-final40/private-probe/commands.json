@@ -1,0 +1,22 @@
+{
+  "compile": [
+    "clang++",
+    "-std=c++20",
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror",
+    "-F/opt/homebrew/opt/qt/lib",
+    "-I/opt/homebrew/opt/qt/lib/QtCore.framework/Headers",
+    "-framework",
+    "QtCore",
+    "-Wl,-rpath,/opt/homebrew/opt/qt/lib",
+    "/private/tmp/qcae-property-fence-final40/helper-boundary-probe.cpp",
+    "-o",
+    "/private/tmp/qcae-property-fence-final40/helper-boundary-probe"
+  ],
+  "execution": [
+    "/private/tmp/qcae-property-fence-final40/helper-boundary-probe"
+  ],
+  "scope": "QtCore-only source helper probe; no native GUI/socket/shared build"
+}

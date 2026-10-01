@@ -3,6 +3,7 @@
 #include "qcae/render_service.hpp"
 #include "qcae/ipc_api.hpp"
 #include "qcae/nastran_codec.hpp"
+#include "qcae/nastran_contribution.hpp"
 #include "qcae/query.hpp"
 #include "qcae/typed_host.hpp"
 #ifdef QCAE_HAS_SQLITE
@@ -11,7 +12,12 @@
 #include "qcae/records.hpp"
 #endif
 #include "qcae/local_endpoint.hpp"
+#include "qcae/json_ledger.hpp"
 #include "qcae/operations.hpp"
+#include "qcae/operation_ledger.hpp"
+#ifdef QCAE_HAS_SOLVER_LOCAL
+#include "qcae/solver_contribution.hpp"
+#endif
 
 #include <QCommandLineParser>
 #include <QCoreApplication>
@@ -26,6 +32,7 @@
 #include <map>
 #include <filesystem>
 #include <memory>
+#include <algorithm>
 
 namespace {
 struct Connection {
@@ -34,28 +41,102 @@ struct Connection {
     bool ready{false};
     QString id;
 };
-void send(QLocalSocket* socket, const QJsonObject& response) {
-    auto bytes = QJsonDocument(response).toJson(QJsonDocument::Compact) + '\n';
+void activate_pending_observation(Connection& connection) noexcept {
+    const auto pending = qcae::ledger::pending();
+    if (qcae::ledger::current() || !pending)
+        return;
+    try {
+        // Test-only observation needs the opcode before normal readAll/copy
+        // accounting. Peek does not consume or validate a business command.
+        // Its temporary parser/buffer is observation control overhead.
+        const auto preview =
+            connection.buffer + connection.socket->peek(qcae::transport::max_frame_bytes + 1);
+        qsizetype start{};
+        while (true) {
+            const auto newline = preview.indexOf('\n', start);
+            if (newline < 0)
+                return;
+            QJsonParseError error;
+            const auto parsed =
+                QJsonDocument::fromJson(preview.sliced(start, newline - start), &error);
+            if (error.error == QJsonParseError::NoError && parsed.isObject() &&
+                parsed.object().value("operation").toStringView() ==
+                    QAnyStringView(QLatin1StringView(pending->trigger_operation().data(),
+                                                     pending->trigger_operation().size()))) {
+                if (qcae::ledger::activate_pending_for(pending->trigger_operation()) &&
+                    (start != 0 || !connection.buffer.isEmpty())) {
+                    // A split/mixed arm boundary cannot claim complete byte
+                    // coverage. Preserve actual counters and the failed trace.
+                    qcae::ledger::unknown(qcae::ledger::Stage::socket_receive,
+                                          qcae::ledger::Metric::model_copy_bytes);
+                    qcae::ledger::unknown(qcae::ledger::Stage::socket_receive,
+                                          qcae::ledger::Metric::library_internal_copy_bytes);
+                }
+                return;
+            }
+            start = newline + 1;
+        }
+    } catch (...) {
+        pending->unknown(qcae::ledger::Stage::socket_receive,
+                         qcae::ledger::Metric::model_copy_bytes);
+        pending->unknown(qcae::ledger::Stage::socket_receive,
+                         qcae::ledger::Metric::library_internal_copy_bytes);
+    }
+}
+qsizetype utf8_size(const QString& text,
+                    qcae::ledger::Stage stage = qcae::ledger::Stage::socket_receive) {
+    // Normal ASCII identifiers can be validated directly through their owned
+    // UTF-16 view. Preserve Qt's conversion/error behavior for other Unicode.
+    if (std::all_of(
+            text.constBegin(), text.constEnd(), [](QChar value) { return value.unicode() < 0x80; }))
+        return text.size();
+    const auto bytes = text.toUtf8();
+    qcae::ledger::add(stage, qcae::ledger::Metric::library_internal_copy_bytes, bytes.size());
+    return bytes.size();
+}
+void send(QLocalSocket* socket,
+          const QJsonObject& response,
+          const std::optional<QByteArray>& retained_frame = {}) {
+    const auto encode = [](const QJsonObject& object) {
+        return qcae::transport::json_ledger::compact_frame(object);
+    };
+    auto actual_response = response; // Immutable Qt container reference only.
+    auto bytes = retained_frame ? *retained_frame : encode(actual_response);
     if (bytes.size() > qcae::transport::max_frame_bytes) {
-        auto id = response.value("request_id").toString();
-        if (id.toUtf8().size() > 128)
+        auto id = qcae::transport::json_ledger::string(response.value("request_id"),
+                                                       qcae::ledger::Stage::socket_send);
+        if (utf8_size(id, qcae::ledger::Stage::socket_send) > 128)
             id.clear();
-        bytes = QJsonDocument(
-                    qcae::ipc::failure(id, "RESOURCE_LIMIT", "Response exceeds the M0 frame limit"))
-                    .toJson(QJsonDocument::Compact) +
-                '\n';
+        actual_response =
+            qcae::ipc::failure(id, "RESOURCE_LIMIT", "Response exceeds the M0 frame limit");
+        bytes = encode(actual_response);
     }
     if (socket->bytesToWrite() + bytes.size() > qcae::transport::max_frame_bytes * 2) {
         socket->abort();
         return;
     }
-    socket->write(bytes);
+    qcae::ledger::cover(qcae::ledger::Stage::socket_send);
+    const auto accepted = socket->write(bytes);
+    if (accepted > 0) {
+        qcae::transport::json_ledger::frame(qcae::ledger::Stage::socket_send,
+                                            actual_response,
+                                            static_cast<std::uint64_t>(accepted));
+        qcae::ledger::add(qcae::ledger::Stage::socket_send,
+                          qcae::ledger::Metric::socket_bytes,
+                          static_cast<std::uint64_t>(accepted));
+        qcae::ledger::add(qcae::ledger::Stage::socket_send,
+                          qcae::ledger::Metric::model_copy_bytes,
+                          static_cast<std::uint64_t>(accepted));
+    }
 }
 } // namespace
 
-int qcae_run_engine(int argc,
-                    char** argv,
-                    std::span<const qcae::ipc::EngineContribution> contributions) {
+namespace {
+int run_engine(int argc,
+               char** argv,
+               std::span<const qcae::ipc::EngineContribution> contributions,
+               qcae::Limits limits,
+               bool production_defaults) {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("QCAE");
     QCommandLineParser parser;
@@ -66,6 +147,9 @@ int qcae_run_engine(int argc,
     parser.addOption({"workspace", "SQLite working recovery database", "path"});
     parser.addOption(
         {"migrate-from", "Read a legacy workspace into a new --workspace destination", "path"});
+    if (production_defaults)
+        parser.addOption(
+            {"solver-config", "Trusted local solver configuration (absolute JSON path)", "path"});
     parser.process(app);
     if (parser.isSet("migrate-from") && !parser.isSet("workspace")) {
         QTextStream(stderr) << "--migrate-from requires a new --workspace destination\n";
@@ -121,6 +205,23 @@ int qcae_run_engine(int argc,
     std::unique_ptr<qcae::ipc::TypedHost> typed;
     qcae::ipc::EngineAssembly assembly;
     try {
+        std::vector<qcae::ipc::EngineContribution> defaults;
+        if (production_defaults) {
+            if (parser.isSet("solver-config")) {
+#ifdef QCAE_HAS_SOLVER_LOCAL
+                const auto config = qcae::ipc::load_local_solver_configuration(
+                    std::filesystem::path(parser.value("solver-config").toStdString()));
+                if (!config.ok())
+                    throw std::runtime_error(config.error->message);
+                defaults = qcae::ipc::default_engine_contributions(*config.value);
+#else
+                throw std::runtime_error("This build does not include local solver support");
+#endif
+            } else {
+                defaults = qcae::ipc::default_engine_contributions();
+            }
+            contributions = defaults;
+        }
         assembly = qcae::ipc::assemble_engine(contributions);
         if (parser.isSet("workspace")) {
 #ifdef QCAE_HAS_SQLITE
@@ -149,20 +250,25 @@ int qcae_run_engine(int argc,
             throw std::runtime_error("This build does not include SQLite persistence");
 #endif
         }
+        auto owned_rows = std::move(assembly.owned_rows);
+        owned_rows.push_back(qcae::task_row_handler());
         application = std::make_unique<qcae::MemoryApplication>(
-            qcae::Limits{},
+            limits,
             store,
             [&](const qcae::ProfileRef& profile) {
-                return profile == codec.definition().reference;
+                return qcae::ipc::nastran_package_enabled() &&
+                       profile == codec.definition().reference;
             },
-            std::vector<qcae::OwnedRowHandler>{qcae::task_row_handler()},
+            std::move(owned_rows),
             assembly.records);
         typed = std::make_unique<qcae::ipc::TypedHost>(
             application->record_application(),
             [&](const qcae::ProfileRef& profile) {
-                return profile == codec.definition().reference;
+                return qcae::ipc::nastran_package_enabled() &&
+                       profile == codec.definition().reference;
             },
-            std::move(assembly.operations));
+            std::move(assembly.operations),
+            std::move(assembly.publisher_factory));
     } catch (const std::exception& error) {
         QTextStream(stderr) << "Workspace initialization failed: " << error.what() << '\n';
         return 5;
@@ -173,7 +279,12 @@ int qcae_run_engine(int argc,
     const qcae::Caller caller{"local-user"};
     const auto engine_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     qcae::ipc::ResourceStore resources;
-    qcae::ipc::RenderService renders(core.record_application(), selections, resources);
+    qcae::ipc::RenderService renders(core.record_application(),
+                                     selections,
+                                     resources,
+                                     qcae::ipc::nastran_package_enabled()
+                                         ? qcae::ipc::nastran_render_contributions()
+                                         : qcae::default_render_contributions());
     qcae::ipc::EventStream events(core.record_application(), engine_id);
     std::map<QString, std::weak_ptr<Connection>> connections;
     const auto publish_events = [&] {
@@ -183,8 +294,10 @@ int qcae_run_engine(int argc,
                 ++it; // send may synchronously disconnect and erase this connection.
                 if (connection->ready &&
                     connection->socket->state() == QLocalSocket::ConnectedState) {
-                    for (const auto& event : events.drain(connection->id))
-                        send(connection->socket, event.toObject());
+                    for (const auto& event : events.drain(connection->id)) {
+                        const auto object = event.toObject();
+                        send(connection->socket, object, events.encoded_frame(object));
+                    }
                 }
             } else
                 it = connections.erase(it);
@@ -204,7 +317,22 @@ int qcae_run_engine(int argc,
             connections.emplace(connection->id, connection);
             auto consume = [&, connection] {
                 auto* client = connection->socket;
-                connection->buffer += client->readAll();
+                activate_pending_observation(*connection);
+                const auto received = client->readAll();
+                qcae::ledger::cover(qcae::ledger::Stage::socket_receive);
+                qcae::ledger::add(qcae::ledger::Stage::socket_receive,
+                                  qcae::ledger::Metric::socket_bytes,
+                                  static_cast<std::uint64_t>(received.size()));
+                // readAll and append each materialize the received payload. Growth may also
+                // copy the existing buffer; account for that payload, not allocator capacity.
+                auto copied = 2 * static_cast<std::uint64_t>(received.size());
+                if (connection->buffer.size() + received.size() > connection->buffer.capacity())
+                    copied += static_cast<std::uint64_t>(connection->buffer.size());
+                qcae::ledger::add(qcae::ledger::Stage::socket_receive,
+                                  qcae::ledger::Metric::model_copy_bytes,
+                                  copied);
+                qcae::transport::json_ledger::socket_read(received.size());
+                connection->buffer += received;
                 while (true) {
                     const auto newline = connection->buffer.indexOf('\n');
                     if (newline < 0) {
@@ -220,26 +348,57 @@ int qcae_run_engine(int argc,
                         client->abort();
                         return;
                     }
-                    const auto line = connection->buffer.left(newline);
-                    connection->buffer.remove(0, newline + 1);
+                    const auto line = QByteArrayView(connection->buffer).first(newline);
+                    qcae::ledger::add(qcae::ledger::Stage::socket_receive,
+                                      qcae::ledger::Metric::decoded_bytes,
+                                      static_cast<std::uint64_t>(line.size()));
+                    qcae::transport::json_ledger::decoding(line);
                     QJsonParseError parse_error;
-                    const auto document = QJsonDocument::fromJson(line, &parse_error);
+                    const auto document = QJsonValue::fromJson(line, &parse_error);
+                    // Parse/decode owns its strings before input-prefix mutation.
+                    qcae::transport::json_ledger::remove_prefix(connection->buffer, newline + 1);
                     if (parse_error.error != QJsonParseError::NoError || !document.isObject()) {
                         send(client,
                              qcae::ipc::failure(
                                  {}, "INVALID_JSON", "Expected one JSON object per line"));
                         continue;
                     }
-                    const auto request = document.object();
-                    const auto id = request.value("request_id").toString();
-                    if (id.isEmpty() || id.toUtf8().size() > 128) {
+                    const auto request = document.toObject();
+                    if (const auto pending = qcae::ledger::pending();
+                        pending &&
+                        request.value("operation").toStringView() ==
+                            QAnyStringView(
+                                QLatin1StringView(pending->trigger_operation().data(),
+                                                  pending->trigger_operation().size())) &&
+                        qcae::ledger::activate_pending_for(pending->trigger_operation())) {
+                        // New bytes can arrive between peek and readAll. The
+                        // command still executes normally, but its unobserved
+                        // receive prefix makes this sample incomplete.
+                        for (const auto metric :
+                             {qcae::ledger::Metric::socket_bytes,
+                              qcae::ledger::Metric::model_copy_bytes,
+                              qcae::ledger::Metric::library_internal_copy_bytes})
+                            qcae::ledger::unknown(qcae::ledger::Stage::socket_receive, metric);
+                    }
+                    qcae::transport::json_ledger::frame(qcae::ledger::Stage::socket_receive,
+                                                        request,
+                                                        static_cast<std::uint64_t>(newline + 1));
+                    qcae::ledger::cover(qcae::ledger::Stage::command);
+                    qcae::ledger::add(qcae::ledger::Stage::command,
+                                      qcae::ledger::Metric::decoded_bytes,
+                                      static_cast<std::uint64_t>(newline));
+                    const auto id =
+                        qcae::transport::json_ledger::string(request.value("request_id"));
+                    if (id.isEmpty() || utf8_size(id) > 128) {
                         send(client,
                              qcae::ipc::failure({},
                                                 "INVALID_INPUT",
                                                 "request_id must contain 1..128 UTF-8 bytes"));
                         continue;
                     }
-                    if (request.value("operation").toString() == "runtime.handshake") {
+                    const auto operation =
+                        qcae::transport::json_ledger::string(request.value("operation"));
+                    if (operation == "runtime.handshake") {
                         if (!request.value("api_version").isString() ||
                             request.value("api_version").toString() != version) {
                             send(client,
@@ -263,26 +422,33 @@ int qcae_run_engine(int argc,
                                       {"durable", core.durable()},
                                       {"capabilities",
                                        QJsonObject{{"resources_version", 1},
-                                                   {"events_version", 1}}}}}});
+                                                   {"events_version", 1},
+                                                   {"render_inline_empty_version", 1},
+                                                   {"render_wire_version", 3},
+                                                   {"events_document_summary_version", 1},
+                                                   {"render_model_rebase_version", 1},
+                                                   {"render_changed_rows_version", 1}}}}}});
                     } else if (!connection->ready) {
                         send(client,
                              qcae::ipc::failure(
                                  id, "HANDSHAKE_REQUIRED", "Perform runtime.handshake first"));
-                    } else if (events.supports(request.value("operation").toString())) {
+                    } else if (events.supports(operation)) {
                         events.refresh();
                         send(client, events.dispatch(request, connection->id));
-                    } else if (renders.supports(request.value("operation").toString())) {
+                    } else if (renders.supports(operation)) {
                         send(client, renders.dispatch(request, caller));
                     } else
                         send(client,
-                             qcae::ipc::dispatch(core,
-                                                 request,
-                                                 caller,
-                                                 &codec,
-                                                 &codec.definition(),
-                                                 &selections,
-                                                 typed.get(),
-                                                 true));
+                             qcae::ipc::dispatch(
+                                 core,
+                                 request,
+                                 caller,
+                                 qcae::ipc::nastran_package_enabled() ? &codec : nullptr,
+                                 qcae::ipc::nastran_package_enabled() ? &codec.definition()
+                                                                      : nullptr,
+                                 &selections,
+                                 typed.get(),
+                                 true));
                     publish_events();
                 }
             };
@@ -300,4 +466,14 @@ int qcae_run_engine(int argc,
                         << (core.durable() ? " (SQLite; explicit recovery on restart)\n"
                                            : " (memory; data lost on exit)\n");
     return app.exec();
+}
+} // namespace
+int qcae_run_engine(int argc, char** argv) {
+    return run_engine(argc, argv, {}, {}, true);
+}
+int qcae_run_engine(int argc,
+                    char** argv,
+                    std::span<const qcae::ipc::EngineContribution> contributions,
+                    qcae::Limits limits) {
+    return run_engine(argc, argv, contributions, limits, false);
 }

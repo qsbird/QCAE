@@ -24,7 +24,7 @@ TYPES = {
 }
 CONTEXT_REQUIRED = ('document', 'epoch', 'expected_revision', 'idempotency_key')
 CONTEXT = (*CONTEXT_REQUIRED, 'expected_profile')
-EFFECTS = {'read_only', 'document_write', 'preview', 'background_task'}
+EFFECTS = {'read_only', 'document_write', 'preview', 'background_task', 'auxiliary_write'}
 IDENTIFIER = re.compile(r'[A-Za-z][A-Za-z0-9_]*\Z')
 WIRE_ID = re.compile(r'[a-z][a-z0-9_.]*\Z')
 
@@ -77,7 +77,7 @@ def load_schemas(directory: Path) -> list[dict]:
                 raise ValueError(f'{file}: fields must be a list (empty for no parameters)')
             field_ids, field_names = set(), set()
             for field in op['fields']:
-                if set(field) - {'field_id', 'name', 'type', 'units', 'optional'} or not {'field_id', 'name', 'type'} <= set(field):
+                if set(field) - {'field_id', 'name', 'type', 'units', 'optional', 'allow_empty'} or not {'field_id', 'name', 'type'} <= set(field):
                     raise ValueError(f'{file}: invalid input field keys')
                 if type(field['field_id']) is not int or not 1 <= field['field_id'] <= 0xFFFFFFFF:
                     raise ValueError(f'{file}: field IDs must be explicit positive uint32')
@@ -87,6 +87,8 @@ def load_schemas(directory: Path) -> list[dict]:
                     raise ValueError(f'{file}: invalid field identifier')
                 if 'optional' in field and type(field['optional']) is not bool:
                     raise ValueError(f'{file}: optional field flag must be boolean')
+                if 'allow_empty' in field and (type(field['allow_empty']) is not bool or field['type'] != 'entity_id_array'):
+                    raise ValueError(f'{file}: allow_empty must be a boolean on an entity ID array')
                 if field['type'] not in TYPES:
                     raise ValueError(f'{file}: unknown input type')
                 units = field.get('units', [])
@@ -133,7 +135,7 @@ def render(operations: list[dict]) -> str:
         for index, field in enumerate(fields):
             comma = ',' if index + 1 != len(fields) else ''
             units = ', '.join(literal(unit) for unit in field.get('units', []))
-            lines.append(f'                    {{{field["field_id"]}, {literal(field["name"])}, {literal(field["type"])}, {{{units}}}, {str(not field.get("optional", False)).lower()}}}{comma}')
+            lines.append(f'                    {{{field["field_id"]}, {literal(field["name"])}, {literal(field["type"])}, {{{units}}}, {str(not field.get("optional", False)).lower()}, {str(field.get("allow_empty", False)).lower()}}}{comma}')
         lines.extend(['                }};', '    }', '',
                       f'    static Result<{name}> from_value(const Value& value) {{',
                       f'        static constexpr std::array<std::string_view, {len(fields)}> allowed{{' + ', '.join(literal(f['name']) for f in fields) + '};',
@@ -162,14 +164,19 @@ def render(operations: list[dict]) -> str:
                 arguments += f', {key}_units'
             decoder = {'string': 'string_value', 'vector3_mm': 'vector3'}.get(field['type'], field['type'])
             arguments += f', {literal("input." + key)}'
+            if field['type'] == 'entity_id_array' and field.get('allow_empty', False):
+                arguments += ', true'
             lines.extend([f'{indent}const auto {decoded} = wire::{decoder}({arguments});',
                           f'{indent}if (!{decoded}.ok()) {{',
                           f'{indent}    return {{{decoded}.status, std::nullopt, {decoded}.error}};',
                           indent + '}'])
             if optional:
-                lines.extend([f'{indent}{key} = *{decoded}.value;', '        }'])
+                lines.extend([f'{indent}{key} = *{decoded}.value;',
+                              f'{indent}wire::observe_input_copy(*{key}, *{key});', '        }'])
         values = [field['name'] if field.get('optional', False) else '*' + field['name'] + '.value' for field in fields]
-        lines.extend([f'        return {{Status::success, {name}{{' + ', '.join(values) + '}, std::nullopt};',
+        lines.extend([f'        {name} input{{' + ', '.join(values) + '};',
+                      '        wire::observe_input_copy(input' + ''.join(', input.' + field['name'] for field in fields) + ');',
+                      '        return {Status::success, std::move(input), std::nullopt};',
                       '    }', '', f'    static Value to_value(const {name}&' + (' input' if fields else '') + ') {',
                       '        Value::Object object;'])
         for field in fields:
@@ -186,9 +193,11 @@ def render(operations: list[dict]) -> str:
             else:
                 expression = f'Value({value})'
             if optional:
-                lines.extend([f'        if (input.{key}) {{', f'            object.emplace({literal(key)}, {expression});', '        }'])
+                lines.extend([f'        if (input.{key}) {{', f'            object.emplace({literal(key)}, {expression});',
+                              f'            wire::observe_key({literal(key)});', '        }'])
             else:
-                lines.append(f'        object.emplace({literal(key)}, {expression});')
+                lines.extend([f'        object.emplace({literal(key)}, {expression});',
+                              f'        wire::observe_key({literal(key)});'])
         lines.extend(['        return Value(std::move(object));', '    }', '};', ''])
     lines.extend(['} // namespace qcae::operations', ''])
     return '\n'.join(lines)

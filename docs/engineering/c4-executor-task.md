@@ -1,0 +1,56 @@
+# C4 扩展执行任务包
+
+本任务包只有在共同基线 manifest 登记实际 commit、保护文件及生成器 SHA256、环境和输入后才生效；缺少该 manifest 时保持草案，不可开始正式实验。共同 manifest 位于 `docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json`，其实际 baseline commit 必须与执行者 checkout 一致。三个扩展均独立从该 commit 开始；不要把另一项扩展作为前置补丁。执行者自行实现、测试和修复。骨架作者不得代写执行中的产品补丁。
+
+## 初始上下文及读取记录
+
+初始上下文固定为以下八份 UTF-8 文件；manifest 记录每份长度和 SHA256，合计不得超过 65536 字节。任务消息只提供任务 ID、工作目录、baseline commit 和这份任务包位置，不附加产品实现建议或其他源码。
+
+1. `AGENTS.md`。
+2. 本文件。
+3. `schemas/entities/entities.json`。
+4. `schemas/operations/basic.json`。
+5. `features/mesh_editing/src/mesh_editing_operations.cpp`。
+6. `modules/document/include/qcae/edit_session.hpp`。
+7. `modules/contracts/include/qcae/render_packet.hpp`。
+8. `modules/query/include/qcae/render_projector.hpp`。
+
+后续需要的源码可自行查阅，记录路径、工具实际返回的 UTF-8 字节数和读取次数。搜索输出和构建诊断也登记读取字节；不能将初始包长度称作全部上下文成本。无法取得真实 token 统计时登记 null。禁止读其他执行者的工作树或未完成补丁。公共约束见初始包的 AGENTS.md 和 baseline manifest；后续读取也计入记录。
+
+初始八文件可由 `tools/c4_context_read.py --root <工作目录> --log <本次读取记录> --phase initial <八个路径>` 一次交付；保留完整工具输出，并核对其 heading、换行与 manifest 的交付字节。首次定位本任务包的读取若与该次交付重复，应另记实际读取，不能忽略重复成本。后续文件读取使用 `--phase subsequent`；搜索及构建诊断另记实际工具返回文本的 UTF-8 字节、命令和读取次数，区分未交付的磁盘原始日志。工具截断时记录真实交付范围，不将完整磁盘长度写成完整交付。
+
+## 所有扩展的公共行为
+
+保持纯 C++20 核心、既有依赖边及唯一权威 RecordApplication。所有写操作带 document/epoch/expected_revision/idempotency_key，走 RecordApplication.execute 和 EditSession，不增加另一份可写业务模型。错误输入、旧修订、旧 epoch 和同键异参不能产生部分提交。相同键重试返回原事务，undo 后重试不能重新应用。
+
+只能在实体或功能、包、投影和具体适配目录内扩展。基线 manifest 的保护文件不得修改、增删或改名，也不得搬出旧实现后改写。手写产品文件包括 schema、操作、注册和编入产品的源代码；测试与说明不计入此上限。生成器保持原哈希，生成产物必须可重复生成，不允许手改生成产物。不得新增第三方依赖。
+
+通用渲染载体已支持 variable-arity polyline/polygon，Line2 为现有真实消费者；wire 和连接管理受保护。扩展须提供其实际贡献，不能修改 wire 加入实体特例。未实现的求解或导出不得宣称可用。
+
+## EXT-01：现有实体可选字段
+
+为现有 Material 增加可选说明字段，null 为旧记录默认值。提供公开 typed 编辑操作或既有通用字段编辑入口，字段可被真实 IPC 查询。新增值、清空值、undo/redo、保存/正常打开及 SQLite recovery 保持一致；重构前 Material 编码夹具缺字段时读出 null，未来不支持版本拒绝。新增说明不得影响材料的工程物性。手写产品文件改动最多 6，保护区触碰 0。
+
+测试必须证明旧物性和其他记录不变、成功编辑只有一个事务、错误字段类型不提交。保留旧 schema 夹具的原字节和摘要，不用新编码器生成缺字段记录冒充旧输入。
+
+## EXT-02：批量节点平移
+
+新增 typed 批量平移操作，至少提供公开接口。M 的节点 4、5 同时平移 (0,1,0)mm，只修改这两个 Node，提交一次，undo 一次恢复全部坐标；redo 恢复平移结果。采用明确长度单位；缺单位、未知 ID、错误类型、重复 ID、非有限数值和旧上下文原子拒绝。预览/取消不改变模型修订或历史，相同键重试不产生额外提交。手写产品文件改动最多 6，保护区触碰 0。
+
+测试须经实际生产 registry/IPC 调用，而不是只运行独立函数。M 仍为真实 11 节点、10 Line2 的几何离散结果。已有 node.move 等入口继续可用。
+
+## EXT-03：Tri3 拓扑
+
+增加独立持久 Tri3 拓扑及真实生产创建/查询、连接/网格归属校验、历史、保存恢复和显示贡献。三节点连接必须不同且有效、面积为正；错误连接和悬空引用原子拒绝。具体引用类型由实体定义声明；删除仍被 Tri3 引用的节点不能留下悬空引用。手写产品文件改动最多 10，保护区触碰 0。
+
+用实际 Qt/VTK 后端执行四项 Tri3 PICK：完全包含框、相交框、遮挡条件 visible、同视图 through。冻结相机矩阵、像素框、坐标、显隐及期望稳定 ID 集合，每项集合全等比较，漏选/多选为 0。与既有点/线八项共同执行得到 12 项；不能用无图形后端或模拟命中替代。旧选择和错误版本 delta 继续拒绝。
+
+此实验验证网格拓扑扩展。Tri3 壳分析和 Nastran 壳导出未实现时必须明确拒绝；不得静默丢弃 Tri3 并宣称完整导出。
+
+## 构建与交付
+
+从已冻结的环境/命令重用现有工具链，不安装依赖。至少执行受影响的核心/IPC/桌面测试、`python3 tools/check_design.py`、`python3 tools/check_cpp_format.py`、`git diff --check`；新增公开契约需参加独立消费者构建。格式工具使用 clang-format21。
+
+交付实际 extension commit、相对于共同 baseline 的完整 diff、diff SHA256、产品文件/保护触碰计数、生成器未改证据、执行者身份、初始八文件字节和后续读取记录、实际测试原始日志，以及失败/修复次数。提交遵循 AGENTS.md 的 Lore 格式。不得写合成测试结果，不得修改验收阈值。共同最终 Release 集成后再次运行 BP 和原回归；独立实验日志不能代替最终 Release 测试。
+
+EXT-04 由主代理用同一核心合同分别运行内存和 SQLite 适配；EXT-05 重跑冻结的三档各 20 次节点/材料局部负载及完整复制/编码/提交/实际网络账本。两者提供独立原始证据，不借此放宽三项扩展成本。

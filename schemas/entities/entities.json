@@ -286,7 +286,8 @@
             "EntitySet",
             "NodalForce",
             "Constraint",
-            "AnalysisDefinition"
+            "AnalysisDefinition",
+            "LoadCase"
           ]
         }
       ],
@@ -355,7 +356,7 @@
     {
       "id": 4107,
       "name": "AnalysisDefinition",
-      "version": 1,
+      "version": 2,
       "fields": [
         {
           "id": 2,
@@ -383,6 +384,16 @@
           "targets": [
             "Constraint"
           ]
+        },
+        {
+          "id": 6,
+          "name": "load_cases",
+          "kind": "references",
+          "targets": [
+            "LoadCase"
+          ],
+          "optional": true,
+          "introduced_version": 2
         }
       ],
       "legacy": "analyses",
@@ -390,7 +401,9 @@
         1
       ],
       "query_kind": "analysis",
-      "display_field": "name"
+      "display_field": "name",
+      "custom_rule": true,
+      "rule_version": 1
     },
     {
       "id": 4108,
@@ -411,7 +424,8 @@
             "EntitySet",
             "NodalForce",
             "Constraint",
-            "AnalysisDefinition"
+            "AnalysisDefinition",
+            "LoadCase"
           ]
         },
         {
@@ -532,6 +546,40 @@
       ],
       "rule_version": 1,
       "query_kind": "mesh",
+      "display_field": "name"
+    },
+    {
+      "id": 4111,
+      "name": "LoadCase",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "forces",
+          "kind": "references",
+          "targets": [
+            "NodalForce"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "constraints",
+          "kind": "references",
+          "targets": [
+            "Constraint"
+          ]
+        }
+      ],
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "load_case",
       "display_field": "name"
     }
   ],

@@ -1,0 +1,38 @@
+/private/tmp/qcae-qt7-independent-review/observer-boundary-probe.cpp:9:13: error: explicitly defaulted equality comparison operator is implicitly deleted [-Werror,-Wdefaulted-function-deleted]
+    9 | friend bool operator==(const Key&,const Key&)=default; };
+      |             ^
+/private/tmp/qcae-qt7-independent-review/observer-boundary-probe.cpp:8:66: note: defaulted 'operator==' is implicitly deleted because there is no viable 'operator==' for member 'subPixelPosition'
+    8 | struct Key { std::uint32_t glyph; struct { std::uint32_t x, y; } subPixelPosition;
+      |                                                                  ^
+/private/tmp/qcae-qt7-independent-review/observer-boundary-probe.cpp:9:47: note: replace 'default' with 'delete'
+    9 | friend bool operator==(const Key&,const Key&)=default; };
+      |                                               ^~~~~~~
+      |                                               delete
+In file included from /private/tmp/qcae-qt7-independent-review/observer-boundary-probe.cpp:1:
+In file included from /Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-prefix/lib/QtCore.framework/Headers/QHash:1:
+In file included from /Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-headers/QtCore/qhash.h:12:
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-prefix/lib/QtCore.framework/Headers/qhashfunctions.h:312:14: error: overload resolution selected deleted operator '=='
+  312 |     return a == b;
+      |            ~ ^  ~
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-headers/QtCore/qhash.h:719:21: note: in instantiation of function template specialization 'qHashEquals<Key>' requested here
+  719 |                 if (qHashEquals(n.key, key))
+      |                     ^
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-headers/QtCore/qhash.h:745:18: note: in instantiation of function template specialization 'QHashPrivate::Data<QHashPrivate::Node<Key, void *>>::findBucketWithHash<Key>' requested here
+  745 |             it = findBucketWithHash(key, hash);
+      |                  ^
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-headers/QtCore/qhash.h:1557:26: note: in instantiation of function template specialization 'QHashPrivate::Data<QHashPrivate::Node<Key, void *>>::findOrInsert<Key>' requested here
+ 1557 |         auto result = d->findOrInsert(key);
+      |                          ^
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-headers/QtCore/qhash.h:1423:24: note: in instantiation of function template specialization 'QHash<Key, void *>::emplace_helper<void *>' requested here
+ 1423 |                 return emplace_helper(std::move(key), T(std::forward<Args>(args)...));
+      |                        ^
+/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche7/qt-headers/QtCore/qhash.h:1392:16: note: in instantiation of function template specialization 'QHash<Key, void *>::emplace<void *>' requested here
+ 1392 |         return emplace(std::move(key), std::move(value));
+      |                ^
+/private/tmp/qcae-qt7-independent-review/observer-boundary-probe.cpp:21:74: note: in instantiation of member function 'QHash<Key, void *>::insert' requested here
+   21 |   if(reenter && !entered){entered=true;QcaeFtHash::Scope child(1);nested.insert(Key{7,{0,0}},reinterpret_cast<void*>(2));child.finish();}
+      |                                                                          ^
+/private/tmp/qcae-qt7-independent-review/observer-boundary-probe.cpp:9:13: note: candidate function has been implicitly deleted
+    9 | friend bool operator==(const Key&,const Key&)=default; };
+      |             ^
+2 errors generated.

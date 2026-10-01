@@ -1,0 +1,77 @@
+{
+  "schema": "qcae.cantilever.numeric-reference.v1",
+  "status": "preregistered_before_real_solver_run",
+  "real_solver_run_performed": false,
+  "unit_system": "mm-N-MPa",
+  "case_label": "LC1",
+  "subcase": 1,
+  "assumptions": [
+    "Euler-Bernoulli straight beam",
+    "linear elastic small displacement",
+    "PBAR K1/K2 blank: no transverse shear flexibility",
+    "basic global coordinates only",
+    "20 uniform CBAR spans; 21 unique GRID points",
+    "one end all six DOF constrained; tip force -Y 1 N"
+  ],
+  "parameters": {
+    "E_mpa": "210000",
+    "I1_mm4": "833.333",
+    "I2_mm4": "833.333",
+    "L_mm": "1000",
+    "P_n": "1"
+  },
+  "expected": {
+    "tip_translation_mm": [
+      "0",
+      "-1.904762666666971428693333382095257600008",
+      "0"
+    ],
+    "tip_rotation_rad": [
+      "0",
+      "0",
+      "-0.002857144000000457143040000073142886400012"
+    ],
+    "support_force_n": [
+      "0",
+      "1",
+      "0"
+    ],
+    "support_moment_n_mm": [
+      "0",
+      "0",
+      "1000"
+    ]
+  },
+  "tolerance": {
+    "translation": {
+      "absolute": "0.00001",
+      "relative": "0.0001"
+    },
+    "rotation": {
+      "absolute": "0.00000001",
+      "relative": "0.0001"
+    },
+    "force": {
+      "absolute": "0.000001",
+      "relative": "0.0001"
+    },
+    "moment": {
+      "absolute": "0.001",
+      "relative": "0.0001"
+    }
+  },
+  "comparison": "abs(actual-expected) <= absolute + relative*abs(expected); all components mandatory",
+  "nodal_reference": {
+    "translation_y": "-P*x*x*(3*L-x)/(6*E*I2)",
+    "rotation_z": "-P*x*(2*L-x)/(2*E*I2)"
+  },
+  "files": {
+    "beams.bdf": "e8820b07949b5c8a75867ee3808c261331c473f34f85a77df4730eec191fd354",
+    "cantilever.bdf": "e0bf7c04a07f9a425b82215da91bc59352930b673b194918a870249b8485a7f6",
+    "nodes.bdf": "40d80f36f26016511a57ce3a704221ee21a53719df8938b517310ab2e6cad514",
+    "properties.bdf": "0d51ea43eac6cb3e1f8f73b19d205f7132b7d266dccac820da1fb7cf3788aef6"
+  },
+  "input_revision": "v2",
+  "supersedes_input": "v1: integer X1 and unsupported LABEL rejected by actual controlled codec",
+  "numeric_parameters_and_tolerances_changed": false
+}

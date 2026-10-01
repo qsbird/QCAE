@@ -1,0 +1,27 @@
+{
+  "schema": "qcae.c4-environment-private-validation/1",
+  "passed": true,
+  "environment_schema": "qcae.c4-environment/1",
+  "environment_sha256": "addb4aeb04ac3418e94bb859cd51adeff405b73b1025bb1146d1b2da00cddafa",
+  "tool_images_count": 11,
+  "probe_evidence_count": 4,
+  "mechanism_frozen": false,
+  "frozen_source_commit": null,
+  "complete_sk12_passed": false,
+  "acceptance_note": "Only the actual environment closed fields, image hashes and referenced probe hashes passed the freeze reader. No source/evidence-spec/build acceptance was executed.",
+  "protected_tool_contract_tests": {
+    "passed": true,
+    "test_count": 24,
+    "log": {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-common40-environment-protected-contract-verified.log",
+      "sha256": "6c6a731e76cbb7b6f5e1b039c07b230deea9dc4a326f7893766e0ff9aa85b0c1"
+    }
+  },
+  "first_contract_failure": {
+    "log": {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-common40-environment-protected-contract.log",
+      "sha256": "72fa57eb6583b548ab22b54a460ecf929e8e85a212d7b5e87e110c8f4d253c98"
+    },
+    "cause": "The new positive temporary fixture initially committed external execution.json with its source files, then changed that tracked file during source restamping. The strict reader correctly rejected the dirty fixture. Corrected by committing only the added generic header and protection definition; validation rules were unchanged."
+  }
+}

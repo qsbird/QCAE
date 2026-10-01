@@ -1,6 +1,8 @@
 #pragma once
 
 #include "qcae/render_packet.hpp"
+#include "qcae/resource.hpp"
+#include "qcae/sdk_copy_observation.hpp"
 
 #include <QStringList>
 #include <QWidget>
@@ -14,6 +16,7 @@ struct VtkUpdateStats {
     // Coordinates written to retained packet/VTK buffers, and complete VTK arrays marked dirty.
     // These are not a measurement of graphics-driver allocation or GPU transfer bytes.
     std::uint64_t coordinate_bytes_copied{}, dirty_coordinate_array_bytes{};
+    std::uint64_t cell_blocks{};
 };
 
 class VtkView : public QWidget {
@@ -37,9 +40,12 @@ class VtkView : public QWidget {
     void setThroughSelection(bool enabled);
     [[nodiscard]] QString cameraFingerprint() const;
     [[nodiscard]] bool hasPacket() const;
+    [[nodiscard]] bool pendingCameraUpdate() const;
+    [[nodiscard]] std::optional<ResourceVersion> installedVersion() const;
+    [[nodiscard]] SdkCopySnapshot sdkCopyObservation() const;
 
   signals:
-    // IDs are real node/beam/geometry entities from RenderPacket, never VTK cell IDs.
+    // IDs are stable display entities from RenderPacket, never VTK cell IDs.
     void picked(const QStringList& ids, bool through);
     void cameraChanged(const QString& fingerprint);
 

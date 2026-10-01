@@ -1,0 +1,12 @@
+********* Start testing of Workflow *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 21.0.0 (clang-2100.0.123.102)), macos 26.6.2
+PASS   : Workflow::initTestCase()
+2026-10-01 08:17:31.626 workflow-old-ui[74127:41541657] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+QINFO  : Workflow::aiSnapshotUnitsAndCameraAreConsistent() File dialog driver "Open QCAE project" QList("/Users/qs/Documents/ChatGPT/QCAE/build-c3-ai-units-snapshots/session5.qcae") accept button "&Open" enabled true
+FAIL!  : Workflow::aiSnapshotUnitsAndCameraAreConsistent() Compared values are not the same
+   Actual   (row.toObject().value("material_id")): QJsonValue(undefined)
+   Expected (material.value("entity_id"))        : QJsonValue(string, "entity-fdba565e8bb656e768912abb26b33aee-4")
+   Loc: [/Users/qs/Documents/ChatGPT/QCAE/tests/c3_desktop_workflow_tests.cpp(439)]
+PASS   : Workflow::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 1974ms
+********* Finished testing of Workflow *********

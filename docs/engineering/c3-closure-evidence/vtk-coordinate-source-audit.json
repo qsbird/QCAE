@@ -1,0 +1,36 @@
+{
+  "kind": "installed_vtk_coordinate_vbo_source_audit",
+  "version": "9.7.0",
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "sources": [
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkOpenGLVertexBufferObject.cxx",
+      "sha256": "6a2f24f164ff63e0bf1261b3f939be9c1f7f1fd317991d37a7412278d560f9bc"
+    },
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkOpenGLVertexBufferObjectGroup.cxx",
+      "sha256": "2a542297883b580e26f2e98e079f73af79750d3333b1396a41c48263cf389148"
+    },
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkOpenGLPolyDataMapper.cxx",
+      "sha256": "e0c687184fc2a7fbeb13c03fb773379d18fe8b565d96db922a39b9eb04fb427c"
+    },
+    {
+      "path": "build-vtk-deps/source/Rendering/OpenGL2/vtkOpenGLBufferObject.h",
+      "sha256": "ab75c498019f1d407bc48b1acdcfbd0ab783561be1e16f313c4b767f8a6b32cf"
+    }
+  ],
+  "observer": "adapters/rendering_vtk/src/vtk_view.cpp",
+  "boundary": "Actual RenderWindow StartEvent/EndEvent, distinct vertexMC VBO upload timestamps",
+  "component": "double-coordinate to float3 PackedVBO buffer writes",
+  "conservative_owned_copy_formula": "2 * NumberOfTuples * Stride for each actual changed upload timestamp",
+  "upload_formula": "NumberOfTuples * Stride: actual UploadInternal argument bytes, not device traffic",
+  "pointer_observation": "GetVBO uses map.find; strong diagnostic references do not mutate array/VBO timestamps or copy geometry",
+  "unaudited": [
+    "IBO and cell topology conversion",
+    "coordinate ranges/bounds and shift/scale temporaries",
+    "other VTK model-data buffers",
+    "Qt widget/text library paths"
+  ],
+  "status": "compiled_diagnostic_awaiting_native_counts_not_final_acceptance"
+}

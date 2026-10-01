@@ -1,0 +1,39 @@
+[0/2] Re-checking globbed directories...
+[1/25] Building CXX object modules/document/CMakeFiles/qcae_document.dir/src/edit_session.cpp.o
+[2/25] Building CXX object modules/document/CMakeFiles/qcae_document.dir/src/document_view.cpp.o
+[3/25] Building CXX object modules/document/CMakeFiles/qcae_document.dir/src/record_model_bridge.cpp.o
+[4/25] Building CXX object modules/document/CMakeFiles/qcae_document.dir/src/records_rules.cpp.o
+[5/25] Linking CXX static library modules/document/libqcae_document.a
+[6/25] Building CXX object modules/application/CMakeFiles/qcae_application.dir/src/core.cpp.o
+[7/25] Automatic MOC for target qcae_vtk_view
+[8/24] Building CXX object modules/application/CMakeFiles/qcae_application.dir/src/application_state.cpp.o
+[9/24] Linking CXX static library modules/application/libqcae_application.a
+[10/24] Building CXX object modules/runtime/CMakeFiles/qcae_task_application.dir/record_application/src/task_application.cpp.o
+[11/24] Building CXX object adapters/solver_local/CMakeFiles/qcae_solver_local.dir/src/solver_local.cpp.o
+[12/24] Building CXX object CMakeFiles/qcae_qt_widget_copy_probe.dir/tests/qt_widget_copy_probe.cpp.o
+[13/24] Building CXX object adapters/rendering_vtk/CMakeFiles/qcae_vtk_view.dir/src/vtk_view.cpp.o
+[14/24] Linking CXX static library modules/runtime/libqcae_task_application.a
+[15/24] Building CXX object CMakeFiles/qcae_vtk_coordinate_range_tests.dir/tests/vtk_coordinate_range_tests.cpp.o
+FAILED: [code=1] CMakeFiles/qcae_vtk_coordinate_range_tests.dir/tests/vtk_coordinate_range_tests.cpp.o 
+/usr/bin/c++ -DFMT_SHARED -DGLAD_API_CALL_EXPORT -DGL_SILENCE_DEPRECATION -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DSCN_DISABLE_FAST_FLOAT=0 -DSCN_DISABLE_REGEX=0 -DSCN_REGEX_BACKEND=0 -Dkiss_fft_scalar=double -I/Users/qs/Documents/ChatGPT/QCAE/adapters/rendering_vtk/src -I/Users/qs/Documents/ChatGPT/QCAE/adapters/rendering_vtk/include -I/Users/qs/Documents/ChatGPT/QCAE/modules/contracts/include -I/Users/qs/Documents/ChatGPT/QCAE/build-c3-closure-desktop/generated -I/Users/qs/Documents/ChatGPT/QCAE/modules/foundation/include -isystem /opt/homebrew/opt/qt/lib/QtWidgets.framework/Headers -iframework /opt/homebrew/opt/qt/lib -isystem /opt/homebrew/opt/qt/lib/QtCore.framework/Headers -isystem /opt/homebrew/opt/qt/share/qt/mkspecs/macx-clang -isystem /opt/homebrew/opt/qt/include -isystem /opt/homebrew/opt/qt/lib/QtGui.framework/Headers -isystem /opt/homebrew/opt/qt/lib/QtOpenGLWidgets.framework/Headers -isystem /opt/homebrew/opt/qt/lib/QtOpenGL.framework/Headers -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7 -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtkfmt -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtknlohmannjson/include -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtknlohmannjson -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtkscn/include -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtkscn -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/token -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtkkissfft -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtkfreetype/include -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtkzlib -isystem /Users/qs/Documents/ChatGPT/QCAE/build-vtk-deps/install/include/vtk-9.7/vtkglad -O3 -DNDEBUG -std=c++20 -Wall -Wextra -Wpedantic -Werror -MD -MT CMakeFiles/qcae_vtk_coordinate_range_tests.dir/tests/vtk_coordinate_range_tests.cpp.o -MF CMakeFiles/qcae_vtk_coordinate_range_tests.dir/tests/vtk_coordinate_range_tests.cpp.o.d -o CMakeFiles/qcae_vtk_coordinate_range_tests.dir/tests/vtk_coordinate_range_tests.cpp.o -c /Users/qs/Documents/ChatGPT/QCAE/tests/vtk_coordinate_range_tests.cpp
+/Users/qs/Documents/ChatGPT/QCAE/tests/vtk_coordinate_range_tests.cpp:78:21: error: unused variable 'a' [-Werror,-Wunused-variable]
+   78 |         const auto* a = observed_points->GetBounds();
+      |                     ^
+/Users/qs/Documents/ChatGPT/QCAE/tests/vtk_coordinate_range_tests.cpp:79:21: error: unused variable 'b' [-Werror,-Wunused-variable]
+   79 |         const auto* b = original_points->GetBounds();
+      |                     ^
+/Users/qs/Documents/ChatGPT/QCAE/tests/vtk_coordinate_range_tests.cpp:125:21: error: unused variable 'output' [-Werror,-Wunused-variable]
+  125 |         const auto* output = empty_points->GetBounds();
+      |                     ^~~~~~
+/Users/qs/Documents/ChatGPT/QCAE/tests/vtk_coordinate_range_tests.cpp:51:29: error: unused variable 'range_call' [-Werror,-Wunused-variable]
+   51 |     constexpr std::uint64_t range_call = 10 * sizeof(double);
+      |                             ^~~~~~~~~~
+/Users/qs/Documents/ChatGPT/QCAE/tests/vtk_coordinate_range_tests.cpp:52:29: error: unused variable 'scan' [-Werror,-Wunused-variable]
+   52 |     constexpr std::uint64_t scan = (42 + 3 * 2 * 3) * sizeof(double);
+      |                             ^~~~
+/Users/qs/Documents/ChatGPT/QCAE/tests/vtk_coordinate_range_tests.cpp:53:29: error: unused variable 'cache_store' [-Werror,-Wunused-variable]
+   53 |     constexpr std::uint64_t cache_store = 6 * sizeof(double);
+      |                             ^~~~~~~~~~~
+6 errors generated.
+[16/24] Building CXX object modules/runtime/CMakeFiles/qcae_runtime_tests.dir/__/__/tests/runtime_tests.cpp.o
+ninja: build stopped: subcommand failed.

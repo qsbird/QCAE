@@ -1,0 +1,50 @@
+{
+  "schema": "qcae.real-ai.physics-scenarios.v1",
+  "scenario": "physics",
+  "run_id": "physics-814e241816f4",
+  "acceptance_ids": [
+    "TST-I02"
+  ],
+  "formal_acceptance": false,
+  "real_solver_run": false,
+  "real_native_gui_rotation": false,
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "xhigh",
+  "engine_sha256": "d30bb34c2330bc249c244362d7e3db6271fa14e0bf6a592e9bc9ff6d8ca46d18",
+  "cli_sha256": "78f32e39651588b9fd77aefb85e56dfabb82d2c25222c3531a9e8217fc583825",
+  "bridge_sha256": "4961ece82b1ae537133442e37aaa9cdb3595974b4d435a9c49f4a582b8f7c4e0",
+  "harness_sha256": "de228a8ca11eaf6211c95ef2c360e50ea67dbf5d8d05c32f46d3a724d42d8c62",
+  "transport_sha256": "56cbc477cf36d0ffbe491e918585194134fae21451d2db5c7b1fe6a0497aa148",
+  "source_binding": "mutable tree; frozen build38 binaries; diagnostic only",
+  "tool_allowlist": [
+    "capabilities.list",
+    "project.current",
+    "entity.query",
+    "entity.fields",
+    "entity.references",
+    "model.summary",
+    "history.list",
+    "changes.preview",
+    "changes.commit",
+    "material.create",
+    "material.set_young_modulus",
+    "section.create",
+    "beam.assign_section",
+    "force.create",
+    "constraint.create",
+    "view.create",
+    "view.update",
+    "history.undo"
+  ],
+  "ephemeral_ai_session": true,
+  "data_destination": "OpenAI model service receives only synthetic prompts, schemas and model facts",
+  "limitations": [
+    "one actual session per scenario; three-session formal threshold pending",
+    "camera fingerprint is a deterministic view API subset, not GUI rotation",
+    "legacy preview reports material identity; full beam impact independently derived from actual references",
+    "no solver, numerical validation or complete M5 acceptance"
+  ],
+  "passed": false,
+  "failure": "AssertionError: isolated durable engine did not start",
+  "elapsed_seconds": 0.02751404093578458
+}

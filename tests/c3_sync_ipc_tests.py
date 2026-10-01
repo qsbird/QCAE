@@ -180,11 +180,13 @@ class BinaryReader:
 
 def decode_packet(data: bytes) -> dict:
     reader = BinaryReader(data)
-    check(reader.u64() == 0x3154454B43415051, "unexpected full render-resource version")
+    magic = reader.u64()
+    check(magic in (0x3154454B43415051, 0x3254454B43415051, 0x3354454B43415051), "unexpected full render-resource version")
+    extended = magic != 0x3154454B43415051
     packet = {"document_id": reader.text(), "document_epoch": reader.text(),
               "revision": reader.u64(), "view_session_id": reader.text(),
               "view_revision": reader.u64(), "points": [], "beams": [],
-              "geometry_lines": []}
+              "geometry_lines": [], "cells": []}
     for _ in range(reader.count()):
         entity_id = reader.text()
         position = reader.point()
@@ -193,19 +195,42 @@ def decode_packet(data: bytes) -> dict:
         packet["points"].append({"entity_id": entity_id, "position_mm": position,
                                  "visible": bool(visible)})
     for _ in range(reader.count()):
-        packet["beams"].append({"entity_id": reader.text(),
-                                "points": [reader.u64(), reader.u64()]})
+        beam = {"entity_id": reader.text(), "points": [reader.u64(), reader.u64()]}
+        if extended:
+            visible = reader.u64()
+            check(visible in (0, 1), "invalid beam visibility bit")
+            beam["visible"] = bool(visible)
+        packet["beams"].append(beam)
     for _ in range(reader.count()):
-        packet["geometry_lines"].append({"entity_id": reader.text(),
-                                         "start_mm": reader.point(),
-                                         "end_mm": reader.point()})
+        line = {"entity_id": reader.text(), "start_mm": reader.point(), "end_mm": reader.point()}
+        if extended:
+            visible = reader.u64()
+            check(visible in (0, 1), "invalid geometry visibility bit")
+            line["visible"] = bool(visible)
+        packet["geometry_lines"].append(line)
+    if magic == 0x3354454B43415051:
+        for _ in range(reader.count()):
+            cell = {"entity_id": reader.text(), "kind": reader.u64()}
+            arity = reader.count()
+            check(cell["kind"] in (0, 1) and 2 + cell["kind"] <= arity <= 4096,
+                  "invalid generic cell topology")
+            cell["points"] = [reader.u64() for _ in range(arity)]
+            check(len(set(cell["points"])) == arity and
+                  all(index < len(packet["points"]) for index in cell["points"]),
+                  "invalid generic cell point")
+            visible = reader.u64()
+            check(visible in (0, 1), "invalid generic cell visibility")
+            cell["visible"] = bool(visible)
+            packet["cells"].append(cell)
     reader.finished()
     return packet
 
 
 def decode_delta(data: bytes) -> dict:
     reader = BinaryReader(data)
-    check(reader.u64() == 0x3141544C45444351, "unexpected render-delta resource version")
+    magic = reader.u64()
+    check(magic in (0x3141544C45444351, 0x3241544C45444351, 0x3341544C45444351), "unexpected render-delta resource version")
+    extended = magic != 0x3141544C45444351
     delta = {"document_id": reader.text(), "document_epoch": reader.text(),
              "revision": reader.u64(), "view_session_id": reader.text(),
              "view_revision": reader.u64(), "base_revision": reader.u64(),
@@ -218,9 +243,20 @@ def decode_delta(data: bytes) -> dict:
         delta["points"].append({"index": index, "entity_id": entity_id,
                                 "position_mm": position, "visible": bool(visible)})
     for _ in range(reader.count()):
-        delta["geometry_lines"].append({"index": reader.u64(), "entity_id": reader.text(),
-                                         "start_mm": reader.point(),
-                                         "end_mm": reader.point()})
+        line = {"index": reader.u64(), "entity_id": reader.text(),
+                "start_mm": reader.point(), "end_mm": reader.point()}
+        if extended:
+            visible = reader.u64()
+            check(visible in (0, 1), "invalid geometry delta visibility bit")
+            line["visible"] = bool(visible)
+        delta["geometry_lines"].append(line)
+    delta["visibility"] = []
+    if extended:
+        for _ in range(reader.count()):
+            primitive, index, identity, visible = reader.u64(), reader.u64(), reader.text(), reader.u64()
+            check(0 <= primitive <= (3 if magic == 0x3341544C45444351 else 2) and visible in (0, 1), "invalid visibility delta")
+            delta["visibility"].append({"primitive": primitive, "index": index,
+                                        "entity_id": identity, "visible": bool(visible)})
     reader.finished()
     return delta
 
@@ -281,9 +317,12 @@ def fetch_resource(client: IpcClient, manifest: dict, release: bool = True) -> t
 
 def render_resource(client: IpcClient, view: dict, context: dict,
                     base_revision: str | None = None,
-                    base_view_revision: str | None = None) -> dict:
+                    base_view_revision: str | None = None,
+                    wire_version: int | None = 3) -> dict:
     parameters = {"view_session_id": view["view_session_id"],
                   "expected_view_revision": view["view_revision"]}
+    if wire_version is not None:
+        parameters["render_wire_version"] = wire_version
     if base_revision is not None or base_view_revision is not None:
         check(base_revision is not None and base_view_revision is not None,
               "render resource base requires both model and view revisions")
@@ -298,6 +337,132 @@ def update_view(client: IpcClient, view: dict, context: dict) -> dict:
                        {"view_session_id": view["view_session_id"],
                         "expected_view_revision": view["view_revision"],
                         "hidden_ids": [], "camera_fingerprint": "c3-sync"}, context)
+
+
+def lean_refresh_workload(client: IpcClient, material_id: str,
+                          geometry_id: str, node_id: str) -> dict:
+    baseline = client.current()
+    view = client.call("view.create", {"hidden_ids": [geometry_id],
+                                       "camera_fingerprint": "lean-sync"}, baseline)
+    full = render_resource(client, view, baseline)
+    fetch_resource(client, full["manifest"])
+    old_selection = client.call("selection.evaluate", {
+        "view_session_id": view["view_session_id"],
+        "expected_view_revision": view["view_revision"],
+        "predicate": {"op": "all"}, "scope": {"visibility": "through"}}, baseline)
+    cursor = client.call("events.read", {"engine_instance_id": client.instance_id,
+                                        "after_sequence": "0", "limit": 64})["current_sequence"]
+    client.call("material.set_young_modulus", {
+        "entity_id": material_id, "young_modulus": {"value": 203000, "unit": "MPa"}},
+        baseline, "c3-lean-material")
+    current = client.current()
+    history = client.call("history.list", context=current)
+    event_params = {"engine_instance_id": client.instance_id,
+                    "after_sequence": cursor, "limit": 64}
+    legacy_events = client.call("events.read", event_params)
+    events = client.call("events.read", {**event_params, "include_document_summary": True})
+    changed = [event for event in events["events"] if event["event"] == "DocumentChanged"]
+    check(len(changed) == 1 and changed[0]["revision"] == current["revision"] and
+          changed[0]["data"]["base_revision"] == baseline["revision"] and
+          changed[0]["data"]["document_summary"] == current,
+          "opted-in event did not carry the exact same-version authoritative summary")
+    legacy_copy = json.loads(json.dumps(events))
+    for event in legacy_copy["events"]:
+        event["data"].pop("document_summary", None)
+    check(legacy_copy == legacy_events, "summary opt-in changed legacy event order or fields")
+    wrong_summary_type = client.call("events.read", {**event_params, "include_document_summary": "true"},
+                                     expected=None)
+    check(wrong_summary_type.get("status") == "failed", "nonboolean summary opt-in succeeded")
+    parameters = {"view_session_id": view["view_session_id"],
+                  "expected_view_revision": view["view_revision"],
+                  "base_revision": baseline["revision"],
+                  "base_view_revision": view["view_revision"],
+                  "render_wire_version": 3, "allow_inline_empty": True,
+                  "allow_model_rebase": True, "include_changed_rows": True}
+    legacy = {key: value for key, value in parameters.items()
+              if key not in {"allow_model_rebase", "include_changed_rows"}}
+    check(client.call("view.render_resource", legacy, current,
+                      extra={"requested_version": 1}, expected=None).get("status") == "conflict",
+          "a legacy render request silently rebound a stale model")
+    malformed = [{**parameters, field: "true"}
+                 for field in ("allow_model_rebase", "include_changed_rows")]
+    malformed += [{key: value for key, value in parameters.items() if key != missing}
+                  for missing in ("base_revision", "base_view_revision")]
+    malformed += [{**parameters, "base_revision": str(integer(baseline["revision"]) - 1)},
+                  {**parameters, "expected_view_revision": str(integer(view["view_revision"]) + 1)},
+                  {**parameters, "base_view_revision": str(integer(view["view_revision"]) + 1)},
+                  {**parameters, "hidden_ids": []}]
+    refusals = []
+    for candidate in malformed:
+        response = client.call("view.render_resource", candidate, current,
+                               extra={"requested_version": 1}, expected=None)
+        check(response.get("status") != "success", "invalid rebase request changed the view")
+        refusals.append(response["error"]["code"])
+    for key in ("document_id", "document_epoch"):
+        response = client.call("view.render_resource", parameters, {**current, key: "wrong-identity"},
+                               extra={"requested_version": 1}, expected=None)
+        check(response.get("status") != "success", "cross-document/epoch rebase succeeded")
+        refusals.append(response["error"]["code"])
+    refreshed = client.call("view.render_resource", parameters, current,
+                            extra={"requested_version": 1})
+    next_view = {"view_session_id": view["view_session_id"],
+                 "view_revision": str(integer(view["view_revision"]) + 1)}
+    target = {"document_id": current["document_id"], "document_epoch": current["document_epoch"],
+              "revision": current["revision"], **next_view}
+    check(refreshed.get("mode") == "version_only" and "manifest" not in refreshed and
+          refreshed["acknowledgement"] == {**target, "base_revision": baseline["revision"],
+                                             "base_view_revision": view["view_revision"]},
+          "material rebase did not advance precisely once with an empty pinned-free delta")
+    row = client.call("entity.query", {"ids": [material_id]}, current)["entities"]
+    check(refreshed.get("rows_complete") is True and refreshed.get("refresh_tree") is False and
+          refreshed.get("rows_version") == target and refreshed.get("changed_ids") == [material_id] and
+          refreshed.get("changed_rows") == row,
+          "render rows differed from the same-version production entity serializer")
+    for operation, selection_params in (
+            ("selection.get", {"selection_handle": old_selection["selection_handle"]}),
+            ("selection.combine", {**next_view, "expected_view_revision": next_view["view_revision"],
+                                   "left": old_selection["selection_handle"],
+                                   "right": old_selection["selection_handle"], "operator": "union"})):
+        selection_params.pop("view_revision", None)
+        response = client.call(operation, selection_params, current, expected=None)
+        check(response.get("status") == "conflict", "rebase accepted a stale selection handle")
+    repeated = client.call("view.render_resource", parameters, current,
+                           extra={"requested_version": 1}, expected=None)
+    check(repeated.get("status") == "conflict", "same stale rebase advanced its version twice")
+    unchanged = client.call("view.update", {"view_session_id": next_view["view_session_id"],
+                                            "expected_view_revision": next_view["view_revision"],
+                                            "hidden_ids": [geometry_id], "camera_fingerprint": "lean-sync"}, current)
+    check(all(unchanged[key] == value for key, value in next_view.items()) and
+          unchanged["hidden_ids"] == [geometry_id] and unchanged["camera_fingerprint"] == "lean-sync" and
+          unchanged["revision"] == current["revision"] and client.current() == current and
+          client.call("history.list", context=current) == history,
+          "rebase changed hidden/camera intent or model history")
+    client.call("node.move", {"entity_id": node_id, "position_mm": [500, 2, 0]}, current,
+                "c3-lean-node")
+    moved = client.current()
+    node_parameters = {**parameters, "expected_view_revision": next_view["view_revision"],
+                       "base_revision": current["revision"], "base_view_revision": next_view["view_revision"]}
+    node_resource = client.call("view.render_resource", node_parameters, moved,
+                                extra={"requested_version": 1})
+    node_bytes, node_transfer = fetch_resource(client, node_resource["manifest"])
+    delta = decode_delta(node_bytes)
+    check(node_resource.get("mode") == "delta" and node_resource.get("rows_complete") is True and
+          delta["base_revision"] == integer(current["revision"]) and delta["revision"] == integer(moved["revision"]) and
+          delta["view_revision"] == integer(next_view["view_revision"]) + 1 and
+          len(delta["points"]) == 1 and delta["points"][0]["entity_id"] == node_id and
+          delta["points"][0]["position_mm"] == [500, 2, 0],
+          "nonempty rebase did not preserve its exact local binary delta")
+    moved_view = {"view_session_id": next_view["view_session_id"],
+                  "view_revision": str(delta["view_revision"])}
+    client.call("node.move", {"entity_id": node_id, "position_mm": [500, 1, 0]}, moved,
+                "c3-lean-node-restore")
+    restored = client.current()
+    restored_view = update_view(client, moved_view, restored)
+    restored_resource = render_resource(client, restored_view, restored, moved["revision"], moved_view["view_revision"])
+    fetch_resource(client, restored_resource["manifest"])
+    return {"summary": changed[0], "legacy_events_preserved": True, "rebase_refusals": refusals,
+            "material": refreshed, "nonempty_node_delta": delta, "node_transfer": node_transfer,
+            "unchanged_hidden_camera_and_model_history": True, "node_fixture_restored": True}
 
 
 def wait_for_mesh(client: IpcClient, context: dict, geometry_id: str) -> dict:
@@ -325,11 +490,10 @@ def wait_for_cancel(client: IpcClient, task_id: str, context: dict, desired: str
         time.sleep(.001)
 
 
-def task_ack_workload(client: IpcClient, context: dict, geometry_id: str) -> dict:
+def task_ack_workload(client: IpcClient, context: dict, geometry_id: str, *, warmups: int = 5) -> dict:
     start_samples: list[float] = []
     cancel_samples: list[float] = []
     records: list[dict] = []
-    warmups = 5
     measured = 50
     for index in range(warmups + measured):
         key = f"c3-sync-task-ack-{index}"
@@ -494,13 +658,14 @@ def run(engine: str, cli: str | None, evidence: Path | None) -> dict:
                                                                        structural_manifest)
                 structural_packet = decode_packet(structural_bytes)
                 check(len(structural_packet["points"]) == 3 and
-                      len(structural_packet["beams"]) == 2 and
+                      structural_packet["beams"] == [] and len(structural_packet["cells"]) == 2 and
+                      all(cell["kind"] == 0 and len(cell["points"]) == 2 for cell in structural_packet["cells"]) and
                       [item["entity_id"] for item in structural_packet["geometry_lines"]] == [geometry_id],
                       "mesh display lost geometry or generated FE entities")
                 summary["resource_roundtrips"].append({"mode": "full-after-topology-change",
                                                        **structural_transfer,
                                                        "points": len(structural_packet["points"]),
-                                                       "beams": len(structural_packet["beams"]),
+                                                       "generic_line_cells": len(structural_packet["cells"]),
                                                        "geometry_id_preserved": geometry_id})
 
                 mesh_view = view
@@ -563,6 +728,32 @@ def run(engine: str, cli: str | None, evidence: Path | None) -> dict:
                                                        **material_transfer,
                                                        "changed_points": 0,
                                                        "changed_geometry_lines": 0})
+                inline_parameters = {"view_session_id": material_view["view_session_id"],
+                                     "expected_view_revision": material_view["view_revision"],
+                                     "base_revision": after_material["revision"],
+                                     "base_view_revision": material_view["view_revision"],
+                                     "allow_inline_empty": True}
+                acknowledged = host.client.call("view.render_resource", inline_parameters,
+                                                 after_material, extra={"requested_version": 1})
+                check(acknowledged.get("mode") == "version_only" and "manifest" not in acknowledged and
+                      acknowledged.get("changed_ids") == [] and acknowledged.get("refresh_tree") is False,
+                      "opted-in empty delta created a binary resource or tree rebuild")
+                expected_ack = {"document_id": after_material["document_id"],
+                                "document_epoch": after_material["document_epoch"],
+                                "revision": after_material["revision"],
+                                "view_session_id": material_view["view_session_id"],
+                                "view_revision": material_view["view_revision"],
+                                "base_revision": after_material["revision"],
+                                "base_view_revision": material_view["view_revision"]}
+                check(acknowledged.get("acknowledgement") == expected_ack,
+                      "empty acknowledgement lost exact from/to authority")
+                invalid_inline = {**inline_parameters, "allow_inline_empty": "true"}
+                refused_inline = host.client.call("view.render_resource", invalid_inline, after_material,
+                                                  extra={"requested_version": 1}, expected=None)
+                check(refused_inline.get("status") == "failed" and
+                      refused_inline.get("error", {}).get("code") == "INVALID_INPUT",
+                      "nonboolean empty-ack opt-in was accepted")
+                summary["version_only_acknowledgement"] = acknowledged
 
                 stale = host.client.call(
                     "resources.read",
@@ -579,8 +770,71 @@ def run(engine: str, cli: str | None, evidence: Path | None) -> dict:
                 summary["resource_negative_samples"] = assert_resource_negative(
                     host.client, material_manifest, after_material)
 
+                # An old client sends no wire capability. Actual full+visibility
+                # responses preserve the original Line2 IDs and v1/v2 codec.
+                legacy_view = host.client.call("view.create", {"hidden_ids": [], "camera_fingerprint": "legacy-wire"}, after_material)
+                legacy_full = render_resource(host.client, legacy_view, after_material, wire_version=None)
+                legacy_bytes, legacy_transfer = fetch_resource(host.client, legacy_full["manifest"])
+                legacy_packet = decode_packet(legacy_bytes)
+                check(legacy_full["manifest"]["media_type"] == "qcae.render.packet.v1" and
+                      legacy_packet["cells"] == [] and len(legacy_packet["beams"]) == 2 and
+                      {beam["entity_id"] for beam in legacy_packet["beams"]} ==
+                      {cell["entity_id"] for cell in structural_packet["cells"]},
+                      "old client full Line2 resource was not represented in v1/v2")
+                legacy_hidden_id = legacy_packet["beams"][0]["entity_id"]
+                legacy_hidden = host.client.call("view.update", {"view_session_id": legacy_view["view_session_id"],
+                    "expected_view_revision": legacy_view["view_revision"], "hidden_ids": [legacy_hidden_id],
+                    "camera_fingerprint": "legacy-wire"}, after_material)
+                legacy_delta = render_resource(host.client, legacy_hidden, after_material,
+                                               after_material["revision"], legacy_view["view_revision"], wire_version=None)
+                legacy_delta_bytes, _ = fetch_resource(host.client, legacy_delta["manifest"])
+                legacy_visibility = decode_delta(legacy_delta_bytes)
+                check(legacy_delta["mode"] == "delta" and legacy_delta["manifest"]["media_type"] == "qcae.render.delta.v2" and
+                      legacy_visibility["visibility"] == [{"primitive": 1, "index": 0, "entity_id": legacy_hidden_id, "visible": False}],
+                      "old client visibility did not retain beam index/identity in v2")
+                for refused_version in (1, 4):
+                    refused_wire = host.client.call("view.render_resource", {"view_session_id": legacy_hidden["view_session_id"],
+                        "expected_view_revision": legacy_hidden["view_revision"], "render_wire_version": refused_version}, after_material,
+                        extra={"requested_version": 1}, expected=None)
+                    check(refused_wire.get("status") == "failed" and refused_wire.get("error", {}).get("code") == "UNSUPPORTED_CAPABILITY",
+                          "unsupported old/future wire version silently lost a visible primitive")
+                summary["legacy_wire_roundtrip"] = {"full": legacy_transfer, "visibility": legacy_visibility}
+
+                # Visibility toggles use the same model revision and retain topology/coordinates.
+                hidden_ids = [middle, structural_packet["cells"][0]["entity_id"], geometry_id]
+                hidden_view = host.client.call(
+                    "view.update", {"view_session_id": material_view["view_session_id"],
+                                    "expected_view_revision": material_view["view_revision"],
+                                    "hidden_ids": hidden_ids, "camera_fingerprint": "c3-sync"},
+                    after_material)
+                hidden_resource = render_resource(host.client, hidden_view, after_material,
+                                                  after_material["revision"], material_view["view_revision"])
+                check(hidden_resource["mode"] == "delta" and not hidden_resource["refresh_tree"] and
+                      hidden_resource["manifest"]["media_type"] == "qcae.render.delta.v3",
+                      "visibility update rebuilt scene or tree")
+                hidden_bytes, hidden_transfer = fetch_resource(host.client, hidden_resource["manifest"])
+                hidden_delta = decode_delta(hidden_bytes)
+                check(hidden_delta["points"] == [] and hidden_delta["geometry_lines"] == [] and
+                      {row["entity_id"] for row in hidden_delta["visibility"]} == set(hidden_ids) and
+                      all(row["visible"] is False for row in hidden_delta["visibility"]),
+                      "visibility delta resent coordinates or lost identities")
+                shown_view = update_view(host.client, hidden_view, after_material)
+                shown_resource = render_resource(host.client, shown_view, after_material,
+                                                 after_material["revision"], hidden_view["view_revision"])
+                shown_bytes, _ = fetch_resource(host.client, shown_resource["manifest"])
+                shown_delta = decode_delta(shown_bytes)
+                check(shown_resource["mode"] == "delta" and
+                      all(row["visible"] is True for row in shown_delta["visibility"]) and
+                      len(shown_delta["visibility"]) == 3,
+                      "unhide failed to reuse retained entity indices")
+                summary["resource_roundtrips"].append({"mode": "delta-visibility",
+                                                       **hidden_transfer, "visible_updates": 3})
+
                 # Start and cancel real background mesh jobs over IPC, timing only the ACKs.
                 summary["task_ack"] = task_ack_workload(host.client, after_material, geometry_id)
+
+                summary["lean_refresh"] = lean_refresh_workload(
+                    host.client, material["entity_id"], geometry_id, middle)
 
                 # Read a cursor, deliberately leave it behind more than the 256-event retention.
                 event_baseline = host.client.call(

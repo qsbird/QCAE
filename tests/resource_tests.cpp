@@ -127,6 +127,31 @@ void leases_and_eviction() {
     check(!store.read(caller, second.resource_id, version(), 0).ok() && store.cached_bytes() == 0 &&
               store.size() == 0,
           "Expired resources retained data or remained readable");
+
+    // A direct pinned read replaces describe for nonempty client transfers.
+    // It must reacquire a released cached lease, while bad offsets must not.
+    now = std::chrono::steady_clock::time_point{};
+    ipc::ResourceStore direct(limits, [&] { return now; });
+    const auto pinned = good(direct.publish(caller, version(), original, "test"));
+    good(direct.release(caller, pinned.resource_id));
+    now += std::chrono::milliseconds(9);
+    good(direct.read(caller, pinned.resource_id, version(), 0));
+    now += std::chrono::milliseconds(2);
+    check(direct.read(caller, pinned.resource_id, version(), 0).ok(),
+          "Direct read did not reacquire the released cached lease");
+    now += std::chrono::milliseconds(9);
+    check(!direct.read(caller, pinned.resource_id, version(), 0).ok(),
+          "Direct read bypassed the renewed lease expiration");
+
+    now = std::chrono::steady_clock::time_point{};
+    const auto invalid = good(direct.publish(caller, version(), original, "test"));
+    good(direct.release(caller, invalid.resource_id));
+    now += std::chrono::milliseconds(9);
+    check(!direct.read(caller, invalid.resource_id, version(), 1).ok(),
+          "Invalid direct read offset was accepted");
+    now += std::chrono::milliseconds(2);
+    check(!direct.read(caller, invalid.resource_id, version(), 0).ok(),
+          "Invalid direct read prolonged a cached lease");
 }
 
 class WireEngine {
@@ -249,12 +274,19 @@ void client_roundtrip_and_rejections() {
     const auto large = payload(4 * 1024 * 1024);
     check(good(fetch(resources, engine.publish(large))) == large,
           "Real resource client 4MiB transfer changed bytes");
-    check(engine.reads == 32 && engine.max_wire <= resource_max_wire_bytes,
+    check(engine.reads == 32 && engine.describes == 0 && engine.max_wire <= resource_max_wire_bytes,
           "Resource client exceeded chunk count or encoded wire cap");
     barrier(client);
     check(engine.releases == 1, "Completed resource transfer leaked its lease");
     check(good(fetch(resources, engine.publish({}))).isEmpty(),
           "Empty resource could not complete");
+    check(engine.describes == 1, "Empty resource skipped its required remote manifest check");
+    auto missing = engine.publish(payload(16));
+    good(engine.store.release(engine.caller, missing.resource_id));
+    missing.resource_id = "unavailable-cache-entry";
+    const auto descriptions_before_missing = engine.describes;
+    check(!fetch(resources, missing).ok() && engine.describes == descriptions_before_missing,
+          "Direct read of an unavailable cached resource exposed bytes or repeated describe");
     const auto bytes = payload(resource_chunk_bytes * 2 + 7);
     int rejected = 0;
     for (const auto* fault : {"missing",

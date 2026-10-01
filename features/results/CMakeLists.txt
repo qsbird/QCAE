@@ -1,0 +1,18 @@
+add_library(qcae_result_features STATIC
+  src/result_fixture.cpp src/result_codec.cpp src/result_service.cpp src/static_validation.cpp
+  include/qcae/result_fixture.hpp include/qcae/result_service.hpp include/qcae/static_validation.hpp)
+target_include_directories(qcae_result_features PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_result_features PUBLIC cxx_std_20)
+target_link_libraries(qcae_result_features PUBLIC qcae_analysis_features)
+qcae_warnings(qcae_result_features)
+if(BUILD_TESTING)
+  add_executable(qcae_result_fixture_tests "${PROJECT_SOURCE_DIR}/tests/result_fixture_tests.cpp")
+  target_link_libraries(qcae_result_fixture_tests PRIVATE qcae_result_features)
+  qcae_warnings(qcae_result_fixture_tests)
+  add_test(NAME result_fixture COMMAND qcae_result_fixture_tests)
+  add_executable(qcae_static_validation_tests "${PROJECT_SOURCE_DIR}/tests/static_validation_tests.cpp")
+  target_link_libraries(qcae_static_validation_tests PRIVATE qcae_result_features qcae_nastran)
+  target_compile_definitions(qcae_static_validation_tests PRIVATE QCAE_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+  qcae_warnings(qcae_static_validation_tests)
+  add_test(NAME static_validation COMMAND qcae_static_validation_tests)
+endif()

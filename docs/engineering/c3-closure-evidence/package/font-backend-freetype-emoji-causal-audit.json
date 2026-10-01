@@ -1,0 +1,226 @@
+{
+  "schema": "qcae.freetype-emoji-causal-audit/1",
+  "default_product_changed": false,
+  "new_sdk_instrumentation": false,
+  "single_case": "SFNS/14/emoji",
+  "original_mac_completed": true,
+  "original_ft_failure_preserved": true,
+  "actual_mac_line_metrics": {
+    "line_ascent": 17.5,
+    "line_descent": 5.46875,
+    "line_height": 23
+  },
+  "actual_ft_line_metrics": {
+    "line_ascent": 297.5,
+    "line_descent": 92.96875,
+    "line_height": 391
+  },
+  "actual_ft_engines": [
+    {
+      "actual_engine": "Freetype",
+      "actual_type": 4,
+      "family": ".SF NS",
+      "style": "Regular"
+    },
+    {
+      "actual_engine": "Freetype",
+      "actual_type": 4,
+      "family": "Apple Color Emoji",
+      "style": "Regular"
+    }
+  ],
+  "original_logical_canvas": [
+    640,
+    160
+  ],
+  "actual_nonempty_glyph_alpha_maps": 6,
+  "actual_original_changed_pixels": "0",
+  "actual_glyph_ink_boxes": [
+    {
+      "family": ".SF NS",
+      "glyph_id": 186,
+      "logical_ink_box": [
+        20,
+        307.5,
+        9,
+        10
+      ],
+      "outside_original_logical_canvas": true
+    },
+    {
+      "family": ".SF NS",
+      "glyph_id": 815,
+      "logical_ink_box": [
+        29.625,
+        309.5,
+        7,
+        9
+      ],
+      "outside_original_logical_canvas": true
+    },
+    {
+      "family": ".SF NS",
+      "glyph_id": 666,
+      "logical_ink_box": [
+        36.890625,
+        307.5,
+        7,
+        11
+      ],
+      "outside_original_logical_canvas": true
+    },
+    {
+      "family": ".SF NS",
+      "glyph_id": 676,
+      "logical_ink_box": [
+        44.484375,
+        309.5,
+        7,
+        9
+      ],
+      "outside_original_logical_canvas": true
+    },
+    {
+      "family": "Apple Color Emoji",
+      "glyph_id": 2165,
+      "logical_ink_box": [
+        54.1875,
+        306.875,
+        10.625,
+        10.625
+      ],
+      "outside_original_logical_canvas": true
+    },
+    {
+      "family": "Apple Color Emoji",
+      "glyph_id": 1450,
+      "logical_ink_box": [
+        67.515625,
+        306.875,
+        10.625,
+        10.625
+      ],
+      "outside_original_logical_canvas": true
+    }
+  ],
+  "exact_matched_font_tables": {
+    "face_index": 0,
+    "head_units_per_em": 800,
+    "hhea_ascent": 800,
+    "hhea_descent": -250,
+    "hhea_leading": 0,
+    "os2_win_metrics": [
+      0,
+      0
+    ],
+    "exact_tables_match_actual_glyph_font": true
+  },
+  "actual_freetype_strikes": {
+    "font_family": "Apple Color Emoji",
+    "face_index": 0,
+    "actual_freetype_bitmap_strikes": [
+      {
+        "height": 26,
+        "width": 18,
+        "size": 1280,
+        "x_ppem": 1280,
+        "y_ppem": 1280
+      },
+      {
+        "height": 34,
+        "width": 24,
+        "size": 1664,
+        "x_ppem": 1664,
+        "y_ppem": 1664
+      },
+      {
+        "height": 42,
+        "width": 29,
+        "size": 2048,
+        "x_ppem": 2048,
+        "y_ppem": 2048
+      },
+      {
+        "height": 52,
+        "width": 37,
+        "size": 2560,
+        "x_ppem": 2560,
+        "y_ppem": 2560
+      },
+      {
+        "height": 63,
+        "width": 44,
+        "size": 3072,
+        "x_ppem": 3072,
+        "y_ppem": 3072
+      },
+      {
+        "height": 68,
+        "width": 48,
+        "size": 3328,
+        "x_ppem": 3328,
+        "y_ppem": 3328
+      },
+      {
+        "height": 84,
+        "width": 59,
+        "size": 4096,
+        "x_ppem": 4096,
+        "y_ppem": 4096
+      },
+      {
+        "height": 126,
+        "width": 88,
+        "size": 6144,
+        "x_ppem": 6144,
+        "y_ppem": 6144
+      },
+      {
+        "height": 210,
+        "width": 147,
+        "size": 10240,
+        "x_ppem": 10240,
+        "y_ppem": 10240
+      }
+    ],
+    "native_gui_executed": false,
+    "font_asset_diagnostic_only": true
+  },
+  "source_metric_reconstruction": {
+    "requested_pixel_size": 14,
+    "FT_non_scalable_emSquareSize": 20,
+    "selected_strike_y_ppem": 20.0,
+    "selected_strike_height": 26,
+    "QFixed_scalableBitmapScaleFactor": 0.53125,
+    "hhea_ascent_times_pixel_over_emSquare_times_scale": 297.5,
+    "hhea_descent_times_pixel_over_emSquare_times_scale": 92.96875,
+    "matches_actual_line_metrics_exactly": true
+  },
+  "causal_finding": "The actual FT emoji fallback has huge line metrics. QTextEngine takes max fallback ascent/descent, placing every nonempty glyph below the original160logical canvas. Real glyph alpha maps are nonempty. Original white failure is preserved; it does not show all glyph rasterization failed.",
+  "source_explanation": "FT non-scalable emSquareSize returns selected y_ppem20 while hhea design units are800. The base height algorithm converts hhea using20; FT then scales by QFixed(14/26)=34/64. It produces ascent297.5/descent92.96875 exactly. No workaround or backend switch applied.",
+  "sources": [
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/qtbase-everywhere-src-6.11.1/src/gui/text/coretext/qcoretextfontdatabase.mm",
+      "sha256": "bcefdfb7d040d3fbd4f4728aa9c02a131407018a690cdc913b361d9bdc82e69e"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/qtbase-everywhere-src-6.11.1/src/gui/text/freetype/qfontengine_ft.cpp",
+      "sha256": "2a7920bf9a7a639180e4f39df9f63adaa7d1d2399a840886c0d4c125a3566841"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/qtbase-everywhere-src-6.11.1/src/gui/text/qfontengine.cpp",
+      "sha256": "29222b97447fdec7053249e15f8b2ed9aad4dfb97c848d35c2124c4feeb63500"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/qtbase-everywhere-src-6.11.1/src/gui/text/qtextengine.cpp",
+      "sha256": "0ab84b6d4e48df18f39d9942d327e1b777e3e700de19a96b79c653495febe5af"
+    },
+    {
+      "path": "/Users/qs/Documents/ChatGPT/QCAE/build-c3-qt-observed/tranche2/qtbase-everywhere-src-6.11.1/src/gui/painting/qfixed_p.h",
+      "sha256": "b4355d5845aa278229733e8681dcd2c12912b7874a1375aafb933d08ffb101b0"
+    }
+  ],
+  "next_independent_diagnostic": "If needed draw the exact same case in a separate taller canvas, preserving original failed pixels and metric differences. The alternate canvas cannot establish equivalence to the original default baseline.",
+  "font_behavior_equivalence": false,
+  "default_coretext_owned_copy_gap_closed": false
+}

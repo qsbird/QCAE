@@ -1,0 +1,1433 @@
+{
+    "before": {
+        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+        "expected_revision": "3"
+    },
+    "commit_requests": 0,
+    "held_current_count": 0,
+    "held_property_reply": [
+        {
+            "data": {
+                "entities": [
+                    {
+                        "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-11",
+                        "force_n": [
+                            0,
+                            -1,
+                            0
+                        ],
+                        "kind": "force",
+                        "name": "",
+                        "node_id": "node-task-66cda94ad3968244-1-0",
+                        "sources": [
+                        ]
+                    }
+                ],
+                "limit": 100,
+                "offset": 0,
+                "revision": "3",
+                "total": 1
+            },
+            "request_id": "5bf3c4bc-de1a-4c3b-9d5a-423bf964020d",
+            "revision": "3",
+            "status": "success"
+        }
+    ],
+    "history_before": {
+        "cursor": 3,
+        "items": [
+            {
+                "applied": true,
+                "label": "Create line",
+                "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-6"
+            },
+            {
+                "applied": true,
+                "label": "Generate uniform line mesh",
+                "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-9"
+            },
+            {
+                "applied": true,
+                "label": "Create nodal force",
+                "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-13"
+            }
+        ],
+        "revision": "3"
+    },
+    "invalidation": "",
+    "metadata_fault": "envelope-new",
+    "model_before": {
+        "entity-967e1c5497fae758523a49a8895de3a7-11": {
+            "fields": {
+                "force_n": [
+                    0,
+                    -1,
+                    0
+                ],
+                "node": "node-task-66cda94ad3968244-1-0"
+            },
+            "kind": "force"
+        },
+        "entity-967e1c5497fae758523a49a8895de3a7-4": {
+            "fields": {
+                "end": [
+                    100,
+                    0,
+                    0
+                ],
+                "geometry_revision": "1",
+                "start": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "kind": "geometry"
+        },
+        "line-task-66cda94ad3968244-1-0": {
+            "fields": {
+                "mesh": "mesh-task-66cda94ad3968244-1",
+                "nodes": [
+                    "node-task-66cda94ad3968244-1-0",
+                    "node-task-66cda94ad3968244-1-1"
+                ],
+                "orientation": [
+                    0,
+                    0,
+                    1
+                ]
+            },
+            "kind": "beam"
+        },
+        "mesh-task-66cda94ad3968244-1": {
+            "fields": {
+                "geometry": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                "geometry_revision": "1",
+                "name": "Uniform line mesh",
+                "origin": "geometry",
+                "stale": false
+            },
+            "kind": "mesh"
+        },
+        "node-task-66cda94ad3968244-1-0": {
+            "fields": {
+                "mesh": "mesh-task-66cda94ad3968244-1",
+                "position": [
+                    0,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        },
+        "node-task-66cda94ad3968244-1-1": {
+            "fields": {
+                "mesh": "mesh-task-66cda94ad3968244-1",
+                "position": [
+                    100,
+                    0,
+                    0
+                ]
+            },
+            "kind": "node"
+        }
+    },
+    "preview_id": "",
+    "property_text": "",
+    "property_y": "",
+    "stage": "row",
+    "transcript": [
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "operation": "runtime.handshake",
+                "request_id": "2a96f5aa-be52-4666-bf5d-fddc2f6f7a3b"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "api_version": "1.1",
+                    "capabilities": {
+                        "events_document_summary_version": 1,
+                        "events_version": 1,
+                        "render_changed_rows_version": 1,
+                        "render_inline_empty_version": 1,
+                        "render_model_rebase_version": 1,
+                        "render_wire_version": 3,
+                        "resources_version": 1
+                    },
+                    "durable": true,
+                    "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                    "pid": "16756",
+                    "storage_mode": "sqlite"
+                },
+                "request_id": "2a96f5aa-be52-4666-bf5d-fddc2f6f7a3b",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "operation": "events.subscribe",
+                "parameters": {
+                    "after_sequence": "0",
+                    "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                    "include_document_summary": true
+                },
+                "request_id": "b8f34de1-85a3-40a9-b2e5-0b765627e0b0",
+                "requested_version": 1
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "current_sequence": "10",
+                    "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                    "next_sequence": "0",
+                    "oldest_sequence": "1",
+                    "resync_required": false
+                },
+                "request_id": "b8f34de1-85a3-40a9-b2e5-0b765627e0b0",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "active": true,
+                    "resync_required": true
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "DocumentChanged",
+                "frame_type": "event",
+                "revision": "0",
+                "sequence": "1"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "resync_required": true
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "HistoryChanged",
+                "frame_type": "event",
+                "revision": "0",
+                "sequence": "2"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "base_revision": "0",
+                    "document_summary": {
+                        "content_state": "state-967e1c5497fae758523a49a8895de3a7-7",
+                        "dirty": true,
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "durable": true,
+                        "material_count": 0,
+                        "name": "Property fence fixture",
+                        "project_id": "",
+                        "revision": "1",
+                        "saved_content_state": "",
+                        "saved_path": ""
+                    },
+                    "resync_required": false,
+                    "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-6"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "DocumentChanged",
+                "frame_type": "event",
+                "revision": "1",
+                "sequence": "3"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "base_revision": "0",
+                    "resync_required": false,
+                    "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-6"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "HistoryChanged",
+                "frame_type": "event",
+                "revision": "1",
+                "sequence": "4"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "input_revision": "1",
+                    "progress": 0,
+                    "state": "running",
+                    "task_id": "task-66cda94ad3968244-1",
+                    "task_sequence": "2"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "JobChanged",
+                "frame_type": "event",
+                "revision": "1",
+                "sequence": "5"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "base_revision": "1",
+                    "document_summary": {
+                        "content_state": "state-967e1c5497fae758523a49a8895de3a7-10",
+                        "dirty": true,
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "durable": true,
+                        "material_count": 0,
+                        "name": "Property fence fixture",
+                        "project_id": "",
+                        "revision": "2",
+                        "saved_content_state": "",
+                        "saved_path": ""
+                    },
+                    "resync_required": false,
+                    "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-9"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "DocumentChanged",
+                "frame_type": "event",
+                "revision": "2",
+                "sequence": "6"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "base_revision": "1",
+                    "resync_required": false,
+                    "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-9"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "HistoryChanged",
+                "frame_type": "event",
+                "revision": "2",
+                "sequence": "7"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "committed_revision": "2",
+                    "input_revision": "1",
+                    "progress": 1,
+                    "state": "succeeded",
+                    "task_id": "task-66cda94ad3968244-1",
+                    "task_sequence": "6"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "JobChanged",
+                "frame_type": "event",
+                "revision": "2",
+                "sequence": "8"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "base_revision": "2",
+                    "document_summary": {
+                        "content_state": "state-967e1c5497fae758523a49a8895de3a7-14",
+                        "dirty": true,
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "durable": true,
+                        "material_count": 0,
+                        "name": "Property fence fixture",
+                        "project_id": "",
+                        "revision": "3",
+                        "saved_content_state": "",
+                        "saved_path": ""
+                    },
+                    "resync_required": false,
+                    "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-13"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "DocumentChanged",
+                "frame_type": "event",
+                "revision": "3",
+                "sequence": "9"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "base_revision": "2",
+                    "resync_required": false,
+                    "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-13"
+                },
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "engine_instance_id": "587dc15b-c53e-4961-9984-fa2d0da42dd5",
+                "event": "HistoryChanged",
+                "frame_type": "event",
+                "revision": "3",
+                "sequence": "10"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "operation": "project.current",
+                "parameters": {
+                },
+                "request_id": "06b87a0d-59e1-4ec1-93b3-da1c799dcad0"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "content_state": "state-967e1c5497fae758523a49a8895de3a7-14",
+                    "dirty": true,
+                    "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                    "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                    "durable": true,
+                    "material_count": 0,
+                    "name": "Property fence fixture",
+                    "project_id": "",
+                    "revision": "3",
+                    "saved_content_state": "",
+                    "saved_path": ""
+                },
+                "request_id": "06b87a0d-59e1-4ec1-93b3-da1c799dcad0",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "operation": "project.current",
+                "parameters": {
+                },
+                "request_id": "50e4d73a-df30-4269-9189-d57017b56c89"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "content_state": "state-967e1c5497fae758523a49a8895de3a7-14",
+                    "dirty": true,
+                    "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                    "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                    "durable": true,
+                    "material_count": 0,
+                    "name": "Property fence fixture",
+                    "project_id": "",
+                    "revision": "3",
+                    "saved_content_state": "",
+                    "saved_path": ""
+                },
+                "request_id": "50e4d73a-df30-4269-9189-d57017b56c89",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "operation": "entity.query",
+                "parameters": {
+                    "limit": 1000,
+                    "offset": 0,
+                    "view": "all"
+                },
+                "request_id": "56fa11ae-d433-4d04-84c9-0cdd95ee7641"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "operation": "history.list",
+                "parameters": {
+                },
+                "request_id": "4736ef63-c883-4d66-ac6e-4ceebefacd60"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "view.create",
+                "parameters": {
+                    "camera_fingerprint": "07719e2ab93644d6a5a99cc1e11c3dd34df3a08f8a6ff1b997e4f4e6156f49e5",
+                    "hidden_ids": [
+                    ]
+                },
+                "request_id": "89b1e1ea-ac03-49eb-b692-3b1331ce458b"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "entities": [
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-0",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                0,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-1",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "line-task-66cda94ad3968244-1-0",
+                            "kind": "beam",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "nodes": [
+                                "node-task-66cda94ad3968244-1-0",
+                                "node-task-66cda94ad3968244-1-1"
+                            ],
+                            "orientation": [
+                                0,
+                                0,
+                                1
+                            ],
+                            "section_id": null,
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-11",
+                            "force_n": [
+                                0,
+                                -1,
+                                0
+                            ],
+                            "kind": "force",
+                            "name": "",
+                            "node_id": "node-task-66cda94ad3968244-1-0",
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "end_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "geometry",
+                            "name": "",
+                            "sources": [
+                            ],
+                            "start_mm": [
+                                0,
+                                0,
+                                0
+                            ]
+                        },
+                        {
+                            "entity_id": "mesh-task-66cda94ad3968244-1",
+                            "geometry_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "mesh",
+                            "name": "Uniform line mesh",
+                            "origin": "geometry",
+                            "sources": [
+                            ],
+                            "stale": false
+                        }
+                    ],
+                    "limit": 1000,
+                    "offset": 0,
+                    "revision": "3",
+                    "total": 6
+                },
+                "request_id": "56fa11ae-d433-4d04-84c9-0cdd95ee7641",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "cursor": 3,
+                    "items": [
+                        {
+                            "applied": true,
+                            "label": "Create line",
+                            "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-6"
+                        },
+                        {
+                            "applied": true,
+                            "label": "Generate uniform line mesh",
+                            "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-9"
+                        },
+                        {
+                            "applied": true,
+                            "label": "Create nodal force",
+                            "transaction_id": "transaction-967e1c5497fae758523a49a8895de3a7-13"
+                        }
+                    ],
+                    "revision": "3"
+                },
+                "request_id": "4736ef63-c883-4d66-ac6e-4ceebefacd60",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "camera_fingerprint": "07719e2ab93644d6a5a99cc1e11c3dd34df3a08f8a6ff1b997e4f4e6156f49e5",
+                    "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                    "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                    "hidden_ids": [
+                    ],
+                    "revision": "3",
+                    "view_revision": "1",
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "89b1e1ea-ac03-49eb-b692-3b1331ce458b",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "operation": "entity.query",
+                "parameters": {
+                    "limit": 500,
+                    "offset": 0,
+                    "view": "all"
+                },
+                "request_id": "208a7654-b50d-4558-9d09-6680f21df0d4"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "view.render_resource",
+                "parameters": {
+                    "allow_inline_empty": true,
+                    "expected_view_revision": "1",
+                    "include_changed_rows": true,
+                    "render_wire_version": 3,
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "60843d25-b561-44d8-86c6-debeafc886c7",
+                "requested_version": 1
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "entities": [
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-0",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                0,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-1",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "line-task-66cda94ad3968244-1-0",
+                            "kind": "beam",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "nodes": [
+                                "node-task-66cda94ad3968244-1-0",
+                                "node-task-66cda94ad3968244-1-1"
+                            ],
+                            "orientation": [
+                                0,
+                                0,
+                                1
+                            ],
+                            "section_id": null,
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-11",
+                            "force_n": [
+                                0,
+                                -1,
+                                0
+                            ],
+                            "kind": "force",
+                            "name": "",
+                            "node_id": "node-task-66cda94ad3968244-1-0",
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "end_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "geometry",
+                            "name": "",
+                            "sources": [
+                            ],
+                            "start_mm": [
+                                0,
+                                0,
+                                0
+                            ]
+                        },
+                        {
+                            "entity_id": "mesh-task-66cda94ad3968244-1",
+                            "geometry_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "mesh",
+                            "name": "Uniform line mesh",
+                            "origin": "geometry",
+                            "sources": [
+                            ],
+                            "stale": false
+                        }
+                    ],
+                    "limit": 500,
+                    "offset": 0,
+                    "revision": "3",
+                    "total": 6
+                },
+                "request_id": "208a7654-b50d-4558-9d09-6680f21df0d4",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "changed_ids": [
+                    ],
+                    "manifest": {
+                        "byte_length": "520",
+                        "chunk_bytes": 131072,
+                        "chunk_count": 1,
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "media_type": "qcae.render.packet.v3",
+                        "resource_id": "47f56a41-163e-4c8f-9962-48b33f63b3f6",
+                        "revision": "3",
+                        "sha256": "3580e223e0b47c79a92b554d980de3cb079473b41595251f6183250f90b0a9ee",
+                        "view_revision": "1",
+                        "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                    },
+                    "mode": "full",
+                    "refresh_tree": true,
+                    "rows_complete": false
+                },
+                "request_id": "60843d25-b561-44d8-86c6-debeafc886c7",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "resources.read",
+                "parameters": {
+                    "expected_view_revision": "1",
+                    "offset": "0",
+                    "resource_id": "47f56a41-163e-4c8f-9962-48b33f63b3f6",
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "5d1946ae-7766-40a5-83dd-897a74846de5",
+                "requested_version": 1
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "data_base64": "UVBBQ0tFVDMmAAAAAAAAAGRvYy05NjdlMWM1NDk3ZmFlNzU4NTIzYTQ5YTg4OTVkZTNhNy0xKAAAAAAAAABlcG9jaC05NjdlMWM1NDk3ZmFlNzU4NTIzYTQ5YTg4OTVkZTNhNy0yAwAAAAAAAAAnAAAAAAAAAHZpZXctMjA3YThjYTNhY2E5MmE2OGUwNzIwMjE1MzYxYzhjMjYtMQEAAAAAAAAAAgAAAAAAAAAeAAAAAAAAAG5vZGUtdGFzay02NmNkYTk0YWQzOTY4MjQ0LTEtMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAHgAAAAAAAABub2RlLXRhc2stNjZjZGE5NGFkMzk2ODI0NC0xLTEAAAAAAABZQAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAApAAAAAAAAAGVudGl0eS05NjdlMWM1NDk3ZmFlNzU4NTIzYTQ5YTg4OTVkZTNhNy00AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWUAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAB4AAAAAAAAAbGluZS10YXNrLTY2Y2RhOTRhZDM5NjgyNDQtMS0wAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAA==",
+                    "encoding": "base64",
+                    "manifest": {
+                        "byte_length": "520",
+                        "chunk_bytes": 131072,
+                        "chunk_count": 1,
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "media_type": "qcae.render.packet.v3",
+                        "resource_id": "47f56a41-163e-4c8f-9962-48b33f63b3f6",
+                        "revision": "3",
+                        "sha256": "3580e223e0b47c79a92b554d980de3cb079473b41595251f6183250f90b0a9ee",
+                        "view_revision": "1",
+                        "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                    },
+                    "offset": "0",
+                    "raw_length": 520
+                },
+                "request_id": "5d1946ae-7766-40a5-83dd-897a74846de5",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "operation": "resources.release",
+                "parameters": {
+                    "resource_id": "47f56a41-163e-4c8f-9962-48b33f63b3f6"
+                },
+                "request_id": "64ba22ac-2d2b-492e-8294-44cb7563567f",
+                "requested_version": 1
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "operation": "entity.query",
+                "parameters": {
+                    "limit": 1000,
+                    "offset": 0,
+                    "view": "all"
+                },
+                "request_id": "2e0bead3-e2b8-448f-b8ea-cbeb622b8284"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "view.update",
+                "parameters": {
+                    "camera_fingerprint": "885a25948a53758dd217ca47c886dc9c6c2fcbe1a8666098296fe3da50df132b",
+                    "expected_view_revision": "1",
+                    "hidden_ids": [
+                    ],
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "1c3f2023-a187-4c47-9652-73b07d4439cb"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "released": true
+                },
+                "request_id": "64ba22ac-2d2b-492e-8294-44cb7563567f",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "entities": [
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-0",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                0,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-1",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "line-task-66cda94ad3968244-1-0",
+                            "kind": "beam",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "nodes": [
+                                "node-task-66cda94ad3968244-1-0",
+                                "node-task-66cda94ad3968244-1-1"
+                            ],
+                            "orientation": [
+                                0,
+                                0,
+                                1
+                            ],
+                            "section_id": null,
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-11",
+                            "force_n": [
+                                0,
+                                -1,
+                                0
+                            ],
+                            "kind": "force",
+                            "name": "",
+                            "node_id": "node-task-66cda94ad3968244-1-0",
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "end_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "geometry",
+                            "name": "",
+                            "sources": [
+                            ],
+                            "start_mm": [
+                                0,
+                                0,
+                                0
+                            ]
+                        },
+                        {
+                            "entity_id": "mesh-task-66cda94ad3968244-1",
+                            "geometry_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "mesh",
+                            "name": "Uniform line mesh",
+                            "origin": "geometry",
+                            "sources": [
+                            ],
+                            "stale": false
+                        }
+                    ],
+                    "limit": 1000,
+                    "offset": 0,
+                    "revision": "3",
+                    "total": 6
+                },
+                "request_id": "2e0bead3-e2b8-448f-b8ea-cbeb622b8284",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "camera_fingerprint": "885a25948a53758dd217ca47c886dc9c6c2fcbe1a8666098296fe3da50df132b",
+                    "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                    "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                    "hidden_ids": [
+                    ],
+                    "revision": "3",
+                    "view_revision": "2",
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "1c3f2023-a187-4c47-9652-73b07d4439cb",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "operation": "entity.query",
+                "parameters": {
+                    "limit": 500,
+                    "offset": 0,
+                    "view": "all"
+                },
+                "request_id": "46ea9586-6d00-4835-a03e-39c5d6b2cc9f"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "view.render_resource",
+                "parameters": {
+                    "allow_inline_empty": true,
+                    "base_revision": "3",
+                    "base_view_revision": "1",
+                    "expected_view_revision": "2",
+                    "include_changed_rows": true,
+                    "render_wire_version": 3,
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "620ade0b-43e6-4606-a1cc-b87ceb77f1c0",
+                "requested_version": 1
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "entities": [
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-0",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                0,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "node-task-66cda94ad3968244-1-1",
+                            "kind": "node",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "position_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "line-task-66cda94ad3968244-1-0",
+                            "kind": "beam",
+                            "mesh_id": "mesh-task-66cda94ad3968244-1",
+                            "name": "",
+                            "nodes": [
+                                "node-task-66cda94ad3968244-1-0",
+                                "node-task-66cda94ad3968244-1-1"
+                            ],
+                            "orientation": [
+                                0,
+                                0,
+                                1
+                            ],
+                            "section_id": null,
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-11",
+                            "force_n": [
+                                0,
+                                -1,
+                                0
+                            ],
+                            "kind": "force",
+                            "name": "",
+                            "node_id": "node-task-66cda94ad3968244-1-0",
+                            "sources": [
+                            ]
+                        },
+                        {
+                            "end_mm": [
+                                100,
+                                0,
+                                0
+                            ],
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "geometry",
+                            "name": "",
+                            "sources": [
+                            ],
+                            "start_mm": [
+                                0,
+                                0,
+                                0
+                            ]
+                        },
+                        {
+                            "entity_id": "mesh-task-66cda94ad3968244-1",
+                            "geometry_id": "entity-967e1c5497fae758523a49a8895de3a7-4",
+                            "geometry_revision": "1",
+                            "kind": "mesh",
+                            "name": "Uniform line mesh",
+                            "origin": "geometry",
+                            "sources": [
+                            ],
+                            "stale": false
+                        }
+                    ],
+                    "limit": 500,
+                    "offset": 0,
+                    "revision": "3",
+                    "total": 6
+                },
+                "request_id": "46ea9586-6d00-4835-a03e-39c5d6b2cc9f",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "acknowledgement": {
+                        "base_revision": "3",
+                        "base_view_revision": "1",
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "revision": "3",
+                        "view_revision": "2",
+                        "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                    },
+                    "changed_ids": [
+                    ],
+                    "changed_rows": [
+                    ],
+                    "mode": "version_only",
+                    "refresh_tree": false,
+                    "rows_complete": true,
+                    "rows_version": {
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "revision": "3",
+                        "view_revision": "2",
+                        "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                    }
+                },
+                "request_id": "620ade0b-43e6-4606-a1cc-b87ceb77f1c0",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "view.update",
+                "parameters": {
+                    "camera_fingerprint": "885a25948a53758dd217ca47c886dc9c6c2fcbe1a8666098296fe3da50df132b",
+                    "expected_view_revision": "2",
+                    "hidden_ids": [
+                    ],
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "150cce3e-0e3e-46a7-aa77-a11850de8140"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "camera_fingerprint": "885a25948a53758dd217ca47c886dc9c6c2fcbe1a8666098296fe3da50df132b",
+                    "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                    "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                    "hidden_ids": [
+                    ],
+                    "revision": "3",
+                    "view_revision": "2",
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "150cce3e-0e3e-46a7-aa77-a11850de8140",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "view.render_resource",
+                "parameters": {
+                    "allow_inline_empty": true,
+                    "base_revision": "3",
+                    "base_view_revision": "2",
+                    "expected_view_revision": "2",
+                    "include_changed_rows": true,
+                    "render_wire_version": 3,
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "2b775a3c-3f79-4d52-92b8-b62dce414116",
+                "requested_version": 1
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "acknowledgement": {
+                        "base_revision": "3",
+                        "base_view_revision": "2",
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "revision": "3",
+                        "view_revision": "2",
+                        "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                    },
+                    "changed_ids": [
+                    ],
+                    "changed_rows": [
+                    ],
+                    "mode": "version_only",
+                    "refresh_tree": false,
+                    "rows_complete": true,
+                    "rows_version": {
+                        "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                        "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                        "revision": "3",
+                        "view_revision": "2",
+                        "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                    }
+                },
+                "request_id": "2b775a3c-3f79-4d52-92b8-b62dce414116",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "expected_revision": "3",
+                "operation": "selection.evaluate",
+                "parameters": {
+                    "expected_view_revision": "2",
+                    "predicate": {
+                        "ids": [
+                            "entity-967e1c5497fae758523a49a8895de3a7-11"
+                        ],
+                        "op": "ids"
+                    },
+                    "scope": {
+                        "candidate_ids": [
+                            "entity-967e1c5497fae758523a49a8895de3a7-11"
+                        ],
+                        "include_hidden": true,
+                        "invert": false,
+                        "visibility": "through"
+                    },
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "ed77be4c-0ab5-4917-856e-970b02256412"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "count": 1,
+                    "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                    "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                    "revision": "3",
+                    "selection_handle": "selection-207a8ca3aca92a68e0720215361c8c26-2",
+                    "view_revision": "2",
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "ed77be4c-0ab5-4917-856e-970b02256412",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "operation": "selection.get",
+                "parameters": {
+                    "limit": 1000,
+                    "offset": 0,
+                    "selection_handle": "selection-207a8ca3aca92a68e0720215361c8c26-2"
+                },
+                "request_id": "05c7e21a-ec0f-4544-b360-17d53a3d2100"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "count": 1,
+                    "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                    "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                    "entity_ids": [
+                        "entity-967e1c5497fae758523a49a8895de3a7-11"
+                    ],
+                    "offset": 0,
+                    "revision": "3",
+                    "selection_handle": "selection-207a8ca3aca92a68e0720215361c8c26-2",
+                    "view_revision": "2",
+                    "view_session_id": "view-207a8ca3aca92a68e0720215361c8c26-1"
+                },
+                "request_id": "05c7e21a-ec0f-4544-b360-17d53a3d2100",
+                "revision": "3",
+                "status": "success"
+            }
+        },
+        {
+            "direction": "request",
+            "frame": {
+                "api_version": "1.1",
+                "document_epoch": "epoch-967e1c5497fae758523a49a8895de3a7-2",
+                "document_id": "doc-967e1c5497fae758523a49a8895de3a7-1",
+                "operation": "entity.query",
+                "parameters": {
+                    "ids": [
+                        "entity-967e1c5497fae758523a49a8895de3a7-11"
+                    ]
+                },
+                "request_id": "5bf3c4bc-de1a-4c3b-9d5a-423bf964020d"
+            }
+        },
+        {
+            "direction": "response",
+            "frame": {
+                "data": {
+                    "entities": [
+                        {
+                            "entity_id": "entity-967e1c5497fae758523a49a8895de3a7-11",
+                            "force_n": [
+                                0,
+                                -1,
+                                0
+                            ],
+                            "kind": "force",
+                            "name": "",
+                            "node_id": "node-task-66cda94ad3968244-1-0",
+                            "sources": [
+                            ]
+                        }
+                    ],
+                    "limit": 100,
+                    "offset": 0,
+                    "revision": "3",
+                    "total": 1
+                },
+                "request_id": "5bf3c4bc-de1a-4c3b-9d5a-423bf964020d",
+                "revision": "4",
+                "status": "success"
+            }
+        }
+    ]
+}

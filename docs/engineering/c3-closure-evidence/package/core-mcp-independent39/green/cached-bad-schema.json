@@ -1,0 +1,28 @@
+{
+  "scenario": "cached-bad-schema",
+  "exit_code": 0,
+  "tools_list_response": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "error": {
+      "code": -32000,
+      "message": "invalid engine schema type"
+    }
+  },
+  "subsequent_call": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "error": {
+      "code": -32000,
+      "message": "invalid engine schema type"
+    }
+  },
+  "engine_business_requests": [
+    "capabilities.list",
+    "capabilities.list"
+  ],
+  "stderr": "",
+  "real_engine": false,
+  "business_model": false,
+  "writes": 0
+}

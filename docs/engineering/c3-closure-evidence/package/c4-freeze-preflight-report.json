@@ -1,0 +1,120 @@
+{
+  "schema": "qcae.c4-freeze-tool-preflight/1",
+  "status": "tool and private contract tests complete; actual QCAE source freeze blocked",
+  "QCAE_mechanism_frozen": false,
+  "source_commit_available_for_current_changes": false,
+  "complete_sk12_passed": false,
+  "complete_c3_passed": false,
+  "whole_pipeline_owned_copy_coverage": "unknown",
+  "tests": {
+    "command": [
+      "python3",
+      "tests/test_c4_freeze.py"
+    ],
+    "exit_code": 0,
+    "actual_tests": 23,
+    "seconds": 29.468,
+    "temporary_git_only": true,
+    "QCAE_build_acceptance": false,
+    "head_and_index_bytes_unchanged_at_each_tool_call": true
+  },
+  "actual_QCAE_preflight": {
+    "exit_code": 1,
+    "source_commit": "9e0a56b7496d402421940ebd31d34ae47f3ba242",
+    "output": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-current-verified.json",
+    "blocked_reason": "Supplied actual old commit lacks the new committed c4-protected-paths.json definition"
+  },
+  "checks": {
+    "python_compile": true,
+    "design": true,
+    "cpp_format": true,
+    "diff_check": true
+  },
+  "changes": {
+    "owned_source_files": [
+      "tools/freeze_c4_baseline.py",
+      "tests/test_c4_freeze.py"
+    ],
+    "shared_CMake_targets_modified": false,
+    "product_UI_VTK_modified": false,
+    "EXT_product_code_added": false,
+    "dependencies_added": false,
+    "native_GUI_used": false,
+    "real_repo_commits_created": false,
+    "worktrees_created_by_tool": false
+  },
+  "evidence": [
+    {
+      "path": "tools/freeze_c4_baseline.py",
+      "sha256": "a74cefec8fe42f97f4c5ed548ded31418d3865e5453f92a32df262d7da14468f",
+      "bytes": 26748
+    },
+    {
+      "path": "tests/test_c4_freeze.py",
+      "sha256": "a4e6406989d960b1ef0e15137b4669423aa713210ca040dbecc19fd6fa40430a",
+      "bytes": 13304
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-selftest.log",
+      "sha256": "1222dbac70534b9d3377d8455aebed27279e4ee5e0cd170a96d18d8550a9d731",
+      "bytes": 116
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-selftest-final.log",
+      "sha256": "da71b51b5b2935619984329371a575ab72b5bab7cc38c3de9df06b05ea616dda",
+      "bytes": 122
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-selftest-verified.log",
+      "sha256": "73e081843d712aa0a9cfa5271cc40adae8eaf57152f1039e556fbf8e77a8ec8d",
+      "bytes": 123
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-environment-recheck.log",
+      "sha256": "35804af0e2b402d7b861ba4e769d4ce8ff09e51f7b5d0da6bfba58617b8aac6c",
+      "bytes": 101
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-demo.json",
+      "sha256": "ff8715d0e8f44e649fec11a993d6bc4cf8f546bb10b309f6221041e1854503ca",
+      "bytes": 69542
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-demo-first.json",
+      "sha256": "2203dfa3270109ca3a044785a052bab591995106ad52311c5d7b1317dfddf761",
+      "bytes": 69208
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-current.json",
+      "sha256": "d6b5363bc67905645ef37edab509b7b007222fd488b72f787c3e0ca53eac193c",
+      "bytes": 375
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-current.log",
+      "sha256": "6001a7ab8b5923ee8968847633d0f5870860195fb26c003ec11e67a385cc5793",
+      "bytes": 212
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-current-verified.json",
+      "sha256": "d6b5363bc67905645ef37edab509b7b007222fd488b72f787c3e0ca53eac193c",
+      "bytes": 375
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-current-verified.log",
+      "sha256": "e134bdcc00920fa181c68f3045a459e5311afb35e4f3691af31a5367eb85c00f",
+      "bytes": 221
+    },
+    {
+      "path": "docs/engineering/c3-closure-evidence/package/c4-freeze-preflight-notes.md",
+      "sha256": "9c3a58a4dd6601760caf5ba677d92f02723cebf0c70e43b48c8aa0b879113745",
+      "bytes": 7329
+    }
+  ],
+  "next_actual_dependencies": [
+    "Root completes common function/quality matrix evidence and independently reviews tool",
+    "Root creates the real source commit without unknown AGENTS working diff",
+    "Stamp actual source_tree_sha256, non-sensitive environment/tool images and actual command/config/log/artifact facts",
+    "Run tool once to a fresh external output manifest; only a verified mechanism manifest then permits root independent worktree preparation"
+  ],
+  "QG02_self_review": "Read-only Git/commit blobs \u2192 initial/source facts \u2192 allowlisted environment and asserted execution/hash integrity \u2192 actual commit/working-file comparison \u2192 exclusive new JSON. The only user diff exemption is explicit working AGENTS, while initial AGENTS always comes from commit. Evidence cannot exempt product/threshold inputs. Default threshold arithmetic is unchanged. Tool neither commits nor executes evidence commands. Source/delivery bytes are factual; tokens/subsequent executor reads stay unavailable until real collection. Runtime execution provenance still requires root review."
+}

@@ -10,6 +10,7 @@ struct ProfileDefinition {
     std::string analysis_kind;
     bool configured{false};
     bool validated{false};
+    std::string implementation_fingerprint{};
 };
 
 class IProfileProvider {

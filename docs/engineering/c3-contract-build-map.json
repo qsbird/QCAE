@@ -1,0 +1,325 @@
+{
+  "schema_version": 1,
+  "kind": "actual_public_contract_build_mapping",
+  "source_binding": "mutable_diagnostic_not_final_acceptance",
+  "reference_contracts": "The original eight-field AP contracts retain their L1 reference inventory and proposed design surfaces; this map records the concrete implemented subset.",
+  "consumer_definition": "tests/public_api_consumers/CMakeLists.txt builds each header in its own translation unit, using only the linked target public requirements.",
+  "runtime_evidence": "BP acceptance and uniform same-source builds are separate evidence; this source map alone passes no SK gate.",
+  "entries": [
+    {
+      "ap_id": "AP-01",
+      "target": "qcae_application",
+      "public_header": "modules/application/include/qcae/record_application.hpp",
+      "public_interfaces": [
+        "RecordApplication::create_document",
+        "RecordApplication::open_document",
+        "RecordApplication::recover_document"
+      ],
+      "header_consumer": "consumer_qcae_application_qcae_record_application_hpp",
+      "bp_case": "BP-01",
+      "limits": [
+        "MCP process bridge and real external AI sessions remain separate M5 work."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-02",
+      "target": "qcae_document",
+      "public_header": "modules/document/include/qcae/record_registry.hpp",
+      "public_interfaces": [
+        "RecordRegistry",
+        "RecordDescriptor",
+        "RecordInput"
+      ],
+      "header_consumer": "consumer_qcae_document_qcae_record_registry_hpp",
+      "bp_case": "BP-02",
+      "limits": [
+        "Optional-field extension acceptance is pending EXT-01."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-03",
+      "target": "qcae_geometry_features",
+      "public_header": "features/geometry/include/qcae/geometry_features.hpp",
+      "public_interfaces": [
+        "create_line_handler",
+        "evaluate_line",
+        "move_line_endpoint_handler"
+      ],
+      "header_consumer": "consumer_qcae_geometry_features_qcae_geometry_features_hpp",
+      "bp_case": "BP-03",
+      "limits": [
+        "Only analytic lines are supported; general CAD topology is unavailable."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-04",
+      "target": "qcae_mesh_generation",
+      "public_header": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+      "public_interfaces": [
+        "regenerate_line_mesh_task",
+        "LineMeshInput"
+      ],
+      "header_consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
+      "bp_case": "BP-04",
+      "limits": [
+        "Replacement policy is reject_unmapped; no inferred remapping."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-05",
+      "target": "qcae_mesh_generation",
+      "public_header": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+      "public_interfaces": [
+        "line_mesh_task"
+      ],
+      "header_consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
+      "bp_case": "BP-05",
+      "limits": [
+        "Provider is the built-in uniform line discretizer; no new meshing SDK."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-06",
+      "target": "qcae_document",
+      "public_header": "modules/document/include/qcae/document_view.hpp",
+      "public_interfaces": [
+        "DocumentView",
+        "RecordVersion"
+      ],
+      "header_consumer": "consumer_qcae_document_qcae_document_view_hpp",
+      "bp_case": "BP-06",
+      "limits": [
+        "Tri3 persistence and topology acceptance are pending EXT-03."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-07",
+      "target": "qcae_mesh_editing",
+      "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
+      "public_interfaces": [
+        "prepare_move_node",
+        "prepare_assign_section",
+        "register_handlers"
+      ],
+      "header_consumer": "consumer_qcae_mesh_editing_qcae_mesh_editing_operations_hpp",
+      "bp_case": "BP-07",
+      "limits": [
+        "Batch translation acceptance is pending EXT-02."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-08",
+      "target": "qcae_query",
+      "public_header": "modules/query/include/qcae/query.hpp",
+      "public_interfaces": [
+        "query_entities",
+        "query_references",
+        "query_affected_analyses"
+      ],
+      "header_consumer": "consumer_qcae_query_qcae_query_hpp",
+      "bp_case": "BP-08",
+      "limits": [
+        "Organization projection retains original entity identities."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-09",
+      "target": "qcae_parameters",
+      "public_header": "modules/parameters/include/qcae/quantities.hpp",
+      "public_interfaces": [
+        "convert_quantity",
+        "local_to_global",
+        "ScalarTable1D::evaluate"
+      ],
+      "header_consumer": "consumer_qcae_parameters_qcae_quantities_hpp",
+      "bp_case": "BP-09",
+      "limits": [
+        "This slice covers the fixed unit, coordinate and interpolation cases."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-10",
+      "target": "qcae_engine_api",
+      "public_header": "adapters/engine_api/include/qcae/engine_contributions.hpp",
+      "public_interfaces": [
+        "EngineContribution",
+        "EngineAssembly",
+        "default_engine_contributions"
+      ],
+      "header_consumer": "consumer_qcae_engine_api_qcae_engine_contributions_hpp",
+      "bp_case": "BP-10",
+      "limits": [
+        "Nastran is the only production package; no dynamic plugin runtime."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-11",
+      "target": "qcae_analysis_features",
+      "public_header": "features/analysis/include/qcae/analysis_input.hpp",
+      "public_interfaces": [
+        "FrozenAnalysisInput",
+        "freeze_analysis_input"
+      ],
+      "header_consumer": "consumer_qcae_analysis_features_qcae_analysis_input_hpp",
+      "bp_case": "BP-11",
+      "limits": [
+        "Analysis/load-case records retain explicit Nastran targets; no solver execution."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-12",
+      "target": "qcae_operations",
+      "public_header": "modules/operations/include/qcae/operation_registry.hpp",
+      "public_interfaces": [
+        "OperationRegistry",
+        "OperationDefinition",
+        "OperationContext"
+      ],
+      "header_consumer": "consumer_qcae_operations_qcae_operation_registry_hpp",
+      "bp_case": "BP-12",
+      "limits": [
+        "RecordApplication owns commits, idempotency and undo/redo."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-13",
+      "target": "qcae_vtk_view",
+      "public_header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp",
+      "public_interfaces": [
+        "VtkView::picked",
+        "VtkView::setPreview",
+        "VtkView::applyDelta"
+      ],
+      "header_consumer": "consumer_qcae_vtk_view_qcae_vtk_view_hpp",
+      "bp_case": "BP-13",
+      "limits": [
+        "Real point/line picking is present; Tri3 picking is pending EXT-03."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-14",
+      "target": "qcae_analysis_features",
+      "public_header": "features/analysis/include/qcae/analysis_features.hpp",
+      "public_interfaces": [
+        "CheckService",
+        "CheckReport",
+        "Issue",
+        "issue_state"
+      ],
+      "header_consumer": "consumer_qcae_analysis_features_qcae_analysis_features_hpp",
+      "bp_case": "BP-14",
+      "limits": [
+        "Missing-load and missing-constraint rules are the controlled check set."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-15",
+      "target": "qcae_application",
+      "public_header": "modules/application/include/qcae/record_application.hpp",
+      "public_interfaces": [
+        "RecordApplication::save_document",
+        "RecordApplication::open_migrated_document"
+      ],
+      "header_consumer": "consumer_qcae_application_qcae_record_application_hpp",
+      "bp_case": "BP-15",
+      "limits": [
+        "Local verified export artifacts are present; files and SQLite have distinct publish boundaries."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-16",
+      "target": "qcae_query",
+      "public_header": "modules/query/include/qcae/render_projector.hpp",
+      "public_interfaces": [
+        "RenderContributions",
+        "RenderProjector",
+        "RenderCellSource"
+      ],
+      "header_consumer": "consumer_qcae_query_qcae_render_projector_hpp",
+      "bp_case": "BP-16",
+      "limits": [
+        "Variable-arity render transport is present; no persistent Tri3 is preseeded."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-17",
+      "target": "qcae_desktop_ui",
+      "public_header": "ui/desktop/include/qcae/desktop.hpp",
+      "public_interfaces": [
+        "create_desktop_window",
+        "desktop_pipeline_idle",
+        "run_desktop"
+      ],
+      "header_consumer": "consumer_qcae_desktop_ui_qcae_desktop_hpp",
+      "bp_case": "BP-17",
+      "limits": [
+        "Panels and shortcut preferences are desktop adapters, without document writes."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-18",
+      "target": "qcae_desktop_client",
+      "public_header": "modules/clients/include/qcae/desktop_client.hpp",
+      "public_interfaces": [
+        "DesktopClient::request",
+        "DesktopClient::eventReceived"
+      ],
+      "header_consumer": "consumer_qcae_desktop_client_qcae_desktop_client_hpp",
+      "bp_case": "BP-18",
+      "limits": [
+        "CLI and thin-script IPC reuse one engine; real AI/MCP sessions remain unvalidated."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-19",
+      "target": "qcae_result_features",
+      "public_header": "features/results/include/qcae/result_service.hpp",
+      "public_interfaces": [
+        "FixtureResultService::read",
+        "FixtureResultService::get",
+        "StoredFixtureResult"
+      ],
+      "header_consumer": "consumer_qcae_result_features_qcae_result_service_hpp",
+      "bp_case": "BP-19",
+      "limits": [
+        "Only explicit R fixture values/provenance are accepted; no real solver or complete postprocessing."
+      ],
+      "uniform_final_validation": "pending"
+    },
+    {
+      "ap_id": "AP-20",
+      "target": "qcae_runtime",
+      "public_header": "modules/runtime/include/qcae/task_service.hpp",
+      "public_interfaces": [
+        "TaskService::start",
+        "TaskService::cancel",
+        "TaskService::query",
+        "TaskServiceLimits"
+      ],
+      "header_consumer": "consumer_qcae_runtime_qcae_task_service_hpp",
+      "bp_case": "BP-20",
+      "limits": [
+        "Task workers/queue are bounded; external solver-process recovery is not implemented."
+      ],
+      "uniform_final_validation": "pending"
+    }
+  ]
+}

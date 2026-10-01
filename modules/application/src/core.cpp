@@ -1,4 +1,5 @@
 #include "qcae/record_application.hpp"
+#include "qcae/operation_ledger.hpp"
 #include "application_state.hpp"
 
 #include <algorithm>
@@ -24,21 +25,54 @@ Result<T> failure(Status status, ErrorCode code, const char* message, const char
     return {status, std::nullopt, Diagnostic{code, message, field}};
 }
 
-std::string scoped_key(const Caller& caller, const std::string& operation, const std::string& key) {
-    return std::to_string(caller.principal.size()) + ":" + caller.principal +
-           std::to_string(operation.size()) + ":" + operation + std::to_string(key.size()) + ":" +
-           key;
+void append_metadata(std::string& to, std::string_view part) {
+    const auto size = to.size();
+    const auto capacity = to.capacity();
+    try {
+        to.append(part);
+        ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, part.size());
+        if (to.capacity() != capacity)
+            ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, size);
+    } catch (...) {
+        ledger::unknown(ledger::Stage::application, ledger::Metric::metadata_copy_bytes);
+        throw;
+    }
+}
+std::string metadata_number(std::uint64_t value) {
+    try {
+        auto result = std::to_string(value);
+        ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, result.size());
+        return result;
+    } catch (...) {
+        ledger::unknown(ledger::Stage::application, ledger::Metric::metadata_copy_bytes);
+        throw;
+    }
 }
 
-void append_part(std::string& to, const std::string& part) {
-    to += std::to_string(part.size()) + ":" + part;
+void append_part(std::string& to, std::string_view part) {
+    append_metadata(to, metadata_number(part.size()));
+    append_metadata(to, ":");
+    append_metadata(to, part);
+}
+std::string scoped_key(const Caller& caller, const std::string& operation, const std::string& key) {
+    std::string result;
+    append_part(result, caller.principal);
+    append_part(result, operation);
+    append_part(result, key);
+    return result;
 }
 
 std::string context_signature(const WriteContext& context) {
     std::string result;
     append_part(result, context.document.id.value);
     append_part(result, context.document.epoch.value);
-    append_part(result, std::to_string(context.expected_revision));
+    append_part(result, metadata_number(context.expected_revision));
+    return result;
+}
+std::string operation_scope(std::string_view operation) {
+    std::string result;
+    append_metadata(result, "execute:");
+    append_metadata(result, operation);
     return result;
 }
 
@@ -56,7 +90,7 @@ commit_signature(const WriteContext& context, const PreviewId& preview, const Pr
     append_part(result, prepared.create ? "create" : "set");
     append_part(result, prepared.entity.value);
     append_part(result, prepared.name);
-    append_part(result, std::to_string(std::bit_cast<std::uint64_t>(prepared.modulus)));
+    append_part(result, metadata_number(std::bit_cast<std::uint64_t>(prepared.modulus)));
     return result;
 }
 
@@ -70,13 +104,29 @@ struct ProjectLeaseGuard {
     }
 };
 
+std::string allocated_id(std::string_view nonce, std::uint64_t& next_id, std::string_view prefix) {
+    std::string result;
+    append_metadata(result, prefix);
+    append_metadata(result, "-");
+    append_metadata(result, nonce);
+    append_metadata(result, "-");
+    append_metadata(result, metadata_number(next_id++));
+    return result;
+}
 std::string new_id(Data& data, const char* prefix) {
-    return std::string(prefix) + "-" + data.application_nonce + "-" +
-           std::to_string(data.next_id++);
+    return allocated_id(data.application_nonce, data.next_id, prefix);
 }
 
 bool same_document(const DocumentRef& a, const DocumentRef& b) {
     return a.id == b.id && a.epoch == b.epoch;
+}
+void observe_info_copy(const DocumentInfo& info) {
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(DocumentInfo) + info.document.id.value.size() +
+                    info.document.epoch.value.size() + info.content_state.size() +
+                    info.name.size() + info.project_id.size() + info.saved_path.size() +
+                    info.saved_content_state.size());
 }
 
 template <class T>
@@ -103,27 +153,23 @@ std::optional<Result<T>> check_revision(const Data& data, const WriteContext& co
 }
 
 ChangeReceipt current_receipt(const Data& data, ChangeReceipt recorded, bool replayed) {
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(ChangeReceipt) + recorded.transaction.value.size() +
+                    recorded.current_content_state.size() + recorded.primary_entity.value.size());
     recorded.current_revision = data.document->revision;
     recorded.current_content_state = data.document->content_state;
     recorded.replayed = replayed;
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(recorded.current_revision) + recorded.current_content_state.size() +
+                    sizeof(recorded.replayed));
     return recorded;
-}
-
-Result<ChangePreview> stage_preview(Data& data, Prepared prepared) {
-    Data candidate = data;
-    PreviewId id(new_id(candidate, "preview"));
-    ChangePreview response{
-        id, prepared.context, prepared.entity, prepared.modulus, prepared.create};
-    candidate.previews.emplace(id.value, std::move(prepared));
-    auto result = success(std::move(response));
-    using std::swap;
-    swap(data, candidate);
-    return result;
 }
 
 void drop_expired_previews(Data& data) {
     for (auto it = data.previews.begin(); it != data.previews.end();) {
-        if (it->second.context.expected_revision != data.document->revision)
+        if (it->second->context.expected_revision != data.document->revision)
             it = data.previews.erase(it);
         else
             ++it;
@@ -161,6 +207,7 @@ void append_change_journal(Data& candidate,
                        sizeof(CommittedRecordChange) + entry->document.id.value.size() +
                        entry->document.epoch.value.size() + entry->transaction.value.size();
     candidate.stats.metadata_bytes_copied += bytes;
+    ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, bytes);
     candidate.journal_stats.metadata_bytes_copied += bytes;
     ++candidate.journal_stats.entries_published;
     candidate.journal_stats.records_referenced += history->changes.records.size();
@@ -186,7 +233,8 @@ struct RecordApplication::State {
                                  const std::string&,
                                  const CommitOwnedRows&,
                                  const std::string& operation_name = "commit",
-                                 const std::optional<std::string>& direct_signature = {});
+                                 const std::string* direct_signature = nullptr,
+                                 const std::string* direct_key = nullptr);
 };
 
 RecordApplication::RecordApplication(RecordApplicationOptions options)
@@ -236,7 +284,7 @@ Result<DocumentInfo> RecordApplication::create_document(const Caller& caller,
         current.limits.max_idempotency_records)
         return failure<DocumentInfo>(
             Status::failed, ErrorCode::resource_limit, "Idempotency record limit reached");
-    Data candidate = current;
+    Data candidate = copy_data(current);
     DocumentInfo info;
     info.document.id = DocumentId(new_id(candidate, "doc"));
     info.document.epoch = DocumentEpoch(new_id(candidate, "epoch"));
@@ -262,6 +310,7 @@ Result<RecordSnapshot> RecordApplication::snapshot(const DocumentRef& ref) const
     std::lock_guard lock(state_->mutex);
     if (auto error = check_document<RecordSnapshot>(state_->data, ref))
         return *error;
+    observe_info_copy(*state_->data.document);
     return success(RecordSnapshot{state_->data.records, *state_->data.document});
 }
 Result<RecordChangeBatch> RecordApplication::changes_since(const DocumentRef& ref,
@@ -307,6 +356,7 @@ Result<RecordChangeBatch> RecordApplication::changes_since(const DocumentRef& re
         bytes += sizeof(CommittedRecordChange) + entry.document.id.value.size() +
                  entry.document.epoch.value.size() + entry.transaction.value.size();
     state_->data.stats.metadata_bytes_copied += bytes;
+    ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, bytes);
     state_->data.journal_stats.metadata_bytes_copied += bytes;
     return success(std::move(batch));
 }
@@ -339,29 +389,34 @@ Result<ChangePreview> RecordApplication::State::prepare(const Caller& caller,
     if (current.previews.size() >= current.limits.max_previews)
         return failure<ChangePreview>(
             Status::failed, ErrorCode::resource_limit, "Preview limit reached");
-    Data candidate = current;
+    auto next_id = current.next_id;
+    const auto allocate_id = [&](const char* prefix) {
+        return allocated_id(current.application_nonce, next_id, prefix);
+    };
     try {
         auto result = handler(current.records, [&] {
             EntityId id;
             do {
-                id = EntityId(new_id(candidate, "entity"));
-            } while (candidate.records.find_identity(id.value));
+                id = EntityId(allocate_id("entity"));
+            } while (current.records.find_identity(id.value));
             return id;
         });
         if (!result.ok())
             return {result.status, {}, result.error};
         auto& operation = *result.value;
-        if (!same_record_version(operation.change.base, current.records.version()))
+        if (!current.records.matches_version(operation.change.base))
             return failure<ChangePreview>(Status::conflict,
                                           ErrorCode::revision_conflict,
                                           "Prepared change base does not match");
-        if (auto error = validate_candidate(operation.change.candidate, candidate))
+        validate_record_candidate(
+            current.records, operation.change.candidate, operation.change.changes);
+        if (auto error = validate_candidate(operation.change.candidate, current))
             return {Status::failed, {}, error};
-        if (!profiles_supported(operation.change.candidate, *candidate.options))
+        if (!profiles_supported(operation.change.candidate, *current.options))
             return failure<ChangePreview>(Status::failed,
                                           ErrorCode::schema_unsupported,
                                           "Prepared change requires an unavailable solver profile");
-        candidate.stats += operation.change.stats;
+        const auto stats = operation.change.stats;
         Prepared prepared{caller,
                           context,
                           operation.creates_entity,
@@ -370,9 +425,24 @@ Result<ChangePreview> RecordApplication::State::prepare(const Caller& caller,
                           operation.normalized_value,
                           std::make_shared<const PreparedRecordChange>(std::move(operation.change)),
                           operation.label};
-        auto response = stage_preview(candidate, std::move(prepared));
-        using std::swap;
-        swap(state_->data, candidate);
+        const PreviewId id(allocate_id("preview"));
+        auto response = success(ChangePreview{
+            id, prepared.context, prepared.entity, prepared.modulus, prepared.create});
+        const auto copied = sizeof(Prepared) + prepared.caller.principal.size() +
+                            prepared.context.document.id.value.size() +
+                            prepared.context.document.epoch.value.size() +
+                            prepared.entity.value.size() + prepared.name.size() +
+                            prepared.label.size() + sizeof(ChangePreview) + id.value.size() +
+                            prepared.context.document.id.value.size() +
+                            prepared.context.document.epoch.value.size() +
+                            prepared.entity.value.size() + sizeof(std::string) + id.value.size();
+        // The candidate and response are complete before this single strong-guarantee insert.
+        // Publishing the transient ID counter/statistics after insertion cannot throw.
+        auto payload = std::make_shared<const Prepared>(std::move(prepared));
+        state_->data.previews.emplace(id.value, std::move(payload));
+        state_->data.next_id = next_id;
+        state_->data.stats += stats;
+        ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, copied);
         return response;
     } catch (const RecordError& error) {
         return {Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
@@ -393,14 +463,14 @@ Result<ChangeReceipt> RecordApplication::commit_with_rows(const Caller& caller,
     std::lock_guard lock(state_->mutex);
     return state_->commit(caller, context, preview_id, idempotency_key, owned);
 }
-Result<ChangeReceipt>
-RecordApplication::State::commit(const Caller& caller,
-                                 const WriteContext& context,
-                                 const PreviewId& preview_id,
-                                 const std::string& idempotency_key,
-                                 const CommitOwnedRows& owned,
-                                 const std::string& operation_name,
-                                 const std::optional<std::string>& direct_signature) {
+Result<ChangeReceipt> RecordApplication::State::commit(const Caller& caller,
+                                                       const WriteContext& context,
+                                                       const PreviewId& preview_id,
+                                                       const std::string& idempotency_key,
+                                                       const CommitOwnedRows& owned,
+                                                       const std::string& operation_name,
+                                                       const std::string* direct_signature,
+                                                       const std::string* direct_key) {
     auto* state_ = this;
     const Data& current = state_->data;
     if (blank(caller.principal) || blank(idempotency_key))
@@ -409,7 +479,9 @@ RecordApplication::State::commit(const Caller& caller,
                                       "Caller and idempotency key are required");
     if (auto error = check_document<ChangeReceipt>(current, context.document))
         return *error;
-    const auto key = scoped_key(caller, operation_name, idempotency_key);
+    const auto computed_key =
+        direct_key ? std::string{} : scoped_key(caller, operation_name, idempotency_key);
+    const auto& key = direct_key ? *direct_key : computed_key;
     const auto existing = current.operations.find(key);
     if (existing != current.operations.end()) {
         // A completed operation survives preview eviction and undo. Its stored signature
@@ -435,7 +507,7 @@ RecordApplication::State::commit(const Caller& caller,
                                       ErrorCode::preview_expired,
                                       "Preview is unavailable or expired",
                                       "preview_id");
-    const Prepared& prepared = preview->second;
+    const Prepared& prepared = *preview->second;
     if (prepared.caller.principal != caller.principal)
         return failure<ChangeReceipt>(Status::conflict,
                                       ErrorCode::preview_expired,
@@ -454,7 +526,7 @@ RecordApplication::State::commit(const Caller& caller,
     if (current.cursor >= current.limits.max_history_entries)
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::resource_limit, "History entry limit reached");
-    Data candidate = current;
+    Data candidate = copy_data(current);
     for (std::size_t i = candidate.cursor; i < candidate.history.size(); ++i)
         candidate.pending.push_back(
             {{StoreSpace::history_entry, candidate.history[i]->transaction.value}, {}});
@@ -462,12 +534,15 @@ RecordApplication::State::commit(const Caller& caller,
     if (!prepared.after)
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::invalid_input, "Preview has no candidate model");
-    if (!same_record_version(prepared.after->base, current.records.version()))
+    if (!current.records.matches_version(prepared.after->base))
         return failure<ChangeReceipt>(
             Status::conflict, ErrorCode::revision_conflict, "Prepared change base changed");
     try {
-        candidate.records = apply_record_changes(
-            current.records, prepared.after->changes, RecordDirection::forward, &candidate.stats);
+        validate_record_candidate(
+            current.records, prepared.after->candidate, prepared.after->changes);
+        // The immutable candidate was produced from this exact checked base version. Reuse
+        // its pages instead of copying the same dirty page again during commit.
+        candidate.records = prepared.after->candidate;
     } catch (const RecordError& error) {
         return {Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
     }
@@ -496,16 +571,31 @@ RecordApplication::State::commit(const Caller& caller,
                           candidate.document->content_state,
                           false};
     receipt.primary_entity = prepared.entity;
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::metadata_copy_bytes,
+                sizeof(ChangeReceipt) + transaction.value.size() +
+                    receipt.current_content_state.size() + prepared.entity.value.size());
     try {
         if (owned)
             queue_owned_rows(candidate, owned(receipt));
     } catch (const RecordError& error) {
         return {Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
     }
-    candidate.operations.emplace(
-        key,
-        RecordedOperation{
-            direct_signature.value_or(commit_signature(context, preview_id, prepared)), receipt});
+    RecordedOperation recorded{direct_signature ? *direct_signature
+                                                : commit_signature(context, preview_id, prepared),
+                               receipt};
+    // Encode the new immutable fact once, before insertion. Its receipt/signature
+    // still have their own initial clones; persist need not clone and replace it.
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::metadata_copy_bytes,
+                (direct_signature ? recorded.signature.size() : 0) +
+                    recorded.receipt.transaction.value.size() +
+                    recorded.receipt.current_content_state.size() +
+                    recorded.receipt.primary_entity.value.size());
+    recorded.encoded = encode_operation_record(recorded);
+    candidate.pending.push_back({{StoreSpace::operation_fact, key}, recorded.encoded});
+    ledger::add(ledger::Stage::application, ledger::Metric::metadata_copy_bytes, key.size());
+    candidate.operations.emplace(key, std::move(recorded));
     drop_expired_previews(candidate);
     auto result = success(std::move(receipt));
     append_change_journal(candidate,
@@ -518,6 +608,10 @@ RecordApplication::State::commit(const Caller& caller,
         return {Status::failed, std::nullopt, std::move(error)};
     using std::swap;
     swap(state_->data, candidate);
+    ledger::cover(ledger::Stage::application);
+    ledger::add(ledger::Stage::application,
+                ledger::Metric::changed_records,
+                prepared.after->changes.records.size());
     return result;
 }
 
@@ -537,7 +631,7 @@ Result<ChangeReceipt> RecordApplication::execute(const Caller& caller,
             "Caller, operation, input signature, handler and key are required");
     if (auto error = check_document<ChangeReceipt>(state_->data, context.document))
         return *error;
-    const auto scope = "execute:" + operation_name;
+    const auto scope = operation_scope(operation_name);
     auto signature = context_signature(context);
     append_part(signature, normalized_signature);
     const auto key = scoped_key(caller, scope, idempotency_key);
@@ -569,7 +663,7 @@ Result<ChangeReceipt> RecordApplication::execute(const Caller& caller,
         }
     } release{state_->data, preview.value->id.value};
     return state_->commit(
-        caller, context, preview.value->id, idempotency_key, owned, scope, signature);
+        caller, context, preview.value->id, idempotency_key, owned, scope, &signature, &key);
 }
 Result<ChangeReceipt> RecordApplication::action_outcome(const Caller& caller,
                                                         const DocumentRef& document,
@@ -578,7 +672,7 @@ Result<ChangeReceipt> RecordApplication::action_outcome(const Caller& caller,
     std::lock_guard lock(state_->mutex);
     if (auto error = check_document<ChangeReceipt>(state_->data, document))
         return *error;
-    const auto key = scoped_key(caller, "execute:" + operation_name, idempotency_key);
+    const auto key = scoped_key(caller, operation_scope(operation_name), idempotency_key);
     const auto found = state_->data.operations.find(key);
     if (found == state_->data.operations.end())
         return failure<ChangeReceipt>(
@@ -589,16 +683,30 @@ Result<ChangeReceipt> RecordApplication::action_outcome(const Caller& caller,
 Result<bool> RecordApplication::update_owned_rows(const Caller& caller,
                                                   const DocumentRef& document,
                                                   std::span<const OwnedRowUpdate> updates) {
+    return update_owned_rows_checked(caller, document, {}, updates);
+}
+Result<bool> RecordApplication::update_owned_rows(const Caller& caller,
+                                                  const WriteContext& context,
+                                                  std::span<const OwnedRowUpdate> updates) {
+    return update_owned_rows_checked(caller, context.document, context.expected_revision, updates);
+}
+Result<bool> RecordApplication::update_owned_rows_checked(const Caller& caller,
+                                                          const DocumentRef& document,
+                                                          std::optional<Revision> revision,
+                                                          std::span<const OwnedRowUpdate> updates) {
     std::lock_guard lock(state_->mutex);
     if (blank(caller.principal))
         return failure<bool>(Status::needs_input, ErrorCode::missing_input, "Caller is required");
     if (auto error = check_document<bool>(state_->data, document))
         return *error;
+    if (revision)
+        if (auto error = check_revision<bool>(state_->data, {document, *revision}))
+            return *error;
     if (state_->data.save_intent)
         return failure<bool>(Status::conflict,
                              ErrorCode::storage_uncertain,
                              "Save intent needs reconciliation before side-row writes");
-    Data candidate = state_->data;
+    Data candidate = copy_data(state_->data);
     try {
         queue_owned_rows(candidate, updates);
         if (auto error =
@@ -623,6 +731,35 @@ Result<std::vector<std::shared_ptr<const OwnedRowImage>>> RecordApplication::own
     for (const auto& [key, row] : *state_->data.owned_rows)
         if (key.space == space && row->owner == owner)
             result.push_back(row);
+    return success(std::move(result));
+}
+
+Result<OwnedRowPage> RecordApplication::owned_rows_with_prefix(const DocumentRef& document,
+                                                               StoreSpace space,
+                                                               std::string_view prefix,
+                                                               std::size_t limit) const {
+    std::lock_guard lock(state_->mutex);
+    if (auto error = check_document<OwnedRowPage>(state_->data, document))
+        return *error;
+    if (prefix.empty() || prefix.size() > 256 || prefix.find('\0') != std::string_view::npos ||
+        limit == 0 || limit > 32)
+        return failure<OwnedRowPage>(
+            Status::failed,
+            ErrorCode::invalid_input,
+            "Owned-row prefix queries require a bounded identity and limit.",
+            "identity_prefix");
+    OwnedRowPage result;
+    result.rows.reserve(limit);
+    const auto& rows = *state_->data.owned_rows;
+    for (auto row = rows.lower_bound({space, std::string(prefix)}); row != rows.end(); ++row) {
+        if (row->first.space != space || !row->first.identity.starts_with(prefix))
+            break;
+        if (result.rows.size() == limit) {
+            result.overflow = true;
+            break;
+        }
+        result.rows.push_back(row->second);
+    }
     return success(std::move(result));
 }
 
@@ -665,7 +802,7 @@ Result<ChangeReceipt> move_history(Data& data,
     if (data.host_operations.size() + data.operations.size() >= data.limits.max_idempotency_records)
         return failure<ChangeReceipt>(
             Status::failed, ErrorCode::resource_limit, "Idempotency record limit reached");
-    Data candidate = data;
+    Data candidate = copy_data(data);
     const auto changed_history = candidate.history[undo ? candidate.cursor - 1 : candidate.cursor];
     if (undo) {
         queue_changes(
@@ -799,6 +936,7 @@ Result<DocumentInfo> RecordApplication::current_document() const {
     if (!data.document || data.recoverable)
         return failure<DocumentInfo>(
             Status::failed, ErrorCode::document_not_found, "No active document");
+    observe_info_copy(*data.document);
     return success(*data.document);
 }
 Result<DocumentInfo> RecordApplication::host_operation(const Caller& caller,
@@ -809,8 +947,8 @@ Result<DocumentInfo> RecordApplication::host_operation(const Caller& caller,
         return failure<DocumentInfo>(
             Status::needs_input, ErrorCode::missing_input, "Caller and key are required");
     if (operation_name != "create_document" && operation_name != "open_document" &&
-        operation_name != "recover_document" && operation_name != "save_document" &&
-        operation_name != "close_document")
+        operation_name != "migrate_document" && operation_name != "recover_document" &&
+        operation_name != "save_document" && operation_name != "close_document")
         return failure<DocumentInfo>(
             Status::failed, ErrorCode::invalid_input, "Unknown host operation");
     const auto key = scoped_key(caller, operation_name, idempotency_key);
@@ -823,14 +961,39 @@ Result<DocumentInfo> RecordApplication::host_operation(const Caller& caller,
 Result<DocumentInfo> RecordApplication::open_document(const Caller& caller,
                                                       const std::string& path,
                                                       const std::string& idempotency_key) {
+    return open_document_impl(caller, path, idempotency_key, nullptr);
+}
+Result<DocumentInfo>
+RecordApplication::open_migrated_document(const Caller& caller,
+                                          const std::string& source_path,
+                                          const std::string& idempotency_key,
+                                          const ProjectRecordMigration& migration) {
+    if (blank(migration.signature) || !migration.prepare)
+        return failure<DocumentInfo>(Status::needs_input,
+                                     ErrorCode::missing_input,
+                                     "Explicit migration semantics and preparation are required");
+    return open_document_impl(caller, source_path, idempotency_key, &migration);
+}
+Result<DocumentInfo>
+RecordApplication::open_document_impl(const Caller& caller,
+                                      const std::string& path,
+                                      const std::string& idempotency_key,
+                                      const ProjectRecordMigration* migration) {
     std::lock_guard lock(state_->mutex);
     if (blank(caller.principal) || blank(path) || blank(idempotency_key))
         return failure<DocumentInfo>(
             Status::needs_input, ErrorCode::missing_input, "Caller, path and key are required");
-    const auto key = scoped_key(caller, "open_document", idempotency_key);
+    const auto operation = migration ? "migrate_document" : "open_document";
+    std::string signature = path;
+    if (migration) {
+        signature.clear();
+        append_part(signature, path);
+        append_part(signature, migration->signature);
+    }
+    const auto key = scoped_key(caller, operation, idempotency_key);
     if (const auto existing = state_->data.host_operations.find(key);
         existing != state_->data.host_operations.end()) {
-        if (existing->second.signature != path)
+        if (existing->second.signature != signature)
             return failure<DocumentInfo>(Status::conflict,
                                          ErrorCode::idempotency_key_conflict,
                                          "Key was used with another path");
@@ -850,8 +1013,17 @@ Result<DocumentInfo> RecordApplication::open_document(const Caller& caller,
         const auto canonical = state_->store->acquire_project(path);
         ProjectLeaseGuard lease{state_->store.get(), ""};
         const auto project = state_->store->read_project(canonical);
-        Data candidate = state_->data;
+        Data candidate = copy_data(state_->data);
         Data opened = decode_project(project.payload, candidate.options);
+        if (migration) {
+            auto prepared = migration->prepare(opened.records);
+            if (!same_record_version(prepared.base, opened.records.version()))
+                throw RecordError(ErrorCode::revision_conflict, "Migration base does not match");
+            validate_record_candidate(opened.records, prepared.candidate, prepared.changes);
+            if (auto error = validate_candidate(prepared.candidate, opened))
+                return {Status::failed, {}, error};
+            opened.records = std::move(prepared.candidate);
+        }
         if (!profiles_supported(opened.records, *state_->data.options))
             return failure<DocumentInfo>(Status::failed,
                                          ErrorCode::schema_unsupported,
@@ -871,18 +1043,27 @@ Result<DocumentInfo> RecordApplication::open_document(const Caller& caller,
         info.document.epoch = DocumentEpoch(new_id(candidate, "epoch"));
         info.saved_path = canonical;
         info.saved_content_state = info.content_state;
+        if (migration) {
+            // An explicit migration creates an unsaved document. It never retains the
+            // source lease or makes an ordinary save overwrite the old-format input.
+            info.saved_path.clear();
+            // Retain the source content marker as the clean comparison point. The
+            // new initial history state below is migrated, so clearing both markers
+            // would incorrectly make the unsaved migration clean.
+            info.content_state = new_id(candidate, "state");
+        }
         info.durable = true;
         candidate.document = info;
         candidate.change_journal.reset();
         candidate.initial_content_state = info.content_state;
         update_document(candidate);
-        candidate.host_operations.emplace(key, HostOperation{path, *candidate.document});
+        candidate.host_operations.emplace(key, HostOperation{signature, *candidate.document});
         if (auto error =
                 persist(candidate, state_->records.get(), state_->generation, state_->poisoned))
             return {Status::failed, std::nullopt, std::move(error)};
         using std::swap;
         swap(state_->data, candidate);
-        state_->store->release_projects_except(canonical);
+        state_->store->release_projects_except(migration ? "" : canonical);
         lease.release = false;
         return success(*state_->data.document);
     } catch (const RecordError& error) {
@@ -933,7 +1114,7 @@ Result<DocumentInfo> RecordApplication::recover_document(const Caller& caller,
         return failure<DocumentInfo>(
             Status::failed, ErrorCode::resource_limit, "Operation record limit reached");
     try {
-        Data candidate = state_->data;
+        Data candidate = copy_data(state_->data);
         if (!profiles_supported(candidate.records, *state_->data.options))
             return failure<DocumentInfo>(Status::failed,
                                          ErrorCode::schema_unsupported,
@@ -1040,7 +1221,7 @@ Result<DocumentInfo> RecordApplication::save_document(const Caller& caller,
         ProjectLeaseGuard lease{state_->store.get(),
                                 state_->data.save_intent ? state_->data.save_intent->path
                                                          : state_->data.document->saved_path};
-        Data candidate = state_->data;
+        Data candidate = copy_data(state_->data);
         if (candidate.save_intent)
             lease.release = false; // Retain both source and pending target leases.
         if (candidate.save_intent && (candidate.save_intent->host_key != key ||
@@ -1167,7 +1348,7 @@ Result<DocumentInfo> RecordApplication::close_document(const Caller& caller,
     if (state_->data.save_intent)
         return failure<DocumentInfo>(
             Status::conflict, ErrorCode::storage_uncertain, "Save intent needs reconciliation");
-    Data candidate = state_->data;
+    Data candidate = copy_data(state_->data);
     const auto result = *candidate.document;
     candidate.change_journal.reset();
     candidate.host_operations.emplace(key, HostOperation{signature, result});

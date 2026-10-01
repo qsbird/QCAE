@@ -1,0 +1,17 @@
+ASA-recognized-metadata ok=1
+ASA-grid-zero-not-control ok=0 error=Result GRID is absent or duplicated in the frozen map
+ASA-wrong-subcase ok=0 error=F06 subcase differs from the frozen case
+ASA-malformed-subcase ok=0 error=F06 subcase header is malformed
+ASA-invalid-header ok=0 error=The nodal result header is unsupported
+ASA-unknown-MPC ok=0 error=The nodal result row is truncated or unsupported
+ASA-numbered-echo ok=0 error=A result table lacks explicit subcase provenance
+ASA-fatal-message ok=0 error=F06 contains a solver fatal message
+ASA-fresh-case-after-page ok=1
+ASA-no-fresh-case-after-page ok=0 error=A result table lacks explicit subcase provenance
+ASA-unknown-GRID-row ok=0 error=Result GRID is absent or duplicated in the frozen map
+ASA-invalid-signed-row ok=0 error=Result GRID is absent or duplicated in the frozen map
+ASA-print-control-on-grid-row ok=0 error=The nodal result row is truncated or unsupported
+ASA-END-complete ok=1
+ASA-result-after-END ok=0 error=A result table lacks explicit subcase provenance
+ASA-fresh-case-after-END ok=0 error=F06 subcase header is malformed
+PASS: 16 controlled ASA/page/row boundaries

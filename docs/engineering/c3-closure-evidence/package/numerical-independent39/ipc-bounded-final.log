@@ -1,0 +1,167 @@
+{
+  "passed": true,
+  "scenarios": [
+    {
+      "mode": "success",
+      "execution": "exited",
+      "task_state": "failed",
+      "cross_row_negative_cases": 8
+    },
+    {
+      "mode": "corrupt",
+      "execution": "exited",
+      "task_state": "failed",
+      "cross_row_negative_cases": 0
+    },
+    {
+      "mode": "missing",
+      "execution": "exited",
+      "task_state": "failed",
+      "cross_row_negative_cases": 0
+    },
+    {
+      "mode": "slow",
+      "execution": "exited",
+      "task_state": "failed",
+      "cross_row_negative_cases": 0
+    },
+    {
+      "mode": "ignore-term",
+      "execution": "cancelled",
+      "task_state": "cancelled",
+      "cross_row_negative_cases": 0
+    },
+    {
+      "mode": "restart",
+      "unknown_recovery": true,
+      "rerun": false
+    }
+  ],
+  "parsed_test_process_scenarios": [
+    {
+      "mode": "parsed-success",
+      "task_state": "succeeded",
+      "parsing": "parsed",
+      "fields": 2,
+      "numerical_validation": "not_run",
+      "cross_row_negative_cases": 5,
+      "published_recovery": true
+    },
+    {
+      "mode": "parsed-wrongcase",
+      "task_state": "failed",
+      "parsing": "failed",
+      "zero_partial_publication": true,
+      "numerical_validation": "not_run"
+    },
+    {
+      "mode": "parsed-damaged",
+      "task_state": "failed",
+      "parsing": "failed",
+      "zero_partial_publication": true,
+      "numerical_validation": "not_run"
+    },
+    {
+      "mode": "parsed-wrongphysics",
+      "task_state": "succeeded",
+      "parsing": "parsed",
+      "fields": 2,
+      "numerical_validation": "not_run",
+      "cross_row_negative_cases": 0,
+      "published_recovery": false
+    },
+    {
+      "mode": "parsed-stale",
+      "task_state": "succeeded",
+      "parsing": "parsed",
+      "fields": 2,
+      "numerical_validation": "not_run",
+      "cross_row_negative_cases": 0,
+      "published_recovery": false
+    },
+    {
+      "mode": "parsed-stage-failure",
+      "task_state": "failed",
+      "parsing": "parsed",
+      "durable_intent": true,
+      "reconcile_rejected": true,
+      "numerical_validation": "not_run"
+    }
+  ],
+  "publication_rollback": {
+    "mode": "parsed-db-rollback",
+    "filesystem_published": true,
+    "first_task_state": "outcome_unknown",
+    "reconciled_task_state": "succeeded",
+    "reconcile_negative_cases": 6,
+    "rerun": false
+  },
+  "synthetic_numerical_comparisons": [
+    {
+      "mode": "numeric-match",
+      "components": 132,
+      "comparison": "matched",
+      "check_kind": "synthetic_comparison",
+      "numerical_stage": "not_run",
+      "portable_negative_cases": 7,
+      "real_solver": false
+    },
+    {
+      "mode": "numeric-wrongdirection",
+      "components": 132,
+      "comparison": "mismatch",
+      "check_kind": "synthetic_comparison",
+      "numerical_stage": "not_run",
+      "portable_negative_cases": 0,
+      "real_solver": false
+    },
+    {
+      "mode": "numeric-wrongreaction",
+      "components": 132,
+      "comparison": "mismatch",
+      "check_kind": "synthetic_comparison",
+      "numerical_stage": "not_run",
+      "portable_negative_cases": 0,
+      "real_solver": false
+    },
+    {
+      "mode": "numeric-zero",
+      "components": 132,
+      "comparison": "mismatch",
+      "check_kind": "synthetic_comparison",
+      "numerical_stage": "not_run",
+      "portable_negative_cases": 0,
+      "real_solver": false
+    },
+    {
+      "mode": "numeric-boundary",
+      "components": 132,
+      "comparison": "matched",
+      "check_kind": "synthetic_comparison",
+      "numerical_stage": "not_run",
+      "portable_negative_cases": 0,
+      "real_solver": false
+    },
+    {
+      "mode": "numeric-over-boundary",
+      "components": 132,
+      "comparison": "mismatch",
+      "check_kind": "synthetic_comparison",
+      "numerical_stage": "not_run",
+      "portable_negative_cases": 0,
+      "real_solver": false
+    },
+    {
+      "mode": "numeric-stale",
+      "components": 132,
+      "comparison": "matched",
+      "check_kind": "synthetic_comparison",
+      "numerical_stage": "not_run",
+      "portable_negative_cases": 0,
+      "real_solver": false
+    }
+  ],
+  "real_solver": false,
+  "parsing_acceptance": false,
+  "numerical_acceptance": false
+}
