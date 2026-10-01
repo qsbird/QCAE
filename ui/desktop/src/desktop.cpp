@@ -654,6 +654,46 @@ class DesktopWindow : public QMainWindow {
                property("treeDocumentEpoch") == epoch_ && property("treeRevision") == revision_;
     }
 
+    QJsonObject pipelineDiagnostics() const {
+        const QJsonObject rendered =
+            rendered_version_ ? QJsonObject{{"document", rendered_version_->document},
+                                            {"epoch", rendered_version_->epoch},
+                                            {"revision", rendered_version_->revision},
+                                            {"view", rendered_version_->view},
+                                            {"view_revision", rendered_version_->view_revision}}
+                              : QJsonObject{};
+        return {{"created_desktop", true},
+                {"idle", pipelineIdle()},
+                {"client_ready", client_.ready()},
+                {"pending_requests", static_cast<qint64>(client_.pendingRequests())},
+                {"subscription_pending", subscription_pending_},
+                {"current_pending", current_pending_},
+                {"current_queued", current_queued_},
+                {"pending_display_callbacks", static_cast<qint64>(pending_display_callbacks_)},
+                {"view_update_pending", view_update_pending_},
+                {"render_pending", render_pending_},
+                {"queued_hidden", queued_hidden_.has_value()},
+                {"pending_selection", pending_selection_.has_value()},
+                {"pending_selection_evaluating", pending_selection_evaluating_},
+                {"camera_timer_active", camera_update_.isActive()},
+                {"screenshot_timer_active", screenshot_retry_.isActive()},
+                {"viewport_camera_pending", viewport_->pendingCameraUpdate()},
+                {"context_refresh_required", context_refresh_required_},
+                {"viewport_matches_context", viewportMatchesContext()},
+                {"force_full_render", force_full_render_},
+                {"scene_invalidated", scene_invalidated_},
+                {"camera_matches", viewport_->cameraFingerprint() == confirmed_camera_},
+                {"document", document_id_},
+                {"epoch", epoch_},
+                {"revision", revision_},
+                {"view", view_id_},
+                {"view_revision", view_revision_},
+                {"tree_document", property("treeDocumentId").toString()},
+                {"tree_epoch", property("treeDocumentEpoch").toString()},
+                {"tree_revision", property("treeRevision").toString()},
+                {"rendered_version", rendered}};
+    }
+
     void closeEvent(QCloseEvent* event) override {
         if (!smoke_) {
             QSettings settings("QCAE", "Desktop");
@@ -2634,6 +2674,11 @@ QMainWindow* qcae::create_desktop_window(DesktopClient::Options options) {
 bool qcae::desktop_pipeline_idle(const QMainWindow& window) {
     const auto* desktop = dynamic_cast<const DesktopWindow*>(&window);
     return desktop && desktop->pipelineIdle();
+}
+
+QJsonObject qcae::desktop_pipeline_diagnostics(const QMainWindow& window) {
+    const auto* desktop = dynamic_cast<const DesktopWindow*>(&window);
+    return desktop ? desktop->pipelineDiagnostics() : QJsonObject{{"created_desktop", false}};
 }
 
 qcae::SdkCopySnapshot qcae::desktop_sdk_copy_observation(const QMainWindow& window) {

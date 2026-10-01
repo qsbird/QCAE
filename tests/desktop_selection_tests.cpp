@@ -689,6 +689,8 @@ class DesktopSelectionTests : public QObject {
         QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
         QMainWindow unrelated;
         QVERIFY(!qcae::desktop_pipeline_idle(unrelated));
+        QCOMPARE(qcae::desktop_pipeline_diagnostics(unrelated),
+                 QJsonObject({{"created_desktop", false}}));
         const auto updates = engine.requests("view.update").size();
         engine.hold_update = true;
         desktop.viewport->standardView(qcae::VtkView::StandardView::front);
@@ -697,13 +699,22 @@ class DesktopSelectionTests : public QObject {
         QTRY_COMPARE(engine.held_updates.size(), 1);
         QVERIFY(!desktop.viewport->pendingCameraUpdate());
         QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        const auto held = qcae::desktop_pipeline_diagnostics(*desktop.window);
+        QCOMPARE(held.value("idle"), QJsonValue(false));
+        QCOMPARE(held.value("view_update_pending"), QJsonValue(true));
         auto* show_all = action(desktop.window.get(), "Show all");
         QVERIFY(show_all);
         show_all->trigger();
         QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        QCOMPARE(qcae::desktop_pipeline_diagnostics(*desktop.window).value("queued_hidden"),
+                 QJsonValue(true));
         engine.releaseViewUpdates();
         QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
         QVERIFY(engine.requests("view.update").size() >= updates + 2);
+        const auto settled = qcae::desktop_pipeline_diagnostics(*desktop.window);
+        QCOMPARE(settled.value("idle"), QJsonValue(true));
+        QCOMPARE(settled.value("view_update_pending"), QJsonValue(false));
+        QCOMPARE(settled.value("queued_hidden"), QJsonValue(false));
     }
 
     void continuousModelEditUsesSameVersionSummaryAndRows_data() {

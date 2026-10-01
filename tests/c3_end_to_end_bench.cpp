@@ -233,7 +233,11 @@ void wait_for_render(QMainWindow& window, const QJsonObject& info) {
             "; tree epoch=" + window.property("treeDocumentEpoch").toString().toStdString() +
             "; pending requests=" + std::to_string(ui_client->pendingRequests()) +
             "; pipeline idle=" + (desktop_pipeline_idle(window) ? "true" : "false") +
-            "; pending camera=" + (viewport->pendingCameraUpdate() ? "true" : "false"));
+            "; pending camera=" + (viewport->pendingCameraUpdate() ? "true" : "false") +
+            "; pipeline diagnostics=" +
+            QJsonDocument(desktop_pipeline_diagnostics(window))
+                .toJson(QJsonDocument::Compact)
+                .toStdString());
     }
     // Drain queued reply callbacks after all socket requests have completed.
     QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
