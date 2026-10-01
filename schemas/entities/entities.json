@@ -590,6 +590,38 @@
       ],
       "query_kind": "load_case",
       "display_field": "name"
+    },
+    {
+      "id": 4112,
+      "name": "Tri3",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "nodes",
+          "kind": "references",
+          "targets": [
+            "Node"
+          ],
+          "count": 3
+        },
+        {
+          "id": 3,
+          "name": "mesh",
+          "kind": "reference",
+          "targets": [
+            "Mesh"
+          ],
+          "id_type": "MeshId"
+        }
+      ],
+      "maximum_encoded_bytes": 4096,
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "tri3"
     }
   ],
   "relation_rules_version": 1

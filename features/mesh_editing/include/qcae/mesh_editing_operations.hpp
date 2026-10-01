@@ -12,5 +12,6 @@ struct OperationPlan {
 prepare_translate_nodes(const operations::NodeTranslateBatchInput&);
 [[nodiscard]] Result<OperationPlan>
 prepare_assign_section(const operations::BeamAssignSectionInput&);
+[[nodiscard]] Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input&);
 [[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
 } // namespace qcae::features::mesh_editing

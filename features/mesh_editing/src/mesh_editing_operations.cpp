@@ -154,6 +154,38 @@ Result<OperationPlan> prepare_translate_nodes(const operations::NodeTranslateBat
     };
     return success(OperationPlan{*signature.value, std::move(prepare)});
 }
+Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input& input) {
+    const auto nodes = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
+    const auto mesh = wire::entity_id(Value(input.mesh_id.value), "mesh_id");
+    if (!nodes.ok())
+        return {nodes.status, std::nullopt, nodes.error};
+    if (!mesh.ok())
+        return {mesh.status, std::nullopt, mesh.error};
+    if (input.node_ids.size() != 3)
+        return {
+            Status::failed,
+            std::nullopt,
+            Diagnostic{ErrorCode::invalid_input, "Tri3 requires exactly three nodes", "node_ids"}};
+    // Node order is topology: preserve its winding in both storage and retry signatures.
+    const auto signature = canonical_value(InputTraits<MeshCreateTri3Input>::to_value(input));
+    if (!signature.ok())
+        return {signature.status, std::nullopt, signature.error};
+    RecordPrepare prepare = [input, signature = *signature.value](
+                                const DocumentView& view, const RecordIdentityAllocator& allocate) {
+        try {
+            const auto id = allocate();
+            EditSession edit(view);
+            edit.put(records::Tri3{id,
+                                   {input.node_ids[0], input.node_ids[1], input.node_ids[2]},
+                                   records::MeshId(input.mesh_id.value)});
+            return success(RecordPreparedOperation{
+                edit.prepare(), "Create Tri3 topology", id, signature, 0, true});
+        } catch (const RecordError& error) {
+            return failed<RecordPreparedOperation>(error);
+        }
+    };
+    return success(OperationPlan{*signature.value, std::move(prepare)});
+}
 
 Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
     const auto registered = registry.register_typed<NodeMoveInput>(
@@ -177,7 +209,7 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
         });
     if (!translate.ok())
         return translate;
-    return registry.register_typed<NodeTranslateBatchPreviewInput>(
+    const auto batch_preview = registry.register_typed<NodeTranslateBatchPreviewInput>(
         InputTraits<NodeTranslateBatchPreviewInput>::definition(),
         [&app](const OperationContext& context,
                const NodeTranslateBatchPreviewInput& input) -> Result<Value> {
@@ -193,6 +225,13 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
                 {"preview_id", Value(preview.value->id.value)},
                 {"affected_entity_id", Value(preview.value->affected_entity.value)},
                 {"revision", Value(std::to_string(preview.value->context.expected_revision))}}));
+        });
+    if (!batch_preview.ok())
+        return batch_preview;
+    return registry.register_typed<MeshCreateTri3Input>(
+        InputTraits<MeshCreateTri3Input>::definition(),
+        [&app](const OperationContext& context, const MeshCreateTri3Input& input) {
+            return execute(app, context, input, prepare_create_tri3);
         });
 }
 } // namespace qcae::features::mesh_editing

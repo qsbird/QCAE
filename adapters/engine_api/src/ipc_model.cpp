@@ -476,6 +476,17 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
             return op == "entity.query" ? entity_query(id, p, *snapshot.value)
                                         : entity_references(id, p, *snapshot.value);
         }
+        if (op == "model.export_preview") {
+            const auto records = app.record_application().snapshot(ref(r));
+            if (!records.ok())
+                return error(id, records);
+            if (ctx(r).expected_revision != records.value->info.revision)
+                return failure(
+                    id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
+            if (records.value->records.count(RecordTraits<records::Tri3>::type_id))
+                return failure(
+                    id, "UNSUPPORTED_CAPABILITY", "Tri3 shell export is not implemented");
+        }
         const auto snap = app.snapshot(ref(r));
         if (!snap.ok())
             return error(id, snap);

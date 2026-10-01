@@ -350,6 +350,31 @@
           ]
         }
       ]
+    },
+    {
+      "operation_id": "mesh.create_tri3",
+      "version": 1,
+      "schema_id": "qcae.operation.mesh.create_tri3.v1",
+      "type_name": "MeshCreateTri3Input",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "node_ids",
+          "type": "entity_id_array"
+        },
+        {
+          "field_id": 2,
+          "name": "mesh_id",
+          "type": "entity_id"
+        }
+      ]
     }
   ]
 }

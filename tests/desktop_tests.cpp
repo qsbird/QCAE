@@ -234,6 +234,22 @@ class DesktopTests : public QObject {
             QTest::newRow(qPrintable(pick_case.value("id").toString())) << fixture << pick_case;
         }
         qInfo().noquote() << "PICK fixture SHA-256:" << digest;
+        QFile triangles(QFINDTESTDATA("fixtures/vtk-tri3-pick-matrix-v1.json"));
+        QVERIFY(triangles.open(QIODevice::ReadOnly));
+        const auto triangle_bytes = triangles.readAll();
+        const auto triangle_digest =
+            QCryptographicHash::hash(triangle_bytes, QCryptographicHash::Sha256).toHex();
+        QCOMPARE(triangle_digest,
+                 QByteArray("3cf184545acdf140d28718f5b1cc8fd525c93a136a7137105cc3032695d27ac3"));
+        const auto triangle_fixture = QJsonDocument::fromJson(triangle_bytes).object();
+        const auto triangle_cases = triangle_fixture.value("cases").toArray();
+        QCOMPARE(triangle_cases.size(), 4);
+        for (const auto& value : triangle_cases) {
+            const auto pick_case = value.toObject();
+            QTest::newRow(qPrintable(pick_case.value("id").toString()))
+                << triangle_fixture << pick_case;
+        }
+        qInfo().noquote() << "Tri3 PICK fixture SHA-256:" << triangle_digest;
     }
 
     void frozenPointAndLinePickingMatrix() {
@@ -256,7 +272,7 @@ class DesktopTests : public QObject {
                                          coordinates(row.value("position")),
                                          row.value("visible").toBool()});
             }
-        } else {
+        } else if (pick_case.value("topology") == "line") {
             for (const auto& value : fixture.value("lines").toArray()) {
                 const auto row = value.toObject();
                 packet.geometry_lines.push_back(
@@ -264,6 +280,23 @@ class DesktopTests : public QObject {
                      coordinates(row.value("start")),
                      coordinates(row.value("end")),
                      row.value("visible").toBool()});
+            }
+        } else {
+            for (const auto& value : fixture.value("triangles").toArray()) {
+                const auto row = value.toObject();
+                const auto id = row.value("id").toString();
+                const auto base = packet.points.size();
+                for (const auto& point : row.value("positions").toArray()) {
+                    packet.points.push_back(
+                        {qcae::EntityId(
+                             (id + "-node-" + QString::number(packet.points.size())).toStdString()),
+                         coordinates(point),
+                         false});
+                }
+                packet.cells.push_back({qcae::EntityId(id.toStdString()),
+                                        qcae::RenderCellKind::polygon,
+                                        {base, base + 1, base + 2},
+                                        row.value("visible").toBool()});
             }
         }
         qcae::VtkView view;
@@ -291,6 +324,19 @@ class DesktopTests : public QObject {
                 QCOMPARE(camera->GetViewTransformMatrix()->GetElement(row, column),
                          matrix[row * 4 + column].toDouble());
         widget->renderWindow()->Render();
+        if (fixture.contains("device_pixel_ratio")) {
+            QCOMPARE(widget->devicePixelRatioF(), fixture.value("device_pixel_ratio").toDouble());
+            const auto pixels = fixture.value("framebuffer_pixels").toArray();
+            QCOMPARE(widget->renderWindow()->GetSize()[0], pixels[0].toInt());
+            QCOMPARE(widget->renderWindow()->GetSize()[1], pixels[1].toInt());
+            const auto projection = camera_fixture.value("projection_matrix").toArray();
+            auto* actual_projection = camera->GetProjectionTransformMatrix(
+                static_cast<double>(widget->width()) / widget->height(), -1, 1);
+            for (int row = 0; row < 4; ++row)
+                for (int column = 0; column < 4; ++column)
+                    QVERIFY(std::abs(actual_projection->GetElement(row, column) -
+                                     projection[row * 4 + column].toDouble()) < 1e-12);
+        }
         view.setThroughSelection(pick_case.value("through").toBool());
         view.setBoxMode(pick_case.value("box_mode") == "contained"
                             ? qcae::VtkView::BoxMode::contained
@@ -308,9 +354,26 @@ class DesktopTests : public QObject {
         actual.sort();
         expected.sort();
         QCOMPARE(actual, expected);
+        QVERIFY(saveEvidence(widget, pick_case.value("id").toString() + ".png"));
+        if (pick_case.value("topology") == "tri3") {
+            auto stale = deltaFor(packet);
+            stale.base_revision = 0;
+            stale.visibility = {{qcae::RenderPrimitive::cell, 0, packet.cells[0].entity, false}};
+            QVERIFY(!view.applyDelta(stale));
+            stale = deltaFor(packet);
+            stale.base_view_revision = 0;
+            QVERIFY(!view.applyDelta(stale));
+            stale = deltaFor(packet);
+            stale.document.epoch = qcae::DocumentEpoch("expired");
+            QVERIFY(!view.applyDelta(stale));
+            QCOMPARE(view.installedVersion()->revision, packet.revision);
+            QCOMPARE(view.installedVersion()->view_revision, packet.view_revision);
+        }
         qInfo().noquote() << pick_case.value("id").toString()
                           << "device_pixel_ratio=" << widget->devicePixelRatioF()
-                          << "missed=0 extra=0";
+                          << "qt_platform=" << QGuiApplication::platformName()
+                          << "vtk_window=" << widget->renderWindow()->GetClassName()
+                          << "actual_ids=" << actual.join(',') << "missed=0 extra=0";
     }
 
     void asynchronousRepliesRemainCorrelated() {

@@ -92,6 +92,13 @@ RenderContributions default_render_contributions() {
              return RenderCellSource{
                  beam.id, RenderCellKind::polyline, {beam.nodes.begin(), beam.nodes.end()}};
          }});
+    result.add(
+        {RecordTraits<records::Tri3>::type_id, "tri3", [](const Record& record) -> RenderItem {
+             const auto& triangle = record->get<records::Tri3>();
+             return RenderCellSource{triangle.id,
+                                     RenderCellKind::polygon,
+                                     {triangle.nodes.begin(), triangle.nodes.end()}};
+         }});
     result.add({RecordTraits<records::GeometryLine>::type_id,
                 "geometry_line",
                 [](const Record& record) -> RenderItem {

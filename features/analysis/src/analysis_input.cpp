@@ -54,6 +54,10 @@ Result<FrozenAnalysisInput> freeze_analysis_input(const DocumentView& view,
                                                   const ProfileRef& profile,
                                                   std::span<const ExportIdentifier> mapping) {
     try {
+        if (view.count(RecordTraits<records::Tri3>::type_id))
+            invalid(ErrorCode::unsupported_capability,
+                    "Tri3 shell analysis is not implemented",
+                    "tri3");
         const auto record = view.find<records::AnalysisDefinition>(identity);
         if (!record)
             invalid(

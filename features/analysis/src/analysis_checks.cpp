@@ -81,6 +81,10 @@ std::span<const RuleDefinition> RuleCatalog::definitions() const noexcept {
     return detail::cantilever_rules();
 }
 Result<CheckReport> RuleCatalog::check(const DocumentView& view, const EntityId& identity) const {
+    if (view.count(RecordTraits<records::Tri3>::type_id))
+        return failed<CheckReport>(ErrorCode::unsupported_capability,
+                                   "Tri3 shell analysis checks are not implemented",
+                                   "tri3");
     const auto record = view.find<records::AnalysisDefinition>(identity);
     if (!record)
         return failed<CheckReport>(

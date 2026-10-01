@@ -66,6 +66,28 @@ void validate_record(const Beam& value, const DocumentView& view) {
     if (left.mesh != right.mesh || value.mesh != left.mesh)
         invalid("Beam and its nodes must belong to the same mesh", value.id.value);
 }
+void validate_record(const Tri3& value, const DocumentView& view) {
+    std::array<std::array<double, 3>, 3> points{};
+    for (std::size_t index = 0; index < value.nodes.size(); ++index) {
+        const auto record = view.find<Node>(value.nodes[index]);
+        if (!record)
+            invalid("Tri3 node is missing", value.id.value);
+        const auto& node = record->get<Node>();
+        if (!node.mesh || *node.mesh != value.mesh)
+            invalid("Tri3 and its nodes must belong to the same mesh", value.id.value);
+        points[index] = node.position;
+    }
+    // Compute area from the ordered connectivity; both windings have positive magnitude.
+    std::array<long double, 3> a{}, b{};
+    for (std::size_t index = 0; index < 3; ++index) {
+        a[index] = static_cast<long double>(points[1][index]) - points[0][index];
+        b[index] = static_cast<long double>(points[2][index]) - points[0][index];
+    }
+    const auto doubled_area =
+        std::hypot(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]);
+    if (!std::isfinite(doubled_area) || doubled_area <= 0)
+        invalid("Tri3 requires positive finite area", value.id.value);
+}
 void validate_record(const Constraint& value, const DocumentView&) {
     if (value.dofs.find_first_not_of("123456") != std::string::npos ||
         std::set<char>(value.dofs.begin(), value.dofs.end()).size() != value.dofs.size())
