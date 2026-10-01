@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 #if defined(__APPLE__)
 #include <libproc.h>
 #endif
@@ -309,6 +310,16 @@ Result<SolverVersionEvidence> probe_solver_version(const fs::path& executable,
         const auto max_fd = ::sysconf(_SC_OPEN_MAX);
         require(input.get() >= 0 && max_fd > 0 && max_fd <= 1048576,
                 "Version descriptor bound is invalid");
+#if defined(__APPLE__)
+        // Reserve and resolve libproc before fork; the child only uses the kernel snapshot.
+        std::vector<proc_fdinfo> inherited(static_cast<std::size_t>(max_fd));
+        const auto descriptor_bytes = static_cast<int>(inherited.size() * sizeof(proc_fdinfo));
+        const auto preflight =
+            ::proc_pidinfo(::getpid(), PROC_PIDLISTFDS, 0, inherited.data(), descriptor_bytes);
+        require(preflight > 0 && preflight < descriptor_bytes &&
+                    preflight % sizeof(proc_fdinfo) == 0,
+                "Version descriptor snapshot is unavailable or truncated");
+#endif
         char help[] = "help", locale[] = "LANG=C", all[] = "LC_ALL=C";
         const auto executable_text = executable.string(), cwd_text = cwd.string();
         char* argv[] = {const_cast<char*>(executable_text.c_str()), help, nullptr};
@@ -321,9 +332,26 @@ Result<SolverVersionEvidence> probe_solver_version(const fs::path& executable,
                 ::dup2(out_write.get(), STDOUT_FILENO) < 0 ||
                 ::dup2(err_write.get(), STDERR_FILENO) < 0)
                 ::_exit(126);
+#if defined(__APPLE__)
+            // Snapshot the child itself so descriptors opened by other parent threads
+            // before fork are included. Do not allocate or inspect parent state here.
+            const auto descriptor_count =
+                ::proc_pidinfo(::getpid(), PROC_PIDLISTFDS, 0, inherited.data(), descriptor_bytes);
+            if (descriptor_count <= 0 || descriptor_count >= descriptor_bytes ||
+                descriptor_count % sizeof(proc_fdinfo) != 0)
+                ::_exit(126);
+            for (std::size_t index = 0; index < descriptor_count / sizeof(proc_fdinfo); ++index) {
+                const auto fd = inherited[index].proc_fd;
+                if (fd < 0)
+                    ::_exit(126);
+                if (fd >= 3 && fd != gate_read.get())
+                    ::close(fd);
+            }
+#else
             for (int fd = 3; fd < max_fd; ++fd)
                 if (fd != gate_read.get())
                     ::close(fd);
+#endif
             struct rlimit zero{0, 0}, file_limit{65536, 65536}, cpu_limit{2, 2};
             if (::setrlimit(RLIMIT_CORE, &zero) != 0 ||
                 ::setrlimit(RLIMIT_FSIZE, &file_limit) != 0 ||

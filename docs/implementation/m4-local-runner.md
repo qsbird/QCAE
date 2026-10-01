@@ -614,3 +614,32 @@ FREEZE 给 root 统一 build39；独立 library snapshot 不是共同全项目�
 完全重写一致归档/文件的攻击与 trusted binary→exec TOCTOU 仍按前述边界。
 历史报告验证针对原输入，stale 与文件损坏时不声称当前模型或当前文件已
 验收。新检查不更改任何 profilevalidated 全局状态。
+
+## macOS 版本探测描述符隔离修复（2026-10-01）
+
+`e94f2b8` 的完整 ASAN IPC 回归为 79/80；版本探测间歇失败。独立实际
+Result 诊断捕获过 `Version probe timeout`，本机 `_SC_OPEN_MAX=1048575`，
+旧子进程在执行前逐项关闭整个区间。仅拆出不链接 Qt/engine 的小型合成
+可执行文件后，一次通过、第二次仍失败；该失败记录保留，没有据此闭环。
+
+macOS 适配器现于 fork 前分配有界描述符快照缓冲区并预调用既有 libproc；
+子进程读取自身的 `PROC_PIDLISTFDS`，关闭实际继承的描述符，保留标准流
+及原 admission gate。不可用、截断或格式错误的快照拒绝执行。子进程不
+分配缓冲区，父进程其他线程在 fork 前打开的描述符也由子进程快照覆盖。
+Linux 区间关闭路径保持原实现，本轮没有 Linux 执行证据。
+
+测试保留原 21 项断言及 2000ms 默认/100ms 短超时、输出总额、固定环境、
+身份与进程组清理规则。新增可继承的 FD4096，并将首次 macOS 探测的软
+描述符上限暂降至 128、调用后恢复，验证已存在的高编号描述符仍被关闭。
+同一增强测试链接保留的旧 ASAN archives 时实际 exit 1；新源码严格清洁
+构建后连续三次 **23/23、exit 0**。直接向合成 helper 传入 FD4096 时，
+helper 实际拒绝并报告继承泄漏。真实适配器及调用者继续 ASAN/UBSAN，
+仅独立外部合成 helper 不插桩。
+
+原始命令、退出码、输入 SHA 和日志在
+`/private/tmp/qcae-version-descriptors-fix45/actual-commands.json`、
+`old-implementation-counterexample/` 及 `helper-canary-negative/`；之前的
+完整回归及精简 helper 失败分别留在 `qcae-final-sk43` 和
+`qcae-version-fixture-fix44`。设计、232 个 C++ 文件格式及 diff-check 通过。
+这些证据限于本修复的定向验证；全量同源码矩阵、真实 Nastran、数值验收
+和完整 P0 尚未完成。

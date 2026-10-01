@@ -36,9 +36,24 @@ if(QCAE_BUILD_SOLVER_LOCAL)
   target_link_libraries(qcae_engine_api PUBLIC qcae_solver_local)
   target_compile_definitions(qcae_engine_api PRIVATE QCAE_HAS_SOLVER_LOCAL)
   if(BUILD_TESTING)
+    add_executable(qcae_solver_version_fixture "${PROJECT_SOURCE_DIR}/tests/solver_version_fixture.cpp")
+    target_link_libraries(qcae_solver_version_fixture PRIVATE Threads::Threads)
+    target_compile_definitions(qcae_solver_version_fixture PRIVATE
+      QCAE_SOLVER_VERSION_FD_CANARY=$<IF:$<PLATFORM_ID:Darwin>,4096,64>)
+    qcae_warnings(qcae_solver_version_fixture)
+    if(QCAE_ENABLE_SANITIZERS AND NOT MSVC)
+      # This tiny external process models a vendor executable. The probe and
+      # its caller remain sanitized; the fixture has no engine/Qt dependency.
+      target_compile_options(qcae_solver_version_fixture PRIVATE -fno-sanitize=all)
+      target_link_options(qcae_solver_version_fixture PRIVATE -fno-sanitize=all)
+    endif()
     add_executable(qcae_solver_version_probe_tests "${PROJECT_SOURCE_DIR}/tests/solver_version_probe_tests.cpp")
     target_link_libraries(qcae_solver_version_probe_tests PRIVATE qcae_engine_api)
     target_include_directories(qcae_solver_version_probe_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_compile_definitions(qcae_solver_version_probe_tests PRIVATE
+      QCAE_SOLVER_VERSION_FD_CANARY=$<IF:$<PLATFORM_ID:Darwin>,4096,64>
+      QCAE_SOLVER_VERSION_FIXTURE_PATH="$<TARGET_FILE:qcae_solver_version_fixture>")
+    add_dependencies(qcae_solver_version_probe_tests qcae_solver_version_fixture)
     qcae_warnings(qcae_solver_version_probe_tests)
     add_test(NAME solver_version_probe COMMAND qcae_solver_version_probe_tests)
     set_tests_properties(solver_version_probe PROPERTIES TIMEOUT 30)

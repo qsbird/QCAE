@@ -2,10 +2,11 @@
 #include "qcae/artifacts_local.hpp"
 #include <algorithm>
 #include <chrono>
-#include <csignal>
 #include <cstdlib>
+#include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <sys/resource.h>
 #include <thread>
 #include <vector>
 #include <unistd.h>
@@ -14,73 +15,43 @@ namespace {
 namespace fs = std::filesystem;
 using namespace qcae;
 using namespace qcae::ipc;
+class InheritedDescriptorCanary {
+  public:
+    InheritedDescriptorCanary() : fd_(::open("/dev/null", O_RDONLY)) {
+        if (fd_ < 0)
+            throw std::runtime_error("Descriptor canary source is unavailable");
+        const auto next = ::fcntl(fd_, F_DUPFD, QCAE_SOLVER_VERSION_FD_CANARY);
+        ::close(fd_);
+        fd_ = next;
+        if (fd_ != QCAE_SOLVER_VERSION_FD_CANARY) {
+            if (fd_ >= 0)
+                ::close(fd_);
+            fd_ = -1;
+            throw std::runtime_error("Descriptor canary slot is unavailable");
+        }
+    }
+    ~InheritedDescriptorCanary() {
+        ::close(fd_);
+    }
+    InheritedDescriptorCanary(const InheritedDescriptorCanary&) = delete;
+    InheritedDescriptorCanary& operator=(const InheritedDescriptorCanary&) = delete;
+    bool inheritable() const {
+        const auto flags = ::fcntl(fd_, F_GETFD);
+        return flags >= 0 && (flags & FD_CLOEXEC) == 0;
+    }
+
+  private:
+    int fd_;
+};
 void require(bool value, const char* message) {
     if (!value)
         throw std::runtime_error(message);
 }
-int child(std::string_view mode) {
-    require(std::getenv("QCAE_VERSION_TEST_CANARY") == nullptr,
-            "Probe inherited test-only host canary environment");
-    std::cout << "QCAE SYNTHETIC VERSION PROBE\n";
-    if (mode == "synthetic-descendant") {
-        int barrier[2];
-        require(::pipe(barrier) == 0, "Synthetic descendant barrier failed");
-        const auto descendant = ::fork();
-        require(descendant >= 0, "Synthetic descendant fork failed");
-        if (descendant == 0) {
-            ::close(barrier[0]);
-            ::close(STDOUT_FILENO);
-            ::close(STDERR_FILENO);
-            (void)::write(barrier[1], "Y", 1);
-            ::close(barrier[1]);
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            std::ofstream("descendant.finished") << "Explicit bounded test-only descendant";
-            ::_exit(0);
-        }
-        ::close(barrier[1]);
-        char ready{};
-        require(::read(barrier[0], &ready, 1) == 1 && ready == 'Y',
-                "Synthetic descendant did not reach its real barrier");
-        ::close(barrier[0]);
-    }
-    if (mode == "synthetic-timeout") {
-        std::signal(SIGTERM, SIG_IGN);
-        for (;;)
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    if (mode == "synthetic-output") {
-        std::cout << std::string(70000, 'x') << std::flush;
-        return 0;
-    }
-    if (mode == "synthetic-aggregate-output") {
-        std::cout << std::string(40000, 'x') << std::flush;
-        std::cerr << std::string(30000, 'y') << std::flush;
-        return 0;
-    }
-    if (mode == "synthetic-noheader")
-        std::cout << "Compatible solver 2024.1\n";
-    else if (mode == "synthetic-substring")
-        std::cout << "Advertisement MSC Nastran 2024.1\n";
-    else if (mode == "synthetic-many")
-        std::cout << "MSC Nastran 2024.1\nMSC Nastran 2022.1\n";
-    else if (mode == "synthetic-patch")
-        std::cout << "MSC Nastran 2024.1.9\n";
-    else if (mode == "synthetic-2022")
-        std::cout << "MSC Nastran V2022.1\n";
-    else if (mode == "synthetic-nul")
-        std::cout << std::string("MSC Nastran 2024.1\n\0", 20);
-    else
-        std::cout << "MSC Nastran 2024.1\n";
-    std::cerr << "Explicit test-only version output, not an installed Nastran\n";
-    return mode == "synthetic-nonzero" ? 7 : 0;
-}
 } // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char**) {
     fs::path directory;
     try {
-        if (argc == 2 && std::string_view(argv[1]) == "help")
-            return child(fs::path(argv[0]).filename().string());
         require(argc == 1, "Unexpected test arguments");
         directory = fs::canonical(fs::temp_directory_path()) /
                     ("qcae-version-test-" + std::to_string(::getpid()));
@@ -89,7 +60,7 @@ int main(int argc, char** argv) {
                 "Test canary failed");
         auto executable = [&](std::string name) {
             const auto path = directory / name;
-            fs::copy_file(fs::canonical(argv[0]), path);
+            fs::copy_file(fs::canonical(QCAE_SOLVER_VERSION_FIXTURE_PATH), path);
             fs::permissions(path,
                             fs::perms::owner_read | fs::perms::owner_write | fs::perms::owner_exec);
             return path;
@@ -99,8 +70,24 @@ int main(int argc, char** argv) {
             require(valid, message);
             ++checks;
         };
+        InheritedDescriptorCanary descriptor_canary;
+        check(descriptor_canary.inheritable(), "High descriptor canary would close on exec");
         const auto matching_path = executable("synthetic-matching");
+#if defined(__APPLE__)
+        struct rlimit descriptor_limit{};
+        require(::getrlimit(RLIMIT_NOFILE, &descriptor_limit) == 0,
+                "Descriptor limit observation failed");
+        const struct rlimit reduced_limit{128, descriptor_limit.rlim_max};
+        require(::setrlimit(RLIMIT_NOFILE, &reduced_limit) == 0,
+                "Descriptor limit reduction failed");
+        check(::sysconf(_SC_OPEN_MAX) < QCAE_SOLVER_VERSION_FD_CANARY,
+              "Inherited descriptor did not exceed the reduced descriptor bound");
+#endif
         const auto matching = detail::probe_solver_version(matching_path, directory, "2024.1");
+#if defined(__APPLE__)
+        require(::setrlimit(RLIMIT_NOFILE, &descriptor_limit) == 0,
+                "Descriptor limit restoration failed");
+#endif
         check(matching.ok() && matching.value->reported_version == "2024.1" &&
                   matching.value->exit_code == 0 && matching.value->synthetic &&
                   matching.value->stdout_bytes > 0 && matching.value->stderr_bytes > 0 &&
