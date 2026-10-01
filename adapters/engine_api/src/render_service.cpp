@@ -332,6 +332,14 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                     if (!rows.complete)
                         refresh_tree = true;
                 }
+                // Keep one fresh builder through the optional row fields. Borrowed fixed
+                // keys avoid initializer-list QString copies; every insert stays observed.
+                json_ledger::ObjectCopies data_copies;
+                const auto insert_data = [&](const char* key, const QJsonValue& value) {
+                    const QLatin1StringView name(key);
+                    data.insert(name, value);
+                    data_copies.insert(name, value, true, false);
+                };
                 if (inline_empty) {
                     const QJsonObject acknowledgement{
                         {"document_id", json_ledger::from_utf8(delta.document.id.value)},
@@ -349,12 +357,10 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                                          "view_revision",
                                          "base_revision",
                                          "base_view_revision"});
-                    data = {{"mode", "version_only"},
-                            {"acknowledgement", acknowledgement},
-                            {"changed_ids", changed_ids},
-                            {"refresh_tree", refresh_tree}};
-                    json_ledger::object(data,
-                                        {"mode", "acknowledgement", "changed_ids", "refresh_tree"});
+                    insert_data("mode", "version_only");
+                    insert_data("acknowledgement", acknowledgement);
+                    insert_data("changed_ids", changed_ids);
+                    insert_data("refresh_tree", refresh_tree);
                     // This operation carries no binary model payload and creates no resource.
                     // Its actual JSON construction/framing remains in the socket ledger.
                     no_binary_payload(ledger::Stage::render_encode);
@@ -376,17 +382,13 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                                : transport::render_delta_requires_v2(delta)
                                    ? "qcae.render.delta.v2"
                                    : "qcae.render.delta.v1"));
-                    data = {{"mode", reset ? "full" : "delta"},
-                            {"manifest", resource_manifest_json(checked(manifest))},
-                            {"changed_ids", changed_ids},
-                            {"refresh_tree", refresh_tree}};
-                    json_ledger::object(data, {"mode", "manifest", "changed_ids", "refresh_tree"});
+                    insert_data("mode", reset ? "full" : "delta");
+                    insert_data("manifest", resource_manifest_json(checked(manifest)));
+                    insert_data("changed_ids", changed_ids);
+                    insert_data("refresh_tree", refresh_tree);
                 }
                 if (rows_requested) {
-                    json_ledger::ObjectCopies copies;
-                    copies.retained(data);
-                    data.insert("rows_complete", rows.complete && !refresh_tree);
-                    copies.insert("rows_complete", data.value("rows_complete"));
+                    insert_data("rows_complete", rows.complete && !refresh_tree);
                     if (rows.complete && !refresh_tree) {
                         const QJsonObject row_version{
                             {"document_id", json_ledger::from_utf8(document.id.value)},
@@ -400,10 +402,8 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                                              "revision",
                                              "view_session_id",
                                              "view_revision"});
-                        data.insert("rows_version", row_version);
-                        copies.insert("rows_version", row_version);
-                        data.insert("changed_rows", rows.rows);
-                        copies.insert("changed_rows", rows.rows);
+                        insert_data("rows_version", row_version);
+                        insert_data("changed_rows", rows.rows);
                     }
                 }
             } else {

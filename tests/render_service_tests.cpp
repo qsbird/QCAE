@@ -2,14 +2,23 @@
 #include "qcae/operations.hpp"
 #include "qcae/ipc_model.hpp"
 #include "qcae/render_wire.hpp"
+#include "qcae/json_ledger.hpp"
 #include "runtime_test_support.hpp"
 #include <QCoreApplication>
+#include <QJsonDocument>
 #include <iostream>
 
 namespace {
 using namespace qcae;
 using runtime_test::check;
 using runtime_test::good;
+
+void check_response(const QJsonObject& actual, const QJsonObject& expected) {
+    check(actual == expected, "Render response changed final protocol fields or values");
+    check(transport::json_ledger::compact_frame(actual) ==
+              QJsonDocument(expected).toJson(QJsonDocument::Compact) + '\n',
+          "Render response changed compact wire bytes or field order");
+}
 
 void polygon_requires_negotiated_wire_and_empty_ack_keeps_versions() {
     auto store = std::make_shared<runtime_test::Store>();
@@ -86,10 +95,20 @@ void polygon_requires_negotiated_wire_and_empty_ack_keeps_versions() {
     parameters.remove("base_revision");
     parameters.remove("base_view_revision");
     parameters.insert("render_wire_version", 3);
+    parameters.insert("include_changed_rows", true);
     request.insert("parameters", parameters);
     auto response = service.dispatch(request, caller);
     check(response.value("status") == "success", "Negotiated generic cell request failed");
     const auto manifest_json = response.value("data").toObject().value("manifest").toObject();
+    check_response(response,
+                   {{"request_id", "display-test"},
+                    {"status", "success"},
+                    {"data",
+                     QJsonObject{{"mode", "full"},
+                                 {"manifest", manifest_json},
+                                 {"changed_ids", QJsonArray{}},
+                                 {"refresh_tree", true},
+                                 {"rows_complete", false}}}});
     const ResourceVersion version{info.document, info.revision, view.id, view.view_revision};
     const auto manifest = good(resources.describe(
         caller, manifest_json.value("resource_id").toString().toStdString(), version));
@@ -102,6 +121,7 @@ void polygon_requires_negotiated_wire_and_empty_ack_keeps_versions() {
           "Negotiated resource lost the area topology or stable identity");
     parameters.insert("base_revision", QString::number(info.revision));
     parameters.insert("base_view_revision", QString::number(view.view_revision));
+    parameters.remove("include_changed_rows");
     request.insert("parameters", parameters);
     response = service.dispatch(request, caller);
     const auto data = response.value("data").toObject();
@@ -113,6 +133,22 @@ void polygon_requires_negotiated_wire_and_empty_ack_keeps_versions() {
               ack.value("revision") == ack.value("base_revision") &&
               ack.value("view_revision") == ack.value("base_view_revision"),
           "Empty negotiated acknowledgement omitted exact authority or created a resource");
+    check_response(
+        response,
+        {{"request_id", "display-test"},
+         {"status", "success"},
+         {"data",
+          QJsonObject{{"mode", "version_only"},
+                      {"acknowledgement",
+                       QJsonObject{{"document_id", request.value("document_id")},
+                                   {"document_epoch", request.value("document_epoch")},
+                                   {"revision", QString::number(info.revision)},
+                                   {"view_session_id", QString::fromStdString(view.id)},
+                                   {"view_revision", QString::number(view.view_revision)},
+                                   {"base_revision", QString::number(info.revision)},
+                                   {"base_view_revision", QString::number(view.view_revision)}}},
+                      {"changed_ids", QJsonArray{}},
+                      {"refresh_tree", false}}}});
     const auto final_history = good(application.history(info.document));
     check(good(application.current_document()).revision == info.revision &&
               final_history.cursor == original_history.cursor &&
@@ -180,7 +216,20 @@ void polygon_requires_negotiated_wire_and_empty_ack_keeps_versions() {
     expect_rejected(wrong_base_view);
     expect_rejected(parameters, Caller{"other-caller"});
     request.insert("parameters", parameters);
+    auto observation =
+        std::make_shared<ledger::OperationLedger>(ledger::Identity{"final-render-json", {}, {}, 0});
+    ledger::activate(observation);
     response = service.dispatch(request, caller);
+    ledger::activate({});
+    const auto measured = observation->snapshot();
+    const auto copies =
+        measured.values[static_cast<std::size_t>(ledger::Stage::socket_send)]
+                       [static_cast<std::size_t>(ledger::Metric::json_object_copy_bytes)];
+    if (transport::json_ledger::detail::supported()) {
+        check(copies && *copies > 0, "Final JSON construction lost its owned-copy observation");
+        std::cout << "OBSERVED: render dispatch JSON copy bytes=" << *copies << '\n';
+    } else
+        check(!copies, "Unsupported Qt copy coverage cannot become a measured zero");
     const auto refreshed = response.value("data").toObject();
     const auto next_ack = refreshed.value("acknowledgement").toObject();
     const auto next_view = good(selections.get_view(current_snapshot.records, caller, view.id));
@@ -203,6 +252,32 @@ void polygon_requires_negotiated_wire_and_empty_ack_keeps_versions() {
               row_version.value("revision") == QString::number(info.revision) &&
               row_version.value("view_revision") == QString::number(next_view.view_revision),
           "Changed entity rows did not use the same immutable render input version");
+    const QJsonObject expected_row{{"entity_id", "shape"},
+                                   {"kind", "material"},
+                                   {"name", "Display fixture"},
+                                   {"young_modulus_mpa", 205000},
+                                   {"poisson_ratio", .3},
+                                   {"description", QJsonValue()},
+                                   {"sources", QJsonArray{}}};
+    const QJsonObject expected_version{{"document_id", request.value("document_id")},
+                                       {"document_epoch", request.value("document_epoch")},
+                                       {"revision", QString::number(info.revision)},
+                                       {"view_session_id", QString::fromStdString(view.id)},
+                                       {"view_revision", QString::number(next_view.view_revision)}};
+    auto expected_ack = expected_version;
+    expected_ack.insert("base_revision", QString::number(baseline));
+    expected_ack.insert("base_view_revision", QString::number(view.view_revision));
+    check_response(response,
+                   {{"request_id", "display-test"},
+                    {"status", "success"},
+                    {"data",
+                     QJsonObject{{"mode", "version_only"},
+                                 {"acknowledgement", expected_ack},
+                                 {"changed_ids", QJsonArray{"shape"}},
+                                 {"refresh_tree", false},
+                                 {"rows_complete", true},
+                                 {"rows_version", expected_version},
+                                 {"changed_rows", QJsonArray{expected_row}}}}});
     check(!selections.page(current_snapshot.records, caller, old_selection.id, 0, 100).ok() &&
               !selections
                    .combine(current_snapshot.records,
@@ -231,6 +306,36 @@ void polygon_requires_negotiated_wire_and_empty_ack_keeps_versions() {
               after_rebase.cursor == committed_history.cursor &&
               after_rebase.items.size() == committed_history.items.size(),
           "Model rebase or rows altered committed model history");
+    // Non-ASCII frame fields must retain the existing unknown copy coverage.
+    parameters.remove("allow_model_rebase");
+    parameters.insert("expected_view_revision", QString::number(next_view.view_revision));
+    parameters.insert("base_revision", QString::number(info.revision));
+    parameters.insert("base_view_revision", QString::number(next_view.view_revision));
+    request.insert("parameters", parameters);
+    request.insert("request_id", QString::fromUtf8("display-\xe4\xb8\xad"));
+    auto unicode_observation = std::make_shared<ledger::OperationLedger>(
+        ledger::Identity{"unicode-render-json", {}, {}, 0});
+    ledger::activate(unicode_observation);
+    const auto unicode_response = service.dispatch(request, caller);
+    ledger::activate({});
+    auto unicode_expected_ack = expected_version;
+    unicode_expected_ack.insert("base_revision", QString::number(info.revision));
+    unicode_expected_ack.insert("base_view_revision", QString::number(next_view.view_revision));
+    check_response(unicode_response,
+                   {{"request_id", request.value("request_id")},
+                    {"status", "success"},
+                    {"data",
+                     QJsonObject{{"mode", "version_only"},
+                                 {"acknowledgement", unicode_expected_ack},
+                                 {"changed_ids", QJsonArray{}},
+                                 {"refresh_tree", false},
+                                 {"rows_complete", true},
+                                 {"rows_version", expected_version},
+                                 {"changed_rows", QJsonArray{}}}}});
+    check(!unicode_observation->snapshot()
+               .values[static_cast<std::size_t>(ledger::Stage::socket_send)]
+                      [static_cast<std::size_t>(ledger::Metric::json_object_copy_bytes)],
+          "Non-ASCII render response falsely claimed complete owned-copy coverage");
 }
 } // namespace
 
