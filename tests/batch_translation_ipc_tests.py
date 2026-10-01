@@ -14,7 +14,7 @@ from analysis_check_ipc_tests import Client
 from result_fixture_ipc_tests import create_m
 
 
-def run(engine, cli, mode, evidence):
+def run(engine, cli, mode, evidence, without_nastran=False):
     evidence.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="qcae-ext02-", dir=Path("/tmp").resolve()) as folder:
         root = Path(folder)
@@ -37,7 +37,12 @@ def run(engine, cli, mode, evidence):
                     assert operations[name]["available"], operations[name]
                 assert operations["node.translate_batch"]["effect"] == "document_write"
                 assert operations["node.translate_batch_preview"]["effect"] == "preview"
-                profile = capabilities["declared_solver_profiles"][0]["profile_ref"]
+                profiles = capabilities["declared_solver_profiles"]
+                if without_nastran:
+                    assert profiles == [], profiles
+                    profile = None
+                else:
+                    profile = profiles[0]["profile_ref"]
                 nodes, beams, material, _, _ = create_m(client, profile)
                 assert len(nodes) == 11 and len(beams) == 10
                 assert len(client.entities("geometry")) == len(client.entities("mesh")) == 1
@@ -176,8 +181,10 @@ def main():
     parser.add_argument("--engine", required=True)
     parser.add_argument("--cli", required=True)
     parser.add_argument("--evidence-dir", required=True, type=Path)
+    parser.add_argument("--without-nastran", action="store_true")
     args = parser.parse_args()
-    reports = [run(str(Path(args.engine).resolve()), str(Path(args.cli).resolve()), mode, args.evidence_dir)
+    reports = [run(str(Path(args.engine).resolve()), str(Path(args.cli).resolve()), mode, args.evidence_dir,
+                   args.without_nastran)
                for mode in ("cli", "script")]
     (args.evidence_dir / "report.json").write_text(json.dumps({"passed": 2, "total": 2, "runs": reports}, indent=2) + "\n")
     print("PASS: EXT-02 production registry/CLI/IPC batch translation 2/2")

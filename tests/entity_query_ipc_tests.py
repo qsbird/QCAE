@@ -218,15 +218,18 @@ def main():
     parser.add_argument("--engine", required=True)
     parser.add_argument("--cli", required=True)
     parser.add_argument("--evidence-dir", type=Path)
+    parser.add_argument("--only-case", choices=("geometry", "organization"))
     args = parser.parse_args()
     engine, cli = str(Path(args.engine).resolve()), str(Path(args.cli).resolve())
     with tempfile.TemporaryDirectory(prefix="qquery-", dir=Path("/tmp").resolve()) as folder:
         for name, run in (("geometry", geometry_queries), ("organization", organization_queries)):
+            if args.only_case and name != args.only_case:
+                continue
             root = Path(folder) / name
             root.mkdir()
             with engine_client(engine, cli, root, args.evidence_dir) as client:
                 run(client)
-    print("PASS: NEXT-01 real engine/CLI queries, references, fields, paging and M1 organization views")
+    print(f"PASS: NEXT-01 real engine/CLI queries: {args.only_case or 'geometry and organization'}")
 
 
 if __name__ == "__main__":

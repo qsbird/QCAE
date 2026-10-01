@@ -42,7 +42,14 @@ def run(args):
                 assert capabilities["durable"]
                 declared = {item["name"]: item for item in capabilities["operations"]}
                 assert declared["mesh.create_tri3"]["available"]
-                profile = capabilities["declared_solver_profiles"][0]["profile_ref"]
+                profiles = capabilities["declared_solver_profiles"]
+                if args.without_nastran:
+                    assert profiles == [], profiles
+                    for name in ("model.export", "model.export_preview"):
+                        assert name not in declared or not declared[name]["available"], declared.get(name)
+                    profile = None
+                else:
+                    profile = profiles[0]["profile_ref"]
                 nodes, beams, material, part, analysis = create_m(client, profile)
                 assert len(nodes) == 11 and len(beams) == 10
                 mesh = client.entities("mesh")[0]["entity_id"]
@@ -97,13 +104,14 @@ def run(args):
                 assert collapse["error"]["code"] == "INVALID_INPUT" and rows() == after_rows
                 deleted = client.call("changes.preview", {"command": "entity.delete", "entity_id": nodes[5]}, after, expected="failed")
                 assert deleted["error"]["code"] == "INVALID_INPUT" and rows() == after_rows
-                preview = client.call("model.export_preview", {"analysis_id": analysis, "expected_profile_ref": profile}, after, expected="failed")
-                assert preview["error"]["code"] == "UNSUPPORTED_CAPABILITY"
-                for operation, parameters, key in (
-                        ("analysis.check", {"analysis_id": analysis}, "check-shell"),
-                        ("model.export", {"analysis_id": analysis, "output_directory": str(root / "shell-export")}, "export-shell")):
-                    reply = client.call(operation, parameters, after, key, expected="failed", profile=profile)
-                    assert reply["error"]["code"] == "UNSUPPORTED_CAPABILITY"
+                if not args.without_nastran:
+                    preview = client.call("model.export_preview", {"analysis_id": analysis, "expected_profile_ref": profile}, after, expected="failed")
+                    assert preview["error"]["code"] == "UNSUPPORTED_CAPABILITY"
+                    for operation, parameters, key in (
+                            ("analysis.check", {"analysis_id": analysis}, "check-shell"),
+                            ("model.export", {"analysis_id": analysis, "output_directory": str(root / "shell-export")}, "export-shell")):
+                        reply = client.call(operation, parameters, after, key, expected="failed", profile=profile)
+                        assert reply["error"]["code"] == "UNSUPPORTED_CAPABILITY"
                 assert not (root / "shell-export").exists() and rows() == after_rows
                 client.call("history.undo", context=after, key="undo-triangle")
                 assert rows() == original_rows
@@ -123,7 +131,8 @@ def run(args):
                 assert recovered["document_id"] == opened["document_id"]
                 assert recovered["document_epoch"] != opened["document_epoch"] and rows() == after_rows
                 client.call("mesh.create_tri3", valid, opened, "old-open-epoch", expected="conflict")
-                print("PASS: production CLI/IPC Tri3 on real 11-node/10-Line2 M; query/references, atomic errors, history, actual save/open/process recovery, stale selection, explicit analysis/export refusal")
+                target_scope = "package disabled" if args.without_nastran else "explicit analysis/export refusal"
+                print(f"PASS: production CLI/IPC Tri3 on real 11-node/10-Line2 M; query/references, atomic errors, history, actual save/open/process recovery, stale selection, {target_scope}")
             finally:
                 if process and process.poll() is None:
                     process.terminate()
@@ -136,4 +145,5 @@ if __name__ == "__main__":
     parser.add_argument("--engine", required=True)
     parser.add_argument("--cli", required=True)
     parser.add_argument("--evidence-dir", type=Path, required=True)
+    parser.add_argument("--without-nastran", action="store_true")
     run(parser.parse_args())

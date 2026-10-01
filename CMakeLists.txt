@@ -244,9 +244,12 @@ if(QCAE_BUILD_IPC)
   if(BUILD_TESTING AND UNIX)
     add_test(NAME ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/ipc_tests.py"
       --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
-    add_test(NAME m1_ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/m1_ipc_tests.py"
-      --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
-    set_tests_properties(ipc m1_ipc PROPERTIES TIMEOUT 60)
+    set_tests_properties(ipc PROPERTIES TIMEOUT 60)
+    if(QCAE_ENABLE_NASTRAN_PACKAGE)
+      add_test(NAME m1_ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/m1_ipc_tests.py"
+        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+      set_tests_properties(m1_ipc PROPERTIES TIMEOUT 60)
+    endif()
     add_test(NAME mcp_bridge COMMAND Python3::Interpreter
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/mcp_bridge_tests.py"
       --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
@@ -263,14 +266,20 @@ if(QCAE_BUILD_IPC)
       set_tests_properties(mcp_bridge_durable PROPERTIES TIMEOUT 90)
     endif()
     if(QCAE_BUILD_STORAGE)
-      add_test(NAME analysis_check_ipc COMMAND Python3::Interpreter
-        "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_check_ipc_tests.py"
-        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
-      set_tests_properties(analysis_check_ipc PROPERTIES TIMEOUT 90)
+      if(QCAE_ENABLE_NASTRAN_PACKAGE)
+        add_test(NAME analysis_check_ipc COMMAND Python3::Interpreter
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_check_ipc_tests.py"
+          --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+        set_tests_properties(analysis_check_ipc PROPERTIES TIMEOUT 90)
+      endif()
+      set(qcae_common_fixture_arguments)
+      if(NOT QCAE_ENABLE_NASTRAN_PACKAGE)
+        list(APPEND qcae_common_fixture_arguments --without-nastran)
+      endif()
       add_test(NAME tri3_ipc COMMAND Python3::Interpreter
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/tri3_ipc_tests.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
-        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/ext03-evidence/ipc")
+        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/ext03-evidence/ipc" ${qcae_common_fixture_arguments})
       set_tests_properties(tri3_ipc PROPERTIES TIMEOUT 90)
       add_test(NAME force_vector_ipc COMMAND Python3::Interpreter
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/force_vector_ipc_tests.py"
@@ -320,10 +329,14 @@ if(QCAE_BUILD_IPC)
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
         --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/c3-evidence/display-ipc")
       set_tests_properties(c3_display_ipc PROPERTIES TIMEOUT 90)
+      set(qcae_entity_query_arguments)
+      if(NOT QCAE_ENABLE_NASTRAN_PACKAGE)
+        list(APPEND qcae_entity_query_arguments --only-case geometry)
+      endif()
       add_test(NAME entity_query_ipc COMMAND Python3::Interpreter
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/entity_query_ipc_tests.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
-        --evidence-dir ${CMAKE_CURRENT_BINARY_DIR}/next-evidence/queries)
+        --evidence-dir ${CMAKE_CURRENT_BINARY_DIR}/next-evidence/queries ${qcae_entity_query_arguments})
       set_tests_properties(entity_query_ipc PROPERTIES TIMEOUT 90)
       add_executable(qcae_contributed_engine tests/contributed_engine_main.cpp)
       target_link_libraries(qcae_contributed_engine PRIVATE qcae_engine_host)
@@ -334,9 +347,11 @@ if(QCAE_BUILD_IPC)
         --production-engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
         --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/next-evidence/contributions")
       set_tests_properties(engine_contributions_ipc PROPERTIES TIMEOUT 90)
-      add_test(NAME m23_ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/m23_ipc_tests.py"
-        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
-      set_tests_properties(m23_ipc PROPERTIES TIMEOUT 90)
+      if(QCAE_ENABLE_NASTRAN_PACKAGE)
+        add_test(NAME m23_ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/m23_ipc_tests.py"
+          --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+        set_tests_properties(m23_ipc PROPERTIES TIMEOUT 90)
+      endif()
       add_test(NAME c2_workflow COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/c2_workflow_tests.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
         --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/c2-evidence/workflow")
@@ -446,8 +461,21 @@ if(QCAE_BUILD_DESKTOP)
       target_link_libraries(qcae_c3_desktop_workflow_tests PRIVATE qcae_desktop_ui Qt6::Test)
       qcae_warnings(qcae_c3_desktop_workflow_tests)
       vtk_module_autoinit(TARGETS qcae_c3_desktop_workflow_tests MODULES ${VTK_LIBRARIES})
+      set(qcae_desktop_workflow_cases)
+      if(NOT QCAE_ENABLE_NASTRAN_PACKAGE)
+        list(APPEND qcae_desktop_workflow_cases
+          propertyRepliesWaitForAuthoritativeRefresh
+          propertyReplyVersionsMatchRequestedContext
+          aiSnapshotUnitsAndCameraAreConsistent
+          aiSnapshotForcePreviewUndoAndRecoveryUseSharedHistory
+          completedAnalysisReportsRemainReadable
+          malformedAnalysisReportsAreRejected
+          lateAnalysisReportsCannotCrossContext
+          layoutRoundTripDoesNotChangeDocument
+          realEngineModelingAndHistory)
+      endif()
       add_test(NAME c3_desktop_workflow COMMAND qcae_c3_desktop_workflow_tests
-        $<TARGET_FILE:qcae-engine> "${CMAKE_CURRENT_BINARY_DIR}/c3-evidence/desktop")
+        $<TARGET_FILE:qcae-engine> "${CMAKE_CURRENT_BINARY_DIR}/c3-evidence/desktop" ${qcae_desktop_workflow_cases})
       set_tests_properties(c3_desktop_workflow PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
       add_executable(qcae_modeling_tools_tests tests/modeling_tools_tests.cpp)
       set_target_properties(qcae_modeling_tools_tests PROPERTIES AUTOMOC ON)
@@ -457,10 +485,12 @@ if(QCAE_BUILD_DESKTOP)
       vtk_module_autoinit(TARGETS qcae_modeling_tools_tests MODULES ${VTK_LIBRARIES})
       add_test(NAME modeling_tools COMMAND qcae_modeling_tools_tests)
       set_tests_properties(modeling_tools PROPERTIES TIMEOUT 60)
-      add_test(NAME desktop_smoke COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/desktop_smoke.py"
-        --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
-        --desktop $<TARGET_FILE:qcae-desktop> --screenshot "${CMAKE_CURRENT_BINARY_DIR}/desktop-smoke.png")
-      set_tests_properties(desktop_smoke PROPERTIES TIMEOUT 45)
+      if(QCAE_ENABLE_NASTRAN_PACKAGE)
+        add_test(NAME desktop_smoke COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/desktop_smoke.py"
+          --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+          --desktop $<TARGET_FILE:qcae-desktop> --screenshot "${CMAKE_CURRENT_BINARY_DIR}/desktop-smoke.png")
+        set_tests_properties(desktop_smoke PROPERTIES TIMEOUT 45)
+      endif()
     endif()
   endif()
 endif()

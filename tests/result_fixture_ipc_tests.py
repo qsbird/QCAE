@@ -24,7 +24,7 @@ def wait_task(client, task):
     return task
 
 
-def create_m(client, profile):
+def create_m(client, profile=None):
     document = client.call("project.create", {"name": "M result fixture"}, key="create")
     line = client.call("geometry.create_line", {"start_mm": [0, 0, 0], "end_mm": [1000, 0, 0]},
                        document, "line")
@@ -51,6 +51,8 @@ def create_m(client, profile):
                              client.current(), "constraint")["entity_id"]
     case = client.call("load_case.create", {"name": "LC1", "force_ids": [force], "constraint_ids": [constraint]},
                        client.current(), "case")["entity_id"]
+    if profile is None:
+        return nodes, beams, material, part, None
     analysis = client.call("analysis.create", {"name": "M static", "load_case_ids": [case]},
                            client.current(), "analysis", profile=profile)["entity_id"]
     assert client.call("analysis.check", {"analysis_id": analysis}, client.current(), "check")["issues"] == []
