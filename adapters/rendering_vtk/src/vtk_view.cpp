@@ -326,6 +326,7 @@ struct VtkView::Impl {
     std::set<std::string> selected;
     VtkUpdateStats stats;
     bool delta_ready{};
+    bool preview_empty{true};
     QPoint press;
     bool mouse_down{false};
     bool box_active{false};
@@ -1068,6 +1069,9 @@ struct VtkView::Impl {
     }
 
     void setPreview(const RenderPreview& value) {
+        const bool empty = value.points.empty() && value.lines.empty();
+        if (empty && preview_empty)
+            return;
         vtkNew<vtkPoints> points;
         vtkNew<vtkCellArray> cells;
         for (const auto& point : value.points)
@@ -1082,6 +1086,7 @@ struct VtkView::Impl {
         const double color[]{0.82, 0.38, 1.0};
         makeActor(preview, points, cells, false, color, 5);
         preview->PickableOff();
+        preview_empty = empty;
         window->Render();
     }
 };

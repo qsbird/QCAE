@@ -20,10 +20,13 @@
 #include <limits>
 #include <vtkActor.h>
 #include <vtkActorCollection.h>
+#include <vtkCallbackCommand.h>
 #include <vtkCamera.h>
+#include <vtkCommand.h>
 #include <vtkDataArray.h>
 #include <vtkMapper.h>
 #include <vtkMatrix4x4.h>
+#include <vtkNew.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkRenderWindow.h>
@@ -650,6 +653,12 @@ class DesktopTests : public QObject {
     }
 
     void geometryPreviewHasNoSelectionIdentity() {
+        unsigned renders{};
+        vtkNew<vtkCallbackCommand> render_observer;
+        render_observer->SetClientData(&renders);
+        render_observer->SetCallback([](vtkObject*, unsigned long, void* state, void*) {
+            ++*static_cast<unsigned*>(state);
+        });
         qcae::VtkView view;
         view.resize(640, 420);
         view.show();
@@ -662,11 +671,16 @@ class DesktopTests : public QObject {
         packet.geometry_lines = {{qcae::EntityId{"committed-line"}, {0, 0, 0}, {100, 0, 0}}};
         view.setPacket(packet);
         view.setSelectedIds({"committed-line"});
-        view.setPreview({{{0, -10, 30}, {100, -10, 30}}, {{0, 1}}});
-        view.standardView(qcae::VtkView::StandardView::front);
-        view.fit();
         auto* widget = view.findChild<QVTKOpenGLNativeWidget*>();
         QVERIFY(widget);
+        widget->renderWindow()->AddObserver(vtkCommand::StartEvent, render_observer);
+        view.clearPreview();
+        view.setPreview({});
+        QCOMPARE(renders, 0U);
+        view.setPreview({{{0, -10, 30}, {100, -10, 30}}, {{0, 1}}});
+        QCOMPARE(renders, 1U);
+        view.standardView(qcae::VtkView::StandardView::front);
+        view.fit();
         QTest::qWait(100);
         QVERIFY(view.hasPacket());
         QVERIFY(highlightedPixels(widget) > 20);
@@ -690,13 +704,20 @@ class DesktopTests : public QObject {
         }
 
         // A preview in front of the committed line cannot replace its pick identity.
+        const auto before_replace = renders;
         view.setPreview({{{0, -10, 0}, {100, -10, 0}}, {{0, 1}}});
+        QCOMPARE(renders, before_replace + 1);
         QCOMPARE(view.cameraFingerprint(), camera);
         view.setThroughSelection(false);
         QTest::mouseClick(widget, Qt::LeftButton, Qt::NoModifier, committed_position);
         QCOMPARE(picked.size(), 1);
         QCOMPARE(picked.takeFirst().at(0).toStringList(), QStringList({"committed-line"}));
+        const auto before_clear = renders;
         view.clearPreview();
+        QCOMPARE(renders, before_clear + 1);
+        view.clearPreview();
+        view.setPreview({});
+        QCOMPARE(renders, before_clear + 1);
         QCOMPARE(view.cameraFingerprint(), camera);
         QCOMPARE(previewPixels(widget), 0);
         QVERIFY(highlightedPixels(widget) > 20);
