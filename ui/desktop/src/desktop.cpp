@@ -547,7 +547,7 @@ class DesktopWindow : public QMainWindow {
         resize(1400, 850);
         buildUi();
         if (!smoke_) {
-            QSettings settings("QCAE", "Desktop");
+            QSettings settings(QSettings::defaultFormat(), QSettings::UserScope, "QCAE", "Desktop");
             restoreGeometry(settings.value("layout/geometry").toByteArray());
             restoreState(settings.value("layout/state").toByteArray(), 1);
         }
@@ -687,7 +687,7 @@ class DesktopWindow : public QMainWindow {
 
     void closeEvent(QCloseEvent* event) override {
         if (!smoke_) {
-            QSettings settings("QCAE", "Desktop");
+            QSettings settings(QSettings::defaultFormat(), QSettings::UserScope, "QCAE", "Desktop");
             settings.setValue("layout/geometry", saveGeometry());
             settings.setValue("layout/state", saveState(1));
         }

@@ -21,7 +21,7 @@ bool valid(const QKeySequence& sequence) {
 }
 } // namespace
 void restore_action_shortcut(QAction& action, const QKeySequence& default_shortcut) {
-    QSettings settings("QCAE", "Desktop");
+    QSettings settings(QSettings::defaultFormat(), QSettings::UserScope, "QCAE", "Desktop");
     const auto saved = settings.value("shortcuts/" + action.objectName());
     const auto sequence =
         saved.isValid() ? QKeySequence::fromString(saved.toString(), QKeySequence::PortableText)
@@ -80,7 +80,7 @@ void show_shortcut_preferences(QWidget& window) {
                     return;
                 }
             action->setShortcut(shortcut);
-            QSettings settings("QCAE", "Desktop");
+            QSettings settings(QSettings::defaultFormat(), QSettings::UserScope, "QCAE", "Desktop");
             settings.setValue("shortcuts/" + action->objectName(),
                               shortcut.toString(QKeySequence::PortableText));
             settings.sync();

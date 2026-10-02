@@ -2227,8 +2227,13 @@ class Workflow : public QObject {
         QVERIFY(window->close());
         window.reset();
 
-        QSettings saved_settings("QCAE", "Desktop");
+        QSettings saved_settings(
+            QSettings::defaultFormat(), QSettings::UserScope, "QCAE", "Desktop");
         saved_settings.sync();
+        QCOMPARE(saved_settings.format(), QSettings::IniFormat);
+        QVERIFY(saved_settings.fileName().startsWith(QDir::tempPath().startsWith("/private/")
+                                                         ? "/private/tmp/qc3-settings-"
+                                                         : "/tmp/qc3-settings-"));
         QCOMPARE(saved_settings.value("layout/state").toByteArray(), saved_state);
         QCOMPARE(saved_settings.value("layout/geometry").toByteArray(), saved_geometry);
 
@@ -2409,6 +2414,8 @@ int main(int argc, char** argv) {
         return 3;
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings_temp.path());
+    QSettings::setPath(
+        QSettings::IniFormat, QSettings::SystemScope, settings_temp.filePath("system"));
     QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
     QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
     QApplication app(argc, argv);

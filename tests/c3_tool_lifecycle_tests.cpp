@@ -287,6 +287,7 @@ int main(int argc, char** argv) {
         return 2;
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope, settings.filePath("system"));
     ToolLifecycle tests;
     return QTest::qExec(&tests, 1, argv);
 }

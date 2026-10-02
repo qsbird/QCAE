@@ -1911,8 +1911,11 @@ int main(int argc, char** argv) {
     QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
     QApplication app(argc, argv);
     QTemporaryDir settings;
+    if (!settings.isValid())
+        return 2;
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings.path());
+    QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope, settings.filePath("system"));
     DesktopSelectionTests tests;
     return QTest::qExec(&tests, argc, argv);
 }
