@@ -27,6 +27,15 @@ resulting registry is injected into `MemoryApplication`; `TypedHost` then instal
 operations over that same `MemoryApplication::record_application()` used by
 legacy requests. Default material/mesh-editing handlers and geometry/mesh task wrappers are
 registered in `engine_contributions.cpp`; the transport host handles wire context and dispatch.
+The assembly also retains the actual owning codec/Profile binding and validates and retains the
+factory's frozen render contributions. The production host uses these selected services for IPC,
+Profile support checks and rendering;
+the build flag only selects the default contribution list. Nastran's binding retains the same
+coordinator State and codec used by its operation callbacks. Duplicate bindings/factories,
+invalid ownership and invalid Profile definitions are rejected before the assembly is returned
+and the typed host is published. Socket listening and some workspace initialization happen earlier.
+Without a render factory, the existing generic projector remains available. This P0 static
+composition does not complete the six-category discovery contract.
 `TaskService` uses `record_task_publisher`;
 the engine registers `task_row_handler` before reading a workspace. Workers prepare a detached
 candidate, and only the application publishes its record changes and terminal task receipt.
@@ -42,9 +51,9 @@ operation's discovered `version`. A mismatched installed version returns `SCHEMA
 before handler invocation; malformed values return `INVALID_INPUT`. Existing API 1.1 clients
 may omit this field, deliberately selecting the installed typed version. Discovery publishes
 `requested_version_field` and `omitted_version_policy` so new clients can pin the contract.
-This is separate from transport `api_version`. Other legacy operations keep their existing request
-shape and reject these new typed-only top-level context fields. The intrinsic
-`project.open` input contract is described below.
+This is separate from transport `api_version`. The five intrinsic project lifecycle routes
+below also accept this operation version. Other legacy operations keep their existing request
+shape and reject the new context fields.
 
 A typed operation declaring `requires_expected_profile: true` requires top-level
 `expected_profile: {profile_id, profile_version, definition_digest}` with no extra members.
@@ -108,26 +117,35 @@ operation catalog or `runtime.handshake`. Startup rejects these collisions befor
 the host. This is static assembly, not dynamic loading.
 No solver execution, AI bridge, C3 renderer/resource work or large-model claim is implied.
 
-### Versioned project.open input
+### Versioned project lifecycle inputs
 
-The intrinsic `project.open` host route decodes generated `ProjectOpenInput` before calling
-its existing application lifecycle service. Discovery keeps the baseline symbolic type names
-and additionally publishes `wire_input_type: ProjectOpenInput`, `wire_output_type: DocumentInfo`,
-`schema_id: qcae.operation.project.open.v1`, version 1, and the actual parameter schema.
-Use `{mode: "normal", path: "..."}` to open a saved project, or `{mode: "recover"}` to recover
-an explicit workspace. Normal mode requires a non-empty path; recovery forbids the path field.
-Missing, unknown or incorrectly typed parameters return `INVALID_INPUT` with an input field.
+The five intrinsic host routes decode generated inputs before calling their existing application
+lifecycle services. Discovery retains the baseline symbolic type names and adds the actual
+`wire_input_type`, `wire_output_type: DocumentInfo`, `schema_id: qcae.operation.<operation>.v1`,
+version 1 and a closed parameter schema.
 
-The route accepts optional `requested_version`: omission selects the installed version,
-malformed values return `INVALID_INPUT`, and a different positive uint32 returns
-`SCHEMA_UNSUPPORTED`. Rejections precede lifecycle admission and do not reserve the host key.
-`expected_profile` is not accepted. The MCP bridge forwards the two closed `oneOf` branches
-with the existing depth and node bounds, and advertises profile context only for descriptors
-that explicitly declare `requires_expected_profile`.
+| Host route | Generated input | Parameters |
+| --- | --- | --- |
+| `project.create` | `ProjectCreateInput` | required non-empty `name`; the existing application byte quota still applies |
+| `project.open` | `ProjectOpenInput` | `{mode: "normal", path: "..."}` or `{mode: "recover"}`; normal requires a non-empty path, recovery forbids it |
+| `project.save` | `ProjectSaveInput` | optional string `path`, including the empty string; original application location semantics |
+| `project.save_as` | `ProjectSaveAsInput` | optional string `path`, including the empty string; original application success/error semantics |
+| `project.close` | `ProjectCloseInput` | required `policy`: `discard` or `keep_recovery` |
 
-Successful requests retain the original caller/key, normal-open and recovery semantics,
-host outcome lookup, and application history. This adds an input contract to an existing
-route; it does not register another business handler or complete every legacy contract.
+Missing required, unknown or incorrectly typed parameters return `INVALID_INPUT` with an input
+field. Optional `requested_version` selects the installed version when omitted; malformed values
+return `INVALID_INPUT`, and a different positive uint32 returns `SCHEMA_UNSUPPORTED`. Rejections
+precede lifecycle admission and do not reserve the host key. `expected_profile` is not accepted.
+The MCP bridge forwards the same schemas, including open's two closed `oneOf` branches, within
+its existing depth and node bounds. It advertises Profile context only for descriptors explicitly
+declaring `requires_expected_profile`.
+
+Successful calls retain the original caller/key namespaces, outcomes, lookup and application
+history. Omitted and empty save paths retain their existing normalization and replay behavior;
+explicit saved paths retain their existing signatures. Normal open and recovery remain distinct.
+These contracts adapt existing routes; they do not register duplicate business handlers or
+complete every legacy contract. Actual tests and packaged execution are described in the
+[local delivery evidence](../../docs/engineering/core-local-delivery-2026-10-03.md).
 
 ### C3 versioned display resources and events
 

@@ -3,7 +3,7 @@
   "baseline_commit": "9e0a56b",
   "branch": "codex/c3-resource-sync",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-10-02T16:58:42.049363+00:00",
+  "updated_utc": "2026-10-02T22:00:03Z",
   "status": "C3_closure_in_progress",
   "phases": {
     "R0": "partial_committed",
@@ -1065,6 +1065,77 @@
   },
   "historical_validation_report_before_core_framework": "docs/engineering/c3-sync-validation.md",
   "current_core_framework": {
+    "status": "local_core_slice_validated_full_acceptance_pending",
+    "tested_implementation_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
+    "source_files_count": 414,
+    "source_dictionary_sha256": "38ec95e3d66aee93fd127cb5d47c64170d99363d59ce2ba37befcec4be191907",
+    "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+    "manifest": "docs/engineering/core-local-delivery-evidence/2026-10-03/validation.json",
+    "report": "docs/engineering/core-local-delivery-2026-10-03.md",
+    "handoff": "docs/implementation/core-local-handoff.md",
+    "full_regression_counts": [
+      40,
+      54,
+      94,
+      75,
+      2
+    ],
+    "cross_configuration_executions": 265,
+    "configuration_order": [
+      "core_release",
+      "local_debug",
+      "desktop_sqlite_release",
+      "package_off_sqlite_release",
+      "asan_ubsan_typed_host_engine_assembly"
+    ],
+    "versioned_existing_host_inputs": [
+      "project.create",
+      "project.open",
+      "project.save",
+      "project.save_as",
+      "project.close"
+    ],
+    "actual_contribution_selected_ports": [
+      "model_codec",
+      "profile_provider",
+      "render_contributions"
+    ],
+    "local_package": {
+      "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
+      "bundle": "/Users/qs/Documents/ChatGPT/QCAE/out/local-delivery138-02/QCAE.app",
+      "regular_files": 419,
+      "macho_files": 145,
+      "relocated_non_system_edges": 925,
+      "adhoc_only": true,
+      "notarized": false
+    },
+    "actual_packaged_workflows": {
+      "sqlite_process_commands": 39,
+      "mcp_process_commands": 5,
+      "gui_process_commands": 9,
+      "staging_and_codesign_commands": 2,
+      "cli_calls": 46,
+      "mcp_tools": 68,
+      "mcp_jsonrpc_requests": 13,
+      "mcp_notifications": 2
+    },
+    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
+    "post_validation_frozen_input_documentation_delta": [
+      "adapters/engine_api/README.md"
+    ],
+    "limits": [
+      "Full six-category contribution discovery metadata and remaining legacy contracts are pending",
+      "Full SK/C3/C4/P0 and public release remain pending",
+      "Actual real solver/numerical closure and complete external AI scenarios remain unvalidated; two AI subcases skipped",
+      "Local arm64/macOS26.6.2 staging only; existing Python >=3.10 required",
+      "ASan/UBSan covers two selected tests; LSan unmeasured",
+      "SDK internal copy coverage unknown/null; deferred from C4 startup only",
+      "Measured copy limits remain binding; prior source material14of30 failures not remeasured",
+      "Historical 378/177 execution counts retain original source scopes",
+      "Prior project-open local binary path was incrementally superseded; original receipts and archive remain unchanged"
+    ]
+  },
+  "historical_core_framework_before_local_delivery": {
     "status": "same_source_core_mechanisms_validated_full_acceptance_pending",
     "tested_implementation_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
     "source410_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",

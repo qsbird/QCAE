@@ -1,0 +1,274 @@
+{
+  "status": "NO_BLOCKING_ARCHIVE_FINDING",
+  "archive": {
+    "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/core-local-delivery-evidence/2026-10-03/evidence.tar.gz",
+    "bytes": 2297502,
+    "sha256": "eda62fa31a0487bb0f407d2791f2a992cce7339c4f7662729606090db3c4e541"
+  },
+  "archive_index": {
+    "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/core-local-delivery-evidence/2026-10-03/archive-index.json",
+    "bytes": 150912,
+    "sha256": "1ba71f020b3344e2034d67b7d3bd8abc0f29c7fb0fa6d2b9388bf56682eba9a0"
+  },
+  "member_count": 544,
+  "all_member_names_bytes_sha256_match": true,
+  "all544_origin_entries_bytes_sha256_match_before_after": true,
+  "product_binary_database_socket_included": false,
+  "declared_gui_screenshot": [
+    {
+      "member": "native/gui/work/real-gui.png",
+      "bytes": 1184994,
+      "sha256": "2317cccb30078c2811ac50d998438f934d84f9352061c3a52e2fe3e79b7e2b57"
+    }
+  ],
+  "source": {
+    "commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
+    "count": 414,
+    "dictionary_sha256": "38ec95e3d66aee93fd127cb5d47c64170d99363d59ce2ba37befcec4be191907",
+    "hash_algorithm": "SHA256 of canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+    "all414_committed_blobs_sha256_match": true,
+    "current_delta": [
+      "adapters/engine_api/README.md"
+    ],
+    "current_delta_scope": "post-runtime adapter README documentation only"
+  },
+  "regression": {
+    "exit": 0,
+    "count": 265,
+    "configurations": [
+      {
+        "configuration": "core",
+        "exit": 0,
+        "count": 40,
+        "raw_names_and_pass_count_match": true,
+        "full_configured_inventory": true,
+        "scope": "existing full regression; no benchmark acceptance"
+      },
+      {
+        "configuration": "local",
+        "exit": 0,
+        "count": 54,
+        "raw_names_and_pass_count_match": true,
+        "full_configured_inventory": true,
+        "scope": "existing full regression; no benchmark acceptance"
+      },
+      {
+        "configuration": "desktop",
+        "exit": 0,
+        "count": 94,
+        "raw_names_and_pass_count_match": true,
+        "full_configured_inventory": true,
+        "scope": "existing full regression; no benchmark acceptance"
+      },
+      {
+        "configuration": "package-off",
+        "exit": 0,
+        "count": 75,
+        "raw_names_and_pass_count_match": true,
+        "full_configured_inventory": true,
+        "scope": "existing full regression; no benchmark acceptance"
+      },
+      {
+        "configuration": "sanitized",
+        "exit": 0,
+        "count": 2,
+        "raw_names_and_pass_count_match": true,
+        "full_configured_inventory": false,
+        "scope": "ASan+UBSan two affected adapter tests only; LSan unmeasured"
+      }
+    ],
+    "sanitized_scope": "two targeted cases, not full inventory"
+  },
+  "native": [
+    {
+      "action": "sqlite",
+      "actual_passed": true,
+      "command_count": 39,
+      "actual_exit_counts": {
+        "-15": 2,
+        "0": 27,
+        "2": 10
+      },
+      "exact_negative_commands": [
+        {
+          "member": "native/sqlite/003-cli-project-create/receipt.json",
+          "exit": 2,
+          "operation": "project.create",
+          "status": "failed",
+          "code": "SCHEMA_UNSUPPORTED",
+          "field": "requested_version"
+        },
+        {
+          "member": "native/sqlite/004-cli-project-create/receipt.json",
+          "exit": 2,
+          "operation": "project.create",
+          "status": "failed",
+          "code": "INVALID_INPUT",
+          "field": "input.name"
+        },
+        {
+          "member": "native/sqlite/014-cli-project-save/receipt.json",
+          "exit": 2,
+          "operation": "project.save",
+          "status": "failed",
+          "code": "SCHEMA_UNSUPPORTED",
+          "field": "requested_version"
+        },
+        {
+          "member": "native/sqlite/015-cli-project-save/receipt.json",
+          "exit": 2,
+          "operation": "project.save",
+          "status": "failed",
+          "code": "INVALID_INPUT",
+          "field": "input.path"
+        },
+        {
+          "member": "native/sqlite/024-cli-project-save_as/receipt.json",
+          "exit": 2,
+          "operation": "project.save_as",
+          "status": "failed",
+          "code": "SCHEMA_UNSUPPORTED",
+          "field": "requested_version"
+        },
+        {
+          "member": "native/sqlite/025-cli-project-save_as/receipt.json",
+          "exit": 2,
+          "operation": "project.save_as",
+          "status": "failed",
+          "code": "INVALID_INPUT",
+          "field": "input.path"
+        },
+        {
+          "member": "native/sqlite/030-cli-project-close/receipt.json",
+          "exit": 2,
+          "operation": "project.close",
+          "status": "failed",
+          "code": "SCHEMA_UNSUPPORTED",
+          "field": "requested_version"
+        },
+        {
+          "member": "native/sqlite/031-cli-project-close/receipt.json",
+          "exit": 2,
+          "operation": "project.close",
+          "status": "failed",
+          "code": "INVALID_INPUT",
+          "field": "input.policy"
+        },
+        {
+          "member": "native/sqlite/033-cli-project-current/receipt.json",
+          "exit": 2,
+          "operation": "project.current",
+          "status": "failed",
+          "code": "DOCUMENT_NOT_FOUND",
+          "field": ""
+        },
+        {
+          "member": "native/sqlite/039-cli-history-undo/receipt.json",
+          "exit": 2,
+          "operation": "history.undo",
+          "status": "conflict",
+          "code": "DOCUMENT_EPOCH_EXPIRED",
+          "field": "document_epoch"
+        }
+      ],
+      "owned_engine_cleanup": [
+        {
+          "member": "native/sqlite/001-engine/receipt.json",
+          "exit": -15,
+          "unforced_reaped": true
+        },
+        {
+          "member": "native/sqlite/034-engine/receipt.json",
+          "exit": -15,
+          "unforced_reaped": true
+        }
+      ],
+      "full_SK": false,
+      "full_P0": false,
+      "solver_execution": false,
+      "external_AI": false
+    },
+    {
+      "action": "mcp",
+      "actual_passed": true,
+      "command_count": 5,
+      "actual_exit_counts": {
+        "-15": 1,
+        "0": 4
+      },
+      "exact_negative_commands": [],
+      "owned_engine_cleanup": [
+        {
+          "member": "native/mcp/001-engine/receipt.json",
+          "exit": -15,
+          "unforced_reaped": true
+        }
+      ],
+      "full_SK": false,
+      "full_P0": false,
+      "solver_execution": false,
+      "external_AI": false
+    },
+    {
+      "action": "gui",
+      "actual_passed": true,
+      "command_count": 9,
+      "actual_exit_counts": {
+        "-15": 1,
+        "0": 8
+      },
+      "exact_negative_commands": [],
+      "owned_engine_cleanup": [
+        {
+          "member": "native/gui/001-engine/receipt.json",
+          "exit": -15,
+          "unforced_reaped": true
+        }
+      ],
+      "full_SK": false,
+      "full_P0": false,
+      "solver_execution": false,
+      "external_AI": false
+    }
+  ],
+  "preserved_original_failures": [
+    {
+      "member": "regression/first-failed/attempt-01/local-build.json",
+      "actual_exit_code": 1,
+      "kind": "original compilation failure, not CTest"
+    },
+    {
+      "member": "regression/first-failed/attempt-01/desktop-build.json",
+      "actual_exit_code": 1,
+      "kind": "original compilation failure, not CTest"
+    },
+    {
+      "member": "package/preflight-failed/complete.json",
+      "actual_passed": false,
+      "error": "AssertionError('Root Release cache differs from prepared stock SDK: Qt6_DIR')"
+    },
+    {
+      "member": "package/staging-failed/complete.json",
+      "actual_passed": false,
+      "error": "AssertionError('Actual command failed; receipt retained')"
+    }
+  ],
+  "reviewer_failed_checks_preserved": [
+    {
+      "attempt": 1,
+      "error": "UnicodeDecodeError on native/gui/work/real-gui.png",
+      "cause": "Extra incorrect all-text assumption; method explicitly permits PNG, archive and origins unchanged."
+    },
+    {
+      "attempt": 2,
+      "error": "AssertionError in narrowed negative-command allowlist",
+      "cause": "Extra incorrect restriction of every CLI exit2 to INVALID_INPUT/SCHEMA_UNSUPPORTED. Two documented context negatives instead return DOCUMENT_NOT_FOUND and conflict/DOCUMENT_EPOCH_EXPIRED; final audit checks all10 exact named request/status/code/field tuples."
+    }
+  ],
+  "limits": [
+    "Read-only archive/receipt audit; no compiler/test/product/guard execution.",
+    "265 includes targeted SAN2, not complete sanitizer inventory.",
+    "Native SQLite covers one material lifecycle; GUI is Cocoa/VTK smoke; MCP is two local stdio clients. Full SK/P0, real solver/AI and performance remain unclaimed."
+  ],
+  "blockers": []
+}

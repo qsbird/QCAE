@@ -1,0 +1,11 @@
+146归档独立只读复核：无阻塞发现。
+
+544个常规tar成员逐项bytes/SHA匹配索引，544个来源项也在前后读取时匹配；归档与索引未改变。无产品二进制、数据库或socket。方法明确允许的GUI PNG截图为1184994B；首次额外全UTF8检查失败保留，不能把截图误报产品binary。
+
+实际265项为40core+54local+94desktop+75package-off+定向SAN2；raw LastTest具名记录和通过数均一致。SAN2是定向子集，未冒称整个inventory。
+
+414个候选来源SHA逐一匹配f2d2e7f25eb2b6218f233c1612a0b16a7705f06a提交的实际Git blobs，字典SHA38ec95e3d66aee93fd127cb5d47c64170d99363d59ce2ba37befcec4be191907。当前仅adapter README说明不同，未误报产品源码变化。
+
+SQLite/MCP/GUI三native complete均实际成功且来源/前后事实相同。SQLite39命令有10个具名负样本exit2及2个自有engine -15；MCP5和GUI9各有1个engine -15，均无强杀且reaped。10个负样本按真实operation/status/code/field逐项核对，其中8个输入/版本错误、1个无active doc、1个旧epoch冲突；第二次过窄allowlist检查失败同样保留，不使用 blanket waiver。
+
+初轮local/desktop编译失败与两次package失败仍分列。此审查未运行产品/编译/测试/guard；仅证明归档完整性和限定实际记录，不声明完整SK/P0、solver/AI或性能。

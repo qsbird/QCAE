@@ -1,0 +1,542 @@
+{
+  "schema_version": 1,
+  "status": "actual_local_slice_passed_full_acceptance_pending",
+  "tested_implementation_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
+  "source": {
+    "files_count": 414,
+    "dictionary_sha256": "38ec95e3d66aee93fd127cb5d47c64170d99363d59ce2ba37befcec4be191907",
+    "hash_algorithm": "SHA256 canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+    "before_after_equal": true,
+    "candidate_archive_member": "regression/final/attempt-01/candidate.json",
+    "post_validation_documentation_delta": [
+      {
+        "path": "adapters/engine_api/README.md",
+        "tested_sha256": "d17a325372cf68d052e073219cc50c64729597445187b484e4f70337b3e1aac0",
+        "current_sha256": "42c4ebbbbdadbf4dbc4c309108d712dec377393110db0653e2caab9e3ec11540",
+        "scope": "documentation only"
+      }
+    ]
+  },
+  "archive": {
+    "path": "evidence.tar.gz",
+    "bytes": 2297502,
+    "sha256": "eda62fa31a0487bb0f407d2791f2a992cce7339c4f7662729606090db3c4e541",
+    "members": 544
+  },
+  "archive_index_sha256": "1ba71f020b3344e2034d67b7d3bd8abc0f29c7fb0fa6d2b9388bf56682eba9a0",
+  "archive_verified_origins": 544,
+  "regressions": [
+    {
+      "configuration": "core",
+      "executed_count": 40,
+      "actual_exit_code": 0,
+      "archive_complete": "regression/final/attempt-01/core-complete.json",
+      "archive_raw_log": "regression/final/attempt-01/core-LastTest.log",
+      "strict_cpp20": true,
+      "compiler_warnings": 0
+    },
+    {
+      "configuration": "local",
+      "executed_count": 54,
+      "actual_exit_code": 0,
+      "archive_complete": "regression/final/attempt-01/local-complete.json",
+      "archive_raw_log": "regression/final/attempt-01/local-LastTest.log",
+      "strict_cpp20": true,
+      "compiler_warnings": 0
+    },
+    {
+      "configuration": "desktop",
+      "executed_count": 94,
+      "actual_exit_code": 0,
+      "archive_complete": "regression/final/attempt-01/desktop-complete.json",
+      "archive_raw_log": "regression/final/attempt-01/desktop-LastTest.log",
+      "strict_cpp20": true,
+      "compiler_warnings": 0
+    },
+    {
+      "configuration": "package-off",
+      "executed_count": 75,
+      "actual_exit_code": 0,
+      "archive_complete": "regression/final/attempt-01/package-off-complete.json",
+      "archive_raw_log": "regression/final/attempt-01/package-off-LastTest.log",
+      "strict_cpp20": true,
+      "compiler_warnings": 0
+    },
+    {
+      "configuration": "sanitized",
+      "executed_count": 2,
+      "actual_exit_code": 0,
+      "archive_complete": "regression/final/attempt-01/sanitized-complete.json",
+      "archive_raw_log": "regression/final/attempt-01/sanitized-LastTest.log",
+      "strict_cpp20": true,
+      "compiler_warnings": 0
+    }
+  ],
+  "total_ctest_executions": 265,
+  "asan_ubsan_tests": [
+    "typed_host",
+    "engine_assembly"
+  ],
+  "lsan": "unmeasured_detect_leaks_0",
+  "skipped_AI_subcases": 2,
+  "local_package": {
+    "bundle": "/Users/qs/Documents/ChatGPT/QCAE/out/local-delivery138-02/QCAE.app",
+    "relocated_bundle": "/private/tmp/qcae-relocated138-02/QCAE.app",
+    "regular_files": 419,
+    "macho_files": 145,
+    "non_system_edges_resolved_inside_relocated_bundle": 925,
+    "manifest_sha256": "8d5fdd2df0a77aefa4fdc06ef53ae6ceb2155e65c1065745792efc787920af64",
+    "original_build_binaries_unchanged": true,
+    "adhoc_deep_strict_exit_code": 0,
+    "minimum_macos": "26.0_declared_older_unvalidated",
+    "actual_macos": "26.6.2",
+    "architecture": "arm64",
+    "external_python": "existing >=3.10; actual 3.14.0",
+    "notarized": false
+  },
+  "actual_environment_version_recheck": {
+    "command": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14 --version\n/usr/bin/sw_vers\n/Library/Developer/CommandLineTools/usr/bin/c++ --version",
+    "actual_exit_code": 0,
+    "output": "Python 3.14.0\nProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\nApple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n"
+  },
+  "actual_packaged_workflows": {
+    "sqlite": {
+      "actual_passed": true,
+      "actual_process_commands": 39,
+      "complete_archive_member": "native/sqlite/complete.json",
+      "summary_archive_member": "native/sqlite/sqlite-summary.json"
+    },
+    "mcp": {
+      "actual_passed": true,
+      "actual_process_commands": 5,
+      "complete_archive_member": "native/mcp/complete.json",
+      "summary_archive_member": "native/mcp/mcp-summary.json"
+    },
+    "gui": {
+      "actual_passed": true,
+      "actual_process_commands": 9,
+      "complete_archive_member": "native/gui/complete.json",
+      "summary_archive_member": "native/gui/gui-summary.json"
+    }
+  },
+  "actual_packaged_process_commands": 55,
+  "actual_cli_calls": 46,
+  "mcp_tools": 68,
+  "mcp_jsonrpc_requests": 13,
+  "mcp_notifications": 2,
+  "owned_runtime_process_receipts": [
+    {
+      "archive_receipt": "native/sqlite/001-engine/receipt.json",
+      "pid": 13768,
+      "actual_exit_code": -15,
+      "cleanup": {
+        "SIGTERM_sent": true,
+        "SIGKILL_sent": false,
+        "reaped": true
+      }
+    },
+    {
+      "archive_receipt": "native/sqlite/002-cli-capabilities-list/receipt.json",
+      "pid": 13773,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/003-cli-project-create/receipt.json",
+      "pid": 13776,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/004-cli-project-create/receipt.json",
+      "pid": 13780,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/005-cli-project-create/receipt.json",
+      "pid": 13784,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/006-cli-project-create/receipt.json",
+      "pid": 13786,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/007-cli-project-current/receipt.json",
+      "pid": 13788,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/008-cli-material-create/receipt.json",
+      "pid": 13791,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/009-cli-project-current/receipt.json",
+      "pid": 13792,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/010-cli-material-set_young_modulus/receipt.json",
+      "pid": 13793,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/011-cli-project-current/receipt.json",
+      "pid": 13794,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/012-cli-entity-fields/receipt.json",
+      "pid": 13795,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/013-cli-history-list/receipt.json",
+      "pid": 13796,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/014-cli-project-save/receipt.json",
+      "pid": 13797,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/015-cli-project-save/receipt.json",
+      "pid": 13798,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/016-cli-project-save/receipt.json",
+      "pid": 13799,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/017-cli-project-current/receipt.json",
+      "pid": 13800,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/018-cli-history-list/receipt.json",
+      "pid": 13801,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/019-cli-project-current/receipt.json",
+      "pid": 13802,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/020-cli-project-save/receipt.json",
+      "pid": 13803,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/021-cli-project-current/receipt.json",
+      "pid": 13804,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/022-cli-project-save/receipt.json",
+      "pid": 13805,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/023-cli-project-current/receipt.json",
+      "pid": 13806,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/024-cli-project-save_as/receipt.json",
+      "pid": 13807,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/025-cli-project-save_as/receipt.json",
+      "pid": 13808,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/026-cli-project-save_as/receipt.json",
+      "pid": 13809,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/027-cli-project-current/receipt.json",
+      "pid": 13810,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/028-cli-history-list/receipt.json",
+      "pid": 13811,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/029-cli-project-current/receipt.json",
+      "pid": 13812,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/030-cli-project-close/receipt.json",
+      "pid": 13813,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/031-cli-project-close/receipt.json",
+      "pid": 13815,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/032-cli-project-close/receipt.json",
+      "pid": 13816,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/033-cli-project-current/receipt.json",
+      "pid": 13818,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/034-engine/receipt.json",
+      "pid": 13819,
+      "actual_exit_code": -15,
+      "cleanup": {
+        "SIGTERM_sent": true,
+        "SIGKILL_sent": false,
+        "reaped": true
+      }
+    },
+    {
+      "archive_receipt": "native/sqlite/035-cli-capabilities-list/receipt.json",
+      "pid": 13821,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/036-cli-project-open/receipt.json",
+      "pid": 13823,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/037-cli-entity-fields/receipt.json",
+      "pid": 13824,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/038-cli-history-list/receipt.json",
+      "pid": 13826,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/sqlite/039-cli-history-undo/receipt.json",
+      "pid": 13827,
+      "actual_exit_code": 2,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/mcp/001-engine/receipt.json",
+      "pid": 13769,
+      "actual_exit_code": -15,
+      "cleanup": {
+        "SIGTERM_sent": true,
+        "SIGKILL_sent": false,
+        "reaped": true
+      }
+    },
+    {
+      "archive_receipt": "native/mcp/002-cli-capabilities-list/receipt.json",
+      "pid": 13774,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/mcp/003-mcp-first/receipt.json",
+      "pid": 13778,
+      "actual_exit_code": 0,
+      "cleanup": {
+        "stdin_EOF": true,
+        "SIGKILL_sent": false,
+        "reaped": true
+      }
+    },
+    {
+      "archive_receipt": "native/mcp/004-mcp-second/receipt.json",
+      "pid": 13779,
+      "actual_exit_code": 0,
+      "cleanup": {
+        "stdin_EOF": true,
+        "SIGKILL_sent": false,
+        "reaped": true
+      }
+    },
+    {
+      "archive_receipt": "native/mcp/005-cli-project-current/receipt.json",
+      "pid": 13790,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/001-engine/receipt.json",
+      "pid": 13767,
+      "actual_exit_code": -15,
+      "cleanup": {
+        "SIGTERM_sent": true,
+        "SIGKILL_sent": false,
+        "reaped": true
+      }
+    },
+    {
+      "archive_receipt": "native/gui/002-cli-capabilities-list/receipt.json",
+      "pid": 13775,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/003-cli-project-create/receipt.json",
+      "pid": 13777,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/004-cli-changes-preview/receipt.json",
+      "pid": 13783,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/005-cli-changes-commit/receipt.json",
+      "pid": 13785,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/006-cli-project-current/receipt.json",
+      "pid": 13787,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/007-desktop-smoke/receipt.json",
+      "pid": 13789,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/008-cli-project-current/receipt.json",
+      "pid": 13839,
+      "actual_exit_code": 0,
+      "cleanup": null
+    },
+    {
+      "archive_receipt": "native/gui/009-cli-model-summary/receipt.json",
+      "pid": 13840,
+      "actual_exit_code": 0,
+      "cleanup": null
+    }
+  ],
+  "qg02": {
+    "blocking_findings": 0,
+    "lifecycle_archive": "reviews/lifecycle/review.json",
+    "assembly_archive": "reviews/assembly/review.json",
+    "non_blocking_note": "Allow-empty save path type error wording still says non-empty string; code/field/schema correct"
+  },
+  "preserved_failures": [
+    "regression/first-failed: test-only invalid DocumentRef comparison; no CTest counted",
+    "package/preflight-failed: Qt6_DIR alias identity; zero product commands",
+    "package/staging-failed: QtPdf search path; one failed staging command"
+  ],
+  "old_local_binary_scope": "Early incremental precheck superseded the previous project-open local build binary path; old receipts/LastTest/272-member archive unchanged. Final 265 runs use current slice 141 directories.",
+  "documentation_checks": {
+    "status": "passed",
+    "run_completed_utc": "2026-10-02 22:19:31 UTC",
+    "workdir": "/private/tmp/qcae-framework-delivery80",
+    "records": [
+      {
+        "command": "python3 tools/check_design.py",
+        "actual_exit_code": 0,
+        "output": "PASS: 183 portable links; 1132 JSON files; 32-module acyclic graph\nPASS: 41 operation descriptors; 12 contract examples; 20 requirements; 38 acceptance cases\nDesign checks only. This command does not run product builds, solver runs or AI acceptance.\n"
+      },
+      {
+        "command": "python3 tools/check_cpp_format.py",
+        "actual_exit_code": 0,
+        "output": "PASS: 235 C++ files match clang-format 21\n"
+      },
+      {
+        "command": "git diff --check",
+        "actual_exit_code": 0,
+        "output": ""
+      }
+    ]
+  },
+  "acceptance_limits": {
+    "full_SK": false,
+    "full_C3_C4": false,
+    "full_P0": false,
+    "real_Nastran_numerical_closure": false,
+    "complete_external_AI": false,
+    "performance_acceptance": false,
+    "SDK_internal_copy_coverage": null,
+    "previous_material_budget_failures": {
+      "failed": 14,
+      "total": 30,
+      "remeasured_this_slice": false
+    }
+  },
+  "remaining_core": [
+    "Full six-category contribution discovery metadata",
+    "Remaining legacy wire/type contracts",
+    "Formal core acceptance closure"
+  ],
+  "independent_documentation_and_archive_reviews": [
+    {
+      "review": 145,
+      "path": "handoff-review.json",
+      "sha256": "98ca8fae0569fde7ee95f69513c50223e3a7e0c8a64ce6301f3397851fcbae47",
+      "scope": "read-only; no compiler/test/product execution",
+      "unresolved_blocking_findings": 0,
+      "documentation_hash_scope": "Review captures the documents before final evidence metadata/check-result update; product code unchanged"
+    },
+    {
+      "review": 146,
+      "path": "archive-review.json",
+      "sha256": "3aedd095ee94f135f4c6d29238d3a9d89b3743095f833b9ff138592ee39cc987",
+      "scope": "read-only; no compiler/test/product execution",
+      "unresolved_blocking_findings": 0,
+      "documentation_hash_scope": "Review captures the documents before final evidence metadata/check-result update; product code unchanged"
+    }
+  ]
+}
