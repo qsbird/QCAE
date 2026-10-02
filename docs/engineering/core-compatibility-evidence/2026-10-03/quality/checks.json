@@ -1,0 +1,53 @@
+{
+  "actual_commands": [
+    {
+      "name": "design",
+      "argv": [
+        "python3",
+        "tools/check_design.py"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "started_unix": 1790968840.686283,
+      "finished_unix": 1790968841.108523,
+      "actual_exit_code": 0,
+      "stdout": {
+        "path": "docs/engineering/core-compatibility-evidence/2026-10-03/quality/design.stdout.log",
+        "sha256": "b9fdb444aa4358328e46d03d6bd9709e2573cbaaba7a7bbcd4d6081ac5e368fd"
+      },
+      "stderr": {
+        "path": "docs/engineering/core-compatibility-evidence/2026-10-03/quality/design.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "diff",
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "started_unix": 1790968841.1086311,
+      "finished_unix": 1790968841.1348622,
+      "actual_exit_code": 0,
+      "stdout": {
+        "path": "docs/engineering/core-compatibility-evidence/2026-10-03/quality/diff.stdout.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "path": "docs/engineering/core-compatibility-evidence/2026-10-03/quality/diff.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "actual_previous_cpp_format_observation": {
+    "scope": "Earlier actual root tool shell execution, not a new subprocess; source412 unchanged since then",
+    "actual_exit_code": 0,
+    "actual_stdout": "PASS: 234 C++ files match clang-format 21",
+    "command": "python3 tools/check_cpp_format.py",
+    "candidate_files_sha256": "d2b507a1bf1c19336731a2a1014baa554d66210ba269dea09b96793fc427c41e"
+  },
+  "candidate412_unchanged": true,
+  "all_actual_finite_QG_reviews_blocking_empty": true,
+  "legacy_and_OFF_scope_not_new412_product_scope": true
+}

@@ -120,7 +120,100 @@
           }
         ]
       },
-      "failure_forms": "The factory returns TaskRequest and throws RecordError(resource_limit) for segment count outside1..100000. Worker resolution/candidate checks can throw RecordError(entity_not_found/invalid_input); TaskControl cancellation is handled by TaskService. A successful request creation is not successful mesh publication."
+      "failure_forms": "The factory returns TaskRequest and throws RecordError(resource_limit) for segment count outside1..100000. Worker resolution/candidate checks can throw RecordError(entity_not_found/invalid_input); TaskControl cancellation is handled by TaskService. A successful request creation is not successful mesh publication.",
+      "actual_evidence_binding_2026_10_03": {
+        "date": "2026-10-03",
+        "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+        "public_header_compile_link": {
+          "consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
+          "target": "qcae_mesh_generation",
+          "header": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+          "actual_build_exit": 0,
+          "population": 74,
+          "AP_distinct_header_consumers": 18,
+          "dialect": "GNU C++20 for the original public consumers",
+          "CTest_registered": 0,
+          "binary_sha256": "4535d686da2441004f56c3ffa2111227a3597bc02c2630e39684107d775cbb3f",
+          "proofs": [
+            "public86_compile74",
+            "public86_inventory0"
+          ],
+          "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+        },
+        "declaration_types": {
+          "consumer": "consumer_ap_05",
+          "actual_configure_exit": 0,
+          "actual_build_exit": 0,
+          "dialect": "strict C++20",
+          "compiler_warnings": 0,
+          "this_AP_function_assertions": 1,
+          "this_AP_member_assertions": 2,
+          "population_consumers": 20,
+          "population_static_assertions": 106,
+          "population_function_assertions": 88,
+          "population_member_assertions": 18,
+          "binary_sha256": "fbc24e4d468ceb06e7d30d16841f47b1f84cc31e0ee04215c0bd25448890b44a",
+          "proof": "typed90_20_106",
+          "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+        },
+        "bounded_runtime": {
+          "BP": "BP-05",
+          "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+          "actual_source": {
+            "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+            "canonical_source_files": 410,
+            "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+            "proof": "source85_frozen"
+          },
+          "observed_scope": [
+            "real task builds complete M11nodes/10beams",
+            "empty/self-loop actual worker candidates fail with no authority publication"
+          ],
+          "counts": {
+            "named_current86_CTest_cases": 2,
+            "runtime_assertion_count": 24,
+            "distinct_actual_runs": 1
+          },
+          "mapping_proof": "BP20_98_compact",
+          "named_actual_cases": [
+            {
+              "case": "skeleton_representatives",
+              "proof": "LastTest86_desktop",
+              "raw_start_line": 796
+            },
+            {
+              "case": "geometry_mesh",
+              "proof": "LastTest86_desktop",
+              "raw_start_line": 2121
+            }
+          ],
+          "limits": [
+            "This binding does not promote the full BP acceptance contract."
+          ],
+          "representative90": {
+            "run_id": "representative-41f6e87bd8d644aa9d0c56b477507dfc-BP-05",
+            "raw_jsonl_line": 1,
+            "literal_source_field": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+            "proofs": [
+              "representatives90_validation",
+              "representatives90_raw"
+            ]
+          }
+        },
+        "remaining": {
+          "original_status_fields_preserved": true,
+          "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+          "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+          "boundary": "The built-in uniform line discretizer has no external meshing SDK. MesherCapabilities, general GenerateMesh and QualityReport are design interfaces, not declarations in line_mesh_task.hpp."
+        }
+      }
     },
     "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },

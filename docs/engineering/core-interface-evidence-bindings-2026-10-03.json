@@ -1,0 +1,2370 @@
+{
+  "schema_version": "qcae.implemented-interface-evidence-binding/1",
+  "date": "2026-10-03",
+  "scope": "Dated evidence reconciliation inside implemented subsets, not an acceptance or reference-inventory promotion.",
+  "actual_runtime_source85": {
+    "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+    "canonical_source_files": 410,
+    "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+    "proof": "source85_frozen"
+  },
+  "current_documentation_HEAD_at_preparation": "8bcec36874a92c80e273141e42263e4cbf67fd71",
+  "current_test_candidate": {
+    "base_head": "1e0197ecb619dfe5ed19ea7bd3f13d78cebca6c8",
+    "old410_files_changed": [
+      "CMakeLists.txt"
+    ],
+    "added_test": "tests/schema_rejection_sqlite_tests.cpp",
+    "test_sha256": "a489b7ed6b49d674e55b5b71338153b8c3bb3eb0239174192509b2201e0eba36",
+    "candidate_file_count": 411,
+    "candidate_files_sha256": "4c80afc459f3e9b6eed3aba195497d8b98e2215866f08224343fbed1f63dae52",
+    "all_other409_frozen_source_files_equal": true,
+    "scope": "8b adds only four CMake test registration lines and one SQLite schema test; all other409 old source files are byte-equal. The original410 runtime results retain source85.",
+    "proof": "candidate112",
+    "actual_new_regression_counts": {
+      "core": 40,
+      "local": 54,
+      "sqlite": 48,
+      "sanitized-schema": 1
+    },
+    "schema_rejections_each_sqlite_and_sanitized": 24,
+    "schema_categories": 8,
+    "old_epoch_checks_each_separate": 8,
+    "actual_build_and_test_exits": 0,
+    "old378_relabelled_as_candidate411": false
+  },
+  "denominators": {
+    "AP_contracts": 20,
+    "distinct_AP_public_header_consumers": 18,
+    "original_public_consumer_population": 74,
+    "public_consumer_CTest_registered": 0,
+    "strict_typed_consumers": 20,
+    "typed_function_assertions": 88,
+    "typed_member_assertions": 18,
+    "typed_static_assertions": 106,
+    "bounded_BP_mechanisms": 20,
+    "original_six_BP_runs": 6,
+    "six_BP_assertions": 269,
+    "reference_inventory_included": 6113,
+    "reference_inventory_self": 5854,
+    "reference_inventory_SDK_boundary": 259,
+    "reference_level": "L1 unchanged",
+    "SK_metric_population": 97,
+    "R5_extension_trial_population": 5,
+    "full_AP_L2_or_SK_or_P0": "NOT_PASSED"
+  },
+  "portable_proofs": {
+    "source85_frozen": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/matrix86/frozen-candidate.json.gz",
+      "archive_bytes": 160850,
+      "archive_sha256": "86c2c4776c4c3e856129fbd58af33e581674a63650d27ca88d6a5ae25339c824",
+      "decoded_bytes": 633711,
+      "decoded_sha256": "67bcf2c8d8f9aa4bef00dbb51607cbb6e4775b41e25f2cdf191ea40d2629e787",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "public86_compile74": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/matrix86/public-consumers74-compile-complete.json.gz",
+      "archive_bytes": 4466,
+      "archive_sha256": "0aaa979d4742a7a315ce5945ad64eaa4013c72717e77233aa8f5846c18c82f11",
+      "decoded_bytes": 18241,
+      "decoded_sha256": "fdde9a92e75c59edd7941aa3ab0bfb142008673595a0e620893e8377f9c7f712",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "public86_inventory0": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/matrix86/provenance/inventory-public_consumers-audit.json.gz",
+      "archive_bytes": 256,
+      "archive_sha256": "5123bf6e93ac85eec67ca0bcbaa8d7c87377153cad1c4dc922a384e54cda7814",
+      "decoded_bytes": 349,
+      "decoded_sha256": "065d790b434688c0b42d8e5fcc2fe81d3159a8bdc1c241447be893441ea18192",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "typed90_20_106": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/supplement90/actual/supplement90-01/signatures/complete.json.gz",
+      "archive_bytes": 3467,
+      "archive_sha256": "142e685bf4997b58acc5008f5a361d053b36dae4384e4467088581fd80840235",
+      "decoded_bytes": 13550,
+      "decoded_sha256": "aed845df9c139aee86e5e3ccad9e85a2edab9065ba6be4669a6a7cf1ccfcf11e",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "representatives90_validation": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/supplement90/actual/supplement90-01/representatives/six-case-validation.json.gz",
+      "archive_bytes": 668,
+      "archive_sha256": "4db352ec8785db223e90b17de09f3cacdc5ff8031bd769c223a6d84b0c5fc6a2",
+      "decoded_bytes": 1748,
+      "decoded_sha256": "4f26ca54cdd3b47b24ca0a412c4aeb6c4c62874050407e4155780f42ac5dd34d",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "package90_complete": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/supplement90/actual/supplement90-01/package/complete.json.gz",
+      "archive_bytes": 19122,
+      "archive_sha256": "f74f41ed1af93e3e6ba6105137e49810f65764af37f92d2cf2be530e08cc2d2c",
+      "decoded_bytes": 104774,
+      "decoded_sha256": "544025afb2055582a7de3d8ec6023be9060beec82eb95a1e9948b2cde52f2175",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "package90_observations": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/supplement90/actual/supplement90-01/package/six-category-observations.json.gz",
+      "archive_bytes": 1878,
+      "archive_sha256": "17749b05ac558e2b91e1cece18f6ad4fe423b92c08de5d422248b96271e6785e",
+      "decoded_bytes": 9368,
+      "decoded_sha256": "040381ed4f18ddaf2d27bb1f28d31b1b4456aaf85a77c098c3fd05332348d9a2",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "BP20_98_compact": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/bp-audit98/BP20-compact-final.json.gz",
+      "archive_bytes": 7350,
+      "archive_sha256": "7cf73311175f922aec4b4434adbfc7aab9cb47c0e70467298095b207233185d4",
+      "decoded_bytes": 42972,
+      "decoded_sha256": "2a50305d34650f7df906854e3162a02ff916c91ebcf6517d755d91ba9f531abd",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "BP17_96_complete": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/layout96/native/action-complete.json",
+      "archive_bytes": 1337,
+      "archive_sha256": "6dd0ed108bdb64f02e8073053a3b075e7c053ed021f62756f05f181c08fbe5c5",
+      "decoded_bytes": 1337,
+      "decoded_sha256": "6dd0ed108bdb64f02e8073053a3b075e7c053ed021f62756f05f181c08fbe5c5",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "original bytes"
+    },
+    "BP17_96_comparison": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/layout96/native/comparison.json",
+      "archive_bytes": 2834,
+      "archive_sha256": "bd9f1d37dc630eb786a2df7c943d42b8f9514bdf968f9cb91bc1b828710a3ccd",
+      "decoded_bytes": 2834,
+      "decoded_sha256": "bd9f1d37dc630eb786a2df7c943d42b8f9514bdf968f9cb91bc1b828710a3ccd",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "original bytes"
+    },
+    "BP13_99_complete": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/move99/native02/action-complete.json.gz",
+      "archive_bytes": 694,
+      "archive_sha256": "d0a404c30373efb1cf5546abf6ff2b45b69e4902f7cc1ff595c46933eeec9e81",
+      "decoded_bytes": 1361,
+      "decoded_sha256": "8009538ba4cba1c15045208d62fe99c4e04ce7ba981bc5842b99c0e4766b1ec7",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "BP13_99_comparison": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/move99/native02/lifecycle-comparison.json.gz",
+      "archive_bytes": 1659,
+      "archive_sha256": "0643bc7e1d4a16f2cfb3737ab5903e84f1dc6462251db9b2b73bf3f658a3d011",
+      "decoded_bytes": 3992,
+      "decoded_sha256": "91c5d2af74d4d0b00c973eb14d781a9479a2c35d7e92ca9292cae6625cbe4dc2",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "BP13_99_raw": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/move99/native02/BP13-node-move-lifecycle.json.gz",
+      "archive_bytes": 52487,
+      "archive_sha256": "c076c949d82db7527223525160cef35a3a33b1cf0d4daea85977b4f464fa22ca",
+      "decoded_bytes": 1227690,
+      "decoded_sha256": "a774b3d626d61fabeb07ae4227b7e9634397afd99d0b4675f08a1120ae60344c",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "workflow88_comparison": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/comparison88/actual/comparison88-01/workflow-comparison.json.gz",
+      "archive_bytes": 3357,
+      "archive_sha256": "3ef14eeeaa644bcd6d1c604dbd5ad54250b785959dc1d5f14631c9f579d4d3e7",
+      "decoded_bytes": 42065,
+      "decoded_sha256": "65e24b1694f164a006d5ddd355e595106bf65e2d1ddbddd2eae862bf84d5385a",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "LastTest86_desktop": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/matrix86/raw/LastTest-desktop.log.gz",
+      "archive_bytes": 147768,
+      "archive_sha256": "d135cec890564df510edc2cd54ea8290d5ee2ec3e7f504798b5c140dc6304a70",
+      "decoded_bytes": 4497525,
+      "decoded_sha256": "258952f861a061ede3d212dccd79734c9b8e18d7eaf6172bc6de292c018b0a95",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "LastTest86_core": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/matrix86/raw/LastTest-core.log.gz",
+      "archive_bytes": 4233,
+      "archive_sha256": "efed840f9633c567d381f2d2b7f8aee1bc8f2d86ca799a988a7dd03cabf324a5",
+      "decoded_bytes": 34422,
+      "decoded_sha256": "196d4045c0d0c719026326216651f2ac5e8046d6efe2229f116c1229e4c3b03f",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "LastTest86_sqlite_headless": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/matrix86/raw/LastTest-sqlite_headless.log.gz",
+      "archive_bytes": 129094,
+      "archive_sha256": "39feade9dfe5b8e25957ad9c33d3841c0f42e2e7ff342aaa0ebce2e9717e07d8",
+      "decoded_bytes": 4345407,
+      "decoded_sha256": "74f42f739d2b9e454fdbed0dbfa02c44c9806c39e796a754c1ceb796ca3b8e7f",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "LastTest86_package_disabled": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/matrix86/raw/LastTest-package_disabled.log.gz",
+      "archive_bytes": 139120,
+      "archive_sha256": "c163d0f9be04248690d64a840bbfb1e7516696d2e2424123c462451c5e3f83a0",
+      "decoded_bytes": 4425061,
+      "decoded_sha256": "e8ae6cd6a7296c5830929ca88f43fa999de5a251f838d9e098cd33d7ca5e49ca",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "representatives90_raw": {
+      "path": "docs/engineering/core-framework-evidence/2026-10-02/supplement90/actual/supplement90-01/representatives/evidence/M-representatives.jsonl.gz",
+      "archive_bytes": 51217,
+      "archive_sha256": "57135ef95af8c7b3519dfcfe5beeaff2b8e0e8ceae1c4e36ebef2f4ad5756ea4",
+      "decoded_bytes": 2605513,
+      "decoded_sha256": "b7e1bd3bbc30cd59e503c2a6b5b1bd42050d8f01ae9889109b3aacba92c5af35",
+      "index_path": "docs/engineering/core-framework-evidence/2026-10-02/archive-index.json",
+      "encoding": "gzip"
+    },
+    "lifecycle104_receipt": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/lifecycle30/native/action-complete.json.gz",
+      "archive_bytes": 692,
+      "archive_sha256": "f745c61a40692a08abbba949486417c001993ad1dd66549014a8bc09d2ea8d34",
+      "decoded_bytes": 1371,
+      "decoded_sha256": "7978269a7b2e9c71ab10dc49bd5fa25d748be90c81c637d64a9691aad260bb18",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "lifecycle104_comparison": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/lifecycle30/native/lifecycle-comparison.json.gz",
+      "archive_bytes": 2489,
+      "archive_sha256": "b89ca86ef4d53b4d3e404cda793c8c1f9458e0f20080d7e7191456ab893712b4",
+      "decoded_bytes": 18031,
+      "decoded_sha256": "dab840e2f3e7296918cbaefd611b956dcca0b51a79358ca6266c9a926d523b39",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "lifecycle104_raw": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/lifecycle30/native/SK10-BP13-node-move-lifecycle30.json.gz",
+      "archive_bytes": 1743500,
+      "archive_sha256": "636b5dd05f16bf52f187bce372bb6bdf6603960ff2b8748036fa0a30e48e2f94",
+      "decoded_bytes": 48863087,
+      "decoded_sha256": "4be64172f6a91a6b294cb64d5b9067b6df418367b5c0e7d67c283156c67953c8",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "lifecycle104_fixed_script": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/lifecycle30/method/fixed-lifecycle30.json.gz",
+      "archive_bytes": 1004,
+      "archive_sha256": "0cdd06470842d80402681671fea1328e61e1caa33a14babab08df7d34c3e10df",
+      "decoded_bytes": 8216,
+      "decoded_sha256": "d335dfd2ba4b8066bc688247e1e0972271ce5c3af7fc9b7f4eec39ba713b35ef",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "candidate112": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/schema/current112/attempt-01/candidate.json.gz",
+      "archive_bytes": 19933,
+      "archive_sha256": "9cf4f16ab6d7852601fd80d1e3d66c97ac1af984c336de0c5fc559c25d8be870",
+      "decoded_bytes": 47285,
+      "decoded_sha256": "60593a19c00015c8666fa084a619d217c44e563807157a054db710e3ae10f830",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "candidate112_core": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/schema/current112/attempt-01/core-complete.json.gz",
+      "archive_bytes": 776,
+      "archive_sha256": "0ef0fe9c549a735c1b5c6b914296208c11169da64cde982b65e52a8c04c1d53a",
+      "decoded_bytes": 2610,
+      "decoded_sha256": "c1dfc9f0cbbede9e501f1d581346451566e0fc8cce47fea1b3f73d686340aa33",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "candidate112_local": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/schema/current112/attempt-01/local-complete.json.gz",
+      "archive_bytes": 878,
+      "archive_sha256": "b2e0fae80106adfaff8ea81c92dd7ea2c6813290a26fd8858de7143946519f61",
+      "decoded_bytes": 3195,
+      "decoded_sha256": "67b6999700fc201b18096fac8a310a9e55f3d4c1e6c17b3c177238f66ba28398",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "candidate112_sqlite": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/schema/current112/attempt-01/sqlite-complete.json.gz",
+      "archive_bytes": 838,
+      "archive_sha256": "581d81b348e7111b324684635f8fc287b96787e58e8034ccacec31f4a8f4c1a1",
+      "decoded_bytes": 3018,
+      "decoded_sha256": "0deaf9759419991ad9f6613c3fc98eb1d05ff1bf18f67e3e240a178044619a2c",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "candidate112_sanitized-schema": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/schema/current112/attempt-01/sanitized-schema-complete.json.gz",
+      "archive_bytes": 857,
+      "archive_sha256": "534a8b694892b156b38a8470a0dc6a3931f71b96c0229620b60992f613f1eecc",
+      "decoded_bytes": 2004,
+      "decoded_sha256": "bdc74a651e778abb9d38d43475086cbd1b4e7926f386dd660069c67a89ce5840",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    },
+    "boundary103": {
+      "path": "docs/engineering/core-acceptance-evidence/2026-10-03/audit103/facts.json.gz",
+      "archive_bytes": 2318,
+      "archive_sha256": "d4a2d4e4952648baf3bea979d7ee85794bca33f627ec16b93bc36fbe76961e8b",
+      "decoded_bytes": 13539,
+      "decoded_sha256": "4eed15fa7719433dc981f27aa71c18b7ad3152cf574861c4a86aedf533b5a4af",
+      "index_path": "docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "encoding": "gzip"
+    }
+  },
+  "AP_bindings": [
+    {
+      "AP": "AP-01",
+      "owner": "application",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_application_qcae_record_application_hpp",
+        "target": "qcae_application",
+        "header": "modules/application/include/qcae/record_application.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "a72ac22b8903ab42515f2e61546e64bba08e982e1f5ac2b4c8fa4c731b7c2ed9",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_01",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 7,
+        "this_AP_member_assertions": 0,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "668dced9907dfbea312605911a393656fff965161f8c3b008ac92698d4bafb91",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-01",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "normal-open changes DocId; real kill/recover preserves DocId, changes epoch and exact M/history"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": 5,
+          "distinct_actual_runs": 1
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "analysis_check_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 967
+          },
+          {
+            "case": "skeleton_workflow_cli",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1069
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "representative90": {
+          "run_id": "representative-41f6e87bd8d644aa9d0c56b477507dfc-BP-01",
+          "raw_jsonl_line": 6,
+          "literal_source_field": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proofs": [
+            "representatives90_validation",
+            "representatives90_raw"
+          ]
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "No public OpenDocument(ProjectRef), RecoverWorkspace(WorkspaceRef) or DiscoverCapabilities(SessionIdentity) declaration exists. The planned interfaces above express responsibilities, not callable signatures. capabilities.list is a host operation in adapters/engine_api/src/ipc_api.cpp, separate from RecordApplication."
+      }
+    },
+    {
+      "AP": "AP-02",
+      "owner": "document/schema",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_document_qcae_record_registry_hpp",
+        "target": "qcae_document",
+        "header": "modules/document/include/qcae/record_registry.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "abc520957a565acb24f2289509a2b78223d981ab25965b0ea625bb0feb8d69ce",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_02",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 5,
+        "this_AP_member_assertions": 2,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "2afbc9f4874370f5994503fabf2258e5453b7e214153692bfe4e32379dbc3e64",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-02",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "null/string generated field, query/edit, one history item, retry, undo/redo, save/normal-open and recover",
+          "frozen v1 lacks field5; current codec defaults description null without changing values"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 4,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "material_description_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2185
+          },
+          {
+            "case": "record_document",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2070
+          },
+          {
+            "case": "entity_generation",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 382
+          },
+          {
+            "case": "generated_entities",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2089
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ]
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "EntitySchema/QueryEntities/EditFields are design names. Actual query_fields is owned by qcae_query; generated records and EditSession provide the typed edit path. Optional-field compatibility and EXT-01 costs require their own execution."
+      }
+    },
+    {
+      "AP": "AP-03",
+      "owner": "geometry",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_geometry_features_qcae_geometry_features_hpp",
+        "target": "qcae_geometry_features",
+        "header": "features/geometry/include/qcae/geometry_features.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "08aceb37fee05a94b9ad90503c8083ffa25a2ab8aad65272a7abe614591be79a",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_03",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 3,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "bf41a2be9e1d0710cad0f1b7408dc733762f31077adfa923a10c1d50264a9a1b",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-03",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "evaluate u0/.5/1 to0/500/1000; save/normal-open retains GeometryId"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": 5
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "skeleton_representatives",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 796
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "mechanism86": {
+          "run_id": "mechanism-1790956527074478-23997-BP-03",
+          "intrinsic_source_field": "mutable-diagnostic",
+          "source_binding_scope": "Actual current86 source/build/full raw fences; raw tag is unchanged",
+          "actual_small_values": {
+            "geometry_id": "entity-19d849e2f5414c5d4dab2da805ce8494-4",
+            "new_document_id": "doc-19d849e2f5414c5d4dab2da805ce8494-10",
+            "old_document_id": "doc-19d849e2f5414c5d4dab2da805ce8494-1",
+            "position_at_0.000000": "0.000000,0,0 mm",
+            "position_at_0.500000": "500.000000,0,0 mm",
+            "position_at_1.000000": "1000.000000,0,0 mm"
+          },
+          "raw_proof": "LastTest86_desktop",
+          "raw_source_tag_unchanged": true
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "Only analytic line creation, endpoint edits and evaluation are mapped. GeometryTopology, surfaces, Booleans and general CAD projection remain outside this implemented public subset."
+      }
+    },
+    {
+      "AP": "AP-04",
+      "owner": "mesh/association",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
+        "target": "qcae_mesh_generation",
+        "header": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "4535d686da2441004f56c3ffa2111227a3597bc02c2630e39684107d775cbb3f",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_04",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 1,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "12895a4e55c8609fb1ef92acf1848abb33039e08641fd8839955ea8cb18b9ae9",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-04",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "1000→1200; stale binding;120mm spacing; reject_unmapped atomically preserves all rows/history"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": 23,
+          "distinct_actual_runs": 1
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "geometry_binding_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1053
+          },
+          {
+            "case": "line_mesh_regeneration",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2169
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "representative90": {
+          "run_id": "representative-41f6e87bd8d644aa9d0c56b477507dfc-BP-04",
+          "raw_jsonl_line": 2,
+          "literal_source_field": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proofs": [
+            "representatives90_validation",
+            "representatives90_raw"
+          ]
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "Only uniform-line regeneration is mapped. Same-count regeneration retains IDs; different-count replacement uses reject_unmapped. No inferred remapping or general geometry association service is declared."
+      }
+    },
+    {
+      "AP": "AP-05",
+      "owner": "meshing_adapter",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
+        "target": "qcae_mesh_generation",
+        "header": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "4535d686da2441004f56c3ffa2111227a3597bc02c2630e39684107d775cbb3f",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_05",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 1,
+        "this_AP_member_assertions": 2,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "fbc24e4d468ceb06e7d30d16841f47b1f84cc31e0ee04215c0bd25448890b44a",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-05",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "real task builds complete M11nodes/10beams",
+          "empty/self-loop actual worker candidates fail with no authority publication"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": 24,
+          "distinct_actual_runs": 1
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "skeleton_representatives",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 796
+          },
+          {
+            "case": "geometry_mesh",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2121
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "representative90": {
+          "run_id": "representative-41f6e87bd8d644aa9d0c56b477507dfc-BP-05",
+          "raw_jsonl_line": 1,
+          "literal_source_field": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proofs": [
+            "representatives90_validation",
+            "representatives90_raw"
+          ]
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "The built-in uniform line discretizer has no external meshing SDK. MesherCapabilities, general GenerateMesh and QualityReport are design interfaces, not declarations in line_mesh_task.hpp."
+      }
+    },
+    {
+      "AP": "AP-06",
+      "owner": "mesh/document",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_document_qcae_document_view_hpp",
+        "target": "qcae_document",
+        "header": "modules/document/include/qcae/document_view.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "49fb9f6527f8b0fc409b1f8201c60304dadd3ee78b8365c950ffc43e0d1c6f17",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_06",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 5,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "8cfe612cb0f81422cbca3a6d83ab3634e827c05df8e6ceae705a650db46be902",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-06",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "separate ID/number/container permutations",
+          "query all11 original IDs, public BDF decode, number bijection, ordered connectivity/section/physics equality"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": 78
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "skeleton_representatives",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 796
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "mechanism86": {
+          "run_id": "mechanism-1790956527074478-23997-BP-06",
+          "intrinsic_source_field": "mutable-diagnostic",
+          "source_binding_scope": "Actual current86 source/build/full raw fences; raw tag is unchanged",
+          "actual_small_values": {
+            "bijective_entity_count": "25",
+            "export_number_count": "25"
+          },
+          "raw_proof": "LastTest86_desktop",
+          "raw_source_tag_unchanged": true
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "TopologyDescriptor/ReadMeshBlocks/ReverseAdjacency are design names absent from the mapped view header. Persistent Tri3, export identity bijection and reverse-reference behavior need their separate tests."
+      }
+    },
+    {
+      "AP": "AP-07",
+      "owner": "features/mesh_editing",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_mesh_editing_qcae_mesh_editing_operations_hpp",
+        "target": "qcae_mesh_editing",
+        "header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "6bc64e3bff7ef053e41f5303663bd4387f43bcf6ef13f5ab649a87abeac07b3e",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_07",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 5,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "a9fc8c1300de54272f32feeed2966a4032279338537ab430554e28f22871c165",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-07",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "select original nodes4/5; local preview/cancel preserves model/history",
+          "one revision/history item; only selected nodes Y+1; one undo restores complete M; redo/retries"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "batch_translation_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2201
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ]
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "Batch translation and Tri3 preparation are already public declarations. Their compilation does not prove BP-07 atomic batch behavior or EXT-02/03 protected-file/cost acceptance."
+      }
+    },
+    {
+      "AP": "AP-08",
+      "owner": "organization",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_query_qcae_query_hpp",
+        "target": "qcae_query",
+        "header": "modules/query/include/qcae/query.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "32efaef0a871a561e921f540baa55a963b237cdf473161244e0a5708a035ffa4",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_08",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 5,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "e0262b06257ce64cbc819c4fee5e82b1e25a24a46200ffb405b0fdbe6af680a5",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-08",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "part/assembly/two sets return original11 stableIDs without copying; membership mutation/undo"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": 6,
+          "distinct_actual_runs": 1
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "record_query",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 237
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "representative90": {
+          "run_id": "representative-41f6e87bd8d644aa9d0c56b477507dfc-BP-08",
+          "raw_jsonl_line": 4,
+          "literal_source_field": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proofs": [
+            "representatives90_validation",
+            "representatives90_raw"
+          ]
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "No generated set-member feature API is declared. The real compatibility facade is qcae_legacy_api; OrganizationProjection and transformed repeated occurrences remain wider design scope."
+      }
+    },
+    {
+      "AP": "AP-09",
+      "owner": "physics/parameters",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_parameters_qcae_quantities_hpp",
+        "target": "qcae_parameters",
+        "header": "modules/parameters/include/qcae/quantities.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "c0eed150f4c3829507da92e5461baba7255cb7c947eaa9065c736858d8188be8",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_09",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 4,
+        "this_AP_member_assertions": 0,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "5dd71f526b27a8f7b74c63bf647c8fc9ab00bb34ff4fbdcd3a601e3139c266b4",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-09",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "canonical1m1000mm and210GPa210000MPa",
+          "local1/2/3 to global11/22/33",
+          "linear interpolation.5→1.5",
+          "named exact four parameter witnesses"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": 3
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "parameters",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 173
+          },
+          {
+            "case": "skeleton_representatives",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 796
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "mechanism86": {
+          "run_id": "mechanism-1790956527074478-23997-BP-09",
+          "intrinsic_source_field": "mutable-diagnostic",
+          "source_binding_scope": "Actual current86 source/build/full raw fences; raw tag is unchanged",
+          "actual_small_values": {
+            "global_coordinate": "11,22,33 mm",
+            "interpolated_value": "1.5 N",
+            "length": "1000 mm",
+            "modulus": "210000 MPa"
+          },
+          "raw_proof": "LastTest86_desktop",
+          "raw_source_tag_unchanged": true
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "CoordinateId/TableId lookup and document dependency invalidation are design services beyond these pure value functions. Successful conversion does not itself mutate document or analysis state."
+      }
+    },
+    {
+      "AP": "AP-10",
+      "owner": "extensions/capability_package",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_engine_api_qcae_engine_contributions_hpp",
+        "target": "qcae_engine_api",
+        "header": "adapters/engine_api/include/qcae/engine_contributions.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "deafc8574538fa984315aedf9ed092bd064ad6373d2e6b6f55421aa6410eba0f",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_10",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 9,
+        "this_AP_member_assertions": 0,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "1e86a973fae890ee369ced85f6e979b0b6c8c94ee80e57fdb5457b2d5ab7b350",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-10",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "OFF no declared profiles/Nastran operations; common create/query/transaction/history still works"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 3,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "nastran_package",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 585
+          },
+          {
+            "case": "engine_assembly",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 871
+          },
+          {
+            "case": "engine_contributions_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1335
+          }
+        ],
+        "limits": [
+          "Six passive ON categories observed; OFF real common-service regressions and package exclusion are separate.",
+          "No invented OFF six-row observer or generic unified category registry.",
+          "No active document or engineering solver execution in passive peer.",
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "package90": {
+          "actual_categories": [
+            "core",
+            "operations",
+            "codecs",
+            "validation",
+            "ui",
+            "render"
+          ],
+          "category_count": 6,
+          "actual_peer_exit": 0,
+          "passive_peer": true,
+          "active_document_created": false,
+          "SQLite_linked": false,
+          "engineering_solver_run": false,
+          "proofs": [
+            "package90_complete",
+            "package90_observations"
+          ],
+          "OFF_six_observer_rows": "NOT_PROVEN; package_disabled common-service tests are a separate scope"
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "RegisterCapabilityPackage/DisablePackage are design names. Registration is static startup assembly and QCAE_ENABLE_NASTRAN_PACKAGE is a compile-time composition choice; no generic dynamic package runtime or unified six-category registry exists. Qt-bearing engine API remains an adapter."
+      }
+    },
+    {
+      "AP": "AP-11",
+      "owner": "analysis",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_analysis_features_qcae_analysis_input_hpp",
+        "target": "qcae_analysis_features",
+        "header": "features/analysis/include/qcae/analysis_input.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "9e03fd146f7f3652ae592aabf461940ee06cccf757d7544a5f3f8bb49595f5bc",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_11",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 4,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "60791699dda74321b5c7ae2b4bec0c9b5058d8b607b52b4111015785adc471aa",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-11",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "exact LoadCase references; reject deleting referenced force; analysis !=Task ID and reject task-is-analysis",
+          "authoritative case and exact force/constraint references; dangling deletion rejection"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "analysis_check_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 967
+          },
+          {
+            "case": "analysis_checks",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2219
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ]
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "Freeze input is a read-only provenance API. Composite load/constraint mutation and referenced-load deletion rejection cannot be inferred from that header alone; BP-11 requires their real transaction behavior."
+      }
+    },
+    {
+      "AP": "AP-12",
+      "owner": "operations/history",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_operations_qcae_operation_registry_hpp",
+        "target": "qcae_operations",
+        "header": "modules/operations/include/qcae/operation_registry.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "edcbe2793c012d2c22586153985178104e56d241284ca9384de2ad11d589c9fb",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_12",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 7,
+        "this_AP_member_assertions": 0,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "50e454018dfd12e97a3281f29026dbb12772bf16d4da74513da9a52eb6766898",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-12",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "complete M node5 Y+1 then100 undo/redo rounds, exact pre/post goldens and201 revision delta"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": 202,
+          "distinct_actual_runs": 1
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "geometry_mesh",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2121
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "representative90": {
+          "run_id": "representative-41f6e87bd8d644aa9d0c56b477507dfc-BP-12",
+          "raw_jsonl_line": 5,
+          "literal_source_field": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proofs": [
+            "representatives90_validation",
+            "representatives90_raw"
+          ]
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "The registry is not the commit coordinator. Execute/Undo design names resolve to RecordApplication::execute/undo/redo/history, not OperationRegistry methods. Declaration or signature compilation does not prove durable history."
+      }
+    },
+    {
+      "AP": "AP-13",
+      "owner": "interaction",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_vtk_view_qcae_vtk_view_hpp",
+        "target": "qcae_vtk_view",
+        "header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "73745b523d12d64b461f59e01d5ecdec44aedc7390b1b5e1cf3e003b4fac9b6c",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_13",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 4,
+        "this_AP_member_assertions": 0,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "d564f21c1cd798dbf53153285b863792bd4dc356dccb2dc89955c37cf0a95088",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-13",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "current86 line-tool coverage is support only; not a substitute for paired node.move enter/pick/leave",
+          "Only public QKeySequence include and StandardKey event input changed; exact fieldY1/keyboard/mouse/lifecycle unchanged."
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "c3_tool_lifecycle",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2017
+          },
+          {
+            "case": "modeling_tools",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1860
+          }
+        ],
+        "limits": [
+          "Only existing node.move property representative; leave means blank viewport pick/empty engine selection, not dock close or Escape.",
+          "Original create-line30 remains a separate population.",
+          "No fullSK14/P0/97 metrics or real solver/external AI claim.",
+          "Loaded image facts are not SDK internal copy measurement.",
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "native99": {
+          "actual_wrapper_exit": 0,
+          "ordered_steps": 10,
+          "formal_target_picks": 2,
+          "empty_viewport_leaves": 2,
+          "cancel_revision_delta": 0,
+          "apply_revision_delta": 1,
+          "persistent_transactions": 1,
+          "observer_writes": 0,
+          "post_leave_apply_writes": 0,
+          "proofs": [
+            "BP13_99_complete",
+            "BP13_99_comparison",
+            "BP13_99_raw"
+          ]
+        },
+        "native104": {
+          "actual_source": {
+            "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+            "canonical_source_files": 410,
+            "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+            "proof": "source85_frozen"
+          },
+          "actual_wrapper_exit": 0,
+          "samples": 30,
+          "ordered_steps": 300,
+          "formal_target_picks": 60,
+          "empty_viewport_leaves": 60,
+          "GUI_undo_resets": 30,
+          "initial_revision": "13",
+          "final_revision": "73",
+          "cancel_revision_delta_each": 0,
+          "apply_revision_delta_each": 1,
+          "undo_revision_delta_each": 1,
+          "unique_persistent_transactions": 30,
+          "all_entity_fields_restored_each": true,
+          "observer_writes": 0,
+          "original_prefix_items": 13,
+          "final_history_cursor": 13,
+          "final_history_items": 14,
+          "proofs": [
+            "lifecycle104_receipt",
+            "lifecycle104_comparison",
+            "lifecycle104_raw",
+            "lifecycle104_fixed_script"
+          ],
+          "scope": "104 fixed successor, separate from original line30; leave is actual blank viewport selection. Dock-close/Escape and full SK10 remain unmeasured."
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "VtkView signals do not declare a public ToolContribution/ToolSession lifecycle service. Enter/pick/preview/cancel/leave behavior remains an integration boundary requiring fresh graphical evidence; no future interface is fabricated."
+      }
+    },
+    {
+      "AP": "AP-14",
+      "owner": "validation",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_analysis_features_qcae_analysis_features_hpp",
+        "target": "qcae_analysis_features",
+        "header": "features/analysis/include/qcae/analysis_features.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "32acff946c019ec0f76d18c47e096c2390d635e5946bcc945a2f18390335e560",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_14",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 4,
+        "this_AP_member_assertions": 2,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "09cde719de719cc5bca71f4ec2d2b01e346be17342056de782bdeb9770a4705d",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-14",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "exact1 missing-load issue locates analysis, version binds; repair→zero/current and oldcheck stale",
+          "named missing-load location and oldissue invalidation"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "analysis_check_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 967
+          },
+          {
+            "case": "analysis_checks",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2219
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ]
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "LocateIssue/PlanRepair are planned service names absent from the mapped header. Desktop analysis tools locate the Issue entity; repair is an explicit prepare_set_references operation, not direct CheckService model mutation. Installed controlled rules do not certify all engineering scenarios."
+      }
+    },
+    {
+      "AP": "AP-15",
+      "owner": "project/exchange",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_application_qcae_record_application_hpp",
+        "target": "qcae_application",
+        "header": "modules/application/include/qcae/record_application.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "a72ac22b8903ab42515f2e61546e64bba08e982e1f5ac2b4c8fa4c731b7c2ed9",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_15",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 4,
+        "this_AP_member_assertions": 0,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "5361984e8d8663e65cdf22d3a5e33556c0a9ac5bda1bee2b7925b37d8c22a104",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-15",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "published complete M deck + duplicate GRID actual model.import rejects with unchanged M/revision/history",
+          "six frozen legacy fixture mechanisms; detached migration preserves identities/facts/redo/save intent",
+          "actual six legacy fixtures and source-byte changes0"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 3,
+          "runtime_assertion_count": 9,
+          "distinct_actual_runs": 1
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "legacy_migration",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 816
+          },
+          {
+            "case": "nastran_artifact_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1087
+          },
+          {
+            "case": "skeleton_workflow_cli",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1069
+          }
+        ],
+        "limits": [
+          "Exact currentM duplicate import and normal-open/BDF mechanisms are combined with separate six frozen legacy-format fixtures.",
+          "Do not describe legacy fixture tests as a newly migrated completeM run unless that exact fixture is identified.",
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "representative90": {
+          "run_id": "representative-41f6e87bd8d644aa9d0c56b477507dfc-BP-15",
+          "raw_jsonl_line": 3,
+          "literal_source_field": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proofs": [
+            "representatives90_validation",
+            "representatives90_raw"
+          ]
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "Save and migration do not implicitly perform BDF exchange. Normal open, recovery and discard remain distinct lifecycle operations. Frozen legacy fixtures, semantic readback and duplicate numbering rejection require runtime evidence."
+      }
+    },
+    {
+      "AP": "AP-16",
+      "owner": "visualization",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_query_qcae_render_projector_hpp",
+        "target": "qcae_query",
+        "header": "modules/query/include/qcae/render_projector.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "ef94ce19f3d12f52edb1b02c405acf5d7f67730a5c3a3ee80db3a909b809003c",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_16",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 6,
+        "this_AP_member_assertions": 2,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "eba9f26cac7c36b742ff22c51e51f95386f90f8e4c5c0a53f49f5f94d09ca090",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-16",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "load exact two point/line/Tri3 PICK fixture hashes/12named rows",
+          "actual VTK mouse box pick; sorted actualIDs==goldenIDs; Tri3 additional render checks"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": null,
+          "PICK_named_cases": 12
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "desktop",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1455
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ]
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "Producer compilation does not prove scene atomicity, visible/through picking or all12 PICK cases. SetDisplayState and generalized RenderProjection design names are not this C++ public API."
+      }
+    },
+    {
+      "AP": "AP-17",
+      "owner": "ui",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_desktop_ui_qcae_desktop_hpp",
+        "target": "qcae_desktop_ui",
+        "header": "ui/desktop/include/qcae/desktop.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "318456e1a7e0a98dd84431c6d04e07f179d2449364fe237a03949b80071e9a56",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_17",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 3,
+        "this_AP_member_assertions": 0,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "7d519b775d11ca79a7e717dabd75e22ab3b8a5a3232795db96421a815c9690f7",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-17",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "current86 same QApplication QMainWindow roundtrip support only",
+          "strict280/360/170; no tolerance",
+          "newprocess state/geometry/raw preference/Ctrl+U exact golden and document-neutral requirement"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "c3_desktop_workflow",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1647
+          }
+        ],
+        "limits": [
+          "Full86 layout roundtrip is same QApplication/window recreation, not fresh process restart.",
+          "Actual96 supplies the separate fresh-process proof; old79 failure and old87 preparation are not imported as success.",
+          "One readiness CLIexit3 and owned engine SIGTERMexit-15 are literal scoped statuses, not every-command-exit0.",
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "native96": {
+          "actual_peer_exits": [
+            0,
+            0
+          ],
+          "independent_GUI_processes": 2,
+          "process_ids": [
+            "34865",
+            "34885"
+          ],
+          "exact_dimensions": {
+            "modelViewsDock_width": 280,
+            "selectionPropertiesDock_width": 360,
+            "historyDock_height": 170
+          },
+          "revision_before": "0",
+          "revision_after": "0",
+          "state_geometry_raw_preferences_shortcut_and_history_exact": true,
+          "settings_format": "explicit private Ini UserScope and SystemScope paths",
+          "proofs": [
+            "BP17_96_complete",
+            "BP17_96_comparison"
+          ],
+          "scope": "Separate fresh-process proof; original86 same-process recreation remains supporting evidence only."
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "UiContributionCatalog/SaveRestoreWorkspacePreferences are design names absent from desktop.hpp. Real panel/catalog actions and shortcut restore are private implementation behavior. Fresh process write/read and exact BP-17 golden are still required."
+      }
+    },
+    {
+      "AP": "AP-18",
+      "owner": "clients/extensions",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_desktop_client_qcae_desktop_client_hpp",
+        "target": "qcae_desktop_client",
+        "header": "modules/clients/include/qcae/desktop_client.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "ff31606389c125f9a0c986c1e6cc89db80b18db414b02c5cf9757af13ab339d3",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_18",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 4,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "b157797ff62f191c03e38b31b68162c71c121209da7967633263703694a53fa7",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-18",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "exact CLI3/GUI3/MIX3 and8checkpoints each; ID bijections and semantic comparison",
+          "real CLI engine workflow producer, common authoritative services"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "skeleton_workflow_cli",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1069
+          },
+          {
+            "case": "c3_desktop_workflow",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1647
+          }
+        ],
+        "limits": [
+          "Thin script/shared service proof; real externalAI=false, real engineering solver=false.",
+          "Comparer acceptance_ready is its workflow-local result, notSK14/P0 readiness.",
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "comparison88": {
+          "workflows": 9,
+          "mode_counts": {
+            "CLI": 3,
+            "GUI": 3,
+            "MIX": 3
+          },
+          "checkpoint_comparisons": 72,
+          "semantic_differences": 0,
+          "GUI_MIX_origin": "original current86 native6 byte-preserved; not a rerun or old68 import",
+          "proof": "workflow88_comparison",
+          "real_external_AI": false
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "ClientSDK.invoke is a planned generic SDK name, not a public DesktopClient declaration. CLI/thin-script share the IPC protocol; real external AI sessions remain separately unvalidated."
+      }
+    },
+    {
+      "AP": "AP-19",
+      "owner": "results",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_result_features_qcae_result_service_hpp",
+        "target": "qcae_result_features",
+        "header": "features/results/include/qcae/result_service.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "015aa6daca120ef762feb1d9bcd92619a67bee9a13980703fe1f5013d1d40ed3",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_19",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 2,
+        "this_AP_member_assertions": 1,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "15b0db79e30af79577cae3cd30b2c03cb720da3f533a6173e273aafb16dbbd83",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-19",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "R endpoint values, displacement/mm/global/node/LC1 and fixture provenance",
+          "physical node edit stales R; undo restoring physical input current",
+          "public read_fixture and exact metadata/provenance through current engine"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 2,
+          "runtime_assertion_count": null
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "result_fixture_ipc",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 1103
+          },
+          {
+            "case": "result_fixture",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 2236
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ]
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "Read is not side-effect-free postprocessing: it persists a CAS/idempotent owned-row result. ResultProjection charts, derived fields and real solver output are outside this explicit fixture public subset."
+      }
+    },
+    {
+      "AP": "AP-20",
+      "owner": "runtime/platform_support",
+      "date": "2026-10-03",
+      "state": "ACTUAL_IMPLEMENTED_SUBSET_EVIDENCE_BOUND; NO_ACCEPTANCE_PROMOTION",
+      "actual_source": {
+        "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+        "canonical_source_files": 410,
+        "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+        "proof": "source85_frozen"
+      },
+      "portable_proof_registry": "docs/engineering/core-interface-evidence-bindings-2026-10-03.json",
+      "public_header_compile_link": {
+        "consumer": "consumer_qcae_runtime_qcae_task_service_hpp",
+        "target": "qcae_runtime",
+        "header": "modules/runtime/include/qcae/task_service.hpp",
+        "actual_build_exit": 0,
+        "population": 74,
+        "AP_distinct_header_consumers": 18,
+        "dialect": "GNU C++20 for the original public consumers",
+        "CTest_registered": 0,
+        "binary_sha256": "f88266b4d901b30b6c791ba27570596eb37ee681b4f3fa626b5b1467962bf037",
+        "proofs": [
+          "public86_compile74",
+          "public86_inventory0"
+        ],
+        "scope": "Independent public-header compile/link and usage requirements; not 74 executed CTest cases or all-ODR/runtime coverage."
+      },
+      "declaration_types": {
+        "consumer": "consumer_ap_20",
+        "actual_configure_exit": 0,
+        "actual_build_exit": 0,
+        "dialect": "strict C++20",
+        "compiler_warnings": 0,
+        "this_AP_function_assertions": 5,
+        "this_AP_member_assertions": 2,
+        "population_consumers": 20,
+        "population_static_assertions": 106,
+        "population_function_assertions": 88,
+        "population_member_assertions": 18,
+        "binary_sha256": "d770503b1b14fcbefac5a6a549edf4152a02a4a0acc39532f1fe020fbc44cf30",
+        "proof": "typed90_20_106",
+        "scope": "Unevaluated declaration-type assertions compiled; not a claim that every listed function was ODR-used or executed."
+      },
+      "bounded_runtime": {
+        "BP": "BP-20",
+        "state": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "observed_scope": [
+          "real workers2/queued8, ninthRESOURCE_LIMIT and actual childExit86",
+          "recover ten interrupted tasks, strictly increasing events, no rerun, unchanged model/history/revision"
+        ],
+        "counts": {
+          "named_current86_CTest_cases": 1,
+          "runtime_assertion_count": 45
+        },
+        "mapping_proof": "BP20_98_compact",
+        "named_actual_cases": [
+          {
+            "case": "skeleton_representatives",
+            "proof": "LastTest86_desktop",
+            "raw_start_line": 796
+          }
+        ],
+        "limits": [
+          "This binding does not promote the full BP acceptance contract."
+        ],
+        "mechanism86": {
+          "run_id": "mechanism-1790956527074478-23997-BP-20",
+          "intrinsic_source_field": "mutable-diagnostic",
+          "source_binding_scope": "Actual current86 source/build/full raw fences; raw tag is unchanged",
+          "actual_small_values": {
+            "active_workers_before": "2",
+            "child_exit": "86",
+            "ninth_pending": "RESOURCE_LIMIT",
+            "queued_before": "8",
+            "recovered_tasks": "10",
+            "revision_delta": "0"
+          },
+          "raw_proof": "LastTest86_desktop",
+          "raw_source_tag_unchanged": true
+        }
+      },
+      "remaining": {
+        "original_status_fields_preserved": true,
+        "future_interfaces_and_all_AP_runtime_L2": "PENDING",
+        "full_97_metrics_SK_C3_C4_P0": "NOT_PASSED",
+        "boundary": "ConfigureRuntime is not a TaskService method. Configuration/logging/packaging and real solver process recovery remain separate platform adapters. Durable transition guarantees depend on installed load/persist/publish callbacks, not the scheduler constructor alone."
+      }
+    }
+  ],
+  "extension_evidence": {
+    "EXT01_EXT02_EXT03": {
+      "actual_source_scope": "Original independent b740 baseline399 extension trials; not newly rerun under source85.",
+      "trials": [
+        {
+          "id": "EXT01",
+          "baseline": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+          "author": "/root/c4_ext01_frozen41",
+          "extension_commit": "d85f7433e741eb7304bdeddd7d4ad0876dfe1f86",
+          "product_files": 6,
+          "original_limit": 6,
+          "protected_touch_count": 0,
+          "diff": "docs/engineering/c3-closure-evidence/package/c4-independent41/EXT01/extension-baseline.diff",
+          "diff_bytes": 38840,
+          "diff_sha256": "67b1cfe421d5bfd0a8089bdcfb0015b41f8773252c2ec5feb99689a9afb314f0",
+          "manifest_diff_hash_matches": true
+        },
+        {
+          "id": "EXT02",
+          "baseline": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+          "author": "/root/c4_ext02_frozen41",
+          "extension_commit": "4629a9084c86b244b0c08af03082c5092cd872d7",
+          "product_files": 4,
+          "original_limit": 6,
+          "protected_touch_count": 0,
+          "diff": "docs/engineering/c3-closure-evidence/package/c4-independent41/EXT02/extension.diff",
+          "diff_bytes": 35691,
+          "diff_sha256": "be05757eee8c18e4d78e5fe5e4d1eaeebe83955744daac248824e915f076118e",
+          "manifest_diff_hash_matches": true
+        },
+        {
+          "id": "EXT03",
+          "baseline": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+          "author": "/root/c4_ext03_frozen41",
+          "extension_commit": "ee71f1ec76e6ce070b7f2351e3a274af02ee8994",
+          "product_files": 10,
+          "original_limit": 10,
+          "protected_touch_count": 0,
+          "diff": "docs/engineering/c3-closure-evidence/package/c4-independent41/EXT03/extension-baseline.diff",
+          "diff_bytes": 52709,
+          "diff_sha256": "d512aa81b321d0aa8c2c57fbc8a17706e0b5cef8f1a50e2f4329f93e9c645eb6",
+          "manifest_diff_hash_matches": true
+        }
+      ],
+      "proof": "boundary103",
+      "protected_source_or_generator_change_not_inferred_from_type_consumers": true
+    },
+    "EXT04": {
+      "actual_source_commit": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "actual_source_sha256": "36335df61c1d57bec11ba620b957d25b0ba07e3242b63f7951f891ebe3a3e5ff",
+      "historical_report": {
+        "path": "docs/engineering/c3-closure-evidence/package/c4-independent41/EXT04/report.json",
+        "bytes": 21348,
+        "sha256": "691b95c74ea75390d93e8147858fc96f98529ef76fd7c6786bd7bd78cf3b4818"
+      },
+      "task_counts_each_backend": {
+        "memory": {
+          "success": 10,
+          "cancel_before_commit": 10,
+          "stale_candidate": 10
+        },
+        "sqlite": {
+          "success": 10,
+          "cancel_before_commit": 10,
+          "stale_candidate": 10
+        }
+      },
+      "history_rounds_each_backend": 100,
+      "history_revision_delta_each_backend": 201,
+      "functional_semantic_differences": 0,
+      "current86_functional_retest": {
+        "actual_source": {
+          "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+          "canonical_source_files": 410,
+          "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+          "proof": "source85_frozen"
+        },
+        "core_case": "geometry_mesh",
+        "sqlite_cases": [
+          "geometry_mesh",
+          "geometry_mesh_sqlite"
+        ],
+        "proofs": [
+          "LastTest86_core",
+          "LastTest86_sqlite_headless"
+        ],
+        "scope": "Original same geometry_mesh translation-unit fixture with adapter selection, not full physical M or a new independent extension trial."
+      },
+      "limits": [
+        "Memory store retains heap state while reconstructing the application; only SQLite closes and reopens a persistent store. This is not cross-process memory durability, full M physics coverage, complete SK or P0 acceptance.",
+        "The original final_integrated_release_retest_pending field remains unchanged; dated current86 evidence is recorded separately."
+      ]
+    },
+    "EXT05": {
+      "state": "KNOWN_FAIL_AND_UNKNOWN; NOT_PASSED",
+      "historical_source49_commit": "c0182a65cba7400960aa7c8f396b31f9351c2b2e",
+      "historical_source49_actual60": {
+        "node": {
+          "population": 30,
+          "original_copy_cap": 589824,
+          "known_copy_failures": 0,
+          "copy_min": 445121,
+          "copy_max": 555298
+        },
+        "material": {
+          "population": 30,
+          "original_copy_cap": 69632,
+          "known_copy_failures": 14,
+          "copy_min": 66863,
+          "copy_max": 90501
+        }
+      },
+      "historical_frozen_baseline399": "b740b374c934f3b4624a21247b9a5deeb2ca6bf4",
+      "current_source85_performance_remeasurement": "NOT_RUN",
+      "whole_SDK_owned_copy_coverage": "UNKNOWN",
+      "unknown_value": null,
+      "phase_only_original_caps_unchanged": true,
+      "proof": "boundary103",
+      "scope": "Known copy-budget failures remain failures; no elapsed/RSS target substitution or double-counted bind saving. Performance optimization is paused."
+    },
+    "R5": {
+      "denominator": 5,
+      "all_five_passed": false,
+      "EXT05_excluded_from_denominator": false
+    }
+  },
+  "unclosed": [
+    "Future AP design interfaces, all runtime/ODR obligations and full L2 qualification.",
+    "OFF six-category direct observation and a second actual format-only profile binary build.",
+    "Full97 metric acceptance, complete SK/C3/C4/P0; original schema/legacy producer limitations remain.",
+    "Real Nastran engineering validation, complete external AI scenarios and whole SDK/performance coverage.",
+    "Blank viewport leave is bounded; dock-close/Escape and generic ToolSession are not proved by99/104."
+  ],
+  "quality_scope": "Documentation-only read/hash/link/JSON preservation checks; no product, compiler or tests run for this reconciliation."
+}
