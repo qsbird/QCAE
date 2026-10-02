@@ -80,6 +80,12 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 
 ## NEXT-02 当前 typed IPC 补充
 
-已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。旧非 typed 路径拒绝这些新字段，避免静默忽略。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
+已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。其他旧非 typed 路径拒绝这些新字段，避免静默忽略；宿主 `project.open` 的版本化输入例外见下节。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
 
 `operations.get` 的 document 作用域可以在贡献停用后查询原调用者的已保存回执，无需重新启用 handler；未知或未保留事实返回 `ENTITY_NOT_FOUND`。来源、测试及未完成范围见[NEXT验证](../engineering/next-validation.md)与[实际 wire 说明](../../adapters/engine_api/README.md)。
+
+## project.open 当前宿主输入契约
+
+已有宿主生命周期入口使用生成的 `ProjectOpenInput`，schema 为 `qcae.operation.project.open.v1`、版本为1。参数为 `{mode: "normal", path: "非空路径"}` 或 `{mode: "recover"}`；恢复不接受 `path`。能力发现保留设计目录的符号类型名，同时用 `wire_input_type` / `wire_output_type` 公布实际 `ProjectOpenInput` / `DocumentInfo`，两个封闭的 `oneOf` 分支与实际拒绝条件一致。
+
+可省略 `requested_version` 选择安装版本；正uint32的不同版本返回 `SCHEMA_UNSUPPORTED`，非法版本或参数返回 `INVALID_INPUT` 及字段。拒绝发生在应用打开/恢复和宿主幂等登记之前。此入口不接受 `expected_profile`。成功及重试继续走原应用服务和host操作事实，不增加另一条写入链。MCP元数据新增有界 `oneOf`，Profile字段只为显式声明 `requires_expected_profile` 的描述符公布。实际测试及局部范围见[验证记录](../engineering/project-open-contract-2026-10-03.md)。

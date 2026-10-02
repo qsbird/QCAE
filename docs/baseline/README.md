@@ -68,3 +68,5 @@ P0装配为部件层级组织；重复变换实例、复杂CAD/网格、完整�
 ## 1.1相对1.0的设计变化
 
 补充SolverProfile/TargetBinding、受控专有扩展、来源/目标编号映射以及通用产物/结果契约。运行时仍采用同一本地engine与事务；SDK、具体方言环境门禁不变。尚无已发布工程格式或产品接口，本轮没有实际数据迁移。
+
+2026-10-03继续补齐已有 `project.open` 的生成输入、实际参数发现和版本拒绝，修正MCP条件schema与Profile元数据声明。实际核心40/本地54/SQLite IPC82/专项ASan+UBSan1通过，真实SQLite33请求及独立进程重启恢复通过；不同源码的能力目录、编译Profile变体和私有宿主ON/OFF补证保持范围分列。见[契约与实际验证](../engineering/project-open-contract-2026-10-03.md)。其他legacy契约、正式六类owner元数据和完整SK/P0门禁仍保留，未追加性能优化。

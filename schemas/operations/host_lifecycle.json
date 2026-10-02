@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "status": "implemented_host_lifecycle_adapter_contract",
+  "operations": [
+    {
+      "operation_id": "project.open",
+      "version": 1,
+      "schema_id": "qcae.operation.project.open.v1",
+      "type_name": "ProjectOpenInput",
+      "effect": "document_write",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "mode",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "path",
+          "type": "string",
+          "optional": true
+        }
+      ]
+    }
+  ]
+}

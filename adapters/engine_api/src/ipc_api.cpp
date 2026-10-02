@@ -3,6 +3,7 @@
 #include "qcae/ipc_model.hpp"
 #include "qcae/ipc_selection.hpp"
 #include "qcae/operations.hpp"
+#include "qcae/operation_inputs.hpp"
 #include "qcae/typed_host.hpp"
 #include "qcae/records.hpp"
 
@@ -12,6 +13,7 @@
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace qcae::ipc {
 namespace {
@@ -22,7 +24,9 @@ QString number(Revision revision) {
     return transport::json_ledger::number(revision);
 }
 struct InvalidRequest : std::runtime_error {
-    using std::runtime_error::runtime_error;
+    std::string field;
+    explicit InvalidRequest(const std::string& message, std::string input_field = {})
+        : std::runtime_error(message), field(std::move(input_field)) {}
 };
 
 QString string_field(const QJsonObject& object, const char* key, bool allow_empty = false) {
@@ -69,6 +73,67 @@ std::optional<QJsonObject> read_parameters_schema(std::string_view operation) {
                        {"properties", properties},
                        {"required", required},
                        {"additionalProperties", false}};
+}
+// This lifecycle route uses the generated string DTO, then retains its explicit mode rules.
+operations::ProjectOpenInput project_open_input(const QJsonObject& parameters) {
+    operations::Value::Object input;
+    for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+        const auto name = transport::json_ledger::utf8(it.keyView());
+        if (!it.value().isString())
+            throw InvalidRequest("Expected a non-empty string: " + name, "input." + name);
+        input.emplace(name,
+                      operations::Value(transport::json_ledger::utf8(it.value().toStringView())));
+    }
+    auto decoded = operations::InputTraits<operations::ProjectOpenInput>::from_value(
+        operations::Value(std::move(input)));
+    if (!decoded.ok())
+        throw InvalidRequest(decoded.error->message, decoded.error->field);
+    return std::move(*decoded.value);
+}
+void describe_project_open(QJsonObject& entry) {
+    const auto definition = operations::InputTraits<operations::ProjectOpenInput>::definition();
+    QJsonArray fields, required;
+    QJsonObject properties;
+    for (const auto& field : definition.fields) {
+        fields.append(QJsonObject{{"name", qs(field.name)},
+                                  {"wire_type", qs(field.wire_type)},
+                                  {"required", field.required},
+                                  {"allow_empty", field.allow_empty},
+                                  {"units", QJsonArray{}}});
+        properties.insert(qs(field.name), QJsonObject{{"type", "string"}, {"minLength", 1}});
+        if (field.required)
+            required.append(qs(field.name));
+    }
+    properties.insert("mode",
+                      QJsonObject{{"type", "string"}, {"enum", QJsonArray{"normal", "recover"}}});
+    const QJsonArray modes{
+        QJsonObject{
+            {"type", "object"},
+            {"properties",
+             QJsonObject{{"mode", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"normal"}}}},
+                         {"path", properties.value("path")}}},
+            {"required", QJsonArray{"mode", "path"}},
+            {"additionalProperties", false}},
+        QJsonObject{
+            {"type", "object"},
+            {"properties",
+             QJsonObject{
+                 {"mode", QJsonObject{{"type", "string"}, {"enum", QJsonArray{"recover"}}}}}},
+            {"required", QJsonArray{"mode"}},
+            {"additionalProperties", false}}};
+    entry.insert("version", static_cast<qint64>(definition.version));
+    entry.insert("schema_id", qs(definition.schema_id));
+    entry.insert("requested_version_field", "requested_version");
+    entry.insert("omitted_version_policy", "installed_version");
+    entry.insert("wire_input_type", "ProjectOpenInput");
+    entry.insert("wire_output_type", "DocumentInfo");
+    entry.insert("fields", fields);
+    entry.insert("parameters_schema",
+                 QJsonObject{{"type", "object"},
+                             {"properties", properties},
+                             {"required", required},
+                             {"additionalProperties", false},
+                             {"oneOf", modes}});
 }
 DocumentRef document_ref(const QJsonObject& request) {
     return {DocumentId{transport::json_ledger::utf8(string_field(request, "document_id"))},
@@ -213,7 +278,8 @@ QJsonObject dispatch(MemoryApplication& app,
         const auto params = request.value("parameters").toObject();
         if (typed && typed->supports(op))
             return typed->dispatch(request, caller);
-        if (request.contains("requested_version") || request.contains("expected_profile"))
+        if ((request.contains("requested_version") && op != "project.open") ||
+            request.contains("expected_profile"))
             throw InvalidRequest("requested_version/expected_profile require a typed operation");
         if (selections) {
             if (const auto selection_response =
@@ -250,6 +316,8 @@ QJsonObject dispatch(MemoryApplication& app,
                     entry.insert("requested_version", 1);
                     available = true;
                 }
+                if (descriptor.name == "project.open")
+                    describe_project_open(entry);
                 entry.insert("available", available);
                 if (const auto schema = read_parameters_schema(descriptor.name))
                     entry.insert("parameters_schema", *schema);
@@ -294,18 +362,40 @@ QJsonObject dispatch(MemoryApplication& app,
             fields(params, {});
             response = result_json(id, app.current_document(), info_json);
         } else if (op == "project.open") {
-            fields(params, {"mode", "path"});
-            const auto mode = string_field(params, "mode");
+            const auto definition =
+                operations::InputTraits<operations::ProjectOpenInput>::definition();
+            if (request.contains("requested_version")) {
+                const auto value = request.value("requested_version");
+                const auto version = value.toDouble();
+                if (!value.isDouble() || !std::isfinite(version) ||
+                    std::trunc(version) != version || version <= 0 ||
+                    version > std::numeric_limits<std::uint32_t>::max())
+                    throw InvalidRequest("Expected a positive uint32 integer.",
+                                         "requested_version");
+                if (static_cast<std::uint32_t>(version) != definition.version) {
+                    auto rejected = failure(
+                        id, "SCHEMA_UNSUPPORTED", "Requested operation version is not installed");
+                    auto error = rejected.value("error").toObject();
+                    error.insert("field", "requested_version");
+                    rejected.insert("error", error);
+                    return rejected;
+                }
+            }
+            const auto input = project_open_input(params);
             const auto key = string_field(request, "idempotency_key").toStdString();
-            if (mode == "normal") {
-                response = result_json(
-                    id,
-                    app.open_document(caller, string_field(params, "path").toStdString(), key),
-                    info_json);
-            } else if (mode == "recover" && !params.contains("path")) {
+            if (input.mode == "normal") {
+                if (!input.path)
+                    throw InvalidRequest("Use mode normal with path, or recover without path",
+                                         "input.path");
+                response = result_json(id, app.open_document(caller, *input.path, key), info_json);
+            } else if (input.mode == "recover") {
+                if (input.path)
+                    throw InvalidRequest("Use mode normal with path, or recover without path",
+                                         "input.path");
                 response = result_json(id, app.recover_document(caller, key), info_json);
             } else
-                throw InvalidRequest("Use mode normal with path, or recover without path");
+                throw InvalidRequest("Use mode normal with path, or recover without path",
+                                     "input.mode");
         } else if (op == "project.save" || op == "project.save_as") {
             fields(params, {"path"});
             const auto path = params.contains("path")
@@ -499,7 +589,13 @@ QJsonObject dispatch(MemoryApplication& app,
         }
         return response;
     } catch (const InvalidRequest& error) {
-        return failure(id, "INVALID_INPUT", QString::fromUtf8(error.what()));
+        auto rejected = failure(id, "INVALID_INPUT", QString::fromUtf8(error.what()));
+        if (!error.field.empty()) {
+            auto diagnostic = rejected.value("error").toObject();
+            diagnostic.insert("field", qs(error.field));
+            rejected.insert("error", diagnostic);
+        }
+        return rejected;
     } catch (const std::exception&) {
         return failure(id,
                        "INTERNAL_ERROR",

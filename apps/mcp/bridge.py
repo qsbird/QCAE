@@ -138,7 +138,7 @@ def checked_parameters_schema(candidate):
             or candidate.get("additionalProperties") is not False):
         raise TransportError("invalid engine parameters schema")
     pending, count = [(candidate, 0)], 0
-    keywords = {"type", "properties", "required", "items", "additionalProperties", "enum",
+    keywords = {"type", "properties", "required", "items", "additionalProperties", "enum", "oneOf",
                 "minimum", "maximum", "minLength", "maxLength", "minItems", "maxItems", "description"}
     types = {"object", "array", "string", "number", "integer", "boolean", "null"}
     while pending:
@@ -163,6 +163,11 @@ def checked_parameters_schema(candidate):
             raise TransportError("invalid engine schema required fields")
         if "items" in schema:
             pending.append((schema["items"], depth + 1))
+        if "oneOf" in schema:
+            branches = schema["oneOf"]
+            if not isinstance(branches, list) or not 1 <= len(branches) <= 128:
+                raise TransportError("invalid engine schema alternatives")
+            pending.extend((branch, depth + 1) for branch in branches)
         if "additionalProperties" in schema and type(schema["additionalProperties"]) is not bool:
             raise TransportError("invalid engine schema additional properties")
         if "description" in schema and not isinstance(schema["description"], str):
@@ -199,6 +204,7 @@ def tool_schema(descriptor):
         properties["requested_version"] = {"type": "integer", "minimum": 1, "maximum": 4294967295}
         if "requested_version" in descriptor:
             properties["requested_version"]["const"] = descriptor["requested_version"]
+    if "requires_expected_profile" in descriptor:
         properties["expected_profile"] = {
             "type": "object", "properties": {key: {"type": "string", "minLength": 1}
                 for key in ("profile_id", "profile_version", "definition_digest")},

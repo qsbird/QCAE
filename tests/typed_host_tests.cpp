@@ -1,5 +1,6 @@
 #include "qcae/ipc_api.hpp"
 #include "qcae/typed_host.hpp"
+#include "qcae/operation_inputs.hpp"
 #include "../adapters/engine_api/src/typed_json.hpp"
 #include "runtime_test_support.hpp"
 #include <QJsonArray>
@@ -7,8 +8,13 @@
 #include <chrono>
 #include <iostream>
 #include <limits>
+#include <map>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <thread>
+#include <utility>
+#include <vector>
 
 namespace qcae::operations {
 // Test contribution only; no synthetic profile operation is registered by production.
@@ -56,6 +62,296 @@ namespace {
 void require(bool condition, const char* message) {
     if (!condition)
         throw std::runtime_error(message);
+}
+// The fake persists actual application rows and project payloads; it does not prove SQLite I/O.
+struct OpenContractStore final : qcae::IWorkspaceStore, qcae::IRecordStore {
+    runtime_test::Store records;
+    std::map<std::string, qcae::StoredProject> projects;
+    unsigned commits{}, publishes{}, project_reads{};
+    std::optional<qcae::StoredWorkspace> load() override {
+        return {};
+    }
+    std::uint64_t commit(std::uint64_t, const std::string&) override {
+        throw qcae::StorageError("The record application must use commit_rows");
+    }
+    qcae::LoadedRows load_rows() override {
+        return records.load_rows();
+    }
+    qcae::BatchReceipt commit_rows(const qcae::StoreBatch& batch) override {
+        auto receipt = records.commit_rows(batch);
+        ++commits;
+        return receipt;
+    }
+    std::string acquire_project(const std::string& path) override {
+        return path;
+    }
+    void release_projects_except(const std::string&) noexcept override {}
+    qcae::StoredProject read_project(const std::string& path) override {
+        ++project_reads;
+        const auto found = projects.find(path);
+        if (found == projects.end())
+            throw qcae::StorageError("project_not_found");
+        return found->second;
+    }
+    void publish_project(const std::string& path, const qcae::StoredProject& project) override {
+        projects[path] = project;
+        ++publishes;
+    }
+};
+struct OpenContractState {
+    std::uint64_t generation{};
+    std::map<qcae::StoreKey, std::string> rows;
+    std::map<std::string, std::pair<std::string, std::string>> projects;
+    QJsonObject document, history;
+    bool recovery_available{};
+    unsigned commits{}, publishes{}, project_reads{};
+    bool operator==(const OpenContractState&) const = default;
+};
+OpenContractState open_contract_state(qcae::MemoryApplication& app,
+                                      const OpenContractStore& store,
+                                      const qcae::Caller& caller) {
+    OpenContractState state;
+    state.generation = store.records.generation;
+    for (const auto& [key, value] : store.records.rows)
+        state.rows.emplace(key, *value);
+    for (const auto& [path, project] : store.projects)
+        state.projects.emplace(path, std::pair{project.save_token, project.payload});
+    const auto current = app.current_document();
+    if (current.ok()) {
+        state.document = qcae::ipc::info_json(*current.value);
+        const QJsonObject request{
+            {"api_version", "1.1"},
+            {"request_id", "observe-history"},
+            {"operation", "history.list"},
+            {"parameters", QJsonObject{}},
+            {"document_id", QString::fromStdString(current.value->document.id.value)},
+            {"document_epoch", QString::fromStdString(current.value->document.epoch.value)}};
+        state.history = qcae::ipc::dispatch(app, request, caller);
+        require(state.history.value("status") == "success", "observe full history");
+    }
+    state.recovery_available = app.recovery_available();
+    state.commits = store.commits;
+    state.publishes = store.publishes;
+    state.project_reads = store.project_reads;
+    return state;
+}
+QJsonObject open_request(QJsonObject parameters, const char* key) {
+    return {{"api_version", "1.1"},
+            {"request_id", "open-contract"},
+            {"operation", "project.open"},
+            {"parameters", parameters},
+            {"idempotency_key", key}};
+}
+void rejected_open_inputs_are_atomic(qcae::MemoryApplication& app,
+                                     OpenContractStore& store,
+                                     qcae::ipc::TypedHost& host,
+                                     const qcae::Caller& caller,
+                                     const char* key) {
+    const auto before = open_contract_state(app, store, caller);
+    auto reject = [&](QJsonObject request, const char* code, const char* field) {
+        // A rejected request must not reserve its host-level key, even after a retry.
+        for (int retry = 0; retry < 2; ++retry) {
+            const auto wire = QJsonDocument::fromJson(QJsonDocument(request).toJson()).object();
+            const auto response =
+                qcae::ipc::dispatch(app, wire, caller, nullptr, nullptr, nullptr, &host);
+            const auto error = response.value("error").toObject();
+            require(response.value("status") == "failed" && error.value("code") == code &&
+                        error.value("field") == field,
+                    "project.open rejects the exact parameter/version contract");
+            require(open_contract_state(app, store, caller) == before,
+                    "rejected open leaves every persisted row, payload, generation, history and "
+                    "lifecycle unchanged");
+        }
+    };
+    const QJsonObject normal{{"mode", "normal"}, {"path", "/open-contract.qcae"}};
+    for (const auto& version : {QJsonValue(0),
+                                QJsonValue(-1),
+                                QJsonValue(1.5),
+                                QJsonValue(4294967296.0),
+                                QJsonValue(true),
+                                QJsonValue("1"),
+                                QJsonValue(QJsonValue::Null)}) {
+        auto request = open_request(normal, key);
+        request.insert("requested_version", version);
+        reject(request, "INVALID_INPUT", "requested_version");
+    }
+    auto future = open_request(normal, key);
+    future.insert("requested_version", 2);
+    reject(future, "SCHEMA_UNSUPPORTED", "requested_version");
+    for (const auto& [input, field] : std::vector<std::pair<QJsonObject, const char*>>{
+             {{}, "input.mode"},
+             {{{"mode", 1}}, "input.mode"},
+             {{{"mode", ""}}, "input.mode"},
+             {{{"mode", "other"}}, "input.mode"},
+             {{{"mode", "normal"}}, "input.path"},
+             {{{"mode", "normal"}, {"path", 1}}, "input.path"},
+             {{{"mode", "normal"}, {"path", ""}}, "input.path"},
+             {{{"mode", "recover"}, {"path", "/open-contract.qcae"}}, "input.path"},
+             {{{"mode", "recover"}, {"extra", "unknown"}}, "input.extra"}})
+        reject(open_request(input, key), "INVALID_INPUT", field);
+    auto legacy = open_request({}, key);
+    legacy.insert("operation", "project.current");
+    legacy.insert("requested_version", 1);
+    const auto legacy_failure = qcae::ipc::dispatch(app, legacy, caller);
+    require(legacy_failure.value("error").toObject().value("code") == "INVALID_INPUT" &&
+                open_contract_state(app, store, caller) == before,
+            "other compatibility operations keep their version-field rejection");
+    auto profile = open_request(normal, key);
+    profile.insert("expected_profile", QJsonObject{});
+    require(qcae::ipc::dispatch(app, profile, caller).value("error").toObject().value("code") ==
+                    "INVALID_INPUT" &&
+                open_contract_state(app, store, caller) == before,
+            "project.open keeps its existing expected_profile rejection");
+}
+void project_open_contract_and_lifecycle() {
+    using namespace qcae;
+    using namespace operations;
+    auto store = std::make_shared<OpenContractStore>();
+    const Caller caller{"open-contract-test"};
+    DocumentInfo before_recovery;
+    QJsonObject recovery_history;
+    {
+        MemoryApplication app({}, store);
+        ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+        const auto created =
+            runtime_test::good(app.create_document(caller, "Open contract", "create"));
+        const auto preview = runtime_test::good(
+            app.preview(caller, runtime_test::at(created), CreateMaterial{"Steel", {210, "GPa"}}));
+        runtime_test::good(app.commit(caller, runtime_test::at(created), preview.id, "steel"));
+        const auto saved = runtime_test::good(
+            app.save_document(caller,
+                              runtime_test::at(runtime_test::good(app.current_document())),
+                              "/open-contract.qcae",
+                              false,
+                              "save"));
+        runtime_test::good(
+            app.close_document(caller, runtime_test::at(saved), ClosePolicy::discard, "discard"));
+        const auto catalog = ipc::dispatch(app,
+                                           {{"api_version", "1.1"},
+                                            {"request_id", "catalog"},
+                                            {"operation", "capabilities.list"},
+                                            {"parameters", QJsonObject{}}},
+                                           caller,
+                                           nullptr,
+                                           nullptr,
+                                           nullptr,
+                                           &host);
+        QJsonObject descriptor;
+        unsigned count = 0;
+        for (const auto& entry : catalog.value("data").toObject().value("operations").toArray()) {
+            if (entry.toObject().value("name") == "project.open") {
+                descriptor = entry.toObject();
+                ++count;
+            }
+        }
+        const auto definition = InputTraits<ProjectOpenInput>::definition();
+        require(count == 1 && descriptor.value("available") == true &&
+                    descriptor.value("version").toInt() == static_cast<int>(definition.version) &&
+                    descriptor.value("schema_id") == QString::fromStdString(definition.schema_id) &&
+                    descriptor.value("wire_input_type") == "ProjectOpenInput" &&
+                    descriptor.value("wire_output_type") == "DocumentInfo" &&
+                    descriptor.value("requested_version_field") == "requested_version" &&
+                    descriptor.value("omitted_version_policy") == "installed_version",
+                "one discoverable host route advertises its installed generated wire contract");
+        const auto fields = descriptor.value("fields").toArray();
+        require(fields.size() == static_cast<qsizetype>(definition.fields.size()),
+                "all generated fields discovered");
+        for (qsizetype index = 0; index < fields.size(); ++index) {
+            const auto field = fields[index].toObject();
+            const auto& expected = definition.fields[static_cast<std::size_t>(index)];
+            require(field.value("name") == QString::fromStdString(expected.name) &&
+                        field.value("wire_type") == QString::fromStdString(expected.wire_type) &&
+                        field.value("required").toBool() == expected.required,
+                    "discovery uses generated input field names/types/requirements");
+        }
+        const auto schema = descriptor.value("parameters_schema").toObject();
+        require(schema.value("additionalProperties") == false &&
+                    schema.value("oneOf").toArray().size() == 2 &&
+                    schema.value("required").toArray() == QJsonArray{"mode"},
+                "discovery distinguishes normal-with-path and recover-without-path");
+        const auto modes = schema.value("oneOf").toArray();
+        require(modes[0].toObject().value("required").toArray() == QJsonArray{"mode", "path"} &&
+                    modes[0].toObject()
+                            .value("properties")
+                            .toObject()
+                            .value("mode")
+                            .toObject()
+                            .value("enum")
+                            .toArray() == QJsonArray{"normal"} &&
+                    modes[0].toObject().value("additionalProperties") == false &&
+                    modes[0].toObject().value("properties").toObject().contains("path") &&
+                    modes[1].toObject().value("required").toArray() == QJsonArray{"mode"} &&
+                    modes[1].toObject().value("additionalProperties") == false &&
+                    !modes[1].toObject().value("properties").toObject().contains("path") &&
+                    modes[1].toObject()
+                            .value("properties")
+                            .toObject()
+                            .value("mode")
+                            .toObject()
+                            .value("enum")
+                            .toArray() == QJsonArray{"recover"},
+                "discovered mode conditions match the actual accepted and rejected requests");
+        require(InputTraits<ProjectOpenInput>::from_value(
+                    Value(Value::Object{{"mode", Value("recover")}}))
+                    .ok(),
+                "generated decoder accepts recover without path");
+        rejected_open_inputs_are_atomic(app, *store, host, caller, "open");
+        auto request = open_request({{"mode", "normal"}, {"path", "/open-contract.qcae"}}, "open");
+        request.insert("requested_version", 1);
+        const auto opened = ipc::dispatch(app, request, caller, nullptr, nullptr, nullptr, &host);
+        const auto info = runtime_test::good(app.current_document());
+        require(opened.value("status") == "success" &&
+                    opened.value("data").toObject() == ipc::info_json(info) &&
+                    info.document.id != saved.document.id &&
+                    info.document.epoch != saved.document.epoch &&
+                    info.project_id == saved.project_id && info.revision == 0 &&
+                    runtime_test::good(app.snapshot(info.document)).materials.size() == 1 &&
+                    runtime_test::good(app.history(info.document)).items.empty(),
+                "version-one normal open preserves DocumentInfo/model and creates its documented "
+                "lifecycle");
+        rejected_open_inputs_are_atomic(app, *store, host, caller, "active-open-rejections");
+        const auto after_open = open_contract_state(app, *store, caller);
+        request.remove("requested_version");
+        require(
+            ipc::dispatch(app, request, caller, nullptr, nullptr, nullptr, &host).value("data") ==
+                    opened.value("data") &&
+                open_contract_state(app, *store, caller) == after_open,
+            "omitted installed version replays normal open without another persistent write");
+        const auto change = runtime_test::good(
+            app.preview(caller, runtime_test::at(info), CreateMaterial{"Aluminium", {70, "GPa"}}));
+        runtime_test::good(app.commit(caller, runtime_test::at(info), change.id, "aluminium"));
+        before_recovery = runtime_test::good(app.current_document());
+        recovery_history = open_contract_state(app, *store, caller).history;
+        runtime_test::good(app.close_document(
+            caller, runtime_test::at(before_recovery), ClosePolicy::keep_recovery, "keep"));
+    }
+    MemoryApplication recovered_app({}, store);
+    ipc::TypedHost recovered_host(recovered_app.record_application(),
+                                  [](const auto&) { return true; });
+    require(recovered_app.recovery_available() && !recovered_app.current_document().ok(),
+            "recovery is explicit on a new host");
+    rejected_open_inputs_are_atomic(recovered_app, *store, recovered_host, caller, "recover");
+    auto request = open_request({{"mode", "recover"}}, "recover");
+    const auto recovered =
+        ipc::dispatch(recovered_app, request, caller, nullptr, nullptr, nullptr, &recovered_host);
+    const auto info = runtime_test::good(recovered_app.current_document());
+    const auto state = open_contract_state(recovered_app, *store, caller);
+    require(recovered.value("status") == "success" &&
+                recovered.value("data").toObject() == ipc::info_json(info) &&
+                info.document.id == before_recovery.document.id &&
+                info.document.epoch != before_recovery.document.epoch &&
+                info.project_id == before_recovery.project_id &&
+                info.revision == before_recovery.revision &&
+                runtime_test::good(recovered_app.snapshot(info.document)).materials.size() == 2 &&
+                state.history == recovery_history,
+            "omitted-version recovery preserves document, model, revision and history while "
+            "replacing epoch");
+    request.insert("requested_version", 1);
+    require(
+        ipc::dispatch(recovered_app, request, caller, nullptr, nullptr, nullptr, &recovered_host)
+                    .value("data") == recovered.value("data") &&
+            open_contract_state(recovered_app, *store, caller) == state,
+        "explicit installed version replays recovery without another write");
 }
 void diagnostic_reports_survive_transport() {
     using namespace qcae;
@@ -537,6 +833,7 @@ int main() {
         poisoned_lazy_tasks_require_recovery();
         version_and_profile_contract();
         diagnostic_reports_survive_transport();
+        project_open_contract_and_lifecycle();
         std::cout << "PASS typed JSON transport, mesh idempotency and task fault recovery\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

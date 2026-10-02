@@ -42,8 +42,9 @@ operation's discovered `version`. A mismatched installed version returns `SCHEMA
 before handler invocation; malformed values return `INVALID_INPUT`. Existing API 1.1 clients
 may omit this field, deliberately selecting the installed typed version. Discovery publishes
 `requested_version_field` and `omitted_version_policy` so new clients can pin the contract.
-This is separate from transport `api_version`. Legacy operations keep their existing request
-shape and reject these new typed-only top-level context fields.
+This is separate from transport `api_version`. Other legacy operations keep their existing request
+shape and reject these new typed-only top-level context fields. The intrinsic
+`project.open` input contract is described below.
 
 A typed operation declaring `requires_expected_profile: true` requires top-level
 `expected_profile: {profile_id, profile_version, definition_digest}` with no extra members.
@@ -106,6 +107,27 @@ cannot register or declare operations reserved by the intrinsic host controls, e
 operation catalog or `runtime.handshake`. Startup rejects these collisions before publishing
 the host. This is static assembly, not dynamic loading.
 No solver execution, AI bridge, C3 renderer/resource work or large-model claim is implied.
+
+### Versioned project.open input
+
+The intrinsic `project.open` host route decodes generated `ProjectOpenInput` before calling
+its existing application lifecycle service. Discovery keeps the baseline symbolic type names
+and additionally publishes `wire_input_type: ProjectOpenInput`, `wire_output_type: DocumentInfo`,
+`schema_id: qcae.operation.project.open.v1`, version 1, and the actual parameter schema.
+Use `{mode: "normal", path: "..."}` to open a saved project, or `{mode: "recover"}` to recover
+an explicit workspace. Normal mode requires a non-empty path; recovery forbids the path field.
+Missing, unknown or incorrectly typed parameters return `INVALID_INPUT` with an input field.
+
+The route accepts optional `requested_version`: omission selects the installed version,
+malformed values return `INVALID_INPUT`, and a different positive uint32 returns
+`SCHEMA_UNSUPPORTED`. Rejections precede lifecycle admission and do not reserve the host key.
+`expected_profile` is not accepted. The MCP bridge forwards the two closed `oneOf` branches
+with the existing depth and node bounds, and advertises profile context only for descriptors
+that explicitly declare `requires_expected_profile`.
+
+Successful requests retain the original caller/key, normal-open and recovery semantics,
+host outcome lookup, and application history. This adds an input contract to an existing
+route; it does not register another business handler or complete every legacy contract.
 
 ### C3 versioned display resources and events
 

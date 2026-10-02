@@ -11,6 +11,17 @@ import tempfile
 import threading
 
 
+def oneof_parameters_schema():
+    return {"type": "object", "properties": {"mode": {"type": "string", "enum": ["normal", "recover"]},
+            "path": {"type": "string", "minLength": 1}}, "required": ["mode"], "additionalProperties": False,
+            "oneOf": [
+                {"type": "object", "properties": {"mode": {"type": "string", "enum": ["normal"]},
+                    "path": {"type": "string", "minLength": 1}}, "required": ["mode", "path"],
+                    "additionalProperties": False},
+                {"type": "object", "properties": {"mode": {"type": "string", "enum": ["recover"]}},
+                    "required": ["mode"], "additionalProperties": False}]}
+
+
 def scenario(command, endpoint, behavior):
     requests = []
     error = []
@@ -48,7 +59,7 @@ def scenario(command, endpoint, behavior):
                                 field["units"] = "MPa"
                             data = {"operations": [{"name": "test.write", "available": True,
                                                      "description": "test-only transport", "fields": [field]}]}
-                            if behavior.startswith("bad-parameters"):
+                            if behavior.startswith("bad-parameters") or behavior == "valid-parameters-oneof":
                                 schema = {"type": "object", "properties": {}, "additionalProperties": False}
                                 if behavior == "bad-parameters-type":
                                     schema = []
@@ -68,6 +79,32 @@ def scenario(command, endpoint, behavior):
                                     schema["properties"] = {str(index): {} for index in range(129)}
                                 elif behavior == "bad-parameters-huge-bound":
                                     schema["properties"] = {"value": {"type": "integer", "minimum": 10 ** 1000}}
+                                elif behavior == "bad-parameters-oneof-type":
+                                    schema["oneOf"] = {}
+                                elif behavior == "bad-parameters-oneof-empty":
+                                    schema["oneOf"] = []
+                                elif behavior == "bad-parameters-oneof-branch":
+                                    schema["oneOf"] = [True]
+                                elif behavior == "bad-parameters-oneof-width":
+                                    schema["oneOf"] = [{} for index in range(129)]
+                                elif behavior == "bad-parameters-oneof-depth":
+                                    node = schema
+                                    for index in range(17):
+                                        child = {}
+                                        node["oneOf"] = [child]
+                                        node = child
+                                elif behavior == "bad-parameters-oneof-nodes":
+                                    # Each branch and its property share the existing 128-node budget.
+                                    schema["oneOf"] = [{"properties": {"value": {}}} for index in range(64)]
+                                elif behavior == "bad-parameters-oneof-required":
+                                    schema["oneOf"] = [{"required": ["unknown"]}]
+                                elif behavior == "bad-parameters-oneof-keyword":
+                                    schema["oneOf"] = [{"not": {}}]
+                                elif behavior == "bad-parameters-keyword":
+                                    schema["const"] = {}
+                                elif behavior == "valid-parameters-oneof":
+                                    schema = oneof_parameters_schema()
+                                    data["operations"][0]["version"] = 1
                                 data["operations"][0]["parameters_schema"] = schema
                             if behavior == "bad-context-flag":
                                 data["operations"][0]["requires_document"] = "false"
@@ -121,8 +158,16 @@ def scenario(command, endpoint, behavior):
             assert all(request["operation"] == "capabilities.list" for request in requests), requests
         else:
             assert "result" in catalog, catalog
+            parameters = {"value": "literal"}
+            if behavior == "valid-parameters-oneof":
+                tool = catalog["result"]["tools"][0]["inputSchema"]
+                schema = tool["properties"]["parameters"]
+                assert schema == oneof_parameters_schema(), schema
+                assert "requested_version" in tool["properties"] and "requested_version" not in tool["required"], tool
+                assert "expected_profile" not in tool["properties"], tool
+                parameters = {"mode": "recover"}
             result = exchange({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
-                "name": "test.write", "arguments": {"parameters": {"value": "literal"},
+                "name": "test.write", "arguments": {"parameters": parameters,
                 "idempotency_key": "original-key"}}})["result"]
             facts = result["structuredContent"]
             assert result["isError"] is True and facts["status"] == "failed", result
@@ -148,9 +193,13 @@ def run(args):
         for behavior in ("bad-handshake", "bad-field", "bad-units", "bad-parameters-type",
                          "bad-parameters-property", "bad-parameters-required", "bad-parameters-inner-type",
                          "bad-parameters-depth", "bad-parameters-width", "bad-parameters-huge-bound",
+                         "bad-parameters-oneof-type", "bad-parameters-oneof-empty", "bad-parameters-oneof-branch",
+                         "bad-parameters-oneof-width", "bad-parameters-oneof-depth", "bad-parameters-oneof-nodes",
+                         "bad-parameters-oneof-required", "bad-parameters-oneof-keyword", "bad-parameters-keyword",
+                         "valid-parameters-oneof",
                          "deep-metadata", "bad-context-flag", "lost-response", "bad-status"):
             scenario([args.mcp], Path(temporary) / f"{behavior}.sock", behavior)
-    print("PASS: fourteen malformed/lost peer scenarios, original idempotency key, exactly one write, no retry")
+    print("PASS: twenty-four metadata/transport peer scenarios, bounded oneOf discovery, original key, no retry")
 
 
 if __name__ == "__main__":

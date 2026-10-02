@@ -1,0 +1,207 @@
+{
+  "status": "BOUNDED_ACTUAL_PRODUCT_REGRESSION_AND_NATIVE_COMPLETE",
+  "base_commit": "e2207ed629c629452bac78dac2c3a4f21abccf4e",
+  "tested_candidate": {
+    "origin": "/private/tmp/qcae-project-open-checks126-successor02/attempt-01/candidate.json",
+    "bytes": 47857,
+    "sha256": "e8cfd0b10a44555c2e13d152d8df4b655ef0a7bc55e31cf024aa938609d4e643"
+  },
+  "tested_input_files": 413,
+  "tested_input_map_sha256": "5288058253f8b12b4748445aee670d31d0e1fe86c41773f8ace9dcd3c58728d6",
+  "product_and_test_files": [
+    {
+      "path": "adapters/engine_api/src/ipc_api.cpp",
+      "bytes": 32619,
+      "sha256": "58dd39276c8a304b4c31eb11c41f0e7dc851281fdce52c1288b44a966036eb61"
+    },
+    {
+      "path": "apps/mcp/bridge.py",
+      "bytes": 20306,
+      "sha256": "586c2ed9ab01b8b3eb0001f954209aebaa4046edbab147cdd5f1120c171c8fa8"
+    },
+    {
+      "path": "schemas/operations/host_lifecycle.json",
+      "bytes": 702,
+      "sha256": "de0b70670e981232c2ac10cc3cc5df85d7c07238ffe6b151c7c86d0c77d6e596"
+    },
+    {
+      "path": "tests/typed_host_tests.cpp",
+      "bytes": 47231,
+      "sha256": "0bdb49b56820fce05b24d4aeaec2e5a50fb7c6b037f64480fc0cc68cc94d9005"
+    },
+    {
+      "path": "tests/mcp_protocol_tests.py",
+      "bytes": 12273,
+      "sha256": "9674affce9c9eec397ae088f6de8e1475efe88f8fe87383507b7d0eb73a63039"
+    },
+    {
+      "path": "tests/mcp_bridge_tests.py",
+      "bytes": 14321,
+      "sha256": "26330e10a6255b27b8202cf94b40cd3335591d0cf4c88cfed2f73d59db4dfc98"
+    }
+  ],
+  "configs": [
+    {
+      "config": "core",
+      "actual_passed": 40,
+      "receipt": {
+        "origin": "/private/tmp/qcae-project-open-checks126-successor02/attempt-01/core-complete.json",
+        "bytes": 2670,
+        "sha256": "151219ed92d7c52ab46b10aa077bdec4758f7afe98abdac89ada99331f4a29b0"
+      },
+      "strict_cpp20": true,
+      "warnings": [],
+      "sanitizer_scope": "normal"
+    },
+    {
+      "config": "local",
+      "actual_passed": 54,
+      "receipt": {
+        "origin": "/private/tmp/qcae-project-open-checks126-successor02/attempt-01/local-complete.json",
+        "bytes": 3255,
+        "sha256": "633d5443662af0e3b4063a9892bd65f8341388109f6e05417f0419cde091f3a3"
+      },
+      "strict_cpp20": true,
+      "warnings": [],
+      "sanitizer_scope": "normal"
+    },
+    {
+      "config": "sqlite-ipc",
+      "actual_passed": 82,
+      "receipt": {
+        "origin": "/private/tmp/qcae-project-open-checks126-successor02/attempt-01/sqlite-ipc-complete.json",
+        "bytes": 4687,
+        "sha256": "28f950961e951a15d3f117db26bb407bb30398fba084eb84f62f8366873976be"
+      },
+      "strict_cpp20": true,
+      "warnings": [],
+      "sanitizer_scope": "normal"
+    },
+    {
+      "config": "sanitized-typed-host",
+      "actual_passed": 1,
+      "receipt": {
+        "origin": "/private/tmp/qcae-project-open-checks126-successor02/attempt-01/sanitized-typed-host-complete.json",
+        "bytes": 2149,
+        "sha256": "234c04c3f372dcb8e70893ed9dc53a67987e374eefa200c383b1f118946dad3f"
+      },
+      "strict_cpp20": true,
+      "warnings": [],
+      "sanitizer_scope": "ASan+UBSan typed_host only; LSan not measured"
+    }
+  ],
+  "actual_total_test_executions": 177,
+  "native": {
+    "receipt": {
+      "origin": "/private/tmp/qcae-project-open-checks126-successor02/native-01/complete.json",
+      "bytes": 3959,
+      "sha256": "dfc916dba7a3cbe6d0fafb3cc6887789b7c7ac217f9601408a10457991ec900d"
+    },
+    "actual_requests": 33,
+    "rejected_input_cases": 10,
+    "same_key_other_path_conflict": true,
+    "row_snapshots": {
+      "origin": "/private/tmp/qcae-project-open-checks126-successor02/native-01/row-snapshots.json",
+      "bytes": 114308,
+      "sha256": "6df90889f65200c08dd2079fb089f929b8a4df5ce2273b1802208cdfc8291979"
+    },
+    "scope": "Current candidate project.open real SQLite/native IPC contract and lifecycle; one material, not full M or historical migration.",
+    "owned_process_cleanup": [
+      {
+        "alive_before_cleanup": true,
+        "argv": [
+          "/private/tmp/qcae-project-open-checks126-successor02-builds/sqlite-ipc/qcae-engine",
+          "--socket",
+          "/private/tmp/qcae-project-open-checks126-successor02/native-01/engine-1.sock",
+          "--workspace",
+          "/private/tmp/qcae-project-open-checks126-successor02/native-01/workspace.sqlite"
+        ],
+        "forced_kill": false,
+        "literal_exit_code": -15,
+        "owned": true,
+        "pid": 59464,
+        "reaped": true
+      },
+      {
+        "alive_before_cleanup": true,
+        "argv": [
+          "/private/tmp/qcae-project-open-checks126-successor02-builds/sqlite-ipc/qcae-engine",
+          "--socket",
+          "/private/tmp/qcae-project-open-checks126-successor02/native-01/engine-2.sock",
+          "--workspace",
+          "/private/tmp/qcae-project-open-checks126-successor02/native-01/workspace.sqlite"
+        ],
+        "forced_kill": false,
+        "literal_exit_code": -15,
+        "owned": true,
+        "pid": 59495,
+        "reaped": true
+      }
+    ],
+    "binary_inputs_before_after_equal": true
+  },
+  "post_run_documentation_delta_only": {
+    "adapters/engine_api/README.md": {
+      "tested_sha256": "b9f795029a234ad358c15b926662247073f4f8ae3933dbada7d1b31e3e7d1c41",
+      "after_documentation_sha256": "d17a325372cf68d052e073219cc50c64729597445187b484e4f70337b3e1aac0"
+    }
+  },
+  "other412_tested_inputs_unchanged": true,
+  "qg02": {
+    "blocking_findings": [],
+    "receipt": {
+      "origin": "/private/tmp/qcae-project-open-final-review132/review.json",
+      "bytes": 8565,
+      "sha256": "05b43a7bdfba2c4f609e50d526d93b951dad58b84ba39c17c72b536b8b30753e"
+    },
+    "static_review_only": true
+  },
+  "prior_failed_runs_preserved": {
+    "first126": "local-build actual1; test-only QJsonValue range-copy warning",
+    "successor01": "core40 passed; local53/54 and ctest actual8; mcp_bridge tools/list schema rejection",
+    "profile125": "private consumer rejected two nonblocking export notes; product complete/artifact true; original call actual1"
+  },
+  "independent_scopes": {
+    "catalogue": "source85 ef0df3b / stock86: actual79 declared,69 available,0 available without observed binding; not every handler semantics",
+    "profile_variants": "e220412 source baseline, format and semantic variants: actual3 fresh builds +3 calls0; private prepared handler and memory store; no registered operation or solver",
+    "host_binding": "e220 private instrumented derivative ON/OFF actual builds/observations0; request join68/64; render owner null; no independent validator registry; not stock or GUI"
+  },
+  "complete_SK_C3_C4_P0_acceptance": false,
+  "real_solver_numerical_acceptance": false,
+  "full_external_AI_acceptance": false,
+  "SDK_internal_copy_coverage": null,
+  "nonessential_performance_optimization": false,
+  "known_prior_material_copy_failure": "14/30; budget and original frozen scope retained; not retested or waived",
+  "archive": {
+    "bytes": 883571,
+    "sha256": "e4b455b8e242058ddaeedb1e137d55434a348fc547bf1c386f499a61545d57a8",
+    "members": 272,
+    "all_member_raw_hashes_verified_by_root": true
+  },
+  "final_repository_checks": [
+    {
+      "name": "design",
+      "chunk_id": "a4dc5b",
+      "wall_time_seconds": 0.392877333,
+      "exit_code": 0,
+      "original_token_count": 63,
+      "output": "PASS: 177 portable links; 1128 JSON files; 32-module acyclic graph\nPASS: 41 operation descriptors; 12 contract examples; 20 requirements; 38 acceptance cases\nDesign checks only. This command does not run product builds, solver runs or AI acceptance.\n"
+    },
+    {
+      "name": "cpp_format",
+      "chunk_id": "27821f",
+      "wall_time_seconds": 1.222207375,
+      "exit_code": 0,
+      "original_token_count": 11,
+      "output": "PASS: 234 C++ files match clang-format 21\n"
+    },
+    {
+      "name": "diff_check",
+      "chunk_id": "bcf459",
+      "wall_time_seconds": 0.000010041,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  ]
+}

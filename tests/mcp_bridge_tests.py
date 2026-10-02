@@ -96,15 +96,33 @@ def run(args):
                 assert first.request("tools/list")["error"]["code"] == -32002
                 for client in clients:
                     client.initialize()
-                tools = first.request("tools/list")["result"]["tools"]
+                discovery = first.request("tools/list")
+                assert "result" in discovery, discovery
+                tools = discovery["result"]["tools"]
                 catalog = {tool["name"]: tool for tool in tools}
                 caps = first.call("capabilities.list")["data"]["operations"]
                 assert set(catalog) == {item["name"] for item in caps if item["available"] and item["name"] != "events.subscribe"}
                 assert "events.subscribe" not in catalog and "events.read" in catalog
                 assert "analysis.start" not in catalog
+                open_schema = catalog["project.open"]["inputSchema"]
+                open_parameters = open_schema["properties"]["parameters"]
+                open_descriptor = next(item for item in caps if item["name"] == "project.open")
+                assert open_parameters == open_descriptor["parameters_schema"], (open_parameters, open_descriptor)
+                assert open_parameters["oneOf"] == [
+                    {"type": "object", "properties": {"mode": {"type": "string", "enum": ["normal"]},
+                        "path": {"type": "string", "minLength": 1}}, "required": ["mode", "path"],
+                        "additionalProperties": False},
+                    {"type": "object", "properties": {"mode": {"type": "string", "enum": ["recover"]}},
+                        "required": ["mode"], "additionalProperties": False}], open_parameters
+                assert open_schema["properties"]["requested_version"] == {
+                    "type": "integer", "minimum": 1, "maximum": 4294967295}, open_schema
+                assert "requested_version" not in open_schema["required"], open_schema
+                assert "expected_profile" not in open_schema["properties"], open_schema
                 material_schema = catalog["material.create"]["inputSchema"]
                 assert material_schema["properties"]["parameters"]["properties"]["young_modulus"]["required"] == ["value", "unit"]
                 assert "expected_revision" in material_schema["required"]
+                assert "expected_profile" in material_schema["properties"], material_schema
+                assert "expected_profile" not in material_schema["required"], material_schema
                 assert catalog["view.render_resource"]["inputSchema"]["properties"]["requested_version"]["const"] == 1
                 assert "requested_version" in catalog["view.render_resource"]["inputSchema"]["required"]
                 query_schema = catalog["entity.query"]["inputSchema"]["properties"]["parameters"]
