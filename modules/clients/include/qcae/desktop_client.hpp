@@ -32,6 +32,9 @@ class DesktopClient : public QObject {
     [[nodiscard]] qsizetype pendingRequests() const {
         return pending_.size();
     }
+    [[nodiscard]] bool isRequestPending(const QString& request_id) const {
+        return pending_.contains(request_id);
+    }
     [[nodiscard]] QString request(const QString& operation,
                                   const QJsonObject& parameters,
                                   const QJsonObject& context,

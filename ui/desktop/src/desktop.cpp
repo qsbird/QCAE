@@ -641,17 +641,8 @@ class DesktopWindow : public QMainWindow {
     }
 
     bool pipelineIdle() const {
-        if (!client_.ready() || client_.pendingRequests() || subscription_pending_ ||
-            current_pending_ || current_queued_ || pending_display_callbacks_ ||
-            view_update_pending_ || render_pending_ || queued_hidden_ || pending_selection_ ||
-            pending_selection_evaluating_ || camera_update_.isActive() ||
-            screenshot_retry_.isActive() || viewport_->pendingCameraUpdate())
-            return false;
-        if (document_id_.isEmpty())
-            return true;
-        return !context_refresh_required_ && viewportMatchesContext() &&
-               property("treeDocumentId") == document_id_ &&
-               property("treeDocumentEpoch") == epoch_ && property("treeRevision") == revision_;
+        return !client_.pendingRequests() && !current_pending_ && !current_queued_ &&
+               displayReady();
     }
 
     QJsonObject pipelineDiagnostics() const {
@@ -989,11 +980,11 @@ class DesktopWindow : public QMainWindow {
         }
         return result;
     }
-    void call(const QString& operation,
-              const QJsonObject& parameters,
-              const QJsonObject& extra,
-              DesktopClient::Reply callback) {
-        (void)client_.request(operation, parameters, extra, std::move(callback));
+    QString call(const QString& operation,
+                 const QJsonObject& parameters,
+                 const QJsonObject& extra,
+                 DesktopClient::Reply callback) {
+        return client_.request(operation, parameters, extra, std::move(callback));
     }
     void record(const QString& operation, const QJsonObject& response) {
         const auto message = succeeded(response)
@@ -1112,11 +1103,32 @@ class DesktopWindow : public QMainWindow {
         viewport_->setPacket(empty);
         selected_label_->setText("No selection");
     }
+    bool displayReady() const {
+        if (!client_.ready() || subscription_pending_ || pending_display_callbacks_ ||
+            view_update_pending_ || render_pending_ || queued_hidden_ || pending_selection_ ||
+            pending_selection_evaluating_ || camera_update_.isActive() ||
+            screenshot_retry_.isActive() || viewport_->pendingCameraUpdate())
+            return false;
+        if (document_id_.isEmpty())
+            return true;
+        return !context_refresh_required_ && viewportMatchesContext() &&
+               property("treeDocumentId") == document_id_ &&
+               property("treeDocumentEpoch") == epoch_ && property("treeRevision") == revision_;
+    }
+    bool onlyCurrentReadPending() const {
+        if (current_pending_ != !current_request_id_.isEmpty())
+            return false;
+        // A received reply leaves its callback queued but no pending transport entry.
+        // Discount only this exact request; another pending request must still block.
+        const bool in_transport = current_pending_ && client_.isRequestPending(current_request_id_);
+        return client_.pendingRequests() == (in_transport ? 1 : 0);
+    }
     bool canRebaseModel() const {
         const auto view = unsignedRevision(QJsonValue(view_revision_));
         return client_.supportsRenderModelRebase() && client_.supportsResources() && view &&
-               *view < std::numeric_limits<std::uint64_t>::max() && pipelineIdle() &&
-               !confirmed_camera_.isEmpty() && viewport_->cameraFingerprint() == confirmed_camera_;
+               *view < std::numeric_limits<std::uint64_t>::max() && displayReady() &&
+               onlyCurrentReadPending() && !confirmed_camera_.isEmpty() &&
+               viewport_->cameraFingerprint() == confirmed_camera_;
     }
     void applyDocumentInfo(const QJsonObject& data, bool model_rebase = false) {
         const auto id = json_ledger::string(data.value("document_id"));
@@ -1186,23 +1198,27 @@ class DesktopWindow : public QMainWindow {
         }
         current_pending_ = true;
         const auto event_generation = event_generation_;
-        call("project.current", {}, {}, [this, event_generation](const QJsonObject& response) {
-            current_pending_ = false;
-            if (current_queued_) {
-                current_queued_ = false;
-                scheduleDisplayCallback(0, [this] { pollCurrent(); });
-            }
-            if (!client_.ready())
-                return;
-            if (event_generation != event_generation_)
-                return; // An event queued a newer authoritative query while this one was in flight.
-            if (!succeeded(response)) {
-                if (response.value("error").toObject().value("code") == "DOCUMENT_NOT_FOUND")
-                    clearDocument();
-                return;
-            }
-            applyDocumentInfo(response.value("data").toObject());
-        });
+        current_request_id_ =
+            call("project.current", {}, {}, [this, event_generation](const QJsonObject& response) {
+                // pollCurrent serializes requests until this callback, so this identity
+                // cannot belong to a newer poll when it is cleared here.
+                current_pending_ = false;
+                current_request_id_.clear();
+                if (current_queued_) {
+                    current_queued_ = false;
+                    scheduleDisplayCallback(0, [this] { pollCurrent(); });
+                }
+                if (!client_.ready())
+                    return;
+                if (event_generation != event_generation_)
+                    return; // A newer event invalidates every effect of this reply.
+                if (!succeeded(response)) {
+                    if (response.value("error").toObject().value("code") == "DOCUMENT_NOT_FOUND")
+                        clearDocument();
+                    return;
+                }
+                applyDocumentInfo(response.value("data").toObject());
+            });
     }
 
     void createProject() {
@@ -2608,6 +2624,7 @@ class DesktopWindow : public QMainWindow {
     QTimer camera_update_;
     QTimer screenshot_retry_;
     bool current_pending_{};
+    QString current_request_id_;
     std::size_t pending_display_callbacks_{};
     bool view_update_pending_{};
     std::optional<QStringList> queued_hidden_;

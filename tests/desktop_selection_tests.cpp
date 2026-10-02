@@ -107,47 +107,29 @@ class SelectionEngine {
                              .toJson(QJsonDocument::Compact) +
                          '\n');
         } else {
-            ++event_sequence;
-            QJsonObject details;
-            if (lean_refresh && summary_subscribed) {
-                auto summary = documentSummary();
-                if (summary_fault == "revision")
-                    summary.insert("revision", "999");
-                if (summary_fault == "document")
-                    summary.insert("document_id", "other-document");
-                if (summary_fault == "epoch")
-                    summary.insert("document_epoch", "other-epoch");
-                if (summary_fault == "name")
-                    summary.insert("name", 7);
-                if (summary_fault == "count")
-                    summary.insert("material_count", -1);
-                if (summary_fault == "oversized")
-                    summary.insert("name", QString(4097, QChar('X')));
-                details = {{"base_revision", notified_revision},
-                           {"resync_required", false},
-                           {"document_summary", summary}};
-                if (summary_fault == "missing")
-                    details.remove("document_summary");
-                if (summary_fault == "malformed")
-                    details.insert("document_summary", "bad");
-                if (summary_fault == "resync")
-                    details.insert("resync_required", true);
-                if (summary_fault == "base")
-                    details.insert("base_revision", "999");
-                notified_revision = revision;
-            }
-            peer_->write(QJsonDocument(QJsonObject{{"frame_type", "event"},
-                                                   {"engine_instance_id", "fake-engine"},
-                                                   {"sequence", QString::number(event_sequence)},
-                                                   {"event", "DocumentChanged"},
-                                                   {"document_id", document_id},
-                                                   {"document_epoch", epoch},
-                                                   {"revision", revision},
-                                                   {"data", details}})
-                             .toJson(QJsonDocument::Compact) +
-                         '\n');
+            peer_->write(documentChangeFrame());
         }
     }
+    void
+    respondObsoleteCurrent(const QJsonObject& request, bool missing, bool notify_first = false) {
+        QJsonObject response{{"request_id", request.value("request_id")},
+                             {"status", missing ? "failed" : "success"}};
+        if (missing)
+            response.insert("error", QJsonObject{{"code", "DOCUMENT_NOT_FOUND"}});
+        else
+            response.insert("data",
+                            QJsonObject{{"document_id", "document"},
+                                        {"document_epoch", "epoch"},
+                                        {"revision", "7"},
+                                        {"name", "Obsolete name"},
+                                        {"dirty", true}});
+        auto bytes = QJsonDocument(response).toJson(QJsonDocument::Compact) + '\n';
+        if (notify_first)
+            bytes.prepend(documentChangeFrame());
+        // One real socket write exposes the event-before-deferred-current-callback phase.
+        peer_->write(bytes);
+    }
+
     void respondResource(const QJsonObject& request) {
         const auto params = request.value("parameters").toObject();
         auto view_revision = params.value("expected_view_revision").toString().toULongLong();
@@ -270,6 +252,7 @@ class SelectionEngine {
     QList<QJsonObject> held_renders;
     QList<QJsonObject> held_updates;
     QList<QJsonObject> held_current;
+    QList<QJsonObject> held_other;
     QList<QJsonObject> held_entity_rows;
     bool hold_create{}, hold_view_ack{};
     QList<QJsonObject> held_creates;
@@ -305,6 +288,47 @@ class SelectionEngine {
     }
 
   private:
+    QByteArray documentChangeFrame() {
+        ++event_sequence;
+        QJsonObject details;
+        if (lean_refresh && summary_subscribed) {
+            auto summary = documentSummary();
+            if (summary_fault == "revision")
+                summary.insert("revision", "999");
+            if (summary_fault == "document")
+                summary.insert("document_id", "other-document");
+            if (summary_fault == "epoch")
+                summary.insert("document_epoch", "other-epoch");
+            if (summary_fault == "name")
+                summary.insert("name", 7);
+            if (summary_fault == "count")
+                summary.insert("material_count", -1);
+            if (summary_fault == "oversized")
+                summary.insert("name", QString(4097, QChar('X')));
+            details = {{"base_revision", notified_revision},
+                       {"resync_required", false},
+                       {"document_summary", summary}};
+            if (summary_fault == "missing")
+                details.remove("document_summary");
+            if (summary_fault == "malformed")
+                details.insert("document_summary", "bad");
+            if (summary_fault == "resync")
+                details.insert("resync_required", true);
+            if (summary_fault == "base")
+                details.insert("base_revision", "999");
+            notified_revision = revision;
+        }
+        return QJsonDocument(QJsonObject{{"frame_type", "event"},
+                                         {"engine_instance_id", "fake-engine"},
+                                         {"sequence", QString::number(event_sequence)},
+                                         {"event", "DocumentChanged"},
+                                         {"document_id", document_id},
+                                         {"document_epoch", epoch},
+                                         {"revision", revision},
+                                         {"data", details}})
+                   .toJson(QJsonDocument::Compact) +
+               '\n';
+    }
     QJsonObject documentSummary() const {
         return {{"document_id", document_id},
                 {"document_epoch", epoch},
@@ -494,6 +518,8 @@ class SelectionEngine {
                      {"data_base64", QString::fromLatin1(bytes.toBase64())}});
         } else if (operation == "resources.release")
             respond(request, {{"released", true}});
+        else if (operation == "test.hold")
+            held_other.append(request);
         else if (operation == "test.barrier")
             respond(request, {});
         else if (operation == "project.current") {
@@ -965,32 +991,169 @@ class DesktopSelectionTests : public QObject {
         QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
     }
 
+    void pendingCurrentCannotOverwriteAcceptedDocumentSummary_data() {
+        QTest::addColumn<bool>("inline_empty");
+        QTest::addColumn<bool>("coalesced");
+        QTest::addColumn<bool>("same_batch");
+        QTest::addColumn<bool>("other_pending");
+        QTest::addColumn<bool>("missing_current");
+        QTest::newRow("delta-held") << false << false << false << false << false;
+        QTest::newRow("empty-held") << true << false << false << false << false;
+        QTest::newRow("delta-coalesced") << false << true << false << false << false;
+        QTest::newRow("empty-coalesced") << true << true << false << false << false;
+        QTest::newRow("delta-event-reply-batch") << false << false << true << false << false;
+        QTest::newRow("empty-event-reply-batch") << true << false << true << false << false;
+        QTest::newRow("delta-batch-other-held") << false << false << true << true << false;
+        QTest::newRow("empty-batch-other-held") << true << false << true << true << false;
+        QTest::newRow("stale-not-found-held") << false << false << false << false << true;
+    }
     void pendingCurrentCannotOverwriteAcceptedDocumentSummary() {
+        QFETCH(bool, inline_empty);
+        QFETCH(bool, coalesced);
+        QFETCH(bool, same_batch);
+        QFETCH(bool, other_pending);
+        QFETCH(bool, missing_current);
         SelectionEngine engine;
         engine.resources_enabled = engine.organization_enabled = engine.lean_refresh = true;
+        engine.inline_empty = inline_empty;
         QVERIFY(engine.listen());
-        Window desktop(engine);
+        Window desktop(engine, 15000); // Keep the real request held through a coalesced poll.
+        QVERIFY(desktop.valid());
         QVERIFY(QTest::qWaitForWindowExposed(desktop.window.get()));
         QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        auto* tree = desktop.window->findChild<QTreeWidget*>("entityTree");
+        QVERIFY(tree);
+        QCOMPARE(treeIdentities(*tree), QStringList({"line-a", "line-b", "material-owner"}));
+        auto* original = tree->topLevelItem(0);
+        QVERIFY(desktop.viewport->installedVersion());
+        const auto baseline = *desktop.viewport->installedVersion();
+        const auto current = engine.requests("project.current").size();
+        const auto updates = engine.requests("view.update").size();
+        const auto creates = engine.requests("view.create").size();
+        const auto queries = engine.requests("entity.query").size();
+        const auto renders = engine.requests("view.render_resource").size();
+        const auto reads = engine.requests("resources.read").size();
+        const auto releases = engine.requests("resources.release").size();
         engine.hold_current = true;
-        QTRY_VERIFY_WITH_TIMEOUT(!engine.held_current.isEmpty(), 5000);
+        QTRY_COMPARE_WITH_TIMEOUT(engine.held_current.size(), 1, 5000);
         const auto old = engine.held_current.takeFirst();
+        const auto old_id = old.value("request_id").toString();
+        QVERIFY(!old_id.isEmpty());
+        QVERIFY(desktop.client->isRequestPending(old_id));
+        QVERIFY(
+            qcae::desktop_pipeline_diagnostics(*desktop.window).value("current_pending").toBool());
+        QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+        if (coalesced) {
+            QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_diagnostics(*desktop.window)
+                                         .value("current_queued")
+                                         .toBool(),
+                                     5000);
+            QCOMPARE(engine.requests("project.current").size(), current + 1);
+            QVERIFY(engine.held_current.isEmpty());
+        }
+        QString other_id;
+        bool other_answered = false;
+        bool other_succeeded = false;
+        if (other_pending) {
+            other_id =
+                desktop.client->request("test.hold", {}, {}, [&](const QJsonObject& response) {
+                    other_answered = true;
+                    other_succeeded = response.value("status") == "success";
+                });
+            QTRY_COMPARE(engine.held_other.size(), 1);
+            QVERIFY(desktop.client->isRequestPending(other_id));
+            QCOMPARE(desktop.client->pendingRequests(), qsizetype(2));
+        }
+        bool event_seen = false;
+        bool current_in_transport_at_event = false;
+        bool other_in_transport_at_event = false;
+        QJsonObject event_diagnostics;
+        QObject::connect(
+            desktop.client,
+            &qcae::DesktopClient::eventReceived,
+            desktop.window.get(),
+            [&](const QJsonObject& event) {
+                if (event.value("event") != "DocumentChanged")
+                    return;
+                event_seen = true;
+                current_in_transport_at_event = desktop.client->isRequestPending(old_id);
+                other_in_transport_at_event = desktop.client->isRequestPending(other_id);
+                event_diagnostics = qcae::desktop_pipeline_diagnostics(*desktop.window);
+            });
         engine.revision = "8";
-        engine.notifyChange();
+        if (same_batch) {
+            engine.hold_current = false;
+            engine.respondObsoleteCurrent(old, missing_current, true);
+        } else {
+            engine.notifyChange();
+        }
+        QTRY_VERIFY(event_seen);
+        QVERIFY(event_diagnostics.value("current_pending").toBool());
+        QVERIFY(!event_diagnostics.value("idle").toBool());
+        QCOMPARE(current_in_transport_at_event, !same_batch);
+        QCOMPARE(other_in_transport_at_event, other_pending);
         QTRY_COMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
         QTRY_COMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
-        engine.respond(old,
-                       {{"document_id", "document"},
-                        {"document_epoch", "epoch"},
-                        {"revision", "7"},
-                        {"name", "Obsolete name"},
-                        {"dirty", true}});
-        engine.releaseCurrent();
+        QCOMPARE(desktop.viewport->installedVersion()->view_revision, baseline.view_revision + 1);
+        QCOMPARE(tree->topLevelItem(0), original);
+        QCOMPARE(original->text(0), QString("renamed-line-a"));
+        QCOMPARE(desktop.window->windowTitle(), QString("Selection test — QCAE"));
+        QCOMPARE(engine.requests("view.render_resource").size(), renders + 1);
+        QCOMPARE(engine.requests("view.update").size(), updates + (other_pending ? 1 : 0));
+        QCOMPARE(engine.requests("view.create").size(), creates);
+        QCOMPARE(engine.requests("entity.query").size(), queries);
+        const auto parameters =
+            engine.requests("view.render_resource").back().value("parameters").toObject();
+        QCOMPARE(parameters.value("base_revision").toString(), QString("7"));
+        QCOMPARE(parameters.value("base_view_revision").toString().toULongLong(),
+                 baseline.view_revision);
+        QCOMPARE(parameters.value("include_changed_rows"), QJsonValue(true));
+        if (other_pending)
+            QVERIFY(!parameters.contains("allow_model_rebase"));
+        else
+            QCOMPARE(parameters.value("allow_model_rebase"), QJsonValue(true));
+        QCOMPARE(parameters.value("expected_view_revision").toString().toULongLong(),
+                 baseline.view_revision + (other_pending ? 1 : 0));
+        QTRY_COMPARE(engine.requests("resources.read").size(), reads + (inline_empty ? 0 : 1));
+        QTRY_COMPARE(engine.requests("resources.release").size(),
+                     releases + (inline_empty ? 0 : 1));
+        if (!same_batch) {
+            QVERIFY(desktop.client->isRequestPending(old_id));
+            QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+            engine.respondObsoleteCurrent(old, missing_current);
+            engine.releaseCurrent();
+        }
+        if (other_pending) {
+            QTRY_VERIFY(!qcae::desktop_pipeline_diagnostics(*desktop.window)
+                             .value("current_pending")
+                             .toBool());
+            QTRY_COMPARE(desktop.client->pendingRequests(), qsizetype(1));
+            QVERIFY(!desktop.client->isRequestPending(old_id));
+            QVERIFY(desktop.client->isRequestPending(other_id));
+            QVERIFY(!other_answered);
+            QVERIFY(!qcae::desktop_pipeline_idle(*desktop.window));
+            engine.respond(engine.held_other.takeFirst(), {});
+            QTRY_VERIFY(other_answered);
+            QVERIFY(other_succeeded);
+        }
         QVERIFY(barrier(*desktop.client));
         QTRY_VERIFY_WITH_TIMEOUT(qcae::desktop_pipeline_idle(*desktop.window), 10000);
+        QVERIFY(!desktop.client->isRequestPending(old_id));
+        QVERIFY(!desktop.client->isRequestPending(other_id));
+        QCOMPARE(desktop.client->pendingRequests(), qsizetype(0));
+        if (coalesced)
+            QVERIFY(engine.requests("project.current").size() >= current + 2);
         QCOMPARE(desktop.viewport->installedVersion()->revision, qcae::Revision(8));
+        QCOMPARE(desktop.viewport->installedVersion()->view_revision, baseline.view_revision + 1);
         QCOMPARE(desktop.window->property("treeRevision").toString(), QString("8"));
+        QCOMPARE(tree->topLevelItem(0), original);
+        QCOMPARE(original->text(0), QString("renamed-line-a"));
         QCOMPARE(desktop.window->windowTitle(), QString("Selection test — QCAE"));
+        QCOMPARE(engine.requests("view.render_resource").size(), renders + 1);
+        QCOMPARE(engine.requests("view.update").size(), updates + (other_pending ? 1 : 0));
+        QCOMPARE(engine.requests("view.create").size(), creates);
+        QCOMPARE(engine.requests("entity.query").size(), queries);
+        QVERIFY(engine.requests("changes.commit").isEmpty());
     }
 
     void modelRefreshPreservesPendingHiddenIntent_data() {
