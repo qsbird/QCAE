@@ -83,6 +83,34 @@ std::string scalar_text(const std::string& path, const char* sql) {
     return result;
 }
 
+std::string binary_payload(std::size_t size, char fill) {
+    std::string result(size, fill);
+    result.at(size / 2) = '\0';
+    return result;
+}
+
+SharedStoreBytes saved_value(const LoadedRows& loaded, StoreSpace space, const std::string& key) {
+    for (const auto& item : loaded.rows)
+        if (item.key.space == space && item.key.identity == key)
+            return item.value;
+    return {};
+}
+
+void assert_value(const LoadedRows& loaded,
+                  StoreSpace space,
+                  const std::string& key,
+                  const std::string& expected) {
+    const auto value = saved_value(loaded, space, key);
+    assert(value && *value == expected);
+}
+
+void fixture_sql(const std::string& path, const char* sql) {
+    sqlite3* db = nullptr;
+    assert(sqlite3_open_v2(path.c_str(), &db, SQLITE_OPEN_READWRITE, nullptr) == SQLITE_OK);
+    assert(sqlite3_exec(db, sql, nullptr, nullptr, nullptr) == SQLITE_OK);
+    assert(sqlite3_close(db) == SQLITE_OK);
+}
+
 void test_rows_and_generation() {
     Sandbox sandbox;
     const auto path = sandbox.database();
@@ -335,6 +363,187 @@ void test_failure_windows() {
     assert(*loaded.rows[3].value == "2");
 }
 
+void test_temporary_batches_and_cache_reuse() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    const std::string long_key(256, 'k');
+    SharedStoreBytes retained;
+    {
+        SqliteWorkspaceStore store(path);
+        // Each batch and all of its bound input owners die at the end of the call expression.
+        const auto seeded = store.commit_rows(
+            {0,
+             std::string(384, 't'),
+             {row(StoreSpace::document_record, long_key, binary_payload(8192, 'a')),
+              row(StoreSpace::history_entry, "old", "discard"),
+              row(StoreSpace::task_record, "empty", "")}});
+        assert(seeded.generation == 1 && seeded.rows_written == 3);
+        const auto first = store.load_rows();
+        assert(first.generation == 1 && first.rows.size() == 3);
+        retained = saved_value(first, StoreSpace::document_record, long_key);
+        assert(retained && *retained == binary_payload(8192, 'a'));
+        assert_value(first, StoreSpace::task_record, "empty", "");
+        assert(scalar_text(path, "SELECT transaction_id FROM record_state") ==
+               std::string(384, 't'));
+
+        const auto changed = store.commit_rows(
+            {1,
+             "short",
+             {row(StoreSpace::document_record, long_key, std::string("b\0c", 3)),
+              row(StoreSpace::document_record, "short", binary_payload(12288, 'd')),
+              {{StoreSpace::history_entry, "old"}, nullptr},
+              row(StoreSpace::task_record, "empty", "")}});
+        assert(changed.generation == 2 && changed.rows_written == 4);
+        const auto loaded = store.load_rows();
+        assert(loaded.generation == 2 && loaded.rows.size() == 3);
+        assert_value(loaded, StoreSpace::document_record, long_key, std::string("b\0c", 3));
+        assert_value(loaded, StoreSpace::document_record, "short", binary_payload(12288, 'd'));
+        assert_value(loaded, StoreSpace::task_record, "empty", "");
+        assert(!saved_value(loaded, StoreSpace::history_entry, "old"));
+        assert(*retained == binary_payload(8192, 'a'));
+    }
+    SqliteWorkspaceStore reopened(path);
+    const auto loaded = reopened.load_rows();
+    assert(loaded.generation == 2 && loaded.rows.size() == 3);
+    assert_value(loaded, StoreSpace::document_record, long_key, std::string("b\0c", 3));
+    assert_value(loaded, StoreSpace::document_record, "short", binary_payload(12288, 'd'));
+    assert_value(loaded, StoreSpace::task_record, "empty", "");
+    assert(scalar_text(path, "SELECT transaction_id FROM record_state") == "short");
+    assert(*retained == binary_payload(8192, 'a'));
+}
+
+void test_failed_step_releases_temporary_batch() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    SqliteWorkspaceStore store(path);
+    store.commit_rows({0,
+                       "seed",
+                       {row(StoreSpace::document_record, "first", "seed"),
+                        row(StoreSpace::history_entry, "old", "keep")}});
+    // The second mutation fails in SQLite after the first write has stepped successfully.
+    fixture_sql(path,
+                "CREATE TRIGGER reject_middle BEFORE INSERT ON store_rows "
+                "WHEN NEW.identity='reject' BEGIN SELECT RAISE(ABORT,'middle write'); END");
+    bool rejected = false;
+    try {
+        store.commit_rows({1,
+                           std::string(384, 'f'),
+                           {row(StoreSpace::document_record, "first", binary_payload(8192, 'f')),
+                            row(StoreSpace::document_record, "reject", binary_payload(4096, 'r')),
+                            row(StoreSpace::operation_fact, "new", "not published")}});
+    } catch (const StorageError& error) {
+        rejected = true;
+        assert(!error.uncertain() && std::string(error.what()) == "write record failed");
+    }
+    assert(rejected);
+    const auto rolled_back = store.load_rows();
+    assert(rolled_back.generation == 1 && rolled_back.rows.size() == 2);
+    assert_value(rolled_back, StoreSpace::document_record, "first", "seed");
+    assert_value(rolled_back, StoreSpace::history_entry, "old", "keep");
+    assert(!saved_value(rolled_back, StoreSpace::document_record, "reject"));
+    assert(!saved_value(rolled_back, StoreSpace::operation_fact, "new"));
+    assert(scalar_text(path, "SELECT transaction_id FROM record_state") == "seed");
+
+    fixture_sql(path, "DROP TRIGGER reject_middle");
+    const auto retry =
+        store.commit_rows({1,
+                           std::string(256, 'r'),
+                           {row(StoreSpace::document_record, "first", binary_payload(12288, 's')),
+                            row(StoreSpace::document_record, "reject", binary_payload(2048, 't')),
+                            row(StoreSpace::operation_fact, "new", "retry fact")}});
+    assert(retry.generation == 2 && retry.rows_written == 3);
+    const auto loaded = store.load_rows();
+    assert(loaded.generation == 2 && loaded.rows.size() == 4);
+    assert_value(loaded, StoreSpace::document_record, "first", binary_payload(12288, 's'));
+    assert_value(loaded, StoreSpace::document_record, "reject", binary_payload(2048, 't'));
+    assert_value(loaded, StoreSpace::history_entry, "old", "keep");
+    assert_value(loaded, StoreSpace::operation_fact, "new", "retry fact");
+    assert(scalar_text(path, "SELECT transaction_id FROM record_state") == std::string(256, 'r'));
+}
+
+void test_temporary_batches_at_commit_faults() {
+    Sandbox sandbox;
+    const auto path = sandbox.database();
+    std::string fault;
+    StoreOptions options;
+    options.fault = [&](const std::string& point) {
+        if (point == fault) {
+            fault.clear();
+            throw std::runtime_error("injected " + point);
+        }
+    };
+    {
+        SqliteWorkspaceStore store(path, options);
+        store.commit_rows(
+            {0, "seed", {row(StoreSpace::document_record, "node", binary_payload(8192, 's'))}});
+        fault = "before_db_commit";
+        assert(fails([&] {
+            store.commit_rows(
+                {1,
+                 std::string(384, 'b'),
+                 {row(StoreSpace::document_record, "node", binary_payload(16384, 'b')),
+                  row(StoreSpace::history_entry, "before-history", binary_payload(4096, 'h')),
+                  row(StoreSpace::operation_fact, "before-op", binary_payload(2048, 'o'))}});
+        }));
+        const auto rolled_back = store.load_rows();
+        assert(rolled_back.generation == 1 && rolled_back.rows.size() == 1);
+        assert_value(rolled_back, StoreSpace::document_record, "node", binary_payload(8192, 's'));
+        assert(scalar_text(path, "SELECT transaction_id FROM record_state") == "seed");
+        assert(
+            store
+                .commit_rows(
+                    {1,
+                     std::string(384, 'b'),
+                     {row(StoreSpace::document_record, "node", binary_payload(16384, 'b')),
+                      row(StoreSpace::history_entry, "before-history", binary_payload(4096, 'h')),
+                      row(StoreSpace::operation_fact, "before-op", binary_payload(2048, 'o'))}})
+                .generation == 2);
+
+        fault = "after_db_commit";
+        assert(fails(
+            [&] {
+                store.commit_rows(
+                    {2,
+                     std::string(384, 'a'),
+                     {row(StoreSpace::document_record, "node", binary_payload(24576, 'a')),
+                      row(StoreSpace::history_entry, "after-history", binary_payload(4096, 'i')),
+                      row(StoreSpace::operation_fact, "after-op", binary_payload(2048, 'p'))}});
+            },
+            true));
+        const auto committed = store.load_rows();
+        assert(committed.generation == 3 && committed.rows.size() == 5);
+        assert_value(committed, StoreSpace::document_record, "node", binary_payload(24576, 'a'));
+        assert_value(
+            committed, StoreSpace::history_entry, "before-history", binary_payload(4096, 'h'));
+        assert_value(committed, StoreSpace::operation_fact, "before-op", binary_payload(2048, 'o'));
+        assert_value(
+            committed, StoreSpace::history_entry, "after-history", binary_payload(4096, 'i'));
+        assert_value(committed, StoreSpace::operation_fact, "after-op", binary_payload(2048, 'p'));
+        assert(scalar_text(path, "SELECT transaction_id FROM record_state") ==
+               std::string(384, 'a'));
+        assert(fails([&] {
+            store.commit_rows(
+                {2,
+                 std::string(384, 'a'),
+                 {row(StoreSpace::history_entry, "after-history", "must not replay")}});
+        }));
+        assert(store
+                   .commit_rows(
+                       {3, "after-uncertain-reuse", {row(StoreSpace::task_record, "empty", "")}})
+                   .generation == 4);
+    }
+    SqliteWorkspaceStore recovered(path);
+    const auto loaded = recovered.load_rows();
+    assert(loaded.generation == 4 && loaded.rows.size() == 6);
+    assert_value(loaded, StoreSpace::document_record, "node", binary_payload(24576, 'a'));
+    assert_value(loaded, StoreSpace::history_entry, "before-history", binary_payload(4096, 'h'));
+    assert_value(loaded, StoreSpace::operation_fact, "before-op", binary_payload(2048, 'o'));
+    assert_value(loaded, StoreSpace::history_entry, "after-history", binary_payload(4096, 'i'));
+    assert_value(loaded, StoreSpace::operation_fact, "after-op", binary_payload(2048, 'p'));
+    assert_value(loaded, StoreSpace::task_record, "empty", "");
+    assert(scalar_text(path, "SELECT transaction_id FROM record_state") == "after-uncertain-reuse");
+}
+
 void test_one_row_update_has_bounded_payload() {
     for (std::uint64_t count : {1000, 10000}) {
         Sandbox sandbox;
@@ -567,6 +776,9 @@ int main(int argc, char** argv) {
     test_legacy_detection_is_read_only();
     test_invalid_batches_and_quotas();
     test_failure_windows();
+    test_temporary_batches_and_cache_reuse();
+    test_failed_step_releases_temporary_batch();
+    test_temporary_batches_at_commit_faults();
     test_one_row_update_has_bounded_payload();
     test_unsupported_record_version();
     test_process_termination_windows(argv[0]);

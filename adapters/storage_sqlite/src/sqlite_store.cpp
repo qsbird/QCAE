@@ -323,7 +323,7 @@ struct Statement {
                             sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_VM_STEP, cached)));
             if (cached) {
                 // reset releases cursors even after a failed step; clear_bindings
-                // drops every transient payload before the next transaction.
+                // drops owned payloads and borrowed batch pointers before the next transaction.
                 sqlite3_reset(stmt);
                 sqlite3_clear_bindings(stmt);
             } else {
@@ -435,12 +435,11 @@ void validate_key(const StoreKey& key, const StoreOptions& options) {
 }
 
 void bind_key(sqlite3* db, sqlite3_stmt* stmt, const StoreKey& key) {
+    // Both callers borrow keys from the batch until their statement guards clear bindings.
     if (sqlite3_bind_int(stmt, 1, static_cast<int>(key.space)) != SQLITE_OK ||
-        sqlite3_bind_text(stmt,
-                          2,
-                          key.identity.data(),
-                          static_cast<int>(key.identity.size()),
-                          SQLITE_TRANSIENT) != SQLITE_OK)
+        sqlite3_bind_text(
+            stmt, 2, key.identity.data(), static_cast<int>(key.identity.size()), SQLITE_STATIC) !=
+            SQLITE_OK)
         fail("bind record workspace key: " + std::string(sqlite3_errmsg(db)));
     ledger::add(ledger::Stage::sqlite, ledger::Metric::driver_bind_copy_bytes, key.identity.size());
 }
@@ -491,10 +490,13 @@ void configure_existing(sqlite3* db) {
     exec(db, "PRAGMA synchronous=FULL");
 }
 
-void bind_blob(sqlite3* db, sqlite3_stmt* stmt, int index, const std::string& value) {
+void bind_blob(sqlite3* db,
+               sqlite3_stmt* stmt,
+               int index,
+               const std::string& value,
+               sqlite3_destructor_type lifetime = SQLITE_TRANSIENT) {
     if (value.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()) ||
-        sqlite3_bind_blob(
-            stmt, index, value.data(), static_cast<int>(value.size()), SQLITE_TRANSIENT) !=
+        sqlite3_bind_blob(stmt, index, value.data(), static_cast<int>(value.size()), lifetime) !=
             SQLITE_OK)
         fail("SQLite bind payload: " + std::string(sqlite3_errmsg(db)));
     ledger::add(ledger::Stage::sqlite, ledger::Metric::driver_bind_copy_bytes, value.size());
@@ -867,7 +869,7 @@ BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
             sqlite3_clear_bindings(write);
             bind_key(db, write, mutation.key);
             if (mutation.after) {
-                bind_blob(db, write, 3, *mutation.after);
+                bind_blob(db, write, 3, *mutation.after, SQLITE_STATIC);
             }
             if (sqlite3_step(write) != SQLITE_DONE)
                 fail("write record failed");
@@ -889,7 +891,7 @@ BatchReceipt SqliteWorkspaceStore::commit_rows(const StoreBatch& batch) {
                               4,
                               batch.transaction_id.data(),
                               static_cast<int>(batch.transaction_id.size()),
-                              SQLITE_TRANSIENT) != SQLITE_OK ||
+                              SQLITE_STATIC) != SQLITE_OK ||
             sqlite3_step(metadata.stmt) != SQLITE_DONE)
             fail("write record workspace metadata failed");
         impl_->fault("before_db_commit");
