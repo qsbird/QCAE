@@ -244,6 +244,119 @@ void prepared_candidate_and_preview_atomicity() {
                   .position[0] == 1,
           "Valid subset commit published unreported node change");
 }
+void prepared_metadata_lifetime() {
+    for (const auto length : {3, 96}) {
+        const auto store = std::make_shared<Store>();
+        const auto settings = options(store);
+        const Caller caller{"metadata-owner"};
+        const EntityId entity("entity-" + std::string(length, 'e'));
+        const auto label = std::string(length, 'l') + std::string("\0label", 6);
+        const auto signature = std::string(length, 's') + std::string("\0input", 6);
+        {
+            RecordApplication app(settings);
+            const auto initial = good(app.create_document(caller, "Owned metadata", "create"));
+            const auto preview = good(
+                app.preview(caller,
+                            at(initial),
+                            [entity, label, signature](const DocumentView& view,
+                                                       const RecordIdentityAllocator&) {
+                                EditSession edit(view);
+                                edit.put(records::Material{entity, "Steel", 210000, .3});
+                                return Result<RecordPreparedOperation>{
+                                    Status::success,
+                                    RecordPreparedOperation{
+                                        edit.prepare(), label, entity, signature, 210000, true},
+                                    {}};
+                            }));
+            // The temporary handler and its result are gone before this separate commit.
+            const auto receipt = good(app.commit(caller, preview.context, preview.id, "material"));
+            const auto history = good(app.history(initial.document));
+            check(preview.affected_entity == entity && receipt.primary_entity == entity &&
+                      good(app.snapshot(initial.document)).records.find_identity(entity.value) &&
+                      history.items.size() == 1 && history.items.front().label == label,
+                  "Prepared metadata outlives its handler and preserves exact identity/label");
+        }
+        RecordApplication recovered(settings);
+        const auto info = good(recovered.recover_document(caller, "recover"));
+        const auto history = good(recovered.history(info.document));
+        check(history.items.size() == 1 && history.items.front().label == label &&
+                  good(recovered.snapshot(info.document)).records.find_identity(entity.value),
+              "Owned prepared metadata survives persistent history recovery");
+    }
+}
+void direct_preparation_failure_atomicity() {
+    const auto store = std::make_shared<Store>();
+    auto settings = options(store);
+    settings.limits.max_previews = 1;
+    RecordApplication app(std::move(settings));
+    const Caller caller{"direct-preview-owner"};
+    auto info = good(app.create_document(caller, "Direct preparation", "create"));
+    const auto signature = std::string(96, 's') + std::string("\0input", 6);
+    const auto label = std::string(96, 'l') + std::string("\0label", 6);
+    EntityId affected;
+    unsigned calls{};
+    const RecordPrepare handler = [&](const DocumentView& view,
+                                      const RecordIdentityAllocator& allocate) {
+        ++calls;
+        affected = allocate();
+        EditSession edit(view);
+        edit.put(records::Material{affected, "Steel", 210000, .3});
+        return Result<RecordPreparedOperation>{
+            Status::success,
+            RecordPreparedOperation{edit.prepare(), label, affected, signature, 210000, true},
+            {}};
+    };
+    const auto rows = store->rows;
+    const auto generation = store->generation;
+    const auto mismatch = app.execute(caller, at(info), "create", "different", handler, "direct");
+    const auto rejected_id = affected;
+    check(!mismatch.ok() && mismatch.error && mismatch.error->code == ErrorCode::invalid_input &&
+              calls == 1 && store->generation == generation && store->rows == rows &&
+              good(app.current_document()).revision == info.revision &&
+              good(app.history(info.document)).items.empty() &&
+              good(app.snapshot(info.document)).records.size() == 0,
+          "Direct signature rejection publishes no model/history/idempotency state");
+    const auto preview = good(app.preview(caller, at(info), handler));
+    check(affected == rejected_id, "Rejected direct preparation consumed an entity ID");
+    const auto full = app.execute(caller, at(info), "create", signature, handler, "direct");
+    check(!full.ok() && full.error && full.error->code == ErrorCode::resource_limit && calls == 2 &&
+              store->generation == generation && store->rows == rows,
+          "A private preview respects the existing quota before calling its handler");
+    good(app.commit(caller, preview.context, preview.id, "held-preview"));
+    info = good(app.current_document());
+    const auto before = good(app.snapshot(info.document));
+    const auto before_rows = store->rows;
+    const auto before_generation = store->generation;
+    store->fault = Store::Fault::before;
+    const auto failed = app.execute(caller, at(info), "create", signature, handler, "direct");
+    const auto failed_id = affected;
+    check(!failed.ok() && failed.error && failed.error->code == ErrorCode::storage_failure &&
+              calls == 3 && store->generation == before_generation && store->rows == before_rows &&
+              good(app.current_document()).revision == info.revision &&
+              good(app.history(info.document)).items.size() == 1 &&
+              !good(app.snapshot(info.document)).records.find_identity(failed_id.value) &&
+              good(app.snapshot(info.document))
+                      .records.find_identity(preview.affected_entity.value) ==
+                  before.records.find_identity(preview.affected_entity.value),
+          "Failed direct commit leaves the authoritative model, history and facts unchanged");
+    const auto receipt =
+        good(app.execute(caller, at(info), "create", signature, handler, "direct"));
+    const auto committed_id = affected;
+    const auto committed_generation = store->generation;
+    const auto committed_rows = store->rows;
+    const auto replay = good(app.execute(caller, at(info), "create", signature, handler, "direct"));
+    const auto conflict = app.execute(caller, at(info), "create", "different", handler, "direct");
+    const auto history = good(app.history(info.document));
+    check(calls == 4 && receipt.primary_entity == committed_id && replay.replayed &&
+              replay.primary_entity == committed_id && replay.transaction == receipt.transaction &&
+              !conflict.ok() && conflict.error &&
+              conflict.error->code == ErrorCode::idempotency_key_conflict &&
+              store->generation == committed_generation && store->rows == committed_rows &&
+              good(app.current_document()).revision == receipt.committed_revision &&
+              history.items.size() == 2 && history.items[0].label == label &&
+              history.items[1].label == label,
+          "Failed private preview is released and exact retry returns the original owned receipt");
+}
 void immutable_fact_balance_and_snapshot() {
     for (const bool reverse : {false, true}) {
         ImmutableFactMap<std::string> facts;
@@ -562,6 +675,8 @@ void owned_row_revision_fences() {
 int main() {
     bounded_commit_and_recovery();
     prepared_candidate_and_preview_atomicity();
+    prepared_metadata_lifetime();
+    direct_preparation_failure_atomicity();
     immutable_fact_balance_and_snapshot();
     persistent_wire_and_reserved_writer();
     bounded_owned_row_prefix_reads();

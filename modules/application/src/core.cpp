@@ -420,11 +420,11 @@ Result<ChangePreview> RecordApplication::State::prepare(const Caller& caller,
         Prepared prepared{caller,
                           context,
                           operation.creates_entity,
-                          operation.affected_entity,
-                          operation.signature,
+                          std::move(operation.affected_entity),
+                          std::move(operation.signature),
                           operation.normalized_value,
                           std::make_shared<const PreparedRecordChange>(std::move(operation.change)),
-                          operation.label};
+                          std::move(operation.label)};
         const PreviewId id(allocate_id("preview"));
         auto response = success(ChangePreview{
             id, prepared.context, prepared.entity, prepared.modulus, prepared.create});
