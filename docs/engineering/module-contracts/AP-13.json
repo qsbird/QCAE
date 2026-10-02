@@ -20,19 +20,79 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "interaction",
-  "authoritative_data": "Client ToolSession owns transient collection/selection/preview, with explicit source document/view version; committed model remains engine authority.",
+  "authoritative_data": "VtkView owns disposable scene/selection/preview state. The private desktop controller owns staged tools; one engine remains the document authority.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "ToolSession.enter/collect_pick/preview/apply/cancel/leave lifecycle.",
       "PickRequest(ViewVersion,Filter,VisibleOrThrough)->SelectionVersion+EntityIds.",
       "ApplyTool(TypedOperationInput)->ServiceCommitFact; no direct document write."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-13"
-    }
+      "ap_id": "AP-13",
+      "primary_owner": {
+        "logical_module": "interaction",
+        "target": "qcae_vtk_view",
+        "public_header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "VtkView::picked",
+          "function_pointer_type": "void (VtkView::*)(const QStringList&, bool)",
+          "target": "qcae_vtk_view",
+          "public_header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp"
+        },
+        {
+          "symbol": "VtkView::setPreview",
+          "function_pointer_type": "void (VtkView::*)(const RenderPreview&)",
+          "target": "qcae_vtk_view",
+          "public_header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp"
+        },
+        {
+          "symbol": "VtkView::applyDelta",
+          "function_pointer_type": "bool (VtkView::*)(const RenderDelta&)",
+          "target": "qcae_vtk_view",
+          "public_header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp"
+        },
+        {
+          "symbol": "VtkView::clearPreview",
+          "function_pointer_type": "void (VtkView::*)()",
+          "target": "qcae_vtk_view",
+          "public_header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp"
+        }
+      ],
+      "public_data_members": [],
+      "input_output": [
+        "picked(const QStringList&,bool through) is a Qt signal carrying stable display EntityIds. setPreview(RenderPreview) is transient; applyDelta(RenderDelta) returns bool admission.",
+        "Tool UI uses private ui/desktop/src/modeling_tools.cpp and desktop.cpp; versioned preview/apply/cancel calls pass through DesktopClient and engine operations."
+      ],
+      "errors_and_effects": "Qt/VTK are adapter types. Failed delta admission preserves installed scene; preview/cancel/leave publish no model mutation. Apply uses the application transaction once. Stale camera/selection and destroyed client callbacks require F16/F17 proof.",
+      "additional_owners": [
+        {
+          "target": "qcae_desktop_ui",
+          "public_header": "ui/desktop/include/qcae/desktop.hpp",
+          "public_interfaces": [
+            "create_desktop_window"
+          ],
+          "role": "Public window factory; staged controller remains private and uses DesktopClient."
+        }
+      ],
+      "implemented_boundary": "VtkView signals do not declare a public ToolContribution/ToolSession lifecycle service. Enter/pick/preview/cancel/leave behavior remains an integration boundary requiring fresh graphical evidence; no future interface is fabricated.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_vtk_view_qcae_vtk_view_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-13",
+        "runtime_obligations": "BP-13 enter/pick/preview/cancel/leave then apply/leave: exact revision0 then1; stale camera/selection and F16/F17 callback/cleanup failures; fresh actual desktop tests required.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "picked is a Qt signal and setPreview/clearPreview return void. applyDelta returns false on rejected version/data admission, preserving the installed scene. Tool request errors arrive through DesktopClient structured envelopes; renderer callbacks do not return domain transaction facts."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -40,20 +100,48 @@
       "client_sdk"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_desktop_ui",
+        "public_dependencies": [
+          "qcae_desktop_client",
+          "qcae_vtk_view"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      },
+      {
+        "target": "qcae_vtk_view",
+        "public_dependencies": [
+          "qcae_contracts",
+          "Qt6::Widgets",
+          "Qt6::OpenGLWidgets",
+          "${VTK_LIBRARIES}"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": [
+          "Qt6::Widgets",
+          "Qt6::OpenGLWidgets",
+          "${VTK_LIBRARIES}"
+        ]
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Tool contributions register staged collection/filter/preview/apply cleanup.",
-    "Graphical pick backends implement supported visible/through modes behind public selection contracts."
+    "Design extension boundary: Tool contributions register staged collection/filter/preview/apply cleanup.",
+    "Design extension boundary: Graphical pick backends implement supported visible/through modes behind public selection contracts."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "Cancel/leave clears draft preview and subscriptions only; revision stays unchanged.",
-    "Apply commits once; exceptional exit also releases transient graphics resources.",
-    "Model/camera/selection version changes invalidate unsafe staged input; stale selection rejects.",
-    "Tool/pick contracts are versioned; headless visible picking returns UNSUPPORTED_CAPABILITY."
+    "Design/acceptance obligation: Cancel/leave clears draft preview and subscriptions only; revision stays unchanged.",
+    "Design/acceptance obligation: Apply commits once; exceptional exit also releases transient graphics resources.",
+    "Design/acceptance obligation: Model/camera/selection version changes invalidate unsafe staged input; stale selection rejects.",
+    "Design/acceptance obligation: Tool/pick contracts are versioned; headless visible picking returns UNSUPPORTED_CAPABILITY.",
+    "Qt/VTK are adapter types. Failed delta admission preserves installed scene; preview/cancel/leave publish no model mutation. Apply uses the application transaction once. Stale camera/selection and destroyed client callbacks require F16/F17 proof."
   ],
   "acceptance_case_ids": [
     "BP-13",

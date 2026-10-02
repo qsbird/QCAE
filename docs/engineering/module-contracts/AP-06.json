@@ -20,19 +20,101 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "mesh/document",
-  "authoritative_data": "Document mesh owns stable EntityIds, topology descriptor/node order/order degree and connectivity; solver numbers, container positions and render IDs are separate mappings.",
+  "authoritative_data": "DocumentView reads immutable generated record pages; RecordApplication owns committed authority. Entity IDs, solver numbers, record positions and render IDs remain separate.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "TopologyDescriptor(TypeId)->NodeArity/Ordering/Order/Location.",
       "ReadMeshBlocks(SessionVersion,BlockIds)->VersionedMeshRecords.",
       "ReverseAdjacency(EntityId)->References with explicit cache revision."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-06"
-    }
+      "ap_id": "AP-06",
+      "primary_owner": {
+        "logical_module": "mesh/document",
+        "target": "qcae_document",
+        "public_header": "modules/document/include/qcae/document_view.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "DocumentView::version",
+          "function_pointer_type": "RecordVersion (DocumentView::*)() const",
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/document_view.hpp"
+        },
+        {
+          "symbol": "DocumentView::matches_version",
+          "function_pointer_type": "bool (DocumentView::*)(const RecordVersion&) const noexcept",
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/document_view.hpp"
+        },
+        {
+          "symbol": "DocumentView::count",
+          "function_pointer_type": "std::size_t (DocumentView::*)(RecordTypeId) const noexcept",
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/document_view.hpp"
+        },
+        {
+          "symbol": "DocumentView::find",
+          "function_pointer_type": "Record (DocumentView::*)(const RecordKey&) const noexcept",
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/document_view.hpp"
+        },
+        {
+          "symbol": "apply_record_changes",
+          "function_pointer_type": "DocumentView (*)(const DocumentView&, const RecordChangeSet&, RecordDirection, RecordStats*)",
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/document_view.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "RecordVersion::revision",
+          "type": "Revision",
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/record_registry.hpp"
+        }
+      ],
+      "input_output": [
+        "RecordVersion contains DocumentRef and Revision; DocumentView exposes version, matches_version, count/find/visit and validation.",
+        "record_page_capacity is1024; immutable Record values borrow shared images. Generated records define topology arity/order; ExportIdentifier and RenderPacket carry separate mappings."
+      ],
+      "errors_and_effects": "View queries are synchronous and read-only. validate/apply_record_changes and decoding can throw RecordError. apply_record_changes creates a candidate view; it does not bypass the application transaction/history path.",
+      "additional_owners": [
+        {
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/model_codec.hpp",
+          "public_interfaces": [
+            "ExportIdentifier"
+          ],
+          "role": "Explicit entity-to-solver-number export mapping; no storage/render ID aliasing."
+        },
+        {
+          "target": "qcae_contracts",
+          "public_header": "modules/contracts/include/qcae/render_packet.hpp",
+          "public_interfaces": [
+            "RenderPacket",
+            "RenderDelta"
+          ],
+          "role": "Disposable display identities and versioned display payloads."
+        }
+      ],
+      "implemented_boundary": "TopologyDescriptor/ReadMeshBlocks/ReverseAdjacency are design names absent from the mapped view header. Persistent Tri3, export identity bijection and reverse-reference behavior need their separate tests.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_document_qcae_document_view_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-06",
+        "runtime_obligations": "BP-06 shuffle IDs/container positions/export numbers; compare original query identities and independently read-back exported connectivity. Source44 CTest contains actual named BP-06; current-source binding remains separate.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "Read methods return immutable values or empty Record for missing keys; matches_version returns bool. validate/apply_record_changes/decoding can throw RecordError for schema/reference/candidate invalidity. No view method returns a committed transaction."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -41,20 +123,41 @@
       "domain"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_contracts",
+        "public_dependencies": [
+          "qcae_foundation"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      },
+      {
+        "target": "qcae_document",
+        "public_dependencies": [
+          "qcae_foundation",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Topology/schema contributions add record arity/validation/render mapping without concrete-type branches in coordinator/history.",
-    "Block stores implement storage ports with bounded records and explicit identity indices."
+    "Design extension boundary: Topology/schema contributions add record arity/validation/render mapping without concrete-type branches in coordinator/history.",
+    "Design extension boundary: Block stores implement storage ports with bounded records and explicit identity indices."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "Shuffling EntityIds/storage indices/export numbers leaves query/export connectivity identical under explicit bijection.",
-    "Adjacency caches invalidate on dependent changes; stale caches never masquerade as current.",
-    "Node blocks use fixed B=1024 and R<=256 bytes for the later SK-12 measurement; no measured performance claim.",
-    "Topology/record versions persist; unknown future records reject."
+    "Design/acceptance obligation: Shuffling EntityIds/storage indices/export numbers leaves query/export connectivity identical under explicit bijection.",
+    "Design/acceptance obligation: Adjacency caches invalidate on dependent changes; stale caches never masquerade as current.",
+    "Design/acceptance obligation: Node blocks use fixed B=1024 and R<=256 bytes for the later SK-12 measurement; no measured performance claim.",
+    "Design/acceptance obligation: Topology/record versions persist; unknown future records reject.",
+    "View queries are synchronous and read-only. validate/apply_record_changes and decoding can throw RecordError. apply_record_changes creates a candidate view; it does not bypass the application transaction/history path."
   ],
   "acceptance_case_ids": [
     "BP-06",

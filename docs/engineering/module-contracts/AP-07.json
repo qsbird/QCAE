@@ -15,19 +15,83 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "features/mesh_editing",
-  "authoritative_data": "Committed mesh stays document authority; edit feature owns selection/constraints/candidate/quality impact only until commit.",
+  "authoritative_data": "Mesh feature factories produce OperationPlan(signature, RecordPrepare); RecordApplication owns every resulting model/history transaction.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "PreviewMoveNodes(SelectionVersion,Delta:Length3)->ReadOnlyPreview.",
       "MoveNodes(ids,delta,ExpectedRevision)->OneChangeSet.",
       "ReplaceMesh(candidate,mapping)->ValidatedCompositeChangeSet with reject_unmapped policy."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-07"
-    }
+      "ap_id": "AP-07",
+      "primary_owner": {
+        "logical_module": "features/mesh_editing",
+        "target": "qcae_mesh_editing",
+        "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
+        "namespace": "qcae::features::mesh_editing"
+      },
+      "public_signatures": [
+        {
+          "symbol": "features::mesh_editing::prepare_move_node",
+          "function_pointer_type": "Result<features::mesh_editing::OperationPlan> (*)(const operations::NodeMoveInput&)",
+          "target": "qcae_mesh_editing",
+          "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+        },
+        {
+          "symbol": "features::mesh_editing::prepare_translate_nodes",
+          "function_pointer_type": "Result<features::mesh_editing::OperationPlan> (*)(const operations::NodeTranslateBatchInput&)",
+          "target": "qcae_mesh_editing",
+          "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+        },
+        {
+          "symbol": "features::mesh_editing::prepare_assign_section",
+          "function_pointer_type": "Result<features::mesh_editing::OperationPlan> (*)(const operations::BeamAssignSectionInput&)",
+          "target": "qcae_mesh_editing",
+          "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+        },
+        {
+          "symbol": "features::mesh_editing::prepare_create_tri3",
+          "function_pointer_type": "Result<features::mesh_editing::OperationPlan> (*)(const operations::MeshCreateTri3Input&)",
+          "target": "qcae_mesh_editing",
+          "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+        },
+        {
+          "symbol": "features::mesh_editing::register_handlers",
+          "function_pointer_type": "Result<bool> (*)(operations::OperationRegistry&, RecordApplication&)",
+          "target": "qcae_mesh_editing",
+          "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "features::mesh_editing::OperationPlan::prepare",
+          "type": "RecordPrepare",
+          "target": "qcae_mesh_editing",
+          "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp"
+        }
+      ],
+      "input_output": [
+        "Generated NodeMoveInput, NodeTranslateBatchInput, BeamAssignSectionInput and MeshCreateTri3Input are transport-neutral typed inputs.",
+        "Result<OperationPlan> is a prepared candidate, not ChangeReceipt. register_handlers binds the same application to OperationRegistry."
+      ],
+      "errors_and_effects": "Preparation validates units/selection/connectivity; errors return Result diagnostics. Actual handlers admit document/epoch/revision/idempotency then execute/preview/commit atomically; one batch is one history fact. Failed plans publish nothing.",
+      "additional_owners": [],
+      "implemented_boundary": "Batch translation and Tri3 preparation are already public declarations. Their compilation does not prove BP-07 atomic batch behavior or EXT-02/03 protected-file/cost acceptance.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_mesh_editing_qcae_mesh_editing_operations_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-07",
+        "runtime_obligations": "BP-07 nodes4,5 +=(0,1,0)mm, exactly2 changed records/one commit/one undo restores both; EXT-02 cost/protected-file evidence remains separate.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "Factories return Result<OperationPlan> with Status/Diagnostic for generated-input, unit, selection/connectivity failures. register_handlers returns Result<bool>; executable handlers return structured operation results from the shared application. A valid plan alone commits nothing."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -38,20 +102,34 @@
       "solver_profiles"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_mesh_editing",
+        "public_dependencies": [
+          "qcae_application",
+          "qcae_operations",
+          "qcae_parameters"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Typed feature operations provide bounded edit/deformation algorithms and quality validation.",
-    "Advanced morph/renumber providers register availability and mapping contracts."
+    "Design extension boundary: Typed feature operations provide bounded edit/deformation algorithms and quality validation.",
+    "Design extension boundary: Advanced morph/renumber providers register availability and mapping contracts."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "Move nodes 4 and 5 by (0,1,0)mm changes exactly two records in one commit; one undo restores both.",
-    "Cancelled preview increments no revision and leaves committed model intact.",
-    "Outdated selection/candidate revision rejects; quality failures cannot partially apply.",
-    "Operation semantics/version and complete reverse deltas are recorded in persistent history."
+    "Design/acceptance obligation: Move nodes 4 and 5 by (0,1,0)mm changes exactly two records in one commit; one undo restores both.",
+    "Design/acceptance obligation: Cancelled preview increments no revision and leaves committed model intact.",
+    "Design/acceptance obligation: Outdated selection/candidate revision rejects; quality failures cannot partially apply.",
+    "Design/acceptance obligation: Operation semantics/version and complete reverse deltas are recorded in persistent history.",
+    "Preparation validates units/selection/connectivity; errors return Result diagnostics. Actual handlers admit document/epoch/revision/idempotency then execute/preview/commit atomically; one batch is one history fact. Failed plans publish nothing."
   ],
   "acceptance_case_ids": [
     "BP-07",

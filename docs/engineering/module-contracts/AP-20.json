@@ -25,19 +25,89 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "runtime/platform_support",
-  "authoritative_data": "Runtime owns durable Task records/progress/cancellation/event sequences/quotas; platform support owns logs/preferences/resource paths/build dependency configuration, separate from engineering document state.",
+  "authoritative_data": "TaskService owns bounded async task state/events through an injected TaskPublisher. RecordApplication and artifact publishers remain the model/file authorities.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "SubmitTask(FrozenInput,Limits)->TaskId+QueuedState.",
       "RequestCancel(TaskId)->CancelRequestedOrCommittedFact.",
       "TaskStatus/EventCursor(TaskId)->VersionedState/Artifacts/Progress; ConfigureRuntime()->LayeredConfig."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-20"
-    }
+      "ap_id": "AP-20",
+      "primary_owner": {
+        "logical_module": "runtime/platform_support",
+        "target": "qcae_runtime",
+        "public_header": "modules/runtime/include/qcae/task_service.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "TaskService::start",
+          "function_pointer_type": "Result<TaskRecord> (TaskService::*)(TaskRequest)",
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp"
+        },
+        {
+          "symbol": "TaskService::query",
+          "function_pointer_type": "Result<TaskRecord> (TaskService::*)(const Caller&, std::string_view) const",
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp"
+        },
+        {
+          "symbol": "TaskService::cancel",
+          "function_pointer_type": "Result<TaskCancelResult> (TaskService::*)(const Caller&, std::string_view)",
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp"
+        },
+        {
+          "symbol": "TaskService::wait",
+          "function_pointer_type": "Result<TaskRecord> (TaskService::*)(const Caller&, std::string_view)",
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp"
+        },
+        {
+          "symbol": "TaskService::reconcile",
+          "function_pointer_type": "Result<bool> (TaskService::*)()",
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "TaskServiceLimits::workers",
+          "type": "std::size_t",
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp"
+        },
+        {
+          "symbol": "TaskPublisher::persist",
+          "type": "std::function<Result<bool>(const TaskRecord&, const std::optional<TaskRecord>&)>",
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp"
+        }
+      ],
+      "input_output": [
+        "TaskServiceLimits defaults workers2/queue_capacity8/max_records1024; TaskRequest owns Caller/key/operation/signature/TaskInputContext/TaskWork.",
+        "TaskRecord retains task id, frozen document/revision/profile, state/progress/events, optional diagnostic and exactly one model or artifact success receipt. TaskCancelResult carries task plus accepted bool."
+      ],
+      "errors_and_effects": "TaskPublisher callbacks serialize through one application and cannot re-enter TaskService. start/query/cancel/wait/reconcile return Result diagnostics. Precommit accepted cancellation publishes no model transaction; postcommit cancellation cannot roll back. Unknown commit waits for application recovery before reconcile; event sequence is retained.",
+      "additional_owners": [],
+      "implemented_boundary": "ConfigureRuntime is not a TaskService method. Configuration/logging/packaging and real solver process recovery remain separate platform adapters. Durable transition guarantees depend on installed load/persist/publish callbacks, not the scheduler constructor alone.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_runtime_qcae_task_service_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-20",
+        "runtime_obligations": "BP-20 actual2running/8queued/ninthRESOURCE_LIMIT, true child86 termination,10interrupted recovered/no rerun, increasing event sequences/modelrevision0; F12-16/F20 and artifact negatives remain separately bound.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "start/query/wait return Result<TaskRecord>; cancel returns Result<TaskCancelResult> with accepted; reconcile returns Result<bool>. resource_limit, missing/invalid input, principal/session/revision/profile conflicts and persist/publication failures retain diagnostics. Terminal task.state and success receipt must be inspected separately from request admission."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -46,21 +116,38 @@
       "ports"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_runtime",
+        "public_dependencies": [
+          "qcae_foundation",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [
+          "Threads::Threads"
+        ],
+        "external_dependencies": [
+          "Threads::Threads"
+        ]
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Task workers and artifact publishers implement ports with bounded resources.",
-    "Optional license/product policy stays a platform adapter.",
-    "Build/packaging variants declare dependencies/resources/regression fixtures without introducing vendor types in core contracts."
+    "Design extension boundary: Task workers and artifact publishers implement ports with bounded resources.",
+    "Design extension boundary: Optional license/product policy stays a platform adapter.",
+    "Design extension boundary: Build/packaging variants declare dependencies/resources/regression fixtures without introducing vendor types in core contracts."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "Two workers/eight queued tasks: ninth pending request returns RESOURCE_LIMIT; records retain transition/event sequence.",
-    "Accepted precommit cancel commits no model transaction; postcommit cancel does not roll back.",
-    "Restart marks interrupted work explicitly; incomplete artifacts cannot be published as successful.",
-    "Task/event/config/resource and dependency manifest versions are frozen; hardware-dependent performance evidence remains pending."
+    "Design/acceptance obligation: Two workers/eight queued tasks: ninth pending request returns RESOURCE_LIMIT; records retain transition/event sequence.",
+    "Design/acceptance obligation: Accepted precommit cancel commits no model transaction; postcommit cancel does not roll back.",
+    "Design/acceptance obligation: Restart marks interrupted work explicitly; incomplete artifacts cannot be published as successful.",
+    "Design/acceptance obligation: Task/event/config/resource and dependency manifest versions are frozen; hardware-dependent performance evidence remains pending.",
+    "TaskPublisher callbacks serialize through one application and cannot re-enter TaskService. start/query/cancel/wait/reconcile return Result diagnostics. Precommit accepted cancellation publishes no model transaction; postcommit cancellation cannot roll back. Unknown commit waits for application recovery before reconcile; event sequence is retained."
   ],
   "acceptance_case_ids": [
     "BP-20",

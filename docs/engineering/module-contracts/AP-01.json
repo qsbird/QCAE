@@ -20,19 +20,97 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "application",
-  "authoritative_data": "The engine owns DocumentId/Epoch/Revision and an immutable capability catalog for the active document; clients hold projections.",
+  "authoritative_data": "RecordApplication owns the active DocumentInfo and immutable committed RecordSnapshot. OperationRegistry owns typed operation descriptors; the IPC host composes global capabilities.list.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "OpenDocument(ProjectRef)->SessionIdentity; normal open allocates DocId.",
       "RecoverWorkspace(WorkspaceRef)->SessionIdentity; recovery preserves DocId and rotates Epoch.",
       "DiscoverCapabilities(SessionIdentity)->VersionedOperationCatalog with truthful availability."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-01"
-    }
+      "ap_id": "AP-01",
+      "primary_owner": {
+        "logical_module": "application",
+        "target": "qcae_application",
+        "public_header": "modules/application/include/qcae/record_application.hpp",
+        "namespace": "qcae; qcae::operations for catalog"
+      },
+      "public_signatures": [
+        {
+          "symbol": "RecordApplication::create_document",
+          "function_pointer_type": "Result<DocumentInfo> (RecordApplication::*)(const Caller&, const std::string&, const std::string&)",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "RecordApplication::open_document",
+          "function_pointer_type": "Result<DocumentInfo> (RecordApplication::*)(const Caller&, const std::string&, const std::string&)",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "RecordApplication::recover_document",
+          "function_pointer_type": "Result<DocumentInfo> (RecordApplication::*)(const Caller&, const std::string&)",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "RecordApplication::close_document",
+          "function_pointer_type": "Result<DocumentInfo> (RecordApplication::*)(const Caller&, const WriteContext&, ClosePolicy, const std::string&)",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "RecordApplication::current_document",
+          "function_pointer_type": "Result<DocumentInfo> (RecordApplication::*)() const",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "RecordApplication::snapshot",
+          "function_pointer_type": "Result<RecordSnapshot> (RecordApplication::*)(const DocumentRef&) const",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "operations::OperationRegistry::descriptors",
+          "function_pointer_type": "std::vector<operations::OperationDescriptor> (operations::OperationRegistry::*)() const",
+          "target": "qcae_operations",
+          "public_header": "modules/operations/include/qcae/operation_registry.hpp"
+        }
+      ],
+      "public_data_members": [],
+      "input_output": [
+        "DocumentInfo: DocumentRef id/epoch, revision, content_state, dirty/durable flags and project/save identity; RecordSnapshot: DocumentView records plus DocumentInfo.",
+        "RecordApplicationOptions injects immutable registry, IRecordStore/IWorkspaceStore ports, limits, validation and owned-row callbacks. Caller is supplied by a trusted host."
+      ],
+      "errors_and_effects": "create/open/recover are host lifecycle admissions with Caller and host idempotency key, not writes against an already active WriteContext. Normal open allocates a new DocumentId/Epoch; recovery retains DocumentId and rotates Epoch. Close admits WriteContext and ClosePolicy; clients own projection/tool disposal. Explicit operation versions belong to registry/host dispatch.",
+      "additional_owners": [
+        {
+          "target": "qcae_operations",
+          "public_header": "modules/operations/include/qcae/operation_registry.hpp",
+          "public_interfaces": [
+            "OperationRegistry::descriptors"
+          ],
+          "role": "Read-only typed catalog; host merges legacy and typed capability descriptors."
+        }
+      ],
+      "implemented_boundary": "No public OpenDocument(ProjectRef), RecoverWorkspace(WorkspaceRef) or DiscoverCapabilities(SessionIdentity) declaration exists. The planned interfaces above express responsibilities, not callable signatures. capabilities.list is a host operation in adapters/engine_api/src/ipc_api.cpp, separate from RecordApplication.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_application_qcae_record_application_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-01",
+        "runtime_obligations": "tests/skeleton_representative_ipc_tests.py --only-case BP-01 must create complete M, save/close, normal-open new DocId, kill actual engine, explicitly recover same DocId/new Epoch and compare complete M; pair F04/F18 and stale-context/idempotency negatives. Existing core lifecycle regression supports implementation but is not this full named IPC case.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "Result<DocumentInfo>/Result<RecordSnapshot> use Status plus optional Diagnostic: missing_input, resource_limit, document_already_open, idempotency_key_conflict, document_not_found, document_epoch_expired, revision_conflict, unsupported_capability, schema_unsupported, storage_failure or storage_uncertain according to lifecycle/admission/store failure. Catalog descriptors are read-only values."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -48,20 +126,46 @@
       "solver_profiles"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_application",
+        "public_dependencies": [
+          "qcae_document",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [
+          "Threads::Threads"
+        ],
+        "external_dependencies": [
+          "Threads::Threads"
+        ]
+      },
+      {
+        "target": "qcae_operations",
+        "public_dependencies": [
+          "qcae_foundation",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Host composition wires concrete adapters through ports.",
-    "Static module/package registrars expose identity/dependencies/availability; no executable handler means unavailable."
+    "Design extension boundary: Host composition wires concrete adapters through ports.",
+    "Design extension boundary: Static module/package registrars expose identity/dependencies/availability; no executable handler means unavailable."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "Close disposes tools/read projections before the single document authority.",
-    "Open/recovery errors never activate an editable empty replacement.",
-    "Operation requests carry DocId/Epoch/expected_revision; stale identity rejects atomically.",
-    "API/catalog semantic version is explicit; unknown versions reject."
+    "Design/acceptance obligation: Close disposes tools/read projections before the single document authority.",
+    "Design/acceptance obligation: Open/recovery errors never activate an editable empty replacement.",
+    "Design/acceptance obligation: Operation requests carry DocId/Epoch/expected_revision; stale identity rejects atomically.",
+    "Design/acceptance obligation: API/catalog semantic version is explicit; unknown versions reject.",
+    "create/open/recover are host lifecycle admissions with Caller and host idempotency key, not writes against an already active WriteContext. Normal open allocates a new DocumentId/Epoch; recovery retains DocumentId and rotates Epoch. Close admits WriteContext and ClosePolicy; clients own projection/tool disposal. Explicit operation versions belong to registry/host dispatch."
   ],
   "acceptance_case_ids": [
     "BP-01",

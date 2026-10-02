@@ -30,19 +30,77 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "clients/extensions",
-  "authoritative_data": "GUI/CLI/thin script/AI clients own requests and transient resources; one local engine owns document state, services, transactions and history.",
+  "authoritative_data": "DesktopClient owns connection/request/event projections only; the selected engine owns one document and one history for GUI/CLI/thin-script requests.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "ClientSDK.invoke(OperationId,Version,Identity,TypedInput)->StructuredResult.",
       "CapabilityDiscovery()->Descriptors/TruthfulAvailability for every entry.",
       "ResourceSubscription(sequence,version)->DeltaOrResnapshot and structured logs."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-18"
-    }
+      "ap_id": "AP-18",
+      "primary_owner": {
+        "logical_module": "clients/extensions",
+        "target": "qcae_desktop_client",
+        "public_header": "modules/clients/include/qcae/desktop_client.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "DesktopClient::request",
+          "function_pointer_type": "QString (DesktopClient::*)(const QString&, const QJsonObject&, const QJsonObject&, DesktopClient::Reply, qsizetype)",
+          "target": "qcae_desktop_client",
+          "public_header": "modules/clients/include/qcae/desktop_client.hpp"
+        },
+        {
+          "symbol": "DesktopClient::eventReceived",
+          "function_pointer_type": "void (DesktopClient::*)(const QJsonObject&)",
+          "target": "qcae_desktop_client",
+          "public_header": "modules/clients/include/qcae/desktop_client.hpp"
+        },
+        {
+          "symbol": "DesktopClient::eventGap",
+          "function_pointer_type": "void (DesktopClient::*)(const QString&)",
+          "target": "qcae_desktop_client",
+          "public_header": "modules/clients/include/qcae/desktop_client.hpp"
+        },
+        {
+          "symbol": "DesktopClient::setEventCursor",
+          "function_pointer_type": "void (DesktopClient::*)(const QString&, quint64)",
+          "target": "qcae_desktop_client",
+          "public_header": "modules/clients/include/qcae/desktop_client.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "DesktopClient::Options::request_timeout_ms",
+          "type": "qint64",
+          "target": "qcae_desktop_client",
+          "public_header": "modules/clients/include/qcae/desktop_client.hpp"
+        }
+      ],
+      "input_output": [
+        "Options: endpoint/workspace/engine/auto_start/request_timeout_ms. request returns QString request id and delivers asynchronous Reply(const QJsonObject&); max_reply_bytes bounds reception.",
+        "Signals eventReceived/eventGap/transportError/readyChanged carry Qt adapter envelopes. Trusted Caller and document/epoch/revision are admitted by host; request parameters cannot supply trusted identity."
+      ],
+      "errors_and_effects": "Timeout/disconnect/negotiation failures use structured response envelopes. Event sequence gap requires authoritative resync. Reply/client destruction and late replies must not cause duplicate writes or lifetime errors. Explicit versions/features are negotiated at the edge.",
+      "additional_owners": [],
+      "implemented_boundary": "ClientSDK.invoke is a planned generic SDK name, not a public DesktopClient declaration. CLI/thin-script share the IPC protocol; real external AI sessions remain separately unvalidated.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_desktop_client_qcae_desktop_client_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-18",
+        "runtime_obligations": "BP-18 actual GUI/CLI/thin-script9 runs, same authority and semantics, F05/F16/F17 idempotency/gap/client lifetime. No external AI execution is performed by this audit.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "request returns an asynchronous QString request ID; Reply carries structured QJsonObject status/error envelopes, not Result<T>. transportError/eventGap are signals; timeout/disconnect/unsupported negotiation must be handled by the caller before stale projections are used."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -51,20 +109,33 @@
       "ipc_local"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_desktop_client",
+        "public_dependencies": [
+          "qcae_transport_local",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Language bindings/MCP adapt the same protocol/descriptor schemas.",
-    "Transport adapters are replaceable; remote servers and real AI integration remain outside this inventory delivery."
+    "Design extension boundary: Language bindings/MCP adapt the same protocol/descriptor schemas.",
+    "Design extension boundary: Transport adapters are replaceable; remote servers and real AI integration remain outside this inventory delivery."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "GUI/CLI/thin script representative sequences produce identical semantics through the same handlers.",
-    "Entries do not instantiate a second authoritative model or bypass write coordinator.",
-    "Disconnect/delayed replies preserve commit facts/idempotency; gaps cause snapshot refresh.",
-    "Wire/operation/schema versions and supported capability negotiation reject unknown or incompatible inputs."
+    "Design/acceptance obligation: GUI/CLI/thin script representative sequences produce identical semantics through the same handlers.",
+    "Design/acceptance obligation: Entries do not instantiate a second authoritative model or bypass write coordinator.",
+    "Design/acceptance obligation: Disconnect/delayed replies preserve commit facts/idempotency; gaps cause snapshot refresh.",
+    "Design/acceptance obligation: Wire/operation/schema versions and supported capability negotiation reject unknown or incompatible inputs.",
+    "Timeout/disconnect/negotiation failures use structured response envelopes. Event sequence gap requires authoritative resync. Reply/client destruction and late replies must not cause duplicate writes or lifetime errors. Explicit versions/features are negotiated at the edge."
   ],
   "acceptance_case_ids": [
     "BP-18",

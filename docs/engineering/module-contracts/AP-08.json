@@ -20,19 +20,102 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "organization",
-  "authoritative_data": "Part/assembly/set/INCLUDE records own references and placement ownership; the model tree is a projection and never duplicates mesh identity.",
+  "authoritative_data": "Organization membership lives in persistent Part/Assembly/EntitySet records. Queries return original stable entity IDs; the query module owns no writable document.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "QueryOrganization(PartId/AssemblyId/SetId)->OriginalEntityIds.",
       "EditSetMembers(SetId,EntityIds,ExpectedRevision)->ChangeSet.",
       "OrganizationProjection(SessionVersion)->TreeRows retaining referenced entity identity."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-08"
-    }
+      "ap_id": "AP-08",
+      "primary_owner": {
+        "logical_module": "organization",
+        "target": "qcae_query",
+        "public_header": "modules/query/include/qcae/query.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "query_entities",
+          "function_pointer_type": "Result<EntityPage> (*)(const DocumentView&, const EntityFilter&, std::size_t, std::size_t, RecordStats*)",
+          "target": "qcae_query",
+          "public_header": "modules/query/include/qcae/query.hpp"
+        },
+        {
+          "symbol": "query_fields",
+          "function_pointer_type": "Result<RecordInput> (*)(const DocumentView&, const EntityId&, RecordStats*)",
+          "target": "qcae_query",
+          "public_header": "modules/query/include/qcae/query.hpp"
+        },
+        {
+          "symbol": "query_references",
+          "function_pointer_type": "Result<ReferencePage> (*)(const DocumentView&, const EntityId&, bool, std::size_t, std::size_t, RecordStats*)",
+          "target": "qcae_query",
+          "public_header": "modules/query/include/qcae/query.hpp"
+        },
+        {
+          "symbol": "query_affected_analyses",
+          "function_pointer_type": "std::vector<EntityId> (*)(const DocumentView&, const EntityId&)",
+          "target": "qcae_query",
+          "public_header": "modules/query/include/qcae/query.hpp"
+        },
+        {
+          "symbol": "MemoryApplication::preview_edit",
+          "function_pointer_type": "Result<ChangePreview> (MemoryApplication::*)(const Caller&, const WriteContext&, const ModelEdit&)",
+          "target": "qcae_legacy_api",
+          "public_header": "features/legacy_api/include/qcae/core.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "EntityFilter::owner",
+          "type": "std::optional<EntityId>",
+          "target": "qcae_query",
+          "public_header": "modules/query/include/qcae/query.hpp"
+        }
+      ],
+      "input_output": [
+        "EntityFilter: kind/name_contains/optional IDs/view/optional owner; EntityPage and ReferencePage retain RecordVersion, offset and total.",
+        "Set writes use changes.preview command set.upsert with entity_id/name/members, converted to UpsertSet in ModelEdit; MemoryApplication::preview_edit delegates into RecordApplication and changes.commit installs the preview."
+      ],
+      "errors_and_effects": "Queries are pure over frozen view with explicit paging and Result errors for invalid filters/owners/limits. Set-member changes require WriteContext, preview and atomic commit/undo; repeated occurrences cannot invent new model identities.",
+      "additional_owners": [
+        {
+          "target": "qcae_legacy_api",
+          "public_header": "features/legacy_api/include/qcae/core.hpp",
+          "public_interfaces": [
+            "MemoryApplication::preview_edit",
+            "MemoryApplication::commit"
+          ],
+          "role": "Compatibility edit facade; does not own a second authority."
+        },
+        {
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/model.hpp",
+          "public_interfaces": [
+            "UpsertSet",
+            "ModelEdit"
+          ],
+          "role": "Actual set.upsert typed conversion in adapters/engine_api/src/ipc_model.cpp."
+        }
+      ],
+      "implemented_boundary": "No generated set-member feature API is declared. The real compatibility facade is qcae_legacy_api; OrganizationProjection and transformed repeated occurrences remain wider design scope.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_query_qcae_query_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-08",
+        "runtime_obligations": "BP-08 M through part/assembly/Fixed/Loaded views returns original11 node IDs; set edit and undo restore membership/dependent freshness using named IPC case.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "Query functions return Result<EntityPage/RecordInput/ReferencePage> diagnostics for invalid kind/owner/ID/paging; query_affected_analyses returns vector<EntityId>. Set writes return Result<ChangePreview> then Result<ChangeReceipt>, including stale context/reference/idempotency/store errors through the real legacy facade and coordinator."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -42,20 +125,54 @@
       "query"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_document",
+        "public_dependencies": [
+          "qcae_foundation",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      },
+      {
+        "target": "qcae_legacy_api",
+        "public_dependencies": [
+          "qcae_application",
+          "qcae_document",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [
+          "qcae_parameters"
+        ],
+        "external_dependencies": []
+      },
+      {
+        "target": "qcae_query",
+        "public_dependencies": [
+          "qcae_document",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Schema declares organization relationships and reference/deletion rules.",
-    "UI tree and format INCLUDE contributions consume public organization projections."
+    "Design extension boundary: Schema declares organization relationships and reference/deletion rules.",
+    "Design extension boundary: UI tree and format INCLUDE contributions consume public organization projections."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "M returns the same original 11 node identities through every organization view.",
-    "Undo restores changed set members and dependent analysis freshness.",
-    "Repeated transformed instances remain unavailable until occurrence/reference semantics are implemented.",
-    "Organization schema migrations preserve identity/reference closure and source mapping."
+    "Design/acceptance obligation: M returns the same original 11 node identities through every organization view.",
+    "Design/acceptance obligation: Undo restores changed set members and dependent analysis freshness.",
+    "Design/acceptance obligation: Repeated transformed instances remain unavailable until occurrence/reference semantics are implemented.",
+    "Design/acceptance obligation: Organization schema migrations preserve identity/reference closure and source mapping.",
+    "Queries are pure over frozen view with explicit paging and Result errors for invalid filters/owners/limits. Set-member changes require WriteContext, preview and atomic commit/undo; repeated occurrences cannot invent new model identities."
   ],
   "acceptance_case_ids": [
     "BP-08",

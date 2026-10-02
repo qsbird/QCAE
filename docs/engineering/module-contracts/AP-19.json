@@ -25,19 +25,75 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "results",
-  "authoritative_data": "ResultSet owns quantity/unit/components/location/coordinate_basis/case/frame, frozen input fingerprint and solver-number/entity mapping; fixture/solver source provenance is mandatory.",
+  "authoritative_data": "FixtureResultService stores explicit fixture provenance in auxiliary owned rows; it does not own a real solver or a general postprocessing model.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "ReadResult(ResultRef,RequestedInput)->ValidatedField+Provenance.",
       "ResultFreshness(ResultId,InputFingerprint)->Current/Stale/Unrelated.",
       "ResultProjection(quantity,frame,components)->ReadOnlyRender/ChartData."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-19"
-    }
+      "ap_id": "AP-19",
+      "primary_owner": {
+        "logical_module": "results",
+        "target": "qcae_result_features",
+        "public_header": "features/results/include/qcae/result_service.hpp",
+        "namespace": "qcae::features::results"
+      },
+      "public_signatures": [
+        {
+          "symbol": "features::results::FixtureResultService::read",
+          "function_pointer_type": "Result<features::results::StoredFixtureResult> (features::results::FixtureResultService::*)(const Caller&, const WriteContext&, std::string_view, const features::results::ResultFixture&, const std::string&)",
+          "target": "qcae_result_features",
+          "public_header": "features/results/include/qcae/result_service.hpp"
+        },
+        {
+          "symbol": "features::results::FixtureResultService::get",
+          "function_pointer_type": "Result<features::results::StoredFixtureResult> (features::results::FixtureResultService::*)(const Caller&, const DocumentRef&, std::string_view) const",
+          "target": "qcae_result_features",
+          "public_header": "features/results/include/qcae/result_service.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "features::results::StoredFixtureResult::artifact_id",
+          "type": "std::string",
+          "target": "qcae_result_features",
+          "public_header": "features/results/include/qcae/result_service.hpp"
+        }
+      ],
+      "input_output": [
+        "StoredFixtureResult: id/principal/signature/artifact_id and ResultBundle. Bundle retains quantity/unit/components/location/coordinate_basis/case/frame/source_kind/input signature and numbering map.",
+        "FrozenInputResolver obtains matching verified artifact input. read admits Caller/WriteContext/key and stores the result; get reads by Caller/DocumentRef/result_id."
+      ],
+      "errors_and_effects": "Provenance/location/unit/fingerprint/number-map mismatch rejects fixture admission. get is read-only; current/stale is derived from the frozen input and current model. A persisted fixture or successful process exit is not engineering solver validation.",
+      "additional_owners": [
+        {
+          "target": "qcae_result_features",
+          "public_header": "features/results/include/qcae/result_fixture.hpp",
+          "public_interfaces": [
+            "ResultFixture",
+            "ResultBundle"
+          ],
+          "role": "Explicit fixture numeric/unit/location/source/freshness DTO and validation helpers."
+        }
+      ],
+      "implemented_boundary": "Read is not side-effect-free postprocessing: it persists a CAS/idempotent owned-row result. ResultProjection charts, derived fields and real solver output are outside this explicit fixture public subset.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_result_features_qcae_result_service_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-19",
+        "runtime_obligations": "BP-19 R node0=(0,0,0),node10=(0,-1,0)mm/metadata fixture provenance; edit input ->stale; wrong fingerprint/location/mapping F22 rejection. result_fixture(_ipc) tests must have actual bound receipts.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "read/get return Result<StoredFixtureResult> for artifact/fixture/provenance/context/idempotency/storage failures. read persists auxiliary rows only after admission; get does not write. Stored bundles retain source_kind fixture; no Result success asserts real solver validation."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -47,20 +103,32 @@
       "domain"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_result_features",
+        "public_dependencies": [
+          "qcae_analysis_features"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Result readers and derived field rules register explicit supported formats/locations.",
-    "Postprocessing UI/render providers consume public result metadata/provenance."
+    "Design extension boundary: Result readers and derived field rules register explicit supported formats/locations.",
+    "Design extension boundary: Postprocessing UI/render providers consume public result metadata/provenance."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "R fixture reads node0=(0,0,0), node10=(0,-1,0)mm and required metadata exactly; source_kind remains fixture.",
-    "Wrong input fingerprint/location/number mapping cannot be accepted as current node displacement.",
-    "Input edit marks dependent results stale; successful solver process exit alone is not engineering validation.",
-    "Reader/result/provenance versions persist; complete postprocessing and real solver verification remain unavailable until separate acceptance."
+    "Design/acceptance obligation: R fixture reads node0=(0,0,0), node10=(0,-1,0)mm and required metadata exactly; source_kind remains fixture.",
+    "Design/acceptance obligation: Wrong input fingerprint/location/number mapping cannot be accepted as current node displacement.",
+    "Design/acceptance obligation: Input edit marks dependent results stale; successful solver process exit alone is not engineering validation.",
+    "Design/acceptance obligation: Reader/result/provenance versions persist; complete postprocessing and real solver verification remain unavailable until separate acceptance.",
+    "Provenance/location/unit/fingerprint/number-map mismatch rejects fixture admission. get is read-only; current/stale is derived from the frozen input and current model. A persisted fixture or successful process exit is not engineering solver validation."
   ],
   "acceptance_case_ids": [
     "BP-19",

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "actual_public_contract_build_mapping",
   "source_binding": "mutable_diagnostic_not_final_acceptance",
-  "reference_contracts": "The original eight-field AP contracts retain their L1 reference inventory and proposed design surfaces; this map records the concrete implemented subset.",
+  "reference_contracts": "The eight-field AP contracts preserve their L1 reference inventory and explicitly separate responsibility-oriented design names from real typed public signatures/owners. This map records only that implemented subset.",
   "consumer_definition": "tests/public_api_consumers/CMakeLists.txt builds each header in its own translation unit, using only the linked target public requirements.",
   "runtime_evidence": "BP acceptance and uniform same-source builds are separate evidence; this source map alone passes no SK gate.",
   "entries": [
@@ -13,30 +13,68 @@
       "public_interfaces": [
         "RecordApplication::create_document",
         "RecordApplication::open_document",
-        "RecordApplication::recover_document"
+        "RecordApplication::recover_document",
+        "RecordApplication::close_document",
+        "RecordApplication::current_document",
+        "RecordApplication::snapshot"
       ],
       "header_consumer": "consumer_qcae_application_qcae_record_application_hpp",
       "bp_case": "BP-01",
       "limits": [
-        "MCP process bridge and real external AI sessions remain separate M5 work."
+        "No public OpenDocument(ProjectRef), RecoverWorkspace(WorkspaceRef) or DiscoverCapabilities(SessionIdentity) declaration exists. The planned interfaces above express responsibilities, not callable signatures. capabilities.list is a host operation in adapters/engine_api/src/ipc_api.cpp, separate from RecordApplication."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-01.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_operations",
+          "public_header": "modules/operations/include/qcae/operation_registry.hpp",
+          "public_interfaces": [
+            "OperationRegistry::descriptors"
+          ],
+          "role": "Read-only typed catalog; host merges legacy and typed capability descriptors."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-02",
       "target": "qcae_document",
       "public_header": "modules/document/include/qcae/record_registry.hpp",
       "public_interfaces": [
-        "RecordRegistry",
-        "RecordDescriptor",
-        "RecordInput"
+        "RecordRegistry::add",
+        "RecordRegistry::freeze",
+        "RecordRegistry::find",
+        "RecordRegistry::decode",
+        "RecordRegistry::from_input"
       ],
       "header_consumer": "consumer_qcae_document_qcae_record_registry_hpp",
       "bp_case": "BP-02",
       "limits": [
-        "Optional-field extension acceptance is pending EXT-01."
+        "EntitySchema/QueryEntities/EditFields are design names. Actual query_fields is owned by qcae_query; generated records and EditSession provide the typed edit path. Optional-field compatibility and EXT-01 costs require their own execution."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-02.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/records.hpp",
+          "public_interfaces": [
+            "records::Node",
+            "RecordTraits<records::Node>"
+          ],
+          "role": "Generated typed persistent records and stable identifiers."
+        },
+        {
+          "target": "qcae_query",
+          "public_header": "modules/query/include/qcae/query.hpp",
+          "public_interfaces": [
+            "query_fields"
+          ],
+          "role": "Read-only versioned field query; separate owner from the registry."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-03",
@@ -44,30 +82,44 @@
       "public_header": "features/geometry/include/qcae/geometry_features.hpp",
       "public_interfaces": [
         "create_line_handler",
-        "evaluate_line",
-        "move_line_endpoint_handler"
+        "move_line_endpoint_handler",
+        "evaluate_line"
       ],
       "header_consumer": "consumer_qcae_geometry_features_qcae_geometry_features_hpp",
       "bp_case": "BP-03",
       "limits": [
-        "Only analytic lines are supported; general CAD topology is unavailable."
+        "Only analytic line creation, endpoint edits and evaluation are mapped. GeometryTopology, surfaces, Booleans and general CAD projection remain outside this implemented public subset."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-03.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-04",
       "target": "qcae_mesh_generation",
       "public_header": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
       "public_interfaces": [
-        "regenerate_line_mesh_task",
-        "LineMeshInput"
+        "regenerate_line_mesh_task"
       ],
       "header_consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
       "bp_case": "BP-04",
       "limits": [
-        "Replacement policy is reject_unmapped; no inferred remapping."
+        "Only uniform-line regeneration is mapped. Same-count regeneration retains IDs; different-count replacement uses reject_unmapped. No inferred remapping or general geometry association service is declared."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-04.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/records.hpp",
+          "public_interfaces": [
+            "records::Mesh"
+          ],
+          "role": "Persistent mesh binding/source revision and generated schema."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-05",
@@ -79,40 +131,83 @@
       "header_consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
       "bp_case": "BP-05",
       "limits": [
-        "Provider is the built-in uniform line discretizer; no new meshing SDK."
+        "The built-in uniform line discretizer has no external meshing SDK. MesherCapabilities, general GenerateMesh and QualityReport are design interfaces, not declarations in line_mesh_task.hpp."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-05.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_runtime",
+          "public_header": "modules/runtime/include/qcae/task_service.hpp",
+          "public_interfaces": [
+            "TaskRequest",
+            "TaskControl"
+          ],
+          "role": "Worker/cancellation/progress contracts; publication is injected through TaskPublisher."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-06",
       "target": "qcae_document",
       "public_header": "modules/document/include/qcae/document_view.hpp",
       "public_interfaces": [
-        "DocumentView",
-        "RecordVersion"
+        "DocumentView::version",
+        "DocumentView::matches_version",
+        "DocumentView::count",
+        "DocumentView::find",
+        "apply_record_changes"
       ],
       "header_consumer": "consumer_qcae_document_qcae_document_view_hpp",
       "bp_case": "BP-06",
       "limits": [
-        "Tri3 persistence and topology acceptance are pending EXT-03."
+        "TopologyDescriptor/ReadMeshBlocks/ReverseAdjacency are design names absent from the mapped view header. Persistent Tri3, export identity bijection and reverse-reference behavior need their separate tests."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-06.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/model_codec.hpp",
+          "public_interfaces": [
+            "ExportIdentifier"
+          ],
+          "role": "Explicit entity-to-solver-number export mapping; no storage/render ID aliasing."
+        },
+        {
+          "target": "qcae_contracts",
+          "public_header": "modules/contracts/include/qcae/render_packet.hpp",
+          "public_interfaces": [
+            "RenderPacket",
+            "RenderDelta"
+          ],
+          "role": "Disposable display identities and versioned display payloads."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-07",
       "target": "qcae_mesh_editing",
       "public_header": "features/mesh_editing/include/qcae/mesh_editing_operations.hpp",
       "public_interfaces": [
-        "prepare_move_node",
-        "prepare_assign_section",
-        "register_handlers"
+        "features::mesh_editing::prepare_move_node",
+        "features::mesh_editing::prepare_translate_nodes",
+        "features::mesh_editing::prepare_assign_section",
+        "features::mesh_editing::prepare_create_tri3",
+        "features::mesh_editing::register_handlers"
       ],
       "header_consumer": "consumer_qcae_mesh_editing_qcae_mesh_editing_operations_hpp",
       "bp_case": "BP-07",
       "limits": [
-        "Batch translation acceptance is pending EXT-02."
+        "Batch translation and Tri3 preparation are already public declarations. Their compilation does not prove BP-07 atomic batch behavior or EXT-02/03 protected-file/cost acceptance."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-07.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending.",
+      "additional_historical_consumer": "consumer_batch_translation; compilation/type-use only, not BP-07 or EXT-02 acceptance."
     },
     {
       "ap_id": "AP-08",
@@ -120,78 +215,166 @@
       "public_header": "modules/query/include/qcae/query.hpp",
       "public_interfaces": [
         "query_entities",
+        "query_fields",
         "query_references",
         "query_affected_analyses"
       ],
       "header_consumer": "consumer_qcae_query_qcae_query_hpp",
       "bp_case": "BP-08",
       "limits": [
-        "Organization projection retains original entity identities."
+        "No generated set-member feature API is declared. The real compatibility facade is qcae_legacy_api; OrganizationProjection and transformed repeated occurrences remain wider design scope."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-08.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_legacy_api",
+          "public_header": "features/legacy_api/include/qcae/core.hpp",
+          "public_interfaces": [
+            "MemoryApplication::preview_edit",
+            "MemoryApplication::commit"
+          ],
+          "role": "Compatibility edit facade; does not own a second authority."
+        },
+        {
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/model.hpp",
+          "public_interfaces": [
+            "UpsertSet",
+            "ModelEdit"
+          ],
+          "role": "Actual set.upsert typed conversion in adapters/engine_api/src/ipc_model.cpp."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-09",
       "target": "qcae_parameters",
       "public_header": "modules/parameters/include/qcae/quantities.hpp",
       "public_interfaces": [
-        "convert_quantity",
-        "local_to_global",
-        "ScalarTable1D::evaluate"
+        "parameters::convert_quantity",
+        "parameters::local_to_global",
+        "parameters::ScalarTable1D::create",
+        "parameters::ScalarTable1D::evaluate"
       ],
       "header_consumer": "consumer_qcae_parameters_qcae_quantities_hpp",
       "bp_case": "BP-09",
       "limits": [
-        "This slice covers the fixed unit, coordinate and interpolation cases."
+        "CoordinateId/TableId lookup and document dependency invalidation are design services beyond these pure value functions. Successful conversion does not itself mutate document or analysis state."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-09.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-10",
       "target": "qcae_engine_api",
       "public_header": "adapters/engine_api/include/qcae/engine_contributions.hpp",
       "public_interfaces": [
-        "EngineContribution",
-        "EngineAssembly",
-        "default_engine_contributions"
+        "ipc::default_engine_contributions",
+        "ipc::assemble_engine",
+        "ipc::nastran_package_enabled"
       ],
       "header_consumer": "consumer_qcae_engine_api_qcae_engine_contributions_hpp",
       "bp_case": "BP-10",
       "limits": [
-        "Nastran is the only production package; no dynamic plugin runtime."
+        "RegisterCapabilityPackage/DisablePackage are design names. Registration is static startup assembly and QCAE_ENABLE_NASTRAN_PACKAGE is a compile-time composition choice; no generic dynamic package runtime or unified six-category registry exists. Qt-bearing engine API remains an adapter."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-10.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_nastran",
+          "public_header": "profiles/nastran/include/qcae/nastran_package.hpp",
+          "public_interfaces": [
+            "register_nastran_core_rules",
+            "validate_nastran_export",
+            "verify_nastran_readback",
+            "nastran_ui_contribution"
+          ],
+          "role": "Core rules, export validation/readback and UI metadata; not a dynamic registry."
+        },
+        {
+          "target": "qcae_nastran",
+          "public_header": "profiles/nastran/include/qcae/nastran_codec.hpp",
+          "public_interfaces": [
+            "NastranCodec::decode",
+            "NastranCodec::encode"
+          ],
+          "role": "IModelCodec/IProfileProvider production injection."
+        },
+        {
+          "target": "qcae_engine_api",
+          "public_header": "adapters/engine_api/include/qcae/nastran_contribution.hpp",
+          "public_interfaces": [
+            "nastran_engine_contribution",
+            "nastran_render_contributions"
+          ],
+          "role": "Operation and render assembly callbacks; package-OFF host wiring excludes them."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-11",
       "target": "qcae_analysis_features",
       "public_header": "features/analysis/include/qcae/analysis_input.hpp",
       "public_interfaces": [
-        "FrozenAnalysisInput",
-        "freeze_analysis_input"
+        "features::analysis::freeze_analysis_input"
       ],
       "header_consumer": "consumer_qcae_analysis_features_qcae_analysis_input_hpp",
       "bp_case": "BP-11",
       "limits": [
-        "Analysis/load-case records retain explicit Nastran targets; no solver execution."
+        "Freeze input is a read-only provenance API. Composite load/constraint mutation and referenced-load deletion rejection cannot be inferred from that header alone; BP-11 requires their real transaction behavior."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-11.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_analysis_features",
+          "public_header": "features/analysis/include/qcae/analysis_features.hpp",
+          "public_interfaces": [
+            "prepare_create_load_case",
+            "prepare_set_references",
+            "prepare_create_analysis"
+          ],
+          "role": "Real generated-input mutation plan factories; application owns commits."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-12",
       "target": "qcae_operations",
       "public_header": "modules/operations/include/qcae/operation_registry.hpp",
       "public_interfaces": [
-        "OperationRegistry",
-        "OperationDefinition",
-        "OperationContext"
+        "operations::OperationRegistry::declare_unavailable",
+        "operations::OperationRegistry::invoke",
+        "operations::OperationRegistry::descriptors"
       ],
       "header_consumer": "consumer_qcae_operations_qcae_operation_registry_hpp",
       "bp_case": "BP-12",
       "limits": [
-        "RecordApplication owns commits, idempotency and undo/redo."
+        "The registry is not the commit coordinator. Execute/Undo design names resolve to RecordApplication::execute/undo/redo/history, not OperationRegistry methods. Declaration or signature compilation does not prove durable history."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-12.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp",
+          "public_interfaces": [
+            "RecordApplication::execute",
+            "RecordApplication::undo",
+            "RecordApplication::redo",
+            "RecordApplication::history"
+          ],
+          "role": "Actual transaction/idempotency/history authority."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-13",
@@ -200,31 +383,47 @@
       "public_interfaces": [
         "VtkView::picked",
         "VtkView::setPreview",
-        "VtkView::applyDelta"
+        "VtkView::applyDelta",
+        "VtkView::clearPreview"
       ],
       "header_consumer": "consumer_qcae_vtk_view_qcae_vtk_view_hpp",
       "bp_case": "BP-13",
       "limits": [
-        "Real point/line picking is present; Tri3 picking is pending EXT-03."
+        "VtkView signals do not declare a public ToolContribution/ToolSession lifecycle service. Enter/pick/preview/cancel/leave behavior remains an integration boundary requiring fresh graphical evidence; no future interface is fabricated."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-13.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_desktop_ui",
+          "public_header": "ui/desktop/include/qcae/desktop.hpp",
+          "public_interfaces": [
+            "create_desktop_window"
+          ],
+          "role": "Public window factory; staged controller remains private and uses DesktopClient."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-14",
       "target": "qcae_analysis_features",
       "public_header": "features/analysis/include/qcae/analysis_features.hpp",
       "public_interfaces": [
-        "CheckService",
-        "CheckReport",
-        "Issue",
-        "issue_state"
+        "features::analysis::RuleCatalog::check",
+        "features::analysis::CheckService::run",
+        "features::analysis::CheckService::get",
+        "features::analysis::issue_state"
       ],
       "header_consumer": "consumer_qcae_analysis_features_qcae_analysis_features_hpp",
       "bp_case": "BP-14",
       "limits": [
-        "Missing-load and missing-constraint rules are the controlled check set."
+        "LocateIssue/PlanRepair are planned service names absent from the mapped header. Desktop analysis tools locate the Issue entity; repair is an explicit prepare_set_references operation, not direct CheckService model mutation. Installed controlled rules do not certify all engineering scenarios."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-14.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-15",
@@ -237,25 +436,108 @@
       "header_consumer": "consumer_qcae_application_qcae_record_application_hpp",
       "bp_case": "BP-15",
       "limits": [
-        "Local verified export artifacts are present; files and SQLite have distinct publish boundaries."
+        "Save and migration do not implicitly perform BDF exchange. Normal open, recovery and discard remain distinct lifecycle operations. Frozen legacy fixtures, semantic readback and duplicate numbering rejection require runtime evidence."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-15.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_contracts",
+          "public_header": "modules/contracts/include/qcae/workspace_store.hpp",
+          "public_interfaces": [
+            "IWorkspaceStore"
+          ],
+          "role": "Project lease/read/publish port; concrete SQLite types stay private to adapter."
+        },
+        {
+          "target": "qcae_contracts",
+          "public_header": "modules/contracts/include/qcae/record_store.hpp",
+          "public_interfaces": [
+            "IRecordStore"
+          ],
+          "role": "Durable batch/recovery port for the coordinator."
+        },
+        {
+          "target": "qcae_nastran",
+          "public_header": "profiles/nastran/include/qcae/nastran_codec.hpp",
+          "public_interfaces": [
+            "NastranCodec::decode",
+            "NastranCodec::encode"
+          ],
+          "role": "Controlled BDF import/export reports and numbering maps."
+        },
+        {
+          "target": "qcae_artifacts_local",
+          "public_header": "adapters/artifacts_local/include/qcae/artifacts_local.hpp",
+          "public_interfaces": [
+            "LocalArtifactStore::stage",
+            "LocalArtifactStore::publish",
+            "LocalArtifactStore::verify"
+          ],
+          "role": "Explicit frozen-file/manifest publication, separate from DB commit."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-16",
       "target": "qcae_query",
       "public_header": "modules/query/include/qcae/render_projector.hpp",
       "public_interfaces": [
-        "RenderContributions",
-        "RenderProjector",
-        "RenderCellSource"
+        "RenderContributions::add",
+        "RenderContributions::freeze",
+        "RenderProjector::update"
       ],
       "header_consumer": "consumer_qcae_query_qcae_render_projector_hpp",
       "bp_case": "BP-16",
       "limits": [
-        "Variable-arity render transport is present; no persistent Tri3 is preseeded."
+        "Producer compilation does not prove scene atomicity, visible/through picking or all12 PICK cases. SetDisplayState and generalized RenderProjection design names are not this C++ public API."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-16.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_contracts",
+          "public_header": "modules/contracts/include/qcae/render_packet.hpp",
+          "public_interfaces": [
+            "RenderPacket",
+            "RenderDelta",
+            "RenderCellKind"
+          ],
+          "role": "Versioned variable-arity display transport DTOs; display IDs are separate from model storage positions."
+        },
+        {
+          "target": "qcae_transport_local",
+          "public_header": "adapters/transport_local/include/qcae/render_wire.hpp",
+          "public_interfaces": [
+            "transport::encode_render_packet",
+            "transport::encode_render_delta",
+            "transport::decode_render_packet",
+            "transport::decode_render_delta"
+          ],
+          "role": "Binary render packet/delta encode/decode; separate adapter from projection."
+        },
+        {
+          "target": "qcae_desktop_client",
+          "public_header": "modules/clients/include/qcae/resource_client.hpp",
+          "public_interfaces": [
+            "ResourceClient::fetch",
+            "ResourceClient::parseManifest"
+          ],
+          "role": "Bounded manifest/chunk/hash-validated resource acquisition; no display publication before validation."
+        },
+        {
+          "target": "qcae_vtk_view",
+          "public_header": "adapters/rendering_vtk/include/qcae/vtk_view.hpp",
+          "public_interfaces": [
+            "VtkView::setPacket",
+            "VtkView::applyDelta",
+            "VtkView::picked"
+          ],
+          "role": "Actual Qt/VTK scene/picking consumer; no core dependency on it."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-17",
@@ -269,9 +551,12 @@
       "header_consumer": "consumer_qcae_desktop_ui_qcae_desktop_hpp",
       "bp_case": "BP-17",
       "limits": [
-        "Panels and shortcut preferences are desktop adapters, without document writes."
+        "UiContributionCatalog/SaveRestoreWorkspacePreferences are design names absent from desktop.hpp. Real panel/catalog actions and shortcut restore are private implementation behavior. Fresh process write/read and exact BP-17 golden are still required."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-17.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-18",
@@ -279,30 +564,47 @@
       "public_header": "modules/clients/include/qcae/desktop_client.hpp",
       "public_interfaces": [
         "DesktopClient::request",
-        "DesktopClient::eventReceived"
+        "DesktopClient::eventReceived",
+        "DesktopClient::eventGap",
+        "DesktopClient::setEventCursor"
       ],
       "header_consumer": "consumer_qcae_desktop_client_qcae_desktop_client_hpp",
       "bp_case": "BP-18",
       "limits": [
-        "CLI and thin-script IPC reuse one engine; real AI/MCP sessions remain unvalidated."
+        "ClientSDK.invoke is a planned generic SDK name, not a public DesktopClient declaration. CLI/thin-script share the IPC protocol; real external AI sessions remain separately unvalidated."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-18.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-19",
       "target": "qcae_result_features",
       "public_header": "features/results/include/qcae/result_service.hpp",
       "public_interfaces": [
-        "FixtureResultService::read",
-        "FixtureResultService::get",
-        "StoredFixtureResult"
+        "features::results::FixtureResultService::read",
+        "features::results::FixtureResultService::get"
       ],
       "header_consumer": "consumer_qcae_result_features_qcae_result_service_hpp",
       "bp_case": "BP-19",
       "limits": [
-        "Only explicit R fixture values/provenance are accepted; no real solver or complete postprocessing."
+        "Read is not side-effect-free postprocessing: it persists a CAS/idempotent owned-row result. ResultProjection charts, derived fields and real solver output are outside this explicit fixture public subset."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-19.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [
+        {
+          "target": "qcae_result_features",
+          "public_header": "features/results/include/qcae/result_fixture.hpp",
+          "public_interfaces": [
+            "ResultFixture",
+            "ResultBundle"
+          ],
+          "role": "Explicit fixture numeric/unit/location/source/freshness DTO and validation helpers."
+        }
+      ],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     },
     {
       "ap_id": "AP-20",
@@ -310,16 +612,20 @@
       "public_header": "modules/runtime/include/qcae/task_service.hpp",
       "public_interfaces": [
         "TaskService::start",
-        "TaskService::cancel",
         "TaskService::query",
-        "TaskServiceLimits"
+        "TaskService::cancel",
+        "TaskService::wait",
+        "TaskService::reconcile"
       ],
       "header_consumer": "consumer_qcae_runtime_qcae_task_service_hpp",
       "bp_case": "BP-20",
       "limits": [
-        "Task workers/queue are bounded; external solver-process recovery is not implemented."
+        "ConfigureRuntime is not a TaskService method. Configuration/logging/packaging and real solver process recovery remain separate platform adapters. Durable transition guarantees depend on installed load/persist/publish callbacks, not the scheduler constructor alone."
       ],
-      "uniform_final_validation": "pending"
+      "uniform_final_validation": "pending",
+      "public_signature_contract": "docs/engineering/module-contracts/AP-20.json#/public_contracts/implemented_subset/public_signatures",
+      "additional_surfaces": [],
+      "typed_consumer_requirement": "Independently compile real public member/function signatures using linked target public usage requirements; supplementary to the original per-header consumer. Execution pending."
     }
   ]
 }

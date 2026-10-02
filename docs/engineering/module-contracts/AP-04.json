@@ -20,19 +20,68 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "mesh/association",
-  "authoritative_data": "Association records own supporting GeometryId, source geometry revision, support location and replacement lineage; mesh records cannot assume association freshness.",
+  "authoritative_data": "Persistent Mesh binding/source revision and stable mesh/node/element identities live in document records; TaskRequest owns frozen regeneration input.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "QueryAssociation(MeshEntityId,SessionVersion)->SupportRef/Freshness.",
       "GeometryReplacementCandidate->AssociationRemapPlan with strict reject_unmapped policy.",
       "RebuildMesh(binding_revision)->Candidate with updated association revision."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-04"
-    }
+      "ap_id": "AP-04",
+      "primary_owner": {
+        "logical_module": "mesh/association",
+        "target": "qcae_mesh_generation",
+        "public_header": "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "regenerate_line_mesh_task",
+          "function_pointer_type": "TaskRequest (*)(const RecordSnapshot&, Caller, records::MeshId, std::uint32_t, std::string, std::string)",
+          "target": "qcae_mesh_generation",
+          "public_header": "features/mesh_generation/include/qcae/line_mesh_task.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "LineMeshInput::geometry",
+          "type": "records::GeometryId",
+          "target": "qcae_mesh_generation",
+          "public_header": "features/mesh_generation/include/qcae/line_mesh_task.hpp"
+        }
+      ],
+      "input_output": [
+        "regenerate_line_mesh_task takes RecordSnapshot, Caller, MeshId, segment count, replacement_policy and idempotency_key.",
+        "It returns TaskRequest; TaskService and the installed task-application publisher own execution and atomic candidate publication. Record/query APIs expose association fields, not a standalone QueryAssociation service."
+      ],
+      "errors_and_effects": "Task creation does not commit. Input document/epoch/revision and binding source revision are frozen; stale candidates and any unmapped existing reference reject the whole replacement. Cancellation is admitted by TaskService before publication.",
+      "additional_owners": [
+        {
+          "target": "qcae_document",
+          "public_header": "modules/document/include/qcae/records.hpp",
+          "public_interfaces": [
+            "records::Mesh"
+          ],
+          "role": "Persistent mesh binding/source revision and generated schema."
+        }
+      ],
+      "implemented_boundary": "Only uniform-line regeneration is mapped. Same-count regeneration retains IDs; different-count replacement uses reject_unmapped. No inferred remapping or general geometry association service is declared.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_mesh_generation_qcae_line_mesh_task_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-04",
+        "runtime_obligations": "BP-04 full M endpoint1000->1200, old binding stale, regenerate120mm spacing and new binding revision; unmapped reference rejects entire replacement. Use existing named IPC case and line_mesh_regeneration negatives.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "The factory returns TaskRequest, and can throw RecordError(resource_limit/invalid_input). The worker can throw RecordError for invalid/missing association/geometry or unresolvable references. TaskService records failed/conflicted/cancelled state; the application publisher rejects stale input atomically."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -42,20 +91,41 @@
       "validation"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_document",
+        "public_dependencies": [
+          "qcae_foundation",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      },
+      {
+        "target": "qcae_mesh_generation",
+        "public_dependencies": [
+          "qcae_task_application"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Provider-specific support interpretation/remapping is behind geometry/mesh ports.",
-    "Association schema and replacement validation are extensible feature contributions."
+    "Design extension boundary: Provider-specific support interpretation/remapping is behind geometry/mesh ports.",
+    "Design extension boundary: Association schema and replacement validation are extensible feature contributions."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "Changing the line end 1000->1200mm marks the old mesh association stale.",
-    "Unmapped existing reference rejects the entire replacement, preserving model/references/revision.",
-    "Rebuild yields 120mm spacing and records new geometry revision.",
-    "Association/replacement format versions are persisted and migrated with project schema."
+    "Design/acceptance obligation: Changing the line end 1000->1200mm marks the old mesh association stale.",
+    "Design/acceptance obligation: Unmapped existing reference rejects the entire replacement, preserving model/references/revision.",
+    "Design/acceptance obligation: Rebuild yields 120mm spacing and records new geometry revision.",
+    "Design/acceptance obligation: Association/replacement format versions are persisted and migrated with project schema.",
+    "Task creation does not commit. Input document/epoch/revision and binding source revision are frozen; stale candidates and any unmapped existing reference reject the whole replacement. Cancellation is admitted by TaskService before publication."
   ],
   "acceptance_case_ids": [
     "BP-04",

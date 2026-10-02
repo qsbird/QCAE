@@ -20,19 +20,71 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "geometry",
-  "authoritative_data": "GeometryId/topological adjacency/orientation and geometry revision belong to document geometry; backend handles stay private to the geometry adapter.",
+  "authoritative_data": "GeometryLine is a generated persistent record in the single committed document; line preparation returns a candidate callback.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "CreateLine(start:Length3,end:Length3)->GeometryId via operation.",
       "EvaluateCurve(GeometryId,u,SessionVersion)->Point3 with explicit length unit.",
       "GeometryTopology(GeometryId)->OrientedAdjacency; projection/discretization report unsupported capabilities explicitly."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-03"
-    }
+      "ap_id": "AP-03",
+      "primary_owner": {
+        "logical_module": "geometry",
+        "target": "qcae_geometry_features",
+        "public_header": "features/geometry/include/qcae/geometry_features.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "create_line_handler",
+          "function_pointer_type": "RecordPrepare (*)(LineGeometryInput)",
+          "target": "qcae_geometry_features",
+          "public_header": "features/geometry/include/qcae/geometry_features.hpp"
+        },
+        {
+          "symbol": "move_line_endpoint_handler",
+          "function_pointer_type": "RecordPrepare (*)(records::GeometryId, std::array<double, 3>)",
+          "target": "qcae_geometry_features",
+          "public_header": "features/geometry/include/qcae/geometry_features.hpp"
+        },
+        {
+          "symbol": "evaluate_line",
+          "function_pointer_type": "std::array<double, 3> (*)(const DocumentView&, const records::GeometryId&, double)",
+          "target": "qcae_geometry_features",
+          "public_header": "features/geometry/include/qcae/geometry_features.hpp"
+        }
+      ],
+      "public_data_members": [
+        {
+          "symbol": "LineGeometryInput::start_mm",
+          "type": "std::array<double, 3>",
+          "target": "qcae_geometry_features",
+          "public_header": "features/geometry/include/qcae/geometry_features.hpp"
+        }
+      ],
+      "input_output": [
+        "LineGeometryInput.start_mm/end_mm are array<double,3>; GeometryId is separate from mesh/entity/solver numbering.",
+        "evaluate_line returns array<double,3> in mm for dimensionless u in closed interval [0,1]."
+      ],
+      "errors_and_effects": "Preparation is synchronous and returns RecordPrepare; it becomes a mutation only through RecordApplication. evaluate_line throws RecordError on invalid u or missing geometry; no failed evaluation publishes a document.",
+      "additional_owners": [],
+      "implemented_boundary": "Only analytic line creation, endpoint edits and evaluation are mapped. GeometryTopology, surfaces, Booleans and general CAD projection remain outside this implemented public subset.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_geometry_features_qcae_geometry_features_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-03",
+        "runtime_obligations": "BP-03 actual line u=0/.5/1 -> 0/500/1000mm plus save/reopen same GeometryId. Source44 CTest contains this actual case; its raw source field is mutable-diagnostic and must be preserved with enclosing d0 build/CTest provenance.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "Factories return RecordPrepare; the callback/evaluate_line can throw RecordError (invalid_input/entity_not_found). Host/application converts those failures to Result diagnostics; no direct factory call returns a committed receipt."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -41,20 +93,32 @@
       "ports"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_geometry_features",
+        "public_dependencies": [
+          "qcae_application"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Kernel adapter owns handle mapping, evaluation/projection and resource lifetime.",
-    "Geometry operations contribute typed candidates and replacement maps through transactions."
+    "Design extension boundary: Kernel adapter owns handle mapping, evaluation/projection and resource lifetime.",
+    "Design extension boundary: Geometry operations contribute typed candidates and replacement maps through transactions."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "The representative is one analytic line; complete CAD Boolean/surface kernels remain unavailable pending real adapters.",
-    "Candidate failure/cancellation releases handles and publishes no document changes.",
-    "Geometry replacement updates resource/manifold references and revision atomically.",
-    "Save/reopen preserves GeometryId; kernel payload/schema versions require explicit migration."
+    "Design/acceptance obligation: The representative is one analytic line; complete CAD Boolean/surface kernels remain unavailable pending real adapters.",
+    "Design/acceptance obligation: Candidate failure/cancellation releases handles and publishes no document changes.",
+    "Design/acceptance obligation: Geometry replacement updates resource/manifold references and revision atomically.",
+    "Design/acceptance obligation: Save/reopen preserves GeometryId; kernel payload/schema versions require explicit migration.",
+    "Preparation is synchronous and returns RecordPrepare; it becomes a mutation only through RecordApplication. evaluate_line throws RecordError on invalid u or missing geometry; no failed evaluation publishes a document."
   ],
   "acceptance_case_ids": [
     "BP-03",

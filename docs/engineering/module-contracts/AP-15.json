@@ -20,19 +20,106 @@
     "limitations": "No Archer build/run; no QCAE public consumer compilation or representative acceptance execution in this contract inventory slice."
   },
   "owner_module": "project/exchange",
-  "authoritative_data": "SQLite workspace owns durable committed recovery state; explicit project snapshots own saved model resources/version/token. Import/export provenance and numbering maps are separate document metadata.",
+  "authoritative_data": "RecordApplication owns project/save identity and intent facts; storage/file adapters have distinct publication boundaries. Nastran codec produces candidates/reports/explicit numbering maps.",
   "public_contracts": {
-    "status": "proposed_uncompiled_contract",
+    "status": "design_and_implemented_subset_same_source_validation_pending",
     "interfaces": [
       "Save/SaveAs(DocumentVersion,TargetRef)->AtomicPublishedSnapshot+SaveToken.",
       "OpenProject(ProjectRef)->ValidatedDocument; RecoverWorkspace remains a separate service.",
       "Import/ExportCodec(Input,ProfileRef)->Candidate/Artifact+LossReport+NumberMapping."
     ],
     "implemented_subset": {
-      "status": "source_mapping_uniform_final_validation_pending",
+      "status": "source_declarations_typed_consumer_execution_pending",
       "map_path": "docs/engineering/c3-contract-build-map.json",
-      "ap_id": "AP-15"
-    }
+      "ap_id": "AP-15",
+      "primary_owner": {
+        "logical_module": "project/exchange",
+        "target": "qcae_application",
+        "public_header": "modules/application/include/qcae/record_application.hpp",
+        "namespace": "qcae"
+      },
+      "public_signatures": [
+        {
+          "symbol": "RecordApplication::save_document",
+          "function_pointer_type": "Result<DocumentInfo> (RecordApplication::*)(const Caller&, const WriteContext&, const std::string&, bool, const std::string&)",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "RecordApplication::open_migrated_document",
+          "function_pointer_type": "Result<DocumentInfo> (RecordApplication::*)(const Caller&, const std::string&, const std::string&, const ProjectRecordMigration&)",
+          "target": "qcae_application",
+          "public_header": "modules/application/include/qcae/record_application.hpp"
+        },
+        {
+          "symbol": "NastranCodec::decode",
+          "function_pointer_type": "ImportOutcome (NastranCodec::*)(const ImportRequest&) const",
+          "target": "qcae_nastran",
+          "public_header": "profiles/nastran/include/qcae/nastran_codec.hpp"
+        },
+        {
+          "symbol": "NastranCodec::encode",
+          "function_pointer_type": "ExportOutcome (NastranCodec::*)(const Model&, const EntityId&, const ProfileRef&) const",
+          "target": "qcae_nastran",
+          "public_header": "profiles/nastran/include/qcae/nastran_codec.hpp"
+        }
+      ],
+      "public_data_members": [],
+      "input_output": [
+        "save_document takes Caller, WriteContext, path, save_as bool and key; open_migrated_document takes Caller, source_path, key and ProjectRecordMigration.",
+        "IRecordStore owns batch durable state, IWorkspaceStore owns leased project paths/snapshots; NastranCodec decode/encode returns ImportOutcome/ExportOutcome with complete/report and optional candidate/artifact."
+      ],
+      "errors_and_effects": "Save intent, file replacement/project token and saved-marker durability are reconciled, not a single filesystem/SQLite transaction. Legacy migration stages a validated candidate without overwriting input. Codec failure blocks artifact publication; storage_uncertain stops further writes pending recovery.",
+      "additional_owners": [
+        {
+          "target": "qcae_contracts",
+          "public_header": "modules/contracts/include/qcae/workspace_store.hpp",
+          "public_interfaces": [
+            "IWorkspaceStore"
+          ],
+          "role": "Project lease/read/publish port; concrete SQLite types stay private to adapter."
+        },
+        {
+          "target": "qcae_contracts",
+          "public_header": "modules/contracts/include/qcae/record_store.hpp",
+          "public_interfaces": [
+            "IRecordStore"
+          ],
+          "role": "Durable batch/recovery port for the coordinator."
+        },
+        {
+          "target": "qcae_nastran",
+          "public_header": "profiles/nastran/include/qcae/nastran_codec.hpp",
+          "public_interfaces": [
+            "NastranCodec::decode",
+            "NastranCodec::encode"
+          ],
+          "role": "Controlled BDF import/export reports and numbering maps."
+        },
+        {
+          "target": "qcae_artifacts_local",
+          "public_header": "adapters/artifacts_local/include/qcae/artifacts_local.hpp",
+          "public_interfaces": [
+            "LocalArtifactStore::stage",
+            "LocalArtifactStore::publish",
+            "LocalArtifactStore::verify"
+          ],
+          "role": "Explicit frozen-file/manifest publication, separate from DB commit."
+        }
+      ],
+      "implemented_boundary": "Save and migration do not implicitly perform BDF exchange. Normal open, recovery and discard remain distinct lifecycle operations. Frozen legacy fixtures, semantic readback and duplicate numbering rejection require runtime evidence.",
+      "validation": {
+        "independent_header_consumer": "consumer_qcae_application_qcae_record_application_hpp",
+        "consumer_scope": "Existing per-header include/link consumer. A separately prepared typed signature consumer is supplementary and is not executed by this documentation change.",
+        "same_source_build": "pending",
+        "representative_case": "BP-15",
+        "runtime_obligations": "BP-15 full M save/open, frozen legacy fixture migration, independently read-back BDF0 semanticdiff, duplicate GRID reject preserving revision/model; F10/F11/F18 intent/token/recovery evidence.",
+        "historical_scope": "Source44 public-consumer receipts cover74 binaries, including20 AP mappings to18 distinct header consumers. Those results remain source44 evidence and are not relabeled as this source execution.",
+        "level2_and_SK01": "pending; reference L1, declarations, a BP ID and pure validation do not establish actual same-source build/BP acceptance."
+      },
+      "failure_forms": "Lifecycle methods return Result<DocumentInfo> with input/context/idempotency/schema/storage diagnostics. NastranCodec returns ImportOutcome/ExportOutcome: optional candidate/artifact plus complete/report/issues, rather than unconditional success. Storage ports can throw StorageError(uncertain); codec failure never implies safe file publication."
+    },
+    "interfaces_scope": "Responsibility-oriented design names retained for traceability; callable C++ declarations are listed only in implemented_subset. Advanced design scope is not advertised as available."
   },
   "allowed_dependencies": {
     "logical_design_dependencies": [
@@ -42,20 +129,62 @@
       "domain"
     ],
     "rule": "Direction is owner depends on these public contracts/ports; concrete adapters are wired only by composition hosts. GUI/CLI/script clients cannot link document/application; no Qt/VTK/SQLite/MCP types in core public interfaces.",
-    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification."
+    "authority": "docs/architecture/module-dependencies.json plus engineering-skeleton-proposal.md logical responsibility target; additions require future actual build graph verification.",
+    "implemented_targets": [
+      {
+        "target": "qcae_application",
+        "public_dependencies": [
+          "qcae_document",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [
+          "Threads::Threads"
+        ],
+        "external_dependencies": [
+          "Threads::Threads"
+        ]
+      },
+      {
+        "target": "qcae_artifacts_local",
+        "public_dependencies": [
+          "qcae_document"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      },
+      {
+        "target": "qcae_contracts",
+        "public_dependencies": [
+          "qcae_foundation"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      },
+      {
+        "target": "qcae_nastran",
+        "public_dependencies": [
+          "qcae_document",
+          "qcae_contracts"
+        ],
+        "private_dependencies": [],
+        "external_dependencies": []
+      }
+    ],
+    "implemented_scope": "Logical dependencies above are design responsibility rules. Actual public/private target edges here come from modules/targets.json. Qt/VTK-bearing assembly, client and display targets are adapters; core targets expose no SDK types. Additional owners listed here do not create dependency edges from the primary owner."
   },
   "extension_points": [
-    "Project/resource codecs and profile exchange adapters implement ports.",
-    "Versioned migration transforms into staged candidate state without modifying old inputs."
+    "Design extension boundary: Project/resource codecs and profile exchange adapters implement ports.",
+    "Design extension boundary: Versioned migration transforms into staged candidate state without modifying old inputs."
   ],
   "state_failure_version_rules": [
-    "This is an L1 draft design contract: no compiled public consumer, BP execution, L2 integration or capability completion is asserted by this file.",
+    "Reference evidence remains L1_draft. This file documents actual public declarations separately from design names; no fresh consumer/BP execution, L2 or full SK/P0 acceptance is asserted.",
     "All document mutation uses the shared coordinator, document/epoch/revision checks and atomic persistent history; GUI/script/AI cannot bypass it.",
     "Unimplemented advanced capabilities report unavailable; data/reference errors never become a partially committed model.",
-    "Normal open, fault recovery, explicit save, save-as and discard have distinct identity/durability behavior.",
-    "Duplicate export/import numbers or unsupported semantics reject; original revision/model remain intact.",
-    "Save replacement failure/retry verifies target token before overwrite and before saved marker publication.",
-    "Legacy schemas require frozen pre-refactor fixtures; unknown/corrupt schema never activates an editable empty model."
+    "Design/acceptance obligation: Normal open, fault recovery, explicit save, save-as and discard have distinct identity/durability behavior.",
+    "Design/acceptance obligation: Duplicate export/import numbers or unsupported semantics reject; original revision/model remain intact.",
+    "Design/acceptance obligation: Save replacement failure/retry verifies target token before overwrite and before saved marker publication.",
+    "Design/acceptance obligation: Legacy schemas require frozen pre-refactor fixtures; unknown/corrupt schema never activates an editable empty model.",
+    "Save intent, file replacement/project token and saved-marker durability are reconciled, not a single filesystem/SQLite transaction. Legacy migration stages a validated candidate without overwriting input. Codec failure blocks artifact publication; storage_uncertain stops further writes pending recovery."
   ],
   "acceptance_case_ids": [
     "BP-15",
