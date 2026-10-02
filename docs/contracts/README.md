@@ -97,3 +97,7 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 | `project.close` | `ProjectCloseInput` | 必需policy，发现枚举 `discard` / `keep_recovery` |
 
 可省略 `requested_version` 选择安装版本；正uint32的不同版本返回 `SCHEMA_UNSUPPORTED`，非法版本或参数返回 `INVALID_INPUT` 及字段。拒绝发生在原应用生命周期和宿主幂等登记之前。上述入口不接受 `expected_profile`；成功、重试及结果查询继续走原服务/host操作事实，不增加写入链或重复handler。MCP保持有界schema及open的两个封闭 `oneOf` 分支，Profile字段只为显式声明 `requires_expected_profile` 的描述符公布。当前实际回归/打包范围见[本轮验证](../engineering/core-local-delivery-2026-10-03.md)；先前open专项保留[原来源记录](../engineering/project-open-contract-2026-10-03.md)。其余legacy合同及完整SK-04仍待完成。
+
+## 当前静态贡献发现
+
+生产 `capabilities.list` 的 `package_contributions_version:1` / `package_contributions` 来自实际装配和注册变更。每个contribution_id含core、operations、codecs、validation、ui、render六数组；字段及拥有式绑定见[实际wire说明](../../adapters/engine_api/README.md#actual-static-contribution-discovery)。全局操作目录仍包含宿主固有入口，六类目录只归属贡献新增的注册；没有新增通用回调操作或业务提交链。Nastran关闭后其owner缺席，公共平台能力继续运行。实际调用与当前图形回归未关闭范围见[本轮证据](../engineering/package-contributions-2026-10-03.md)；完整SK-11、SK-04及P0继续未验收。

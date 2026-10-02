@@ -2,9 +2,9 @@
 
 面向本地中小规模模型的 CAE 前处理平台。P0 聚焦受控 Nastran 悬臂梁流程，提供桌面 GUI 与外部 AI 共用的无界面业务接口；服务器和亿级实现后置。
 
-**当前状态：核心框架已有可运行的本机交付包。** C1/C2、NEXT-01—03及C3几何/网格桌面工具已实现；统一事务/历史、SQLite保存恢复、CLI/GUI/MCP共享engine已贯通。五个工程生命周期入口的输入合同与实际贡献的codec/显示装配已补齐，本轮265项适用测试和包内SQLite、双MCP、真实桌面验证通过。运行见[本机交接](docs/implementation/core-local-handoff.md)，范围见[验证记录](docs/engineering/core-local-delivery-2026-10-03.md)。
+**当前状态：核心框架已有可运行的本机交付包，源码继续收敛接口。** 统一事务/历史、SQLite保存恢复、CLI/GUI/MCP共享engine已贯通。本机包对应 `f2d2e7f`，265项回归及包内SQLite、双MCP、真实桌面验证见[本机交接](docs/implementation/core-local-handoff.md)。
 
-后续优先收敛六类实际贡献的发现信息、其余legacy合同及核心正式验收；真实求解、完整外部AI、完整SK、容量/性能及P0发布仍未验收。顺序与原约束见[开发计划](docs/baseline/development-plan.md#c2之后的接续计划)。
+最新源码 `6eab0ca` 已接入六类实际贡献发现与调用；初始五配置269项通过、1项桌面选择超时，原上限复验仍失败，见[本轮验证](docs/engineering/package-contributions-2026-10-03.md)。该源码尚未刷新到本机包。后续推进图形阻塞定位、`changes.commit`及其余legacy合同和核心正式验收；真实求解、完整AI、性能、完整SK/P0仍未验收，顺序与原约束见[开发计划](docs/baseline/development-plan.md#c2之后的接续计划)。
 
 ## 从这里开始
 

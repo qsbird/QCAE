@@ -1,0 +1,197 @@
+{
+  "review_id": 160,
+  "status": "NO_FALSE_PASS_OR_SOURCE_MIXING_FOUND; FULL_GRAPHICAL_GATE_OPEN",
+  "reviewer_scope": "Only read/hash/parse raw archive/origins/receipts/logs, committed Git blobs and new documentation. Product/tests/compiler/guard NOT_RUN; no archive/origin/source/Git changes.",
+  "archive": {
+    "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/package-contributions-evidence/2026-10-03/evidence.tar.gz",
+    "bytes": 1296794,
+    "sha256": "44c387e1b2d2322ec54aa3f4c8f81d21fc4f42177c4f451ec19f52dd5895ca1f",
+    "members_matched": 202,
+    "origins_before_after_matched": 202,
+    "all_regular_safe_utf8": true,
+    "DB_binary_socket_fullbuildtree_members": 0,
+    "explicit_selected_build_metadata_text_files": 10,
+    "index_sha256": "b74e217239544403677ce4f23d8c527204e56b1ba95b35cf8c4db3b60592519d",
+    "archive_index_unchanged": true
+  },
+  "source": {
+    "implementation_commit": "6eab0ca2bd3d6fa7fb76ae148e73e555f7c0b388",
+    "frozen_files": 416,
+    "committed_blob_matches": 416,
+    "original_full_candidate_matches_final": 415,
+    "only_post_full_regression_delta": [
+      "tests/package_contributions_ipc_tests.py"
+    ],
+    "exact_test_delta": "Existing evidence parent allowed; unique run child created. All assertions/behavior checks unchanged.",
+    "final_dictionary_sha256": "36e23a74ebe7fde0c7d51f784613a1c0a2e3e2cf814b5599048fef86ddcb6fbb",
+    "full_dictionary_sha256": "b05c22c2c04e191aa5e8f4638d482b9f05e5d4d33a6335c7e8a1ba8df7b07d7a",
+    "current_frozen_matches": 415,
+    "post_runtime_documentation_only_delta": {
+      "adapters/engine_api/README.md": {
+        "frozen_sha256": "42c4ebbbbdadbf4dbc4c309108d712dec377393110db0653e2caab9e3ec11540",
+        "current_sha256": "d2623b206d87975f36a020f50ad73340f9108ebcab1fef702a419e3a17eae7c6"
+      }
+    },
+    "post_runtime_product_source_deltas": 0,
+    "algorithm": "SHA256 of canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1"
+  },
+  "initial_distinct_inventory": {
+    "total": 270,
+    "passes": 269,
+    "timeouts": 1,
+    "configurations": [
+      {
+        "configuration": "core",
+        "passes": 40,
+        "actual_exit_code": 0,
+        "scope": "full inventory",
+        "receipt": "regression/full/attempt-01/core-ctest.json",
+        "raw_log": "regression/full/attempt-01/core-LastTest.log"
+      },
+      {
+        "configuration": "local",
+        "passes": 55,
+        "actual_exit_code": 0,
+        "scope": "full inventory",
+        "receipt": "regression/full/attempt-01/local-ctest.json",
+        "raw_log": "regression/full/attempt-01/local-LastTest.log"
+      },
+      {
+        "configuration": "OFF",
+        "passes": 76,
+        "actual_exit_code": 0,
+        "scope": "full inventory",
+        "receipt": "regression/remaining/package-off-ctest.json",
+        "raw_log": "regression/remaining/package-off-ctest-LastTest.log"
+      },
+      {
+        "configuration": "targetedSAN",
+        "passes": 3,
+        "actual_exit_code": 0,
+        "scope": "targeted3",
+        "receipt": "regression/remaining/sanitized-ctest.json",
+        "raw_log": "regression/remaining/sanitized-ctest-LastTest.log"
+      },
+      {
+        "configuration": "desktop",
+        "passes": 95,
+        "failures": 1,
+        "actual_exit_code": 8,
+        "failure": "desktop_selection timeout original180s",
+        "raw_log": "regression/failed-rerun/attempt-01/desktop-original-failed-LastTest.log"
+      }
+    ],
+    "full_matrix_passed": false
+  },
+  "preserved_first_compile_failures": [
+    {
+      "configuration": "local",
+      "actual_exit_code": 1,
+      "kind": "compile error; not CTest",
+      "receipt": "regression/first-failed/attempt-01/local-build.json"
+    },
+    {
+      "configuration": "desktop",
+      "actual_exit_code": 1,
+      "kind": "compile error; not CTest",
+      "receipt": "regression/first-failed/attempt-01/desktop-build.json"
+    }
+  ],
+  "preserved_graphical_failures": {
+    "first_ctest_exit": 8,
+    "same_selector_rerun_exit": 8,
+    "original_ctest_limit_seconds": 180,
+    "full_native_diagnostic_exit": -15,
+    "full_native_elapsed_seconds": 180.14385724067688,
+    "full_native_terminated_at_original_180s_bound": true,
+    "forced_kill": false,
+    "single_slot_exit": 0,
+    "single_slot_scope": "One slot only; no replacement of failed full suite",
+    "sample150": "Actual stack contains SavePixelBuffer/glReadPixels/AppleMetalOpenGLRenderer; stalled location only, root cause unproven"
+  },
+  "final_test_repeats": {
+    "executions": 2,
+    "passes": 2,
+    "actual_exit_code": 0,
+    "source": "final Python evidence-directory successor; unchanged actual built product",
+    "raw_log": "regression/repeat/repeat-LastTest.log"
+  },
+  "combined_ctest_attempts": {
+    "total": 273,
+    "passes": 271,
+    "timeouts": 2,
+    "formula": "270 initial +1 selector rerun +2 IPC repeats; native diagnostics excluded"
+  },
+  "actual_ipc_observations": [
+    {
+      "prefix": "native/six-category",
+      "requests": 69,
+      "expected_validator_rejections": 1,
+      "completed": true,
+      "engine_returncode": -15,
+      "source": "original full-run Python",
+      "scope": "headless SQLite IPC; not GUI gate"
+    },
+    {
+      "prefix": "native/six-category/run-ev3mr7k6",
+      "requests": 69,
+      "expected_validator_rejections": 1,
+      "completed": true,
+      "engine_returncode": -15,
+      "source": "final evidence-directory successor",
+      "scope": "headless SQLite IPC; not GUI gate"
+    },
+    {
+      "prefix": "native/six-category/run-uq10n8cg",
+      "requests": 69,
+      "expected_validator_rejections": 1,
+      "completed": true,
+      "engine_returncode": -15,
+      "source": "final evidence-directory successor",
+      "scope": "headless SQLite IPC; not GUI gate"
+    }
+  ],
+  "review152": "Independent static NOT RUN; no runtime pass imported",
+  "documentation_review": {
+    "validation_and_current_core_framework_counts_match_raw": true,
+    "old_package_remains_f2d2e7f": true,
+    "post_runtime_README_delta_registered": true,
+    "two_AI_subcases_skipped_not_AI_pass": true,
+    "graphical_gate_remains_failed": true,
+    "files": [
+      {
+        "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/package-contributions-evidence/2026-10-03/validation.json",
+        "bytes": 4415,
+        "sha256": "d6c194c33bd1a2fa43463b2169e3de6af8e17be7cefb09483252d380ba08b713"
+      },
+      {
+        "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/package-contributions-2026-10-03.md",
+        "bytes": 7513,
+        "sha256": "41b719e0925c913e4ff0c8e51ea3c7b3d504a32bc8f9ec8fa12341829a7c69f2"
+      },
+      {
+        "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/execution-status.json",
+        "bytes": 53734,
+        "sha256": "10caf2c89cdcbdd9b2476ceddcd6d57fbc34c9803ee9afa30bec5f9e292924b5"
+      }
+    ]
+  },
+  "false_pass_or_source_mixing_findings": [],
+  "preserved_private_inspection_failures": [
+    {
+      "kind": "Index listing KeyError",
+      "reason": "Assumed stored_relative; actual schema entries[].member. No archive/product problem."
+    },
+    {
+      "kind": "First final checker AssertionError line51",
+      "reason": "Expected current416 hashes, but root concurrently published its explicitly allowed adapter README documentation delta. Corrected check proves only that MD path differs; committed416 and other current415 match. No product-source mismatch."
+    }
+  ],
+  "limits": [
+    "Initial distinct configuration inventory270 includes269 passes and1 desktop_selection timeout; same test rerun timed out again at original180s; two additional IPC repeats passed after one test-only evidence-directory correction",
+    "Initial compile failure, two original-limit CTest timeouts and full-suite native diagnostic timeout retained; full graphical gate remains open and driver-readback sample does not establish root cause",
+    "No current-bundle refresh, real Nastran, full external AI, LSan, performance or complete SK/P0 claim",
+    "Sanitizer3 is a targeted subset, not a full sanitizer inventory.",
+    "No full270 PASS, closed graphical gate, updated package, root-cause conclusion or full SK/P0."
+  ]
+}

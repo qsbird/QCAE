@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "status": "contribution_paths_validated_full_graphical_regression_gate_open",
+  "implementation_commit": "6eab0ca2bd3d6fa7fb76ae148e73e555f7c0b388",
+  "final_source": {
+    "files_count": 416,
+    "source_dictionary_sha256": "36e23a74ebe7fde0c7d51f784613a1c0a2e3e2cf814b5599048fef86ddcb6fbb",
+    "full_regression_source_dictionary_sha256": "b05c22c2c04e191aa5e8f4638d482b9f05e5d4d33a6335c7e8a1ba8df7b07d7a",
+    "algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+    "post_full_regression_source_delta": [
+      "tests/package_contributions_ipc_tests.py"
+    ],
+    "explanation": "Only test evidence directory handling changed after the initial full matrix; actual built production bytes unchanged, final IPC test repeated twice"
+  },
+  "configuration_results": [
+    {
+      "name": "core",
+      "executed": 40,
+      "passed": 40,
+      "failed": 0
+    },
+    {
+      "name": "local",
+      "executed": 55,
+      "passed": 55,
+      "failed": 0
+    },
+    {
+      "name": "desktop_sqlite",
+      "executed": 96,
+      "passed": 95,
+      "failed": 1,
+      "failure": "desktop_selection timeout180.03s"
+    },
+    {
+      "name": "package_off_sqlite",
+      "executed": 76,
+      "passed": 76,
+      "failed": 0
+    },
+    {
+      "name": "asan_ubsan_selected",
+      "executed": 3,
+      "passed": 3,
+      "failed": 0,
+      "lsan_measured": false
+    }
+  ],
+  "initial_distinct_configuration_inventory": 270,
+  "initial_distinct_passed": 269,
+  "all_configuration_tests_passed": false,
+  "additional_ctest_executions": {
+    "desktop_selection_original_limit_rerun": {
+      "executed": 1,
+      "passed": 0,
+      "timed_out": 1
+    },
+    "final_same_product_package_contributions_repeat": {
+      "executed": 2,
+      "passed": 2,
+      "timed_out": 0
+    }
+  },
+  "actual_ctest_executions_including_rerun_and_repeats": 273,
+  "actual_ctest_passed_including_repeats": 271,
+  "actual_ctest_timeouts": 2,
+  "native_diagnostics": {
+    "single_qt_slot": {
+      "exit_code": 0,
+      "elapsed_seconds": 1.7964129447937012,
+      "does_not_replace_full_suite": true
+    },
+    "full_qt_suite": {
+      "exit_code": -15,
+      "terminated_at_original180s": true,
+      "required_kill": false,
+      "sample_observation": "main thread in vtkHardwareSelector SavePixelBuffer -> glReadPixels -> AppleMetalOpenGLRenderer wait at150s; root cause unproven",
+      "source_unchanged": true
+    }
+  },
+  "actual_six_category_sqlite": {
+    "completed": true,
+    "selected_owner": "qcae.nastran",
+    "category_entry_counts": {
+      "core": 1,
+      "operations": 7,
+      "codecs": 1,
+      "validation": 1,
+      "ui": 1,
+      "render": 3
+    },
+    "read_only_ui_full_rows_history_document_equal": true,
+    "validator_rejection_full_rows_history_document_equal": true,
+    "published_bdf_physical_fields_and_references_readback_equal": true,
+    "original_transcript_entries": 69,
+    "original_and_two_repeat_owned_engine_exit_codes": [
+      -15,
+      -15,
+      -15
+    ]
+  },
+  "source_review": {
+    "id": "QG-02/package-contributions152",
+    "reviewer_execution": "NOT RUN",
+    "source_blockers_remaining": 0,
+    "fixed_issue": "Per-run unique evidence subdirectory; initial blocked review preserved",
+    "graphical_gate_closed": false
+  },
+  "archive": {
+    "path": "evidence.tar.gz",
+    "bytes": 1296794,
+    "sha256": "44c387e1b2d2322ec54aa3f4c8f81d21fc4f42177c4f451ec19f52dd5895ca1f",
+    "members": 202
+  },
+  "archive_index_sha256": "b74e217239544403677ce4f23d8c527204e56b1ba95b35cf8c4db3b60592519d",
+  "verification": {
+    "all_members_read_back_equal": true,
+    "all_origins_re_read_equal": true,
+    "runtime_database_or_product_binary_included": false
+  },
+  "limits": [
+    "Full graphical regression remains failed; no claim of270/270 or complete SK11/SK/C3/C4/P0",
+    "Existing bundle remains f2d2e7f; new contribution discovery is not packaged by this work",
+    "Two actual AI subcases skipped for absent QCAE_AI_UNITS_SNAPSHOT",
+    "Real Nastran, complete external AI, LSan and performance unvalidated",
+    "SDK internal-copy coverage unknown/null, deferred from C4 startup only; measured budgets and original material14of30 failure retained",
+    "Initial inaccessible qs compile failure and all later graphical failures preserved",
+    "No dependencies installed and no unnecessary performance optimization"
+  ],
+  "independent_archive_review": {
+    "path": "archive-review.json",
+    "sha256": "e855246913c518774b19487dea780f453cc9a99c47476a630099d198a2e292a4",
+    "reviewer_product_execution": "NOT RUN",
+    "all202_member_origins_match": true,
+    "false_passes_or_mixed_sources_found": false
+  }
+}

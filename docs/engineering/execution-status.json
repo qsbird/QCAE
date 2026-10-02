@@ -1065,6 +1065,149 @@
   },
   "historical_validation_report_before_core_framework": "docs/engineering/c3-sync-validation.md",
   "current_core_framework": {
+    "status": "contribution_paths_validated_full_graphical_regression_gate_open",
+    "tested_implementation_commit": "6eab0ca2bd3d6fa7fb76ae148e73e555f7c0b388",
+    "source_files_count": 416,
+    "source_dictionary_sha256": "36e23a74ebe7fde0c7d51f784613a1c0a2e3e2cf814b5599048fef86ddcb6fbb",
+    "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+    "manifest": "docs/engineering/package-contributions-evidence/2026-10-03/validation.json",
+    "report": "docs/engineering/package-contributions-2026-10-03.md",
+    "handoff": "docs/implementation/core-local-handoff.md",
+    "full_regression_counts": [
+      40,
+      55,
+      95,
+      76,
+      3
+    ],
+    "cross_configuration_executions": 270,
+    "configuration_order": [
+      "core_release",
+      "local_debug",
+      "desktop_sqlite_release",
+      "package_off_sqlite_release",
+      "asan_ubsan_three_selected_adapters"
+    ],
+    "versioned_existing_host_inputs": [
+      "project.create",
+      "project.open",
+      "project.save",
+      "project.save_as",
+      "project.close"
+    ],
+    "actual_contribution_selected_ports": [
+      "model_codec",
+      "profile_provider",
+      "render_contributions"
+    ],
+    "local_package": {
+      "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
+      "bundle": "/Users/qs/Documents/ChatGPT/QCAE/out/local-delivery138-02/QCAE.app",
+      "regular_files": 419,
+      "macho_files": 145,
+      "relocated_non_system_edges": 925,
+      "adhoc_only": true,
+      "notarized": false,
+      "refreshed_for_current_implementation": false
+    },
+    "actual_packaged_workflows": {
+      "sqlite_process_commands": 39,
+      "mcp_process_commands": 5,
+      "gui_process_commands": 9,
+      "staging_and_codesign_commands": 2,
+      "cli_calls": 46,
+      "mcp_tools": 68,
+      "mcp_jsonrpc_requests": 13,
+      "mcp_notifications": 2,
+      "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a"
+    },
+    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
+    "post_validation_frozen_input_documentation_delta": [
+      "adapters/engine_api/README.md"
+    ],
+    "limits": [
+      "Full graphical regression remains failed; no claim of270/270 or complete SK11/SK/C3/C4/P0",
+      "Existing bundle remains f2d2e7f; new contribution discovery is not packaged by this work",
+      "Two actual AI subcases skipped for absent QCAE_AI_UNITS_SNAPSHOT",
+      "Real Nastran, complete external AI, LSan and performance unvalidated",
+      "SDK internal-copy coverage unknown/null, deferred from C4 startup only; measured budgets and original material14of30 failure retained",
+      "Initial inaccessible qs compile failure and all later graphical failures preserved",
+      "No dependencies installed and no unnecessary performance optimization"
+    ],
+    "full_regression_source_dictionary_sha256": "b05c22c2c04e191aa5e8f4638d482b9f05e5d4d33a6335c7e8a1ba8df7b07d7a",
+    "post_full_regression_source_delta": [
+      "tests/package_contributions_ipc_tests.py"
+    ],
+    "configuration_inventory_counts": [
+      40,
+      55,
+      96,
+      76,
+      3
+    ],
+    "cross_configuration_passed": 269,
+    "full_matrix_passed": false,
+    "actual_ctest_executions_with_rerun_and_repeat": 273,
+    "actual_ctest_passed_with_repeats": 271,
+    "actual_ctest_timeouts": 2,
+    "actual_contribution_categories": [
+      "core",
+      "operations",
+      "codecs",
+      "validation",
+      "ui",
+      "render"
+    ],
+    "current_graphical_blocker": {
+      "single_qt_slot": {
+        "exit_code": 0,
+        "elapsed_seconds": 1.7964129447937012,
+        "does_not_replace_full_suite": true
+      },
+      "full_qt_suite": {
+        "exit_code": -15,
+        "terminated_at_original180s": true,
+        "required_kill": false,
+        "sample_observation": "main thread in vtkHardwareSelector SavePixelBuffer -> glReadPixels -> AppleMetalOpenGLRenderer wait at150s; root cause unproven",
+        "source_unchanged": true
+      }
+    },
+    "next_core_interface": "changes.commit generated input and discovery/version; preserve original application/replay/history path"
+  },
+  "historical_core_framework_before_local_delivery": {
+    "status": "same_source_core_mechanisms_validated_full_acceptance_pending",
+    "tested_implementation_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+    "source410_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+    "manifest": "docs/engineering/core-framework-evidence/2026-10-02/validation.json",
+    "full_regression_counts": [
+      40,
+      47,
+      47,
+      80,
+      73,
+      91
+    ],
+    "cross_configuration_executions": 378,
+    "public_header_compile_link": 74,
+    "contract_consumers": 20,
+    "contract_type_assertions": 106,
+    "fault_runs": 220,
+    "extra_sanitizer_F17_runs": 10,
+    "entry_workflows": 9,
+    "entry_checkpoints": 72,
+    "entry_semantic_differences": 0,
+    "fresh_GUI_layout_processes": 2,
+    "paired_node_move_lifecycle": "actual99_native02_cancel0_apply1_empty_selection_leave",
+    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
+    "limits": [
+      "Full SK/C3/C4/P0 and release packaging remain pending",
+      "Actual real solver/numerical closure and complete external AI scenarios remain unvalidated",
+      "SDK internal copy coverage unknown/null; deferred from C4 startup only",
+      "Measured copy limits remain binding; prior source material14of30 failures not remeasured",
+      "Historical mutable-source diagnostics below retain their original identity"
+    ]
+  },
+  "historical_core_framework_before_contribution_discovery": {
     "status": "local_core_slice_validated_full_acceptance_pending",
     "tested_implementation_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
     "source_files_count": 414,
@@ -1133,39 +1276,6 @@
       "Measured copy limits remain binding; prior source material14of30 failures not remeasured",
       "Historical 378/177 execution counts retain original source scopes",
       "Prior project-open local binary path was incrementally superseded; original receipts and archive remain unchanged"
-    ]
-  },
-  "historical_core_framework_before_local_delivery": {
-    "status": "same_source_core_mechanisms_validated_full_acceptance_pending",
-    "tested_implementation_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
-    "source410_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
-    "manifest": "docs/engineering/core-framework-evidence/2026-10-02/validation.json",
-    "full_regression_counts": [
-      40,
-      47,
-      47,
-      80,
-      73,
-      91
-    ],
-    "cross_configuration_executions": 378,
-    "public_header_compile_link": 74,
-    "contract_consumers": 20,
-    "contract_type_assertions": 106,
-    "fault_runs": 220,
-    "extra_sanitizer_F17_runs": 10,
-    "entry_workflows": 9,
-    "entry_checkpoints": 72,
-    "entry_semantic_differences": 0,
-    "fresh_GUI_layout_processes": 2,
-    "paired_node_move_lifecycle": "actual99_native02_cancel0_apply1_empty_selection_leave",
-    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
-    "limits": [
-      "Full SK/C3/C4/P0 and release packaging remain pending",
-      "Actual real solver/numerical closure and complete external AI scenarios remain unvalidated",
-      "SDK internal copy coverage unknown/null; deferred from C4 startup only",
-      "Measured copy limits remain binding; prior source material14of30 failures not remeasured",
-      "Historical mutable-source diagnostics below retain their original identity"
     ]
   }
 }

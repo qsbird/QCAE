@@ -27,6 +27,8 @@
 
 ## 当前实现
 
+[六类能力包贡献验证](engineering/package-contributions-2026-10-03.md)：实际注册/调用和关闭包观察已补齐，269项通过/1桌面选择超时，原上限复验失败，图形门禁保持未关闭。
+
 [核心框架本机交接](implementation/core-local-handoff.md)与[本轮验证](engineering/core-local-delivery-2026-10-03.md)：五个工程生命周期输入合同、实际codec/显示贡献装配、265项适用回归及重定位包的SQLite/双MCP/真实桌面验证；完整SK/P0及真实环境、性能仍待接续。
 
 [核心框架统一验证](engineering/core-framework-validation-2026-10-02.md)：2026-10-02—03 同源码完整回归、公共接口、故障恢复、三入口一致性及独立 GUI 交互证据；区分核心机制已验证范围与真实环境、性能及完整产品验收的剩余工作。

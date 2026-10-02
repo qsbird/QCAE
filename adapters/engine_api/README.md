@@ -34,8 +34,8 @@ the build flag only selects the default contribution list. Nastran's binding ret
 coordinator State and codec used by its operation callbacks. Duplicate bindings/factories,
 invalid ownership and invalid Profile definitions are rejected before the assembly is returned
 and the typed host is published. Socket listening and some workspace initialization happen earlier.
-Without a render factory, the existing generic projector remains available. This P0 static
-composition does not complete the six-category discovery contract.
+Without a render factory, the existing generic projector remains available. The actual six-category
+startup catalog is described below; full graphical regression and SK/P0 acceptance remain open.
 `TaskService` uses `record_task_publisher`;
 the engine registers `task_row_handler` before reading a workspace. Workers prepare a detached
 candidate, and only the application publishes its record changes and terminal task receipt.
@@ -205,3 +205,28 @@ arrives. VTK partitions point/line geometry into blocks of 1024 entities; select
 changes update highlight cells without rebuilding the base scene. Structural
 changes still rebuild. Dock/toolbar layout is a local Qt setting and never enters
 the document transaction history.
+
+## Actual static contribution discovery
+
+Successful production `capabilities.list` adds `package_contributions_version:1` and an array
+`package_contributions`. Each `contribution_id` owns six arrays: `core`, `operations`, `codecs`,
+`validation`, `ui` and `render`. The source is the selected assembly and actual registration
+changes over its frozen record registry and the same application used by all clients.
+
+- Core record entries contain `kind:record`, stable `record_type`, name and current version;
+  named rule entries contain `kind:rule` and ID tied to actual appended rule indices.
+- Operations contain actual name, version, schema_id and available status.
+- Codecs contain the selected owned `profile_ref`; validation contains owned callback ID/version.
+- UI references this contributor's available read-only operation and installed version.
+- Render lists the actual selected factory's stable record_type/topology entries.
+
+The Nastran contribution `qcae.nastran` registers all six categories. Its export handler uses
+the registered validator before task/file side effects while retaining original replay checks.
+Catalog reads require completed operation/UI registration; production publishes only after
+successful TypedHost construction. This is trusted static startup metadata, not a dynamic
+plugin ABI or a generic callback invocation operation. Host intrinsic routes remain in the
+global operation catalog. Default OFF and ON platform-only assemblies omit the Nastran owner;
+generic rendering fallback is not attributed to that absent package.
+
+Actual scope, full SQLite row observations and the unclosed desktop selection timeout are in
+[the contribution validation](../../docs/engineering/package-contributions-2026-10-03.md).
