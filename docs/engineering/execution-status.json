@@ -3,7 +3,7 @@
   "baseline_commit": "9e0a56b",
   "branch": "codex/c3-resource-sync",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-10-01T01:16:59.538371+00:00",
+  "updated_utc": "2026-10-02T16:58:42.049363+00:00",
   "status": "C3_closure_in_progress",
   "phases": {
     "R0": "partial_committed",
@@ -247,7 +247,7 @@
     "C1": "checkpoint/c1",
     "C2": "checkpoint/c2"
   },
-  "validation_report": "docs/engineering/c3-sync-validation.md",
+  "validation_report": "docs/engineering/core-framework-validation-2026-10-02.md",
   "follow_up": {
     "base_commit": "9e0a56b",
     "NEXT-01": "completed",
@@ -1062,5 +1062,39 @@
       "protected_ast": "17 translation units / 0 direct persistent entity references, passed including injected-negative self-test",
       "final_same_commit_matrix_passed": false
     }
+  },
+  "historical_validation_report_before_core_framework": "docs/engineering/c3-sync-validation.md",
+  "current_core_framework": {
+    "status": "same_source_core_mechanisms_validated_full_acceptance_pending",
+    "tested_implementation_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+    "source410_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+    "manifest": "docs/engineering/core-framework-evidence/2026-10-02/validation.json",
+    "full_regression_counts": [
+      40,
+      47,
+      47,
+      80,
+      73,
+      91
+    ],
+    "cross_configuration_executions": 378,
+    "public_header_compile_link": 74,
+    "contract_consumers": 20,
+    "contract_type_assertions": 106,
+    "fault_runs": 220,
+    "extra_sanitizer_F17_runs": 10,
+    "entry_workflows": 9,
+    "entry_checkpoints": 72,
+    "entry_semantic_differences": 0,
+    "fresh_GUI_layout_processes": 2,
+    "paired_node_move_lifecycle": "actual99_native02_cancel0_apply1_empty_selection_leave",
+    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
+    "limits": [
+      "Full SK/C3/C4/P0 and release packaging remain pending",
+      "Actual real solver/numerical closure and complete external AI scenarios remain unvalidated",
+      "SDK internal copy coverage unknown/null; deferred from C4 startup only",
+      "Measured copy limits remain binding; prior source material14of30 failures not remeasured",
+      "Historical mutable-source diagnostics below retain their original identity"
+    ]
   }
 }

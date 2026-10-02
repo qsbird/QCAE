@@ -1,0 +1,53 @@
+{
+  "local_header": {
+    "path": "/opt/homebrew/Cellar/qtbase/6.11.1/lib/QtCore.framework/Versions/A/Headers/qsettings.h",
+    "bytes": 5269,
+    "sha256": "72712e36f5e5febd936aaf71ac6896764e059e9662defbf03cbe1fbc900e5990"
+  },
+  "stock68_actual_QObject_constructor_import": true,
+  "official_references": [
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/corelib/io/qsettings.cpp",
+      "version_tag": "v6.11.1",
+      "method": "web__run official Qt-owned repository; code.qt.io URLs were unavailable",
+      "symbols": [
+        "QSettings::QSettings(const QString &, const QString &, QObject *)",
+        "QSettings::QSettings(Format, Scope, const QString &, const QString &, QObject *)",
+        "globalDefaultFormat",
+        "QSettings::defaultFormat",
+        "QSettings::setPath"
+      ],
+      "claims": [
+        "QObject-enabled two-name constructor directly selects NativeFormat/UserScope",
+        "explicit format constructor forwards the provided format and scope",
+        "globalDefaultFormat initializes to NativeFormat",
+        "INI fallback file roots come from both UserScope and SystemScope paths"
+      ]
+    },
+    {
+      "url": "https://github.com/qt/qtbase/blob/v6.11.1/src/corelib/io/qsettings_mac.cpp",
+      "version_tag": "v6.11.1",
+      "method": "web__run official Qt-owned repository",
+      "symbols": [
+        "QSettingsPrivate::create",
+        "QMacSettingsPrivate::QMacSettingsPrivate",
+        "QMacSettingsPrivate::get"
+      ],
+      "claims": [
+        "NativeFormat dispatches to QMacSettingsPrivate/CFPreferences",
+        "other explicit formats dispatch to QConfFileSettingsPrivate",
+        "Native backend reads per-user/application, organization and global fallback domains"
+      ]
+    },
+    {
+      "url": "https://doc.qt.io/qt-6.11/qsettings.html",
+      "method": "web__run official Qt documentation",
+      "claims": [
+        "NativeFormat setPath has no effect on macOS",
+        "allKeys may include global fallback keys on macOS"
+      ]
+    }
+  ],
+  "not_a_rebuilt_Qt_or_SDK_byte_provenance_claim": true,
+  "no_third_party_documentation_relied_on": true
+}

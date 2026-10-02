@@ -1,0 +1,1167 @@
+{
+  "schema_version": "qcae-bounded-core-validation-v1",
+  "scope": "Actual same-source core mechanism reliability evidence; no full SK/C3/C4/P0 or complete future AP interface acceptance.",
+  "source": {
+    "commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+    "canonical_source_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+    "canonical_source_files": 410,
+    "tracked_files": 2835,
+    "git_tree": "c82b70ca60a606da258a90c0da6502d7d45693f4",
+    "clean_source_fence": true,
+    "evidence": "source85_frozen",
+    "quality_review_ref": "source_quality100_final"
+  },
+  "portability": {
+    "archive_index": "archive-index.json",
+    "lookup": "Each evidence entry comes from exact original.path lookup; verify archive SHA, then decode gzip and verify original bytes/SHA.",
+    "archive_paths_relative_to": "this validation.json directory",
+    "original_absolute_paths": "Provenance only; archived bytes permit review without the original private directories."
+  },
+  "seven_matrix_results": {
+    "production_full_regressions": [
+      {
+        "name": "core",
+        "configure_exit": 0,
+        "build_exit": 0,
+        "inventory_exit": 0,
+        "full_CTest_exit": 0,
+        "full_CTest_count": 40,
+        "original_R0_missing": [],
+        "compiler_warnings": 0,
+        "evidence": "full86_core"
+      },
+      {
+        "name": "sqlite_headless",
+        "configure_exit": 0,
+        "build_exit": 0,
+        "inventory_exit": 0,
+        "full_CTest_exit": 0,
+        "full_CTest_count": 47,
+        "original_R0_missing": [],
+        "compiler_warnings": 0,
+        "evidence": "full86_sqlite_headless"
+      },
+      {
+        "name": "asan_ubsan",
+        "configure_exit": 0,
+        "build_exit": 0,
+        "inventory_exit": 0,
+        "full_CTest_exit": 0,
+        "full_CTest_count": 47,
+        "original_R0_missing": [],
+        "compiler_warnings": 0,
+        "evidence": "full86_asan_ubsan"
+      },
+      {
+        "name": "asan_ipc",
+        "configure_exit": 0,
+        "build_exit": 0,
+        "inventory_exit": 0,
+        "full_CTest_exit": 0,
+        "full_CTest_count": 80,
+        "original_R0_missing": [],
+        "compiler_warnings": 0,
+        "evidence": "full86_asan_ipc"
+      },
+      {
+        "name": "package_disabled",
+        "configure_exit": 0,
+        "build_exit": 0,
+        "inventory_exit": 0,
+        "full_CTest_exit": 0,
+        "full_CTest_count": 73,
+        "original_R0_missing": [],
+        "compiler_warnings": 0,
+        "evidence": "full86_package_disabled"
+      },
+      {
+        "name": "desktop",
+        "configure_exit": 0,
+        "build_exit": 0,
+        "inventory_exit": 0,
+        "full_CTest_exit": 0,
+        "full_CTest_count": 91,
+        "original_R0_missing": [],
+        "compiler_warnings": 0,
+        "evidence": "full86_desktop"
+      }
+    ],
+    "total_CTest_occurrences_across_six_configurations": 378,
+    "scope": "378 cross-configuration occurrences, not 378 distinct cases; original R0 entries retained and applicable current additions included.",
+    "independent_public_consumers": {
+      "configure_exit": 0,
+      "build_exit": 0,
+      "inventory_exit": 0,
+      "compile_link_count": 74,
+      "CTest_registered_count": 0,
+      "full_CTest_run": false,
+      "top_level_source": "tests/public_api_consumers",
+      "dialect": "GNU C++20 for original independent consumers; product dependencies strict C++20",
+      "no_public_top_level_product_source_guard_relaxation": true,
+      "evidence": [
+        "public86_compile74",
+        "public86_inventory0"
+      ]
+    },
+    "independent_read_only_review": [
+      "matrix94_complete",
+      "matrix94_review",
+      "matrix94_desktop"
+    ]
+  },
+  "AP_declaration_type_validation": {
+    "actual_configure_exit": 0,
+    "actual_build_exit": 0,
+    "independent_typed_consumers": 20,
+    "static_assertions": 106,
+    "function_signatures": 88,
+    "data_members": 18,
+    "dialect": "strict C++20",
+    "warnings": 0,
+    "evidence": "typed90_20_106",
+    "scope": "Unevaluated declared types and usage requirements. Does not prove every ODR use, runtime behavior, future interfaces, AP L2, or all SK-01."
+  },
+  "faults": {
+    "actual_main_runs": 220,
+    "cases": 22,
+    "runs_per_case": 10,
+    "all_main_passed": true,
+    "extra_instrumented_F17_runs": 10,
+    "extra_F17_counted_in_main220": false,
+    "supported_ASan_UBSan_F17_passed": true,
+    "LSan_supported": false,
+    "LSan_pass_claim": false,
+    "evidence": [
+      "reliability88_complete",
+      "fault88_validated",
+      "fault88_F17_raw"
+    ]
+  },
+  "workflows": {
+    "CLI": 3,
+    "GUI": 3,
+    "MIX": 3,
+    "actual_runs": 9,
+    "semantic_checkpoints": 72,
+    "semantic_differences": 0,
+    "identity_bijections": 9,
+    "CLI_actual_command_exit": 0,
+    "comparison_actual_command_exit": 0,
+    "GUI_MIX_origin": "Original same-source86 complete Desktop CTest; reused raw JSON/PNG, not newly launched GUI by comparison88.",
+    "real_solver": false,
+    "real_external_AI": false,
+    "evidence": [
+      "workflow88_cli_command",
+      "workflow88_comparison_complete",
+      "workflow88_comparison",
+      "matrix94_desktop"
+    ],
+    "original_GUI_first_write_cryptographic_manifest_proven": false,
+    "original_GUI_provenance_scope": "Reused original GUI/MIX raw artifacts were later verified against the actual current run window, mtime and byte hashes; no independent cryptographic manifest was sealed at their first write. This is provenance certification scope, not cryptographic execution cost."
+  },
+  "original_six_BP_representatives": {
+    "cases": [
+      "BP-01",
+      "BP-04",
+      "BP-05",
+      "BP-08",
+      "BP-12",
+      "BP-15"
+    ],
+    "actual_exit": 0,
+    "actual_cases": 6,
+    "actual_passed": 6,
+    "actual_assertions": 269,
+    "optional_pending_task_poll_assertions_included": 1,
+    "per_case": {
+      "BP-05": {
+        "actual_assertions": 24,
+        "optional_pending_task_poll_assertions": 0
+      },
+      "BP-04": {
+        "actual_assertions": 23,
+        "optional_pending_task_poll_assertions": 1
+      },
+      "BP-15": {
+        "actual_assertions": 9,
+        "optional_pending_task_poll_assertions": 0
+      },
+      "BP-08": {
+        "actual_assertions": 6,
+        "optional_pending_task_poll_assertions": 0
+      },
+      "BP-12": {
+        "actual_assertions": 202,
+        "optional_pending_task_poll_assertions": 0
+      },
+      "BP-01": {
+        "actual_assertions": 5,
+        "optional_pending_task_poll_assertions": 0
+      }
+    },
+    "evidence": [
+      "representatives90_complete",
+      "representatives90_validation"
+    ],
+    "scope": "Original six named cases only; no denominator reduction or inference that all20 BP imply full SK."
+  },
+  "BP10_package_consumer": {
+    "actual_clean_build_exit": 0,
+    "actual_peer_exit": 0,
+    "actual_peer_pid": "34136",
+    "ON_actual_categories": [
+      "codecs",
+      "core",
+      "operations",
+      "render",
+      "ui",
+      "validation"
+    ],
+    "actual_category_count": 6,
+    "registry_scope": "No generic unified codec/validation/UI category registry endpoint exists; actual existing host injection and typed operation bindings are named explicitly.",
+    "SQLite_linked_in_passive_peer": false,
+    "storage_calls_in_passive_peer": false,
+    "active_document_in_passive_peer": false,
+    "production_SQLite_gate_remains_required": true,
+    "OFF_full_actual_exit": 0,
+    "OFF_nastran_disabled_ipc_executed": true,
+    "OFF_six_observer_rows_claimed": false,
+    "evidence": [
+      "package90_complete",
+      "package90_observations",
+      "full86_sqlite_headless",
+      "full86_package_disabled"
+    ]
+  },
+  "native_Desktop_full_supplement": {
+    "PICK_QTest_report_passed_total": 12,
+    "desktop_selection_QTest_report_passed_total": 71,
+    "desktop_QTest_report_passed_total": 25,
+    "tool_real_samples": 30,
+    "tool_cancel_revision_delta": 0,
+    "tool_apply_revision_delta_per_run": 1,
+    "tool_undo_final_empty": true,
+    "snapshot_named_passes": [
+      "aiSnapshotUnitsAndCameraAreConsistent()",
+      "aiSnapshotForcePreviewUndoAndRecoveryUseSharedHistory()"
+    ],
+    "snapshot_original_sha256": "78b66ecb188d317c39192abedba25c5f335f87f56b9988dd0a1c9e5adfd33e83",
+    "scope": "QTest report totals include fixture rows where applicable and are not added to378. Snapshot tests consume the original frozen fixture; no new external AI run.",
+    "evidence": [
+      "matrix94_desktop",
+      "desktop86_raw",
+      "tool86_create30"
+    ]
+  },
+  "BP17_fresh_process_preferences": {
+    "actual_wrapper_exit": 0,
+    "actual_GUI_exits": [
+      0,
+      0
+    ],
+    "actual_GUI_PIDs": [
+      34865,
+      34885
+    ],
+    "separate_QApplication_processes": true,
+    "exact_panel_dimensions": {
+      "historyDock_height": 170,
+      "modelViewsDock_width": 280,
+      "selectionPropertiesDock_width": 360
+    },
+    "document_revision_before_after": [
+      "0",
+      "0"
+    ],
+    "history_unchanged": true,
+    "exact_raw_preferences_SHA_equal": true,
+    "exact_state_geometry_equal": true,
+    "private_settings_format_integer": 1,
+    "private_settings_scope_integer": 0,
+    "private_User_and_System_paths_guarded": true,
+    "original_production_close_used": true,
+    "shortcut": "Ctrl+U",
+    "engine_PID": 34822,
+    "engine_literal_exit": -15,
+    "engine_force_killed": false,
+    "engine_reaped": true,
+    "evidence": [
+      "BP17_96_complete",
+      "BP17_96_comparison",
+      "BP17_96_gui_write",
+      "BP17_96_gui_read",
+      "BP17_96_engine",
+      "BP17_96_loaded_images"
+    ]
+  },
+  "BP13_paired_move_lifecycle": {
+    "status": "actual_bounded_representative_passed",
+    "actual_native_attempt": "native-02",
+    "actual_wrapper_exit": 0,
+    "actual_GUI_exit": 0,
+    "actual_GUI_PID": 37192,
+    "new_clean_build_exit": 0,
+    "new_actual_compile_entries": 75,
+    "representative": "existing production node.move property tool",
+    "contract_steps": [
+      "cancel.enter",
+      "cancel.pick",
+      "cancel.preview",
+      "cancel.cancel",
+      "cancel.leave",
+      "apply.enter",
+      "apply.pick",
+      "apply.preview",
+      "apply.apply",
+      "apply.leave"
+    ],
+    "cancel_revision_delta": 0,
+    "apply_revision_delta": 1,
+    "new_persistent_transactions": 1,
+    "real_target_viewport_picks": 2,
+    "real_empty_viewport_leaves": 2,
+    "post_leave_Apply_extra_writes": 0,
+    "M_population": {
+      "nodes": 11,
+      "beams": 10
+    },
+    "after_node5_position_mm": [
+      500,
+      1,
+      0
+    ],
+    "all_other_entity_fields_unchanged": true,
+    "observer_model_writes": 0,
+    "leave_scope": "release by empty selection; dock-close/Escape unmeasured",
+    "wait_deadline_ms": 30000,
+    "engine_PID": 37090,
+    "engine_literal_exit": -15,
+    "engine_force_killed": false,
+    "engine_reaped": true,
+    "startup_initial_CLI_exit3_preserved": true,
+    "startup_second_CLI_exit": 0,
+    "create30_inherited_pending_text_preserved": true,
+    "create30_actual_evidence_separate": "tool86_create30",
+    "evidence": [
+      "BP13_99_clean_build",
+      "BP13_99_complete",
+      "BP13_99_comparison",
+      "BP13_99_gui",
+      "BP13_99_engine",
+      "BP13_99_raw",
+      "BP13_99_loaded_images",
+      "BP13_99_startup_initial3"
+    ]
+  },
+  "sanitizer_scope": {
+    "asan_ubsan_compile_entries": 78,
+    "asan_ubsan_instrumented_entries": 78,
+    "asan_ipc_compile_entries": 115,
+    "asan_ipc_instrumented_entries": 114,
+    "original_fixture_optout": "tests/solver_version_fixture.cpp; explicit fno-sanitize, only1 translation unit",
+    "LSan_supported": false,
+    "scope": "Supported ASan/UBSan actual gates only; no LSan or complete external SDK instrumentation claim.",
+    "evidence": "matrix94_review"
+  },
+  "preserved_failures_and_historical_sources": [
+    {
+      "attempt": "71 passive peer",
+      "source_commit": "1c3f8f594409a73f03442ada47fa0d13d1b9f31a",
+      "source_digest": "fb5489f6a20edaeafab18cdba1d9ac4462bfa4f5fb1df919b2b6db43c83f48f6",
+      "wrapper_exit": 1,
+      "six_category_product_call_started": false,
+      "failure_scope": "Collector required SQLite although actual passive peer did not link/use it; QtCore/QtNetwork were present. No fake SQLite image or dummy link supplied.",
+      "evidence": [
+        "historical71_failure",
+        "historical71_diagnosis78"
+      ]
+    },
+    {
+      "attempt": "79 fresh-layout native-01",
+      "source_commit": "1c3f8f594409a73f03442ada47fa0d13d1b9f31a",
+      "source_digest": "fb5489f6a20edaeafab18cdba1d9ac4462bfa4f5fb1df919b2b6db43c83f48f6",
+      "GUI_exit": 1,
+      "production_window_constructed": false,
+      "failure_scope": "First fresh GUI settings must be empty; old two-argument NativeFormat constructor did not respect intended private Ini isolation.",
+      "evidence": "historical79_failed_GUI"
+    },
+    {
+      "attempt": "95 BP13 native-01",
+      "source_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+      "source_digest": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+      "GUI_PID": 34646,
+      "GUI_exit": 1,
+      "formal_steps_passed": [
+        "cancel.enter",
+        "cancel.pick"
+      ],
+      "failure_scope": "Actual keyboard input did not set physical Y=1mm; final field text absent, later steps unproven. Original Meta+A input retained in original95.",
+      "evidence": [
+        "failed95_gui",
+        "failed95_action",
+        "failed95_observation"
+      ]
+    },
+    {
+      "attempt": "99 native-01 default-sandbox",
+      "source_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+      "source_digest": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+      "wrapper_exit": 1,
+      "engine_PID": 36763,
+      "engine_exit": 4,
+      "CLI_PID": 36764,
+      "CLI_exit": 3,
+      "GUI_started": false,
+      "BP13_new_keyboard_validated": false,
+      "failure_scope": "QLocalServer listen Unknown error1 before GUI; suitable local IPC environment retry used same sealed method in native02.",
+      "evidence": [
+        "failed99_native01_action",
+        "failed99_native01_engine",
+        "failed99_native01_CLI"
+      ]
+    },
+    {
+      "attempt": "73 declarations / old68,72,75,78 successes",
+      "source_commit": "1c3f8f594409a73f03442ada47fa0d13d1b9f31a",
+      "source_digest": "fb5489f6a20edaeafab18cdba1d9ac4462bfa4f5fb1df919b2b6db43c83f48f6",
+      "current_source_PASS_imported": false,
+      "scope": "Historical sources retain identity; current declaration proof is90 and current core evidence is86/94/88/90/96/99.",
+      "evidence": "historical73_declarations"
+    }
+  ],
+  "deferred_and_unclosed": {
+    "authorized_deferred_full_SDK_copy_coverage": {
+      "status": "unknown",
+      "passed": null,
+      "scope": "Full Qt glyph/text/socket-internal and VTK/external SDK owned-copy coverage remains unknown, not zero. Exact loaded-image hash evidence is bounded separately."
+    },
+    "current_source_performance": {
+      "retested": false,
+      "passed": null,
+      "historical_source49_material_cap_failures": 14,
+      "historical_material_population": 30,
+      "historical_total_samples": 60,
+      "original_material_limit_bytes": 69632,
+      "original_node_limit_bytes": 589824,
+      "original_metadata_limit_bytes": 65536,
+      "scope": "Old source49 actual ledger outcome retained; no new85 perf pass, no threshold/counter/SDK reclassification."
+    },
+    "real_solver_engineering_validation": false,
+    "real_external_AI_acceptance": false,
+    "full_AP_L2_or_future_interfaces": false,
+    "full_SK": false,
+    "C3_complete": false,
+    "C4_complete": false,
+    "P0_complete": false,
+    "native_layout_and_move_image_evidence_scope": "Actual owned-PID external image paths/bytes/hashes only; full SDK internals remain unknown separately. No guarantee of provenance sealing at first write of reused GUI artifacts.",
+    "BP20_count_does_not_imply_full_SK": true,
+    "BP01_20_compact_cross_reference": {
+      "evidence": "BP20_98_compact",
+      "status": "Actual same-source bounded map available; full registry/SK/P0 remain unaccepted."
+    }
+  },
+  "evidence": {
+    "source85_frozen": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/frozen-candidate.json",
+        "bytes": 633711,
+        "sha256": "67bcf2c8d8f9aa4bef00dbb51607cbb6e4775b41e25f2cdf191ea40d2629e787"
+      },
+      "archive": {
+        "relative_path": "matrix86/frozen-candidate.json.gz",
+        "bytes": 160850,
+        "sha256": "86c2c4776c4c3e856129fbd58af33e581674a63650d27ca88d6a5ae25339c824"
+      },
+      "encoding": "gzip"
+    },
+    "matrix94_review": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-matrix-review94/attempts/matrix94-01/01-review.json",
+        "bytes": 163675,
+        "sha256": "cf3087eb88342d68bdfd11bd2e79ea401a81016a43b2c9d2c8c6cd79aff017b3"
+      },
+      "archive": {
+        "relative_path": "matrix-review94/actual/matrix94-01/01-review.json.gz",
+        "bytes": 30151,
+        "sha256": "b3c7821d7aecf67ac3fff271a1db8968353c4ca151c44fe733315c49916fb650"
+      },
+      "encoding": "gzip"
+    },
+    "matrix94_desktop": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-matrix-review94/attempts/matrix94-01/02-desktop-addendum.json",
+        "bytes": 144499,
+        "sha256": "dd5a810a13a824911643273ee501dfe43b9ca600545d0179dc5d4329b86ea5d9"
+      },
+      "archive": {
+        "relative_path": "matrix-review94/actual/matrix94-01/02-desktop-addendum.json.gz",
+        "bytes": 31000,
+        "sha256": "20f5b071fd96943ef6da8b5ad89cddf53b83e068051bd154dc4acd7a0df3de5d"
+      },
+      "encoding": "gzip"
+    },
+    "matrix94_complete": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-matrix-review94/attempts/matrix94-01/complete.json",
+        "bytes": 1184,
+        "sha256": "2a13e4d4b9713d0352967266e5676bd0d69dfbb941d451fd03b1c6c2205295a2"
+      },
+      "archive": {
+        "relative_path": "matrix-review94/actual/matrix94-01/complete.json.gz",
+        "bytes": 499,
+        "sha256": "f40c1428e758ea2b16473cc686bb3dfb8b27a4d77ccc711ce886d817e67d6233"
+      },
+      "encoding": "gzip"
+    },
+    "full86_core": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/full-regression-core-complete.json",
+        "bytes": 1379,
+        "sha256": "f6a0a12e56a10901b0f6d51a643e039fd4d2cd4e910e7d79fb9e21e635bf96c4"
+      },
+      "archive": {
+        "relative_path": "matrix86/full-regression-core-complete.json",
+        "bytes": 1379,
+        "sha256": "f6a0a12e56a10901b0f6d51a643e039fd4d2cd4e910e7d79fb9e21e635bf96c4"
+      },
+      "encoding": "original bytes"
+    },
+    "full86_sqlite_headless": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/full-regression-sqlite_headless-complete.json",
+        "bytes": 1562,
+        "sha256": "a291734efd531472c1d7443de3fa2e4329fb813e799040f7ebe5624a7e087597"
+      },
+      "archive": {
+        "relative_path": "matrix86/full-regression-sqlite_headless-complete.json",
+        "bytes": 1562,
+        "sha256": "a291734efd531472c1d7443de3fa2e4329fb813e799040f7ebe5624a7e087597"
+      },
+      "encoding": "original bytes"
+    },
+    "full86_asan_ubsan": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/full-regression-asan_ubsan-complete.json",
+        "bytes": 1557,
+        "sha256": "8eb12eab92ef7a027a4ac9622ca05a19df67a14cdfdcc628e616ecff186b6501"
+      },
+      "archive": {
+        "relative_path": "matrix86/full-regression-asan_ubsan-complete.json",
+        "bytes": 1557,
+        "sha256": "8eb12eab92ef7a027a4ac9622ca05a19df67a14cdfdcc628e616ecff186b6501"
+      },
+      "encoding": "original bytes"
+    },
+    "full86_asan_ipc": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/full-regression-asan_ipc-complete.json",
+        "bytes": 2316,
+        "sha256": "688317fc05384c4793da2daf7d7a468f402ec241c49ca4d08fbe1a3d0b04bf16"
+      },
+      "archive": {
+        "relative_path": "matrix86/full-regression-asan_ipc-complete.json",
+        "bytes": 2316,
+        "sha256": "688317fc05384c4793da2daf7d7a468f402ec241c49ca4d08fbe1a3d0b04bf16"
+      },
+      "encoding": "original bytes"
+    },
+    "full86_package_disabled": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/full-regression-package_disabled-complete.json",
+        "bytes": 2164,
+        "sha256": "84105c01e54d139bdd1293b623cf319ebae70614bfde05d0ae3eefc9e119d5e0"
+      },
+      "archive": {
+        "relative_path": "matrix86/full-regression-package_disabled-complete.json",
+        "bytes": 2164,
+        "sha256": "84105c01e54d139bdd1293b623cf319ebae70614bfde05d0ae3eefc9e119d5e0"
+      },
+      "encoding": "original bytes"
+    },
+    "full86_desktop": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/full-regression-desktop-complete.json",
+        "bytes": 2571,
+        "sha256": "667aeca453a2513712e7e29fee3e34863ccd408ce609f7d7e0a1abfc47bac0d3"
+      },
+      "archive": {
+        "relative_path": "matrix86/full-regression-desktop-complete.json",
+        "bytes": 2571,
+        "sha256": "667aeca453a2513712e7e29fee3e34863ccd408ce609f7d7e0a1abfc47bac0d3"
+      },
+      "encoding": "original bytes"
+    },
+    "public86_compile74": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/public-consumers74-compile-complete.json",
+        "bytes": 18241,
+        "sha256": "fdde9a92e75c59edd7941aa3ab0bfb142008673595a0e620893e8377f9c7f712"
+      },
+      "archive": {
+        "relative_path": "matrix86/public-consumers74-compile-complete.json.gz",
+        "bytes": 4466,
+        "sha256": "0aaa979d4742a7a315ce5945ad64eaa4013c72717e77233aa8f5846c18c82f11"
+      },
+      "encoding": "gzip"
+    },
+    "public86_inventory0": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/inventory-public_consumers-audit.json",
+        "bytes": 349,
+        "sha256": "065d790b434688c0b42d8e5fcc2fe81d3159a8bdc1c241447be893441ea18192"
+      },
+      "archive": {
+        "relative_path": "matrix86/provenance/inventory-public_consumers-audit.json.gz",
+        "bytes": 256,
+        "sha256": "5123bf6e93ac85eec67ca0bcbaa8d7c87377153cad1c4dc922a384e54cda7814"
+      },
+      "encoding": "gzip"
+    },
+    "typed90_20_106": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-supplement90/attempts/supplement90-01/signatures/complete.json",
+        "bytes": 13550,
+        "sha256": "aed845df9c139aee86e5e3ccad9e85a2edab9065ba6be4669a6a7cf1ccfcf11e"
+      },
+      "archive": {
+        "relative_path": "supplement90/actual/supplement90-01/signatures/complete.json.gz",
+        "bytes": 3467,
+        "sha256": "142e685bf4997b58acc5008f5a361d053b36dae4384e4467088581fd80840235"
+      },
+      "encoding": "gzip"
+    },
+    "representatives90_complete": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-supplement90/attempts/supplement90-01/representatives/complete.json",
+        "bytes": 3192,
+        "sha256": "6bdf79e709d1f3984151087906663e8488d17e16248ce91837ad6f8af64f3ac1"
+      },
+      "archive": {
+        "relative_path": "supplement90/actual/supplement90-01/representatives/complete.json.gz",
+        "bytes": 1062,
+        "sha256": "1aa9ac8b3d21c561d2e6104b2030ceaeeda14c88bd9dc0a82db751d5f6f3d607"
+      },
+      "encoding": "gzip"
+    },
+    "representatives90_validation": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-supplement90/attempts/supplement90-01/representatives/six-case-validation.json",
+        "bytes": 1748,
+        "sha256": "4f26ca54cdd3b47b24ca0a412c4aeb6c4c62874050407e4155780f42ac5dd34d"
+      },
+      "archive": {
+        "relative_path": "supplement90/actual/supplement90-01/representatives/six-case-validation.json.gz",
+        "bytes": 668,
+        "sha256": "4db352ec8785db223e90b17de09f3cacdc5ff8031bd769c223a6d84b0c5fc6a2"
+      },
+      "encoding": "gzip"
+    },
+    "package90_complete": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-supplement90/attempts/supplement90-01/package/complete.json",
+        "bytes": 104774,
+        "sha256": "544025afb2055582a7de3d8ec6023be9060beec82eb95a1e9948b2cde52f2175"
+      },
+      "archive": {
+        "relative_path": "supplement90/actual/supplement90-01/package/complete.json.gz",
+        "bytes": 19122,
+        "sha256": "f74f41ed1af93e3e6ba6105137e49810f65764af37f92d2cf2be530e08cc2d2c"
+      },
+      "encoding": "gzip"
+    },
+    "package90_observations": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-supplement90/attempts/supplement90-01/package/six-category-observations.json",
+        "bytes": 9368,
+        "sha256": "040381ed4f18ddaf2d27bb1f28d31b1b4456aaf85a77c098c3fd05332348d9a2"
+      },
+      "archive": {
+        "relative_path": "supplement90/actual/supplement90-01/package/six-category-observations.json.gz",
+        "bytes": 1878,
+        "sha256": "17749b05ac558e2b91e1cece18f6ad4fe423b92c08de5d422248b96271e6785e"
+      },
+      "encoding": "gzip"
+    },
+    "reliability88_complete": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-reliability-collector88/attempts/reliability88-01/action-complete.json",
+        "bytes": 348,
+        "sha256": "4955da59ebdb8ae377f7afe70437eb0e0cf5b48d091cd85a42f1a41268117b4c"
+      },
+      "archive": {
+        "relative_path": "reliability88/actual/reliability88-01/action-complete.json.gz",
+        "bytes": 254,
+        "sha256": "1b0cafea8fa63ff432b71f846ccbf654cd651fc138fa8700953f2a5f2cfc8763"
+      },
+      "encoding": "gzip"
+    },
+    "fault88_validated": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-reliability-collector88/attempts/reliability88-01/faults/validated.json",
+        "bytes": 2744,
+        "sha256": "397ee0b0ecfa61e24c4ff6a4c751bdb9fe2f0a0f4783369a6f7d815e0c252730"
+      },
+      "archive": {
+        "relative_path": "reliability88/actual/reliability88-01/faults/validated.json.gz",
+        "bytes": 679,
+        "sha256": "172242c4ea8dd01b122610e878c827260f1039c4a34b3db5b3af2546a8aafe1e"
+      },
+      "encoding": "gzip"
+    },
+    "fault88_F17_raw": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-reliability-collector88/attempts/reliability88-01/faults/sanitizer-client.jsonl",
+        "bytes": 34452,
+        "sha256": "8a645db087be01d50a0b91c14bebbe90b3a678affd457ae432d269e626a122cf"
+      },
+      "archive": {
+        "relative_path": "reliability88/actual/reliability88-01/faults/sanitizer-client.jsonl.gz",
+        "bytes": 3345,
+        "sha256": "3f82835de380ef512c2229fb739f236bd78c69b62e834639e14d5a4fc805b15f"
+      },
+      "encoding": "gzip"
+    },
+    "workflow88_cli_command": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-reliability-collector88/attempts/reliability88-01/commands/workflow-cli.json",
+        "bytes": 11003,
+        "sha256": "2b0690fa005a02ff0d3896b1eafa5515c92ee0f0ebf83f32cb64f312e65e967a"
+      },
+      "archive": {
+        "relative_path": "reliability88/actual/reliability88-01/commands/workflow-cli.json.gz",
+        "bytes": 2895,
+        "sha256": "67d92d503e7fc047e16c7c69eb5a7ba3fbba43dde3ad2e8e3b751404fe763a5e"
+      },
+      "encoding": "gzip"
+    },
+    "workflow88_comparison_complete": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-reliability-collector88/attempts/comparison88-01/comparison-complete.json",
+        "bytes": 677,
+        "sha256": "f928aaa1ca650bd929fad2f18abb222ea7413a2b05414168476d593c06d1bbae"
+      },
+      "archive": {
+        "relative_path": "comparison88/actual/comparison88-01/comparison-complete.json.gz",
+        "bytes": 454,
+        "sha256": "3da9a5df67a008ced397c82f10e8665b72015e48f52494ba483ac3675722b44f"
+      },
+      "encoding": "gzip"
+    },
+    "workflow88_comparison": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-reliability-collector88/attempts/comparison88-01/workflow-comparison.json",
+        "bytes": 42065,
+        "sha256": "65e24b1694f164a006d5ddd355e595106bf65e2d1ddbddd2eae862bf84d5385a"
+      },
+      "archive": {
+        "relative_path": "comparison88/actual/comparison88-01/workflow-comparison.json.gz",
+        "bytes": 3357,
+        "sha256": "3ef14eeeaa644bcd6d1c604dbd5ad54250b785959dc1d5f14631c9f579d4d3e7"
+      },
+      "encoding": "gzip"
+    },
+    "tool86_create30": {
+      "original": {
+        "path": "/private/tmp/qcae-framework86-builds/desktop/c3_tool_lifecycle_evidence/tool-lifecycle.json",
+        "bytes": 20431,
+        "sha256": "e1cfae1300e77bc2f28205de68f278e9422f9e10f366ef351bc5a8378bd6fc68"
+      },
+      "archive": {
+        "relative_path": "matrix86/tool-lifecycle30.json.gz",
+        "bytes": 1508,
+        "sha256": "ab58b66248c98e40f11166c1b5d0579d8a61f2aa5ca20f4375f36e0228454754"
+      },
+      "encoding": "gzip"
+    },
+    "desktop86_raw": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-runtime86/full-regression-desktop-diagnostics/LastTest.log",
+        "bytes": 4497525,
+        "sha256": "258952f861a061ede3d212dccd79734c9b8e18d7eaf6172bc6de292c018b0a95"
+      },
+      "archive": {
+        "relative_path": "matrix86/raw/LastTest-desktop.log.gz",
+        "bytes": 147768,
+        "sha256": "d135cec890564df510edc2cd54ea8290d5ee2ec3e7f504798b5c140dc6304a70"
+      },
+      "encoding": "gzip"
+    },
+    "BP17_96_complete": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-layout-runtime96/native-01/action-complete.json",
+        "bytes": 1337,
+        "sha256": "6dd0ed108bdb64f02e8073053a3b075e7c053ed021f62756f05f181c08fbe5c5"
+      },
+      "archive": {
+        "relative_path": "layout96/native/action-complete.json",
+        "bytes": 1337,
+        "sha256": "6dd0ed108bdb64f02e8073053a3b075e7c053ed021f62756f05f181c08fbe5c5"
+      },
+      "encoding": "original bytes"
+    },
+    "BP17_96_comparison": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-layout-runtime96/native-01/comparison.json",
+        "bytes": 2834,
+        "sha256": "bd9f1d37dc630eb786a2df7c943d42b8f9514bdf968f9cb91bc1b828710a3ccd"
+      },
+      "archive": {
+        "relative_path": "layout96/native/comparison.json",
+        "bytes": 2834,
+        "sha256": "bd9f1d37dc630eb786a2df7c943d42b8f9514bdf968f9cb91bc1b828710a3ccd"
+      },
+      "encoding": "original bytes"
+    },
+    "BP17_96_engine": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-layout-runtime96/native-01/engine-process.json",
+        "bytes": 3116,
+        "sha256": "5c0ef1e9e2f79cd59a9e975e03acb026ce00d64d634ab8f79136c7ba7873c543"
+      },
+      "archive": {
+        "relative_path": "layout96/native/engine-process.json",
+        "bytes": 3116,
+        "sha256": "5c0ef1e9e2f79cd59a9e975e03acb026ce00d64d634ab8f79136c7ba7873c543"
+      },
+      "encoding": "original bytes"
+    },
+    "BP17_96_gui_write": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-layout-runtime96/native-01/commands/fresh-gui-write.json",
+        "bytes": 62951,
+        "sha256": "54cd7a43615d0f8c703dbe9a4ddb3f968931183e9d1b71ec9a1a432c7ef2a91e"
+      },
+      "archive": {
+        "relative_path": "layout96/native/commands/fresh-gui-write.json.gz",
+        "bytes": 15479,
+        "sha256": "41c7bcec37eecda2f53fdeaba48e67f8010e11e2a05d6acf1cda99365eb8ff58"
+      },
+      "encoding": "gzip"
+    },
+    "BP17_96_gui_read": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-layout-runtime96/native-01/commands/fresh-gui-read.json",
+        "bytes": 63031,
+        "sha256": "1a4137c0287f0f966124cf633d99e73dd79d8fa11b8e8bd408e7ca3cf311ded1"
+      },
+      "archive": {
+        "relative_path": "layout96/native/commands/fresh-gui-read.json.gz",
+        "bytes": 15500,
+        "sha256": "83d4e6705aaa719c5e8b9ebc7e37916372c9635ccb80e018358e466f3c4bfb9b"
+      },
+      "encoding": "gzip"
+    },
+    "BP17_96_loaded_images": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-layout-runtime96/native-01/observed-images.json",
+        "bytes": 355189,
+        "sha256": "1f4d9980b4810681837336bf26a221e056a46fb6f921430ff9fd8e5bb7ec0d69"
+      },
+      "archive": {
+        "relative_path": "layout96/native/observed-images.json.gz",
+        "bytes": 50121,
+        "sha256": "ab378e8d5dbbabc0900388b5f9b38a4e693cf03a5a58cbe302ee5fa89de2c906"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_clean_build": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/build-01/peer-build-complete.json",
+        "bytes": 24405,
+        "sha256": "2da2a84a919dc54b0ae676808a9e9aae8a2eff0e6da4779a23aa2dae7f1c7ca3"
+      },
+      "archive": {
+        "relative_path": "move99/build/peer-build-complete.json.gz",
+        "bytes": 5816,
+        "sha256": "bbba8ceb6796a59742021ff0880731c1b6e59860c01c634abc87b11477d226bb"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_complete": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-02/action-complete.json",
+        "bytes": 1361,
+        "sha256": "8009538ba4cba1c15045208d62fe99c4e04ce7ba981bc5842b99c0e4766b1ec7"
+      },
+      "archive": {
+        "relative_path": "move99/native02/action-complete.json.gz",
+        "bytes": 694,
+        "sha256": "d0a404c30373efb1cf5546abf6ff2b45b69e4902f7cc1ff595c46933eeec9e81"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_comparison": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-02/lifecycle-comparison.json",
+        "bytes": 3992,
+        "sha256": "91c5d2af74d4d0b00c973eb14d781a9479a2c35d7e92ca9292cae6625cbe4dc2"
+      },
+      "archive": {
+        "relative_path": "move99/native02/lifecycle-comparison.json.gz",
+        "bytes": 1659,
+        "sha256": "0643bc7e1d4a16f2cfb3737ab5903e84f1dc6462251db9b2b73bf3f658a3d011"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_gui": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-02/commands/BP13-paired-lifecycle.json",
+        "bytes": 55659,
+        "sha256": "3e09127b3ad35154d8e18d73114a961a8451e3828ffc0f8abecfb28b58b71143"
+      },
+      "archive": {
+        "relative_path": "move99/native02/commands/BP13-paired-lifecycle.json.gz",
+        "bytes": 14247,
+        "sha256": "cff7efe2e6952c50e041be191789f8f6a7048a4637e34346fdadfc753bf85c44"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_engine": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-02/engine-process.json",
+        "bytes": 3017,
+        "sha256": "596119a190409cb6bdfad6eb9b02e8ce67996d69fa4eecf8d5194ef5b53c5590"
+      },
+      "archive": {
+        "relative_path": "move99/native02/engine-process.json.gz",
+        "bytes": 1174,
+        "sha256": "b228541e5b81b751fe54caf0f9ad0d9ec7ebd4f26a10e553c4f1db364eae7e8d"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_raw": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-02/BP13-node-move-lifecycle.json",
+        "bytes": 1227690,
+        "sha256": "a774b3d626d61fabeb07ae4227b7e9634397afd99d0b4675f08a1120ae60344c"
+      },
+      "archive": {
+        "relative_path": "move99/native02/BP13-node-move-lifecycle.json.gz",
+        "bytes": 52487,
+        "sha256": "c076c949d82db7527223525160cef35a3a33b1cf0d4daea85977b4f464fa22ca"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_loaded_images": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-02/observed-images.json",
+        "bytes": 214216,
+        "sha256": "0f989fd3681cfb78d3da72dcc13a5a0743c212af59333626a54cd5703a24ce9b"
+      },
+      "archive": {
+        "relative_path": "move99/native02/observed-images.json.gz",
+        "bytes": 32250,
+        "sha256": "76de721247f0d8b780af20dafba4a6180e5353bd9d1d8c73bc250904f96c43ec"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_99_startup_initial3": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-02/commands/bootstrap-001-capabilities-list.json",
+        "bytes": 2977,
+        "sha256": "759bfc6fbba86701ffa13ce6f18b4fca1f2a9e8f4b7bcc7f88db88360e06e367"
+      },
+      "archive": {
+        "relative_path": "move99/native02/commands/bootstrap-001-capabilities-list.json.gz",
+        "bytes": 1122,
+        "sha256": "e455db4dd62a596cce97c97444bc2c7dd24cd92b8034169b9902d9d76b2954a2"
+      },
+      "encoding": "gzip"
+    },
+    "failed95_gui": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime95/native-01/commands/BP13-paired-lifecycle.json",
+        "bytes": 56945,
+        "sha256": "19d8a7018c0868b0bd8c5cff2c8be763bfee998dd5faf542a45b1cafdc295e79"
+      },
+      "archive": {
+        "relative_path": "failed-move95/commands/BP13-paired-lifecycle.json.gz",
+        "bytes": 14498,
+        "sha256": "a764e299ab0eb8f4ab693884fae76d87ef4c0e7e8d2c4e85f15036162b09b435"
+      },
+      "encoding": "gzip"
+    },
+    "failed95_action": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime95/native-01/action-failed.json",
+        "bytes": 423,
+        "sha256": "e32921f8c8bbac4f190dae445dd88a289de9b495a87f79d8685db4f9295b3efb"
+      },
+      "archive": {
+        "relative_path": "failed-move95/action-failed.json",
+        "bytes": 423,
+        "sha256": "e32921f8c8bbac4f190dae445dd88a289de9b495a87f79d8685db4f9295b3efb"
+      },
+      "encoding": "original bytes"
+    },
+    "failed95_observation": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime95/native-01/BP13-node-move-lifecycle.json",
+        "bytes": 298413,
+        "sha256": "02c2a91bd85d923e8507988cf2a1b6f67ab5c19402f65ba1a686cd93e6172bc2"
+      },
+      "archive": {
+        "relative_path": "failed-move95/BP13-node-move-lifecycle.json.gz",
+        "bytes": 14354,
+        "sha256": "d965ca454490d390105eaea98ef089101cefe342a2f35cbaa9074ec581e65b37"
+      },
+      "encoding": "gzip"
+    },
+    "failed99_native01_action": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-01/action-failed.json",
+        "bytes": 421,
+        "sha256": "342504c3b0e5ff4e112d7315179bcdd2946006c32fef771ff26b635407d00448"
+      },
+      "archive": {
+        "relative_path": "move99/failed-native01/action-failed.json.gz",
+        "bytes": 301,
+        "sha256": "4382821c39a5c2ca3b49f59a958fd783ddbd8af07cf12c624673267da55056f5"
+      },
+      "encoding": "gzip"
+    },
+    "failed99_native01_engine": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-01/engine-process.json",
+        "bytes": 3088,
+        "sha256": "b875df9071382c0d9bf1291d14ef79aaf49b10e8d84d50d009c7904d323c4b33"
+      },
+      "archive": {
+        "relative_path": "move99/failed-native01/engine-process.json.gz",
+        "bytes": 1215,
+        "sha256": "2f61b1127b224df36fe4c7561cf7159f91904821dfec14fd522706f41411e389"
+      },
+      "encoding": "gzip"
+    },
+    "failed99_native01_CLI": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-BP13-runtime99/native-01/commands/bootstrap-001-capabilities-list.json",
+        "bytes": 2977,
+        "sha256": "7a54c840815cc9c8a34775bef8239e55ef6c28d7085c76935fbee21998eb7c72"
+      },
+      "archive": {
+        "relative_path": "move99/failed-native01/commands/bootstrap-001-capabilities-list.json.gz",
+        "bytes": 1122,
+        "sha256": "716903cafb1eecb20426c12c0ff9980caac3bfdfcbfbb81b7c601a05a6be8252"
+      },
+      "encoding": "gzip"
+    },
+    "historical79_failed_GUI": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-layout-runtime79/native-01/commands/fresh-gui-write.json",
+        "bytes": 55441,
+        "sha256": "5657337aab5b75fa169d7a5830f1f0b3d6dd4bd70b212e9168813021f3694167"
+      },
+      "archive": {
+        "relative_path": "failed-layout79/commands/fresh-gui-write.json.gz",
+        "bytes": 14031,
+        "sha256": "2e0474789680987eeb69f7832dec6a3f2a1e173b74269ad1b8ac9980cffd0f69"
+      },
+      "encoding": "gzip"
+    },
+    "historical71_failure": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-package-peer71/results/bp10-six-categories-01/wrapper-failure.json",
+        "bytes": 182,
+        "sha256": "72663a0ac7d5608fffcfd11112f07a6b4cd6779c3e96d3fd17ca66e2f0f892bf"
+      },
+      "archive": {
+        "relative_path": "historical-package71/wrapper-failure.json.gz",
+        "bytes": 159,
+        "sha256": "1f3f8c38e52d1d3a1414d8a1b9b4c33a341cf795c44f847e76f503165cf2bc15"
+      },
+      "encoding": "gzip"
+    },
+    "historical71_diagnosis78": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-package-peer78/diagnosis71.json",
+        "bytes": 23300,
+        "sha256": "5e2960949b21c1453e456a474596130133b41bb5a46e77bc5bc068e4cb0af8fe"
+      },
+      "archive": {
+        "relative_path": "historical-package71/diagnosis78.json.gz",
+        "bytes": 3997,
+        "sha256": "e8dd98d1586bc50195ccb39287b871b17749f7a468d6e6050641982054903792"
+      },
+      "encoding": "gzip"
+    },
+    "historical73_declarations": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-ap-signature-runtime73/attempt-01/complete.json",
+        "bytes": 13445,
+        "sha256": "2597471066801b09ca0adf0fdd852aee480502691cd2ba588c19ead83e898f8a"
+      },
+      "archive": {
+        "relative_path": "signatures73/complete.json.gz",
+        "bytes": 3575,
+        "sha256": "21e39a300f5f91d32b97e5ac90df77206a7aa15a0d939fb72849eacd6845e9a4"
+      },
+      "encoding": "gzip"
+    },
+    "BP20_98_compact": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-bp-audit98/BP20-compact-final.json",
+        "bytes": 42972,
+        "sha256": "2a50305d34650f7df906854e3162a02ff916c91ebcf6517d755d91ba9f531abd"
+      },
+      "archive": {
+        "relative_path": "bp-audit98/BP20-compact-final.json.gz",
+        "bytes": 7350,
+        "sha256": "7cf73311175f922aec4b4434adbfc7aab9cb47c0e70467298095b207233185d4"
+      },
+      "encoding": "gzip"
+    },
+    "BP13_98_actual99_audit": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-bp-audit98/BP13-actual99-addendum.json",
+        "bytes": 19359,
+        "sha256": "fceb87768d589bb93b9052f57b74e4f8da53d66158cd64ae1d4b3a4b72fce21a"
+      },
+      "archive": {
+        "relative_path": "bp-audit98/BP13-actual99-addendum.json.gz",
+        "bytes": 3015,
+        "sha256": "c9d38e321d548f53306ebd35d08e3195374de6a0c50bbb561052c86eaa44a878"
+      },
+      "encoding": "gzip"
+    },
+    "BP20_98_handoff": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-bp-audit98/final-handoff.json",
+        "bytes": 2156,
+        "sha256": "587250b8a88acf212c92f7cd851295c87122eb8dd7824b708fdf61bd3b97f931"
+      },
+      "archive": {
+        "relative_path": "bp-audit98/final-handoff.json.gz",
+        "bytes": 970,
+        "sha256": "73df643ffbc651bafea1abd65dc5426d4c68bfe7e2b7b078c421d90035452851"
+      },
+      "encoding": "gzip"
+    },
+    "source_quality100_final": {
+      "original": {
+        "path": "/private/tmp/qcae-framework-quality-review100/review.json",
+        "bytes": 43921,
+        "sha256": "a7e1d0a46336a5103bc74076f462f4dcc6e0e67c0bf2172f1d8f3570c733053c"
+      },
+      "archive": {
+        "relative_path": "quality100/final-source-review.json.gz",
+        "bytes": 10878,
+        "sha256": "f0021fa9118cf2b93cfdc02ef9dcf7249180d60601c531c6f5f10b36c6c7ec87"
+      },
+      "encoding": "gzip"
+    }
+  },
+  "bounded_BP_mechanism_map": {
+    "canonical_named_requirements": 20,
+    "current_source_bounded_mechanism_records": 20,
+    "literal_status": "CURRENT_SOURCE_BOUNDED_MECHANISM_EVIDENCE",
+    "full_registry_acceptance": false,
+    "full_SK_or_P0_claim": false,
+    "scope": "Original BP01–20 requirement map with literal case-specific proof limits; no registry promotion or inference that20 bounded mechanisms prove all SK.",
+    "evidence": [
+      "BP20_98_compact",
+      "BP13_98_actual99_audit",
+      "BP20_98_handoff"
+    ]
+  }
+}

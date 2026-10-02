@@ -27,6 +27,8 @@
 
 ## 当前实现
 
+[核心框架统一验证](engineering/core-framework-validation-2026-10-02.md)：2026-10-02—03 同源码完整回归、公共接口、故障恢复、三入口一致性及独立 GUI 交互证据；区分核心机制已验证范围与真实环境、性能及完整产品验收的剩余工作。
+
 [NEXT-01—03 入口一致性](engineering/next-validation.md)：C2 后统一查询、操作契约和生产装配的实现、测试与边界。
 
 [C2 交接](implementation/c2-handoff.md)：该阶段的记录核心、后台线网格、CLI/薄客户端与保存/恢复链路及运行方式。

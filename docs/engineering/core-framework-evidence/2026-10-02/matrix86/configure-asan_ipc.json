@@ -1,0 +1,54 @@
+{
+  "argv": [
+    "/opt/homebrew/Cellar/cmake/4.3.0/bin/cmake",
+    "-S",
+    "/private/tmp/qcae-framework-preference-fix85",
+    "-B",
+    "/private/tmp/qcae-framework86-builds/asan_ipc",
+    "-G",
+    "Ninja",
+    "-DQCAE_BUILD_IPC=ON",
+    "-DQCAE_BUILD_STORAGE=ON",
+    "-DQCAE_BUILD_DESKTOP=OFF",
+    "-DQCAE_ENABLE_SANITIZERS=ON",
+    "-DQCAE_ENABLE_NASTRAN_PACKAGE=ON",
+    "-DCMAKE_BUILD_TYPE=Debug",
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+    "-DPython3_EXECUTABLE=/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "-DCMAKE_CXX_COMPILER=/Library/Developer/CommandLineTools/usr/bin/c++",
+    "-DQCAE_SOURCE_ROOT=/private/tmp/qcae-framework-preference-fix85",
+    "-DSQLite3_LIBRARY=/opt/homebrew/Cellar/sqlite/3.53.4/lib/libsqlite3.3.53.4.dylib",
+    "-DSQLite3_INCLUDE_DIR=/opt/homebrew/Cellar/sqlite/3.53.4/include",
+    "-DQt6_DIR=/opt/homebrew/Cellar/qtbase/6.11.1/lib/cmake/Qt6",
+    "--trace-expand",
+    "--trace-format=json-v1",
+    "--trace-redirect=/private/tmp/qcae-framework86-builds/asan_ipc/.cmake/api/v1/architecture-trace.jsonl"
+  ],
+  "cwd": "/private/tmp/qcae-framework-preference-fix85",
+  "explicit_environment": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "QCAE_SOURCE_TREE_SHA256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03"
+  },
+  "pid": 95866,
+  "started_unix": 1790955416.2221172,
+  "finished_unix": 1790955417.18014,
+  "elapsed_seconds": 0.9580228328704834,
+  "actual_exit_code": 0,
+  "stdout": {
+    "path": "/private/tmp/qcae-framework-runtime86/configure-asan_ipc.stdout.log",
+    "bytes": 1252,
+    "sha256": "600a09b259f7582ff88e77d4f1e20cfea9dbe5c515a4abd0d740dccb43ebd26c"
+  },
+  "stderr": {
+    "path": "/private/tmp/qcae-framework-runtime86/configure-asan_ipc.stderr.log",
+    "bytes": 350166,
+    "sha256": "92a9c5e4b607154057f538edfacc4ae8e55b358359121f0489da83e70b35b729"
+  },
+  "source_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+  "source410_sha256": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+  "runner": {
+    "path": "/private/tmp/qcae-framework-runtime86/run.py",
+    "bytes": 13867,
+    "sha256": "fc3c97e418f5fb779081e2efaad694bed04a1d5013c2fdc3a44fb29c7cc89d36"
+  }
+}
