@@ -1,0 +1,191 @@
+{
+  "kind": "independent bounded final document review; no product execution",
+  "started_unix": 1790965604.201026,
+  "finished_unix": 1790965687.81904,
+  "reviewed_delivery_root": "/private/tmp/qcae-framework-delivery80",
+  "inputs": [
+    {
+      "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/core-acceptance-follow-up-2026-10-03.md",
+      "bytes": 8503,
+      "sha256": "9de5bf530cd3d43ab218835b27d41aa4cd35974909a62d8a3c131701ad0ee156"
+    },
+    {
+      "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/core-acceptance-evidence/2026-10-03/validation.json",
+      "bytes": 28677,
+      "sha256": "18602af45d7affc6b6abce9066f9d5dd2582103bd634aa0dab854757a1250712"
+    },
+    {
+      "path": "/private/tmp/qcae-framework-delivery80/docs/engineering/core-acceptance-evidence/2026-10-03/archive-index.json",
+      "bytes": 310421,
+      "sha256": "a8984dbe188ce4449a9b832cdff57f4c47300f2c011bd99991b3903fb5910c13"
+    },
+    {
+      "path": "/private/tmp/qcae-framework-delivery80/docs/baseline/README.md",
+      "bytes": 6742,
+      "sha256": "7433e6b9a4b9b8cd2e571d346cc032e2157ac39aa29709c76adc61c1c579b3a5"
+    },
+    {
+      "path": "/private/tmp/qcae-framework-delivery80/tests/schema_rejection_sqlite_tests.cpp",
+      "bytes": 25525,
+      "sha256": "a489b7ed6b49d674e55b5b71338153b8c3bb3eb0239174192509b2201e0eba36"
+    },
+    {
+      "path": "/private/tmp/qcae-framework-delivery80/CMakeLists.txt",
+      "bytes": 35081,
+      "sha256": "acdb9c31a4986127144b47289bc4b060b51a53c5dac950e22355e9b98e245c74"
+    }
+  ],
+  "inputs_stable_during_review": true,
+  "checks": {
+    "all_archive_byte_and_decoded_hashes": {
+      "records": 598,
+      "decoded_bytes": 61345220,
+      "failures": [],
+      "passed": true
+    },
+    "validation_portable_refs": {
+      "count": 13,
+      "failures": [],
+      "passed": true
+    },
+    "local_links": [
+      {
+        "document": "docs/engineering/core-acceptance-follow-up-2026-10-03.md",
+        "count": 17,
+        "missing": []
+      },
+      {
+        "document": "docs/baseline/README.md",
+        "count": 18,
+        "missing": []
+      }
+    ],
+    "report_archive_count": true,
+    "candidate_source": {
+      "candidate_files": 411,
+      "candidate_digest_actual": "4c80afc459f3e9b6eed3aba195497d8b98e2215866f08224343fbed1f63dae52",
+      "candidate_digest_recorded": "4c80afc459f3e9b6eed3aba195497d8b98e2215866f08224343fbed1f63dae52",
+      "mismatches": [],
+      "old410_changed_actual": [
+        "CMakeLists.txt"
+      ],
+      "old409_identical": 409,
+      "new_test_actual_sha256": "a489b7ed6b49d674e55b5b71338153b8c3bb3eb0239174192509b2201e0eba36",
+      "CMake_diff_numstat": "4\t0\tCMakeLists.txt",
+      "passed": true
+    },
+    "configs": {
+      "core": {
+        "actual_exit_code": 0,
+        "executed_count": 40,
+        "configured_count": 40,
+        "executed_names_match_manifest": true,
+        "strict_cpp20": true,
+        "compiler_warnings": [],
+        "source_candidate_sha256": "60593a19c00015c8666fa084a619d217c44e563807157a054db710e3ae10f830",
+        "scope": "normal"
+      },
+      "local": {
+        "actual_exit_code": 0,
+        "executed_count": 54,
+        "configured_count": 54,
+        "executed_names_match_manifest": true,
+        "strict_cpp20": true,
+        "compiler_warnings": [],
+        "source_candidate_sha256": "60593a19c00015c8666fa084a619d217c44e563807157a054db710e3ae10f830",
+        "scope": "normal"
+      },
+      "sqlite": {
+        "actual_exit_code": 0,
+        "executed_count": 48,
+        "configured_count": 48,
+        "executed_names_match_manifest": true,
+        "strict_cpp20": true,
+        "compiler_warnings": [],
+        "source_candidate_sha256": "60593a19c00015c8666fa084a619d217c44e563807157a054db710e3ae10f830",
+        "scope": "normal"
+      },
+      "sanitized-schema": {
+        "actual_exit_code": 0,
+        "executed_count": 1,
+        "configured_count": 48,
+        "executed_names_match_manifest": true,
+        "strict_cpp20": true,
+        "compiler_warnings": [],
+        "source_candidate_sha256": "60593a19c00015c8666fa084a619d217c44e563807157a054db710e3ae10f830",
+        "scope": "ASan+UBSan new schema test; LSan not measured"
+      }
+    },
+    "targeted_sanitizer_scope": {
+      "configured": 48,
+      "actual_selected": 1,
+      "full_sanitizer_suite_claimed": false,
+      "LSan_measured": false,
+      "compile_flags_present": true
+    },
+    "111_failure_and_header_only_successor": {
+      "retained_actual_exit": 1,
+      "inverse_unistd_hash_matches_old111": true,
+      "final_quality_blocking": [],
+      "final_quality_hash": "a489b7ed6b49d674e55b5b71338153b8c3bb3eb0239174192509b2201e0eba36"
+    },
+    "protected_AST": {
+      "actual_exit": 0,
+      "TUs": 17,
+      "persistent_entity_types": 16,
+      "direct_refs": 0,
+      "errors": [],
+      "unsaved_injection_rejected": true,
+      "source_file_modified": false,
+      "source_scope": "ef0df3b source410 and actual86 desktop compile database; not a new411 execution label"
+    },
+    "native_lifecycle30": {
+      "actual_wrapper_exit": 0,
+      "source_commit": "ef0df3bdd8c1b27330d71a596f16098cb6b6410a",
+      "source_digest": "15d20f20fef88ed6d1b8637b97edf77143887728cb9c42427620b25429e65c03",
+      "samples": 30,
+      "passed_samples": 30,
+      "ordered_steps": 300,
+      "picks": 60,
+      "leaves": 60,
+      "Undo": 30,
+      "initial_revision": "13",
+      "final_revision": "73",
+      "GUI_pid": 43032,
+      "GUI_exit": 0,
+      "engine_pid": 42912,
+      "engine_exit": -15,
+      "engine_reaped": true,
+      "engine_forced_kill": false,
+      "observer_writes": 0,
+      "post_leave_extra_writes": 0,
+      "compile_count": 75,
+      "warnings": [],
+      "leave_scope": "release by actual empty selection; dock-close/Escape unmeasured",
+      "observer_reads_actual_count": 15160,
+      "observer_reads_schema": "Original actual raw field is a list of requests; count is derived from len, not a target substitution."
+    },
+    "scope_text": {
+      "old378_not_relabelled": true,
+      "no_unknown_targets_filled": true,
+      "record_project_v1_historical_producer_assumption_corrected": true,
+      "full_acceptance_unclaimed": true,
+      "R0_original6_retained": true,
+      "separate_migration_physical_subset_scope": true,
+      "remaining_not_passed": [
+        "record-project v1 declared reader compatibility has no historical producer fixture",
+        "full historical/current M graph migration join",
+        "all design AP L2 and OFF category direct ownership scope",
+        "EXT04 functional evidence reconciliation; EXT05 measured performance budgets",
+        "real solver engineering and complete external AI scenarios",
+        "full SK/C3/C4/P0 acceptance"
+      ]
+    }
+  },
+  "blocking": [],
+  "review_result": "no_blocking_findings",
+  "review_scope": "Portable docs/evidence/source/count consistency only; does not promote full SK/C3/C4/P0, allAP L2, historical record-v1 producer, performance, solver or external AI.",
+  "commands_executed": "Read/hash/decompress/parse Git diff and receipts only; no compiler, CMake, CTest, product, guard, GUI or native execution.",
+  "candidate_or_old_evidence_mutations": 0,
+  "own_draft_derivation_correction": "Initial review draft compared the actual observer_reads list to an integer. Corrected by counting its actual15160 rows; no source/report/archive/raw change and no product failure. Initial draft bytes were overwritten before the later preservation request; private first-draft.json records the original actual bytes/hash and this loss, not a recovered original. No product/raw failure."
+}
