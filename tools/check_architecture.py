@@ -114,8 +114,20 @@ def domain_or_storage(row: dict) -> bool:
                                    "adapters/storage", "adapters/engine_api", "profiles/"))
 
 
+def framework_include(path: Path, root: Path, build: Path) -> bool:
+    # Workspace ancestors are not dependency names. Keep checking the remaining
+    # path, including SDK directories inside generated roots; resolve symlinks
+    # before deciding whether an include actually belongs to either workspace.
+    path = path.resolve()
+    for workspace in sorted((build, root), key=lambda directory: len(directory.parts), reverse=True):
+        if path.is_relative_to(workspace):
+            return bool(FRAMEWORK.search(path.relative_to(workspace).as_posix()))
+    return bool(FRAMEWORK.search(path.as_posix()))
+
+
 def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> list[str]:
     root = root.resolve()
+    build = Path(evidence["build"]).resolve()
     errors: list[str] = []
     def reject(code: str, message: str):
         errors.append(f"{code}: {message}")
@@ -216,7 +228,6 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
                 reject("include-root", f"unresolved public include expression on {name}: {path}")
                 continue
             absolute = Path(path).resolve()
-            build = Path(evidence["build"]).resolve()
             generated = set()
             for directory in row.get("generated_public_include_dirs", []):
                 candidate = (build / directory).resolve()
@@ -226,13 +237,13 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
                     generated.add(candidate)
             if absolute in generated:
                 continue
-            if absolute.is_relative_to(build):
-                reject("private-include", f"{name} exports undeclared generated include root {absolute}")
-            elif absolute.is_relative_to(root):
+            if absolute.is_relative_to(root):
                 relative = str(absolute.relative_to(root))
                 if relative not in row["public_include_dirs"]:
                     reject("private-include", f"{name} exports undeclared include root {relative}")
-            if core(row) and FRAMEWORK.search(path):
+            elif absolute.is_relative_to(build):
+                reject("private-include", f"{name} exports undeclared generated include root {absolute}")
+            if core(row) and framework_include(absolute, root, build):
                 reject("core-framework", f"{name} exports framework include directory {path}")
 
     graph = {name: {d for d in direct[name] if d in active} for name in active}
@@ -337,7 +348,7 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
             for group in actual.get("compileGroups", []):
                 for item in group.get("includes", []):
                     path = Path(item["path"]).resolve()
-                    if core(active[name]) and FRAMEWORK.search(str(path)):
+                    if core(active[name]) and framework_include(path, root, build):
                         reject("core-framework", f"{name} compiles with framework include {path}")
                     for other, row in targets.items():
                         if other == name:

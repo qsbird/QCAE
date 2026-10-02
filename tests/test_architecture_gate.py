@@ -178,6 +178,47 @@ class ArchitectureMutations(unittest.TestCase):
         self.assertTrue(any(e.startswith("include-root:") for e in errors), errors)
         self.assertTrue(any(e.startswith("private-include:") for e in errors), errors)
 
+    def test_workspace_names_do_not_create_framework_dependencies(self):
+        parent = Path(self.temporary.name) / "sqlite-workspace" / "Qt6"
+        parent.mkdir(parents=True)
+        moved = parent / "source"
+        self.root.rename(moved)
+        self.root = moved
+        self.build = parent / "sqlite_headless"
+        self.row("qcae_document")["generated_public_include_dirs"] = ["generated"]
+        self.extra_cmake = 'target_include_directories(qcae_document PUBLIC "${CMAKE_BINARY_DIR}/generated")\n'
+        self.write_configuration()
+        self.assertEqual(self.run_gate(), [])
+        self.inject_domain_header("sqlite3.h")
+
+    def test_framework_include_below_generated_root_is_rejected(self):
+        directory = self.build / "generated" / "sqlite-sdk" / "include"
+        directory.mkdir(parents=True)
+        self.extra_cmake = f'target_include_directories(qcae_document PRIVATE "{directory}")\n'
+        self.write_configuration()
+        self.assertTrue(any(e.startswith("core-framework:") for e in self.run_gate()))
+
+    def test_source_nested_in_build_uses_its_own_include_paths(self):
+        self.build = Path(self.temporary.name) / "nested-build"
+        self.build.mkdir()
+        parent = self.build / "Qt6"
+        parent.mkdir()
+        moved = parent / "source"
+        self.root.rename(moved)
+        self.root = moved
+        self.write_configuration()
+        self.assertEqual(self.run_gate(), [])
+
+    def test_external_framework_include_through_symlink_is_rejected(self):
+        external = Path(self.temporary.name) / "SQLite3" / "include"
+        external.mkdir(parents=True)
+        link = self.build / "generated" / "sdk"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(external, target_is_directory=True)
+        self.extra_cmake = f'target_include_directories(qcae_document PRIVATE "{link}")\n'
+        self.write_configuration()
+        self.assertTrue(any(e.startswith("core-framework:") for e in self.run_gate()))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
