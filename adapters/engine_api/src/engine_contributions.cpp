@@ -210,19 +210,67 @@ default_engine_contributions(const LocalSolverConfiguration& config) {
 bool nastran_package_enabled() noexcept {
     return QCAE_NASTRAN_PACKAGE_ENABLED != 0;
 }
+const IModelCodec* EngineAssembly::model_codec() const noexcept {
+    return profile_codec ? profile_codec->codec.get() : nullptr;
+}
+const ProfileDefinition* EngineAssembly::profile_definition() const noexcept {
+    return profile_codec && profile_codec->profile ? &profile_codec->profile->definition()
+                                                   : nullptr;
+}
 EngineAssembly assemble_engine(std::span<const EngineContribution> contributions) {
     auto registry = std::make_shared<RecordRegistry>();
     std::set<std::string> identities;
     std::vector<TypedHost::OperationContributor> contributors;
     std::vector<OwnedRowHandler> owned_rows;
     TypedHost::TaskPublisherFactory publisher_factory;
+    std::optional<EngineCodecBinding> profile_codec;
+    std::string profile_codec_owner;
+    std::optional<RenderContributions> render;
+    std::string render_owner;
     for (const auto& contribution : contributions) {
         if (contribution.id.empty() || !identities.insert(contribution.id).second ||
-            (!contribution.records && !contribution.operations))
+            (!contribution.records && !contribution.operations && !contribution.profile_codec &&
+             !contribution.render_factory))
             throw RecordError(
                 ErrorCode::invalid_input,
                 "Engine contribution identity must be unique and nonempty, with a registration",
                 "contribution");
+        if (contribution.profile_codec) {
+            const auto& binding = *contribution.profile_codec;
+            if (profile_codec)
+                throw RecordError(ErrorCode::invalid_input,
+                                  "Only one profile/codec binding may own the engine",
+                                  "contribution");
+            if (!binding.codec || !binding.profile || binding.codec.use_count() == 0 ||
+                binding.profile.use_count() == 0 || binding.codec.owner_before(binding.profile) ||
+                binding.profile.owner_before(binding.codec))
+                throw RecordError(ErrorCode::invalid_input,
+                                  "Profile and codec ports must share an owned lifetime",
+                                  "contribution");
+            const auto& definition = binding.profile->definition();
+            if (definition.reference.profile_id.empty() ||
+                definition.reference.profile_version.empty() ||
+                definition.reference.definition_digest.empty() ||
+                definition.solver_family.empty() || definition.analysis_kind.empty())
+                throw RecordError(ErrorCode::invalid_input,
+                                  "Profile/codec binding requires a complete definition",
+                                  "contribution");
+            profile_codec = binding;
+            profile_codec_owner = contribution.id;
+        }
+        if (contribution.render_factory) {
+            if (render)
+                throw RecordError(ErrorCode::invalid_input,
+                                  "Only one render factory may own the engine",
+                                  "contribution");
+            auto selected = contribution.render_factory();
+            if (!selected.frozen() || selected.entries().empty())
+                throw RecordError(ErrorCode::invalid_input,
+                                  "Engine render contributions must be frozen and nonempty",
+                                  "contribution");
+            render = std::move(selected);
+            render_owner = contribution.id;
+        }
         if (contribution.records)
             contribution.records(*registry);
         if (contribution.operations)
@@ -254,6 +302,10 @@ EngineAssembly assemble_engine(std::span<const EngineContribution> contributions
                 return Result<bool>{Status::success, true, {}};
             },
             std::move(owned_rows),
-            std::move(publisher_factory)};
+            std::move(publisher_factory),
+            std::move(profile_codec),
+            std::move(profile_codec_owner),
+            render ? std::move(*render) : default_render_contributions(),
+            std::move(render_owner)};
 }
 } // namespace qcae::ipc

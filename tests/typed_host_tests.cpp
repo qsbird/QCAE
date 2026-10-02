@@ -13,6 +13,7 @@
 #include <optional>
 #include <stdexcept>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -352,6 +353,489 @@ void project_open_contract_and_lifecycle() {
                     .value("data") == recovered.value("data") &&
             open_contract_state(recovered_app, *store, caller) == state,
         "explicit installed version replays recovery without another write");
+}
+QJsonObject create_request(QJsonObject parameters, const char* key) {
+    auto request = open_request(std::move(parameters), key);
+    request.insert("operation", "project.create");
+    request.insert("request_id", "create-contract");
+    return request;
+}
+void rejected_create_inputs_are_atomic(qcae::MemoryApplication& app,
+                                       OpenContractStore& store,
+                                       qcae::ipc::TypedHost& host,
+                                       const qcae::Caller& caller,
+                                       const char* key) {
+    const auto before = open_contract_state(app, store, caller);
+    auto reject = [&](QJsonObject request,
+                      const char* code,
+                      const char* field,
+                      const char* status = "failed") {
+        const auto wire = QJsonDocument::fromJson(QJsonDocument(request).toJson()).object();
+        const auto response =
+            qcae::ipc::dispatch(app, wire, caller, nullptr, nullptr, nullptr, &host);
+        const auto error = response.value("error").toObject();
+        require(response.value("status") == status && error.value("code") == code &&
+                    error.value("field") == field,
+                "project.create rejects its exact input/version contract");
+        require(
+            open_contract_state(app, store, caller) == before,
+            "rejected create preserves all rows, payloads, counters, RAM, history and recovery");
+    };
+    const QJsonObject valid{{"name", "Create contract"}};
+    for (const auto& version : {QJsonValue(0),
+                                QJsonValue(-1),
+                                QJsonValue(1.5),
+                                QJsonValue(4294967296.0),
+                                QJsonValue(true),
+                                QJsonValue("1"),
+                                QJsonValue(QJsonValue::Null)}) {
+        auto request = create_request(valid, key);
+        request.insert("requested_version", version);
+        reject(request, "INVALID_INPUT", "requested_version");
+    }
+    for (const auto& version : {QJsonValue(2), QJsonValue(4294967295.0)}) {
+        auto request = create_request(valid, key);
+        request.insert("requested_version", version);
+        reject(request, "SCHEMA_UNSUPPORTED", "requested_version");
+    }
+    for (const auto& [input, field] : std::vector<std::pair<QJsonObject, const char*>>{
+             {{}, "input.name"},
+             {{{"name", ""}}, "input.name"},
+             {{{"name", 1}}, "input.name"},
+             {{{"name", "Create contract"}, {"extra", "unknown"}}, "input.extra"}})
+        reject(create_request(input, key), "INVALID_INPUT", field);
+    reject(
+        create_request({{"name", QString(1025, QLatin1Char('n'))}}, key), "RESOURCE_LIMIT", "name");
+    // The existing application quota is UTF-8 bytes, not QString characters.
+    reject(create_request({{"name", QString(512, QChar{u'\u03a9'}) + QLatin1Char('a')}}, key),
+           "RESOURCE_LIMIT",
+           "name");
+    reject(create_request({{"name", " \t"}}, key), "MISSING_INPUT", "", "needs_input");
+    auto profile = create_request(valid, key);
+    profile.insert("expected_profile", QJsonObject{});
+    require(qcae::ipc::dispatch(app, profile, caller).value("error").toObject().value("code") ==
+                    "INVALID_INPUT" &&
+                open_contract_state(app, store, caller) == before,
+            "project.create retains its expected_profile rejection");
+}
+void project_create_contract_and_replay() {
+    using namespace qcae;
+    using namespace operations;
+    auto store = std::make_shared<OpenContractStore>();
+    const Caller caller{"create-contract-test"};
+    QJsonObject created;
+    {
+        MemoryApplication app({}, store);
+        ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+        const auto catalog = ipc::dispatch(app,
+                                           {{"api_version", "1.1"},
+                                            {"request_id", "create-catalog"},
+                                            {"operation", "capabilities.list"},
+                                            {"parameters", QJsonObject{}}},
+                                           caller,
+                                           nullptr,
+                                           nullptr,
+                                           nullptr,
+                                           &host);
+        QJsonObject descriptor;
+        unsigned count{};
+        for (const auto& entry : catalog.value("data").toObject().value("operations").toArray())
+            if (entry.toObject().value("name") == "project.create") {
+                descriptor = entry.toObject();
+                ++count;
+            }
+        const auto definition = InputTraits<ProjectCreateInput>::definition();
+        require(count == 1 && descriptor.value("available") == true &&
+                    descriptor.value("version").toInt() == static_cast<int>(definition.version) &&
+                    descriptor.value("schema_id") == QString::fromStdString(definition.schema_id) &&
+                    descriptor.value("wire_input_type") == "ProjectCreateInput" &&
+                    descriptor.value("wire_output_type") == "DocumentInfo" &&
+                    descriptor.value("requested_version_field") == "requested_version" &&
+                    descriptor.value("omitted_version_policy") == "installed_version",
+                "create discovery identifies the installed generated input adapter");
+        const auto fields = descriptor.value("fields").toArray();
+        require(fields.size() == 1 && definition.fields.size() == 1,
+                "create has one generated input field");
+        const auto& name = definition.fields.front();
+        require(fields[0].toObject().value("name") == QString::fromStdString(name.name) &&
+                    fields[0].toObject().value("wire_type") ==
+                        QString::fromStdString(name.wire_type) &&
+                    fields[0].toObject().value("required").toBool() == name.required,
+                "create discovery uses the generated name field");
+        const auto schema = descriptor.value("parameters_schema").toObject();
+        require(schema.value("additionalProperties") == false &&
+                    schema.value("required").toArray() == QJsonArray{"name"} &&
+                    schema.value("properties").toObject() ==
+                        QJsonObject{{"name", QJsonObject{{"type", "string"}, {"minLength", 1}}}},
+                "create input discovery is strict and requires a nonempty name");
+        rejected_create_inputs_are_atomic(app, *store, host, caller, "create");
+        const QString boundary_name(1024, QLatin1Char('n'));
+        auto request = create_request({{"name", boundary_name}}, "create");
+        created = ipc::dispatch(app, request, caller, nullptr, nullptr, nullptr, &host);
+        auto info = runtime_test::good(app.current_document());
+        require(created.value("status") == "success" &&
+                    created.value("data").toObject() == ipc::info_json(info) &&
+                    info.name.size() == 1024 && info.name == boundary_name.toStdString() &&
+                    info.revision == 0 &&
+                    runtime_test::good(app.history(info.document)).items.empty(),
+                "omitted version creates the exact 1024-byte name without prior rejected key use");
+        rejected_create_inputs_are_atomic(app, *store, host, caller, "active-create-rejections");
+        const auto change = runtime_test::good(
+            app.preview(caller, runtime_test::at(info), CreateMaterial{"Steel", {210, "GPa"}}));
+        runtime_test::good(app.commit(caller, runtime_test::at(info), change.id, "steel"));
+        const auto after_edit = open_contract_state(app, *store, caller);
+        request.insert("requested_version", 1);
+        require(
+            ipc::dispatch(app, request, caller, nullptr, nullptr, nullptr, &host).value("data") ==
+                    created.value("data") &&
+                open_contract_state(app, *store, caller) == after_edit,
+            "explicit installed version replays the original create after edits without writes");
+        auto conflict = create_request({{"name", "Another name"}}, "create");
+        conflict.insert("requested_version", 1);
+        require(ipc::dispatch(app, conflict, caller, nullptr, nullptr, nullptr, &host)
+                            .value("error")
+                            .toObject()
+                            .value("code") == "IDEMPOTENCY_KEY_CONFLICT" &&
+                    open_contract_state(app, *store, caller) == after_edit,
+                "same create key with a different name cannot replace original facts or model");
+        info = runtime_test::good(app.current_document());
+        runtime_test::good(
+            app.close_document(caller, runtime_test::at(info), ClosePolicy::keep_recovery, "keep"));
+    }
+    MemoryApplication app({}, store);
+    ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+    require(app.recovery_available() && !app.current_document().ok(),
+            "retained create is not active");
+    rejected_create_inputs_are_atomic(app, *store, host, caller, "recovery-create-rejections");
+    const auto before = open_contract_state(app, *store, caller);
+    auto replay = create_request({{"name", QString(1024, QLatin1Char('n'))}}, "create");
+    require(ipc::dispatch(app, replay, caller, nullptr, nullptr, nullptr, &host).value("data") ==
+                    created.value("data") &&
+                open_contract_state(app, *store, caller) == before,
+            "omitted version replays retained create without activating or altering recovery");
+    const QJsonObject lookup{{"api_version", "1.1"},
+                             {"request_id", "create-lookup"},
+                             {"operation", "operations.get"},
+                             {"parameters",
+                              QJsonObject{{"lookup_scope", "host"},
+                                          {"original_operation", "project.create"},
+                                          {"idempotency_key", "create"}}}};
+    const auto fact = ipc::dispatch(app, lookup, caller);
+    require(fact.value("status") == "success" && fact.value("data") == created.value("data") &&
+                open_contract_state(app, *store, caller) == before,
+            "existing host outcome lookup returns create facts without a document context");
+}
+QJsonObject write_lifecycle_request(const char* operation,
+                                    QJsonObject parameters,
+                                    const qcae::DocumentInfo& info,
+                                    const char* key) {
+    auto request = open_request(std::move(parameters), key);
+    request.insert("operation", operation);
+    request.insert("document_id", QString::fromStdString(info.document.id.value));
+    request.insert("document_epoch", QString::fromStdString(info.document.epoch.value));
+    request.insert("expected_revision", QString::number(info.revision));
+    return request;
+}
+void reject_write_lifecycle_request(qcae::MemoryApplication& app,
+                                    OpenContractStore& store,
+                                    qcae::ipc::TypedHost& host,
+                                    const qcae::Caller& caller,
+                                    const QJsonObject& request,
+                                    const char* code,
+                                    const char* field = "",
+                                    const char* status = "failed") {
+    const auto before = open_contract_state(app, store, caller);
+    const auto wire = QJsonDocument::fromJson(QJsonDocument(request).toJson()).object();
+    const auto response = qcae::ipc::dispatch(app, wire, caller, nullptr, nullptr, nullptr, &host);
+    const auto error = response.value("error").toObject();
+    require(response.value("status") == status && error.value("code") == code &&
+                error.value("field").toString() == field,
+            "save/close rejects the expected input/version/context");
+    require(open_contract_state(app, store, caller) == before,
+            "rejected save/close preserves rows, project payloads, RAM, history, recovery and "
+            "counters");
+}
+void rejected_write_lifecycle_inputs(qcae::MemoryApplication& app,
+                                     OpenContractStore& store,
+                                     qcae::ipc::TypedHost& host,
+                                     const qcae::Caller& caller,
+                                     const qcae::DocumentInfo& info) {
+    for (const auto* operation : {"project.save", "project.save_as", "project.close"}) {
+        const bool close = std::string_view(operation) == "project.close";
+        const QJsonObject valid = close ? QJsonObject{{"policy", "keep_recovery"}} : QJsonObject{};
+        auto reject = [&](const QJsonObject& request, const char* code, const char* field = "") {
+            reject_write_lifecycle_request(app, store, host, caller, request, code, field);
+        };
+        for (const auto& version : {QJsonValue(0),
+                                    QJsonValue(-1),
+                                    QJsonValue(1.5),
+                                    QJsonValue(4294967296.0),
+                                    QJsonValue(true),
+                                    QJsonValue("1"),
+                                    QJsonValue(QJsonValue::Null)}) {
+            auto request = write_lifecycle_request(operation, valid, info, "contract-key");
+            request.insert("requested_version", version);
+            reject(request, "INVALID_INPUT", "requested_version");
+        }
+        for (const auto& version : {QJsonValue(2), QJsonValue(4294967295.0)}) {
+            auto request = write_lifecycle_request(operation, valid, info, "contract-key");
+            request.insert("requested_version", version);
+            reject(request, "SCHEMA_UNSUPPORTED", "requested_version");
+        }
+        auto context_free = write_lifecycle_request(operation, valid, info, "contract-key");
+        context_free.insert("requested_version", 2);
+        for (const auto* field :
+             {"document_id", "document_epoch", "expected_revision", "idempotency_key"})
+            context_free.remove(field);
+        reject(context_free, "SCHEMA_UNSUPPORTED", "requested_version");
+        const char* name = close ? "policy" : "path";
+        for (const auto& value : {QJsonValue(true), QJsonValue(1), QJsonValue(QJsonValue::Null)})
+            reject(write_lifecycle_request(operation, {{name, value}}, info, "contract-key"),
+                   "INVALID_INPUT",
+                   close ? "input.policy" : "input.path");
+        auto extra = valid;
+        extra.insert("extra", "unknown");
+        reject(write_lifecycle_request(operation, extra, info, "contract-key"),
+               "INVALID_INPUT",
+               "input.extra");
+        auto profile = write_lifecycle_request(operation, valid, info, "contract-key");
+        profile.insert("expected_profile", QJsonObject{});
+        reject(profile, "INVALID_INPUT");
+        if (close) {
+            reject(write_lifecycle_request(operation, {}, info, "contract-key"),
+                   "INVALID_INPUT",
+                   "input.policy");
+            reject(write_lifecycle_request(operation, {{"policy", ""}}, info, "contract-key"),
+                   "INVALID_INPUT",
+                   "input.policy");
+            reject(write_lifecycle_request(operation, {{"policy", "wrong"}}, info, "contract-key"),
+                   "INVALID_INPUT",
+                   "input.policy");
+        }
+    }
+}
+void project_save_close_contract_and_replay() {
+    using namespace qcae;
+    using namespace operations;
+    auto store = std::make_shared<OpenContractStore>();
+    const Caller caller{"save-close-contract-test"};
+    QJsonObject saved_request, close_request, saved, copied, closed;
+    DocumentInfo closed_info;
+    {
+        MemoryApplication app({}, store);
+        ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+        auto dispatch = [&](const QJsonObject& request) {
+            return ipc::dispatch(app, request, caller, nullptr, nullptr, nullptr, &host);
+        };
+        auto info =
+            runtime_test::good(app.create_document(caller, "Save close contract", "create"));
+        const auto change = runtime_test::good(
+            app.preview(caller, runtime_test::at(info), CreateMaterial{"Steel", {210, "GPa"}}));
+        runtime_test::good(app.commit(caller, runtime_test::at(info), change.id, "steel"));
+        info = runtime_test::good(app.current_document());
+        const auto catalog = dispatch({{"api_version", "1.1"},
+                                       {"request_id", "lifecycle-catalog"},
+                                       {"operation", "capabilities.list"},
+                                       {"parameters", QJsonObject{}}});
+        for (const auto& [definition, type] :
+             std::vector<std::pair<OperationDefinition, const char*>>{
+                 {InputTraits<ProjectSaveInput>::definition(), "ProjectSaveInput"},
+                 {InputTraits<ProjectSaveAsInput>::definition(), "ProjectSaveAsInput"},
+                 {InputTraits<ProjectCloseInput>::definition(), "ProjectCloseInput"}}) {
+            QJsonObject descriptor;
+            unsigned count{};
+            for (const auto& entry : catalog.value("data").toObject().value("operations").toArray())
+                if (entry.toObject().value("name") ==
+                    QString::fromStdString(definition.operation_id)) {
+                    descriptor = entry.toObject();
+                    ++count;
+                }
+            require(count == 1 && descriptor.value("available") == true &&
+                        descriptor.value("version").toInt() == 1 &&
+                        descriptor.value("schema_id") ==
+                            QString::fromStdString(definition.schema_id) &&
+                        descriptor.value("wire_input_type") == type &&
+                        descriptor.value("wire_output_type") == "DocumentInfo" &&
+                        descriptor.value("requested_version_field") == "requested_version" &&
+                        descriptor.value("omitted_version_policy") == "installed_version" &&
+                        descriptor.value("requires_document") == true &&
+                        descriptor.value("requires_epoch") == true &&
+                        descriptor.value("requires_revision") == true &&
+                        descriptor.value("requires_idempotency_key") == true,
+                    "save/close discovery retains context and names its generated input/output");
+            const auto fields = descriptor.value("fields").toArray();
+            require(fields.size() == 1 && definition.fields.size() == 1,
+                    "save/close has one generated field");
+            const auto& field = definition.fields.front();
+            require(fields[0].toObject().value("name") == QString::fromStdString(field.name) &&
+                        fields[0].toObject().value("required").toBool() == field.required &&
+                        fields[0].toObject().value("allow_empty").toBool() == field.allow_empty,
+                    "save/close discovery reflects generated optional and empty flags");
+            const bool close = definition.operation_id == "project.close";
+            const auto schema = descriptor.value("parameters_schema").toObject();
+            require(
+                schema.value("additionalProperties") == false &&
+                    schema.value("required").toArray() ==
+                        (close ? QJsonArray{"policy"} : QJsonArray{}) &&
+                    schema.value("properties").toObject() ==
+                        (close
+                             ? QJsonObject{{"policy",
+                                            QJsonObject{
+                                                {"type", "string"},
+                                                {"minLength", 1},
+                                                {"enum", QJsonArray{"discard", "keep_recovery"}}}}}
+                             : QJsonObject{{"path", QJsonObject{{"type", "string"}}}}),
+                "save paths allow omission/empty; close advertises exactly its two policies");
+        }
+        rejected_write_lifecycle_inputs(app, *store, host, caller, info);
+        for (const auto* operation : {"project.save", "project.save_as"})
+            for (const auto& params : {QJsonObject{}, QJsonObject{{"path", ""}}})
+                reject_write_lifecycle_request(
+                    app,
+                    *store,
+                    host,
+                    caller,
+                    write_lifecycle_request(operation, params, info, "contract-key"),
+                    "MISSING_INPUT",
+                    "",
+                    "needs_input");
+        saved_request = write_lifecycle_request(
+            "project.save", {{"path", "/save-contract.qcae"}}, info, "contract-key");
+        saved_request.insert("requested_version", 1);
+        saved = dispatch(saved_request);
+        require(saved.value("status") == "success" &&
+                    store->projects.contains("/save-contract.qcae"),
+                "version 1 save succeeds after rejected requests without consuming its key");
+        info = runtime_test::good(app.current_document());
+        require(!info.dirty && info.saved_path == "/save-contract.qcae" &&
+                    runtime_test::good(app.history(info.document)).items.size() == 1,
+                "save retains the model history and marks the original content saved");
+        auto omitted = write_lifecycle_request("project.save", {}, info, "save-default");
+        const auto default_save = dispatch(omitted);
+        require(default_save.value("status") == "success", "omitted save path selects saved_path");
+        auto before = open_contract_state(app, *store, caller);
+        omitted.insert("parameters", QJsonObject{{"path", ""}});
+        omitted.insert("requested_version", 1);
+        require(
+            dispatch(omitted).value("data") == default_save.value("data") &&
+                open_contract_state(app, *store, caller) == before,
+            "explicit empty save path replays the same raw empty signature without publication");
+        omitted.insert("parameters", QJsonObject{{"path", "/save-contract.qcae"}});
+        reject_write_lifecycle_request(
+            app, *store, host, caller, omitted, "IDEMPOTENCY_KEY_CONFLICT", "", "conflict");
+        // A missing saved file lets save-as reuse the saved_path with its original empty-path
+        // rules.
+        store->projects.erase("/save-contract.qcae");
+        auto save_as = write_lifecycle_request("project.save_as", {}, info, "save-as-default");
+        copied = dispatch(save_as);
+        const auto copied_info = runtime_test::good(app.current_document());
+        require(copied.value("status") == "success" &&
+                    copied_info.document.id == info.document.id &&
+                    copied_info.document.epoch == info.document.epoch &&
+                    copied_info.saved_path == info.saved_path &&
+                    copied_info.project_id != info.project_id,
+                "omitted save-as path preserves the document and creates a new project snapshot");
+        before = open_contract_state(app, *store, caller);
+        save_as.insert("parameters", QJsonObject{{"path", ""}});
+        save_as.insert("requested_version", 1);
+        require(dispatch(save_as).value("data") == copied.value("data") &&
+                    open_contract_state(app, *store, caller) == before,
+                "empty save-as path replays omitted path without another publication");
+        save_as.insert("operation", "project.save");
+        reject_write_lifecycle_request(
+            app, *store, host, caller, save_as, "IDEMPOTENCY_KEY_CONFLICT", "", "conflict");
+        info = runtime_test::good(app.current_document());
+        close_request = write_lifecycle_request(
+            "project.close", {{"policy", "keep_recovery"}}, info, "contract-key");
+        auto stale = close_request;
+        stale.insert("document_epoch", "stale-epoch");
+        reject_write_lifecycle_request(app,
+                                       *store,
+                                       host,
+                                       caller,
+                                       stale,
+                                       "DOCUMENT_EPOCH_EXPIRED",
+                                       "document_epoch",
+                                       "conflict");
+        stale = close_request;
+        stale.insert("expected_revision", QString::number(info.revision - 1));
+        reject_write_lifecycle_request(
+            app, *store, host, caller, stale, "REVISION_CONFLICT", "expected_revision", "conflict");
+        close_request.insert("requested_version", 1);
+        closed = dispatch(close_request);
+        closed_info = info;
+        require(closed.value("status") == "success" && !app.current_document().ok() &&
+                    app.recovery_available(),
+                "valid close retains recovery after rejected key use");
+        before = open_contract_state(app, *store, caller);
+        close_request.remove("requested_version");
+        require(dispatch(close_request).value("data") == closed.value("data") &&
+                    open_contract_state(app, *store, caller) == before,
+                "omitted version replays keep_recovery close with no active document");
+        for (const auto& [field, value] : std::vector<std::pair<const char*, QJsonValue>>{
+                 {"parameters", QJsonObject{{"policy", "discard"}}},
+                 {"document_epoch", "stale-epoch"},
+                 {"expected_revision", QString::number(info.revision + 1)}}) {
+            auto conflict = close_request;
+            conflict.insert(field, value);
+            reject_write_lifecycle_request(
+                app, *store, host, caller, conflict, "IDEMPOTENCY_KEY_CONFLICT", "", "conflict");
+        }
+    }
+    MemoryApplication app({}, store);
+    ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+    require(app.recovery_available() && !app.current_document().ok(),
+            "restart retains closed recovery");
+    rejected_write_lifecycle_inputs(app, *store, host, caller, closed_info);
+    auto before = open_contract_state(app, *store, caller);
+    require(ipc::dispatch(app, saved_request, caller).value("data") == saved.value("data") &&
+                ipc::dispatch(app, close_request, caller).value("data") == closed.value("data") &&
+                open_contract_state(app, *store, caller) == before,
+            "original save/close facts replay after restart without activating recovery");
+    for (const auto& [operation, key, expected] :
+         std::vector<std::tuple<const char*, const char*, QJsonObject>>{
+             {"project.save", "contract-key", saved},
+             {"project.save_as", "save-as-default", copied},
+             {"project.close", "contract-key", closed}}) {
+        const QJsonObject lookup{{"api_version", "1.1"},
+                                 {"request_id", "host-lookup"},
+                                 {"operation", "operations.get"},
+                                 {"parameters",
+                                  QJsonObject{{"lookup_scope", "host"},
+                                              {"original_operation", operation},
+                                              {"idempotency_key", key}}}};
+        require(ipc::dispatch(app, lookup, caller).value("data") == expected.value("data") &&
+                    open_contract_state(app, *store, caller) == before,
+                "original host lookup returns save/close facts without an active document");
+    }
+    reject_write_lifecycle_request(
+        app,
+        *store,
+        host,
+        caller,
+        write_lifecycle_request("project.close", {{"policy", "discard"}}, closed_info, "discard"),
+        "DOCUMENT_NOT_FOUND",
+        "document_id");
+    const auto recovered =
+        ipc::dispatch(app, open_request({{"mode", "recover"}}, "recover"), caller);
+    require(recovered.value("status") == "success",
+            "recovery remains available after replay/rejection");
+    const auto info = runtime_test::good(app.current_document());
+    auto discard =
+        write_lifecycle_request("project.close", {{"policy", "discard"}}, info, "discard");
+    auto stale = discard;
+    stale.insert("document_epoch", QString::fromStdString(closed_info.document.epoch.value));
+    reject_write_lifecycle_request(
+        app, *store, host, caller, stale, "DOCUMENT_EPOCH_EXPIRED", "document_epoch", "conflict");
+    const auto discarded = ipc::dispatch(app, discard, caller);
+    require(discarded.value("status") == "success" && !app.current_document().ok() &&
+                !app.recovery_available(),
+            "discard clears the active document and recovery");
+    before = open_contract_state(app, *store, caller);
+    discard.insert("requested_version", 1);
+    require(ipc::dispatch(app, discard, caller).value("data") == discarded.value("data") &&
+                open_contract_state(app, *store, caller) == before,
+            "version 1 discard retry returns its original fact without recreating a document");
 }
 void diagnostic_reports_survive_transport() {
     using namespace qcae;
@@ -834,6 +1318,8 @@ int main() {
         version_and_profile_contract();
         diagnostic_reports_survive_transport();
         project_open_contract_and_lifecycle();
+        project_create_contract_and_replay();
+        project_save_close_contract_and_replay();
         std::cout << "PASS typed JSON transport, mesh idempotency and task fault recovery\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

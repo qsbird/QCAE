@@ -148,7 +148,8 @@ inline void observe_key(std::string_view key) noexcept {
                                                          std::span<const std::string_view> allowed,
                                                          std::span<const std::string_view> required,
                                                          std::string_view field);
-[[nodiscard]] Result<std::string> string_value(const Value& value, std::string_view field);
+[[nodiscard]] Result<std::string>
+string_value(const Value& value, std::string_view field, bool allow_empty = false);
 [[nodiscard]] Result<double> finite_number(const Value& value, std::string_view field);
 [[nodiscard]] Result<EntityId> entity_id(const Value& value, std::string_view field);
 [[nodiscard]] Result<std::vector<EntityId>>

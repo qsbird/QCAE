@@ -149,10 +149,12 @@ Result<bool> valid_definition(const OperationDefinition& definition) {
                                  "Input field identity/name/type is missing or duplicated.",
                                  "fields");
         }
-        if (field.allow_empty && field.wire_type != "entity_id_array")
-            return failure<bool>(ErrorCode::invalid_input,
-                                 "Empty collections are supported only for entity ID arrays.",
-                                 "fields");
+        if (field.allow_empty && field.wire_type != "string" &&
+            field.wire_type != "entity_id_array")
+            return failure<bool>(
+                ErrorCode::invalid_input,
+                "Empty values are supported only for strings and entity ID arrays.",
+                "fields");
         std::set<std::string> units;
         for (const auto& unit : field.units) {
             if (unit.empty() || !units.insert(unit).second) {
@@ -266,11 +268,13 @@ Result<const Value::Object*> object_fields(const Value& value,
     return success(object);
 }
 
-Result<std::string> string_value(const Value& value, std::string_view field) {
+Result<std::string> string_value(const Value& value, std::string_view field, bool allow_empty) {
     const auto* string = std::get_if<std::string>(&value.data);
-    if (!string || string->empty()) {
-        return failure<std::string>(
-            ErrorCode::invalid_input, "Expected a nonempty string.", std::string(field));
+    if (!string || (!allow_empty && string->empty())) {
+        return failure<std::string>(ErrorCode::invalid_input,
+                                    allow_empty ? "Expected a string."
+                                                : "Expected a nonempty string.",
+                                    std::string(field));
     }
     auto copy = *string;
     observe_input_copy(copy, copy);

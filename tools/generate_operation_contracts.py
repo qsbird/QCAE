@@ -87,8 +87,8 @@ def load_schemas(directory: Path) -> list[dict]:
                     raise ValueError(f'{file}: invalid field identifier')
                 if 'optional' in field and type(field['optional']) is not bool:
                     raise ValueError(f'{file}: optional field flag must be boolean')
-                if 'allow_empty' in field and (type(field['allow_empty']) is not bool or field['type'] != 'entity_id_array'):
-                    raise ValueError(f'{file}: allow_empty must be a boolean on an entity ID array')
+                if 'allow_empty' in field and (type(field['allow_empty']) is not bool or field['type'] not in {'string', 'entity_id_array'}):
+                    raise ValueError(f'{file}: allow_empty must be a boolean on a string or entity ID array')
                 if field['type'] not in TYPES:
                     raise ValueError(f'{file}: unknown input type')
                 units = field.get('units', [])
@@ -164,7 +164,7 @@ def render(operations: list[dict]) -> str:
                 arguments += f', {key}_units'
             decoder = {'string': 'string_value', 'vector3_mm': 'vector3'}.get(field['type'], field['type'])
             arguments += f', {literal("input." + key)}'
-            if field['type'] == 'entity_id_array' and field.get('allow_empty', False):
+            if field['type'] in {'string', 'entity_id_array'} and field.get('allow_empty', False):
                 arguments += ', true'
             lines.extend([f'{indent}const auto {decoded} = wire::{decoder}({arguments});',
                           f'{indent}if (!{decoded}.ok()) {{',

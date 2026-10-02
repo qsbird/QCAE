@@ -275,6 +275,13 @@ if(QCAE_BUILD_IPC)
     endif()
     if(QCAE_BUILD_STORAGE)
       if(QCAE_ENABLE_NASTRAN_PACKAGE)
+        add_executable(qcae_platform_engine tests/platform_engine_main.cpp)
+        target_link_libraries(qcae_platform_engine PRIVATE qcae_engine_host)
+        qcae_warnings(qcae_platform_engine)
+        add_test(NAME platform_only_engine_ipc COMMAND Python3::Interpreter
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/nastran_disabled_ipc_tests.py"
+          --engine $<TARGET_FILE:qcae_platform_engine>)
+        set_tests_properties(platform_only_engine_ipc PROPERTIES TIMEOUT 60)
         add_test(NAME analysis_check_ipc COMMAND Python3::Interpreter
           "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_check_ipc_tests.py"
           --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)

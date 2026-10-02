@@ -25,6 +25,7 @@ class NastranArtifactCoordinator {
     [[nodiscard]] static OwnedRowHandler row_handler();
     [[nodiscard]] static OwnedRowHandler reconcile_row_handler();
     [[nodiscard]] const NastranCodec& codec() const noexcept;
+    [[nodiscard]] EngineCodecBinding codec_binding() const;
 
   private:
     struct State;

@@ -27,6 +27,26 @@ def main():
                           f"Disabled package advertised {name}")
                 client = host.client
                 document = client.call("project.create", {"name": "Common services"}, key="create")
+                check("model.import" not in operations["changes.preview"]["supported_commands"],
+                      "Uninstalled codec was advertised as an import command")
+                before_codec_requests = client.current()
+                before_history = client.call("history.list", context=before_codec_requests)
+                rejected_import = client.call("changes.preview", {
+                    "command": "model.import", "root_resource": "unused.bdf",
+                    "resources": [{"path": "unused.bdf", "text": "GRID,1,,0.,0.,0.\n"}],
+                    "source_profile_ref": {"profile_id": "not-installed", "profile_version": "0",
+                                           "definition_digest": "unused"},
+                    "unit_system": "mm-N-MPa"}, before_codec_requests, expected="failed")
+                check(rejected_import["error"]["code"] == "UNSUPPORTED_CAPABILITY" and
+                      rejected_import["error"]["message"] == "No model codec registered",
+                      f"Import did not refuse the missing registered codec: {rejected_import}")
+                rejected_export = client.call("model.export_preview", context=before_codec_requests,
+                                              expected="failed")
+                check(rejected_export["error"]["code"] == "UNSUPPORTED_CAPABILITY",
+                      f"Uninstalled codec accepted export preview: {rejected_export}")
+                check(client.current() == before_codec_requests and
+                      client.call("history.list", context=before_codec_requests) == before_history,
+                      "Rejected codec operations changed the common document or history")
                 line = client.call("geometry.create_line", {"start_mm": [0, 0, 0], "end_mm": [1000, 0, 0]},
                                    document, "line")
                 current = client.current()

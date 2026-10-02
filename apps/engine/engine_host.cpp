@@ -2,8 +2,6 @@
 #include "qcae/event_stream.hpp"
 #include "qcae/render_service.hpp"
 #include "qcae/ipc_api.hpp"
-#include "qcae/nastran_codec.hpp"
-#include "qcae/nastran_contribution.hpp"
 #include "qcae/query.hpp"
 #include "qcae/typed_host.hpp"
 #ifdef QCAE_HAS_SQLITE
@@ -199,7 +197,6 @@ int run_engine(int argc,
         QTextStream(stderr) << server.errorString() << '\n';
         return 4;
     }
-    const qcae::NastranCodec codec;
     std::shared_ptr<qcae::IWorkspaceStore> store;
     std::unique_ptr<qcae::MemoryApplication> application;
     std::unique_ptr<qcae::ipc::TypedHost> typed;
@@ -223,6 +220,11 @@ int run_engine(int argc,
             contributions = defaults;
         }
         assembly = qcae::ipc::assemble_engine(contributions);
+        // Capture the selected ports by value: application/task callbacks can outlive assembly.
+        const auto supports_profile =
+            [binding = assembly.profile_codec](const qcae::ProfileRef& profile) {
+                return binding && profile == binding->profile->definition().reference;
+            };
         if (parser.isSet("workspace")) {
 #ifdef QCAE_HAS_SQLITE
             std::optional<qcae::LoadedRows> migration;
@@ -253,22 +255,11 @@ int run_engine(int argc,
         auto owned_rows = std::move(assembly.owned_rows);
         owned_rows.push_back(qcae::task_row_handler());
         application = std::make_unique<qcae::MemoryApplication>(
-            limits,
-            store,
-            [&](const qcae::ProfileRef& profile) {
-                return qcae::ipc::nastran_package_enabled() &&
-                       profile == codec.definition().reference;
-            },
-            std::move(owned_rows),
-            assembly.records);
-        typed = std::make_unique<qcae::ipc::TypedHost>(
-            application->record_application(),
-            [&](const qcae::ProfileRef& profile) {
-                return qcae::ipc::nastran_package_enabled() &&
-                       profile == codec.definition().reference;
-            },
-            std::move(assembly.operations),
-            std::move(assembly.publisher_factory));
+            limits, store, supports_profile, std::move(owned_rows), assembly.records);
+        typed = std::make_unique<qcae::ipc::TypedHost>(application->record_application(),
+                                                       supports_profile,
+                                                       std::move(assembly.operations),
+                                                       std::move(assembly.publisher_factory));
     } catch (const std::exception& error) {
         QTextStream(stderr) << "Workspace initialization failed: " << error.what() << '\n';
         return 5;
@@ -279,12 +270,8 @@ int run_engine(int argc,
     const qcae::Caller caller{"local-user"};
     const auto engine_id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     qcae::ipc::ResourceStore resources;
-    qcae::ipc::RenderService renders(core.record_application(),
-                                     selections,
-                                     resources,
-                                     qcae::ipc::nastran_package_enabled()
-                                         ? qcae::ipc::nastran_render_contributions()
-                                         : qcae::default_render_contributions());
+    qcae::ipc::RenderService renders(
+        core.record_application(), selections, resources, std::move(assembly.render));
     qcae::ipc::EventStream events(core.record_application(), engine_id);
     std::map<QString, std::weak_ptr<Connection>> connections;
     const auto publish_events = [&] {
@@ -439,16 +426,14 @@ int run_engine(int argc,
                         send(client, renders.dispatch(request, caller));
                     } else
                         send(client,
-                             qcae::ipc::dispatch(
-                                 core,
-                                 request,
-                                 caller,
-                                 qcae::ipc::nastran_package_enabled() ? &codec : nullptr,
-                                 qcae::ipc::nastran_package_enabled() ? &codec.definition()
-                                                                      : nullptr,
-                                 &selections,
-                                 typed.get(),
-                                 true));
+                             qcae::ipc::dispatch(core,
+                                                 request,
+                                                 caller,
+                                                 assembly.model_codec(),
+                                                 assembly.profile_definition(),
+                                                 &selections,
+                                                 typed.get(),
+                                                 true));
                     publish_events();
                 }
             };

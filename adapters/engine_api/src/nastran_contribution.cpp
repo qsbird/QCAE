@@ -221,6 +221,10 @@ NastranArtifactCoordinator::~NastranArtifactCoordinator() = default;
 const NastranCodec& NastranArtifactCoordinator::codec() const noexcept {
     return state_->codec;
 }
+EngineCodecBinding NastranArtifactCoordinator::codec_binding() const {
+    return {std::shared_ptr<const IModelCodec>(state_, &state_->codec),
+            std::shared_ptr<const IProfileProvider>(state_, &state_->codec)};
+}
 OwnedRowHandler NastranArtifactCoordinator::row_handler() {
     return {StoreSpace::artifact_record,
             std::string(owner),
@@ -702,7 +706,9 @@ nastran_engine_contribution(const std::shared_ptr<NastranArtifactCoordinator>& c
         },
         [coordinator](RecordApplication& app, std::function<bool(const ProfileRef&)> supported) {
             return coordinator->publisher(app, std::move(supported));
-        }};
+        },
+        coordinator->codec_binding(),
+        [] { return nastran_render_contributions(); }};
 }
 RenderContributions nastran_render_contributions() {
     RenderContributions result;

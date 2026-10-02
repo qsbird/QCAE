@@ -42,13 +42,15 @@ class Client:
         assert response["result"]["protocolVersion"] == "2025-11-25", response
         self.send({"jsonrpc": "2.0", "method": "notifications/initialized"})
 
-    def call(self, name, parameters=None, context=None, key=None, status="success"):
+    def call(self, name, parameters=None, context=None, key=None, status="success", version=None):
         arguments = {"parameters": parameters or {}}
         if context:
             arguments.update(document_id=context["document_id"], document_epoch=context["document_epoch"],
                              expected_revision=context["revision"])
         if key:
             arguments["idempotency_key"] = key
+        if version is not None:
+            arguments["requested_version"] = version
         response = self.request("tools/call", {"name": name, "arguments": arguments})
         assert "result" in response, response
         result = response["result"]
@@ -104,6 +106,15 @@ def run(args):
                 assert set(catalog) == {item["name"] for item in caps if item["available"] and item["name"] != "events.subscribe"}
                 assert "events.subscribe" not in catalog and "events.read" in catalog
                 assert "analysis.start" not in catalog
+                create_schema = catalog["project.create"]["inputSchema"]
+                create_descriptor = next(item for item in caps if item["name"] == "project.create")
+                assert create_schema["properties"]["parameters"] == create_descriptor["parameters_schema"] == {
+                    "type": "object", "properties": {"name": {"type": "string", "minLength": 1}},
+                    "required": ["name"], "additionalProperties": False}, create_schema
+                assert create_schema["properties"]["requested_version"] == {
+                    "type": "integer", "minimum": 1, "maximum": 4294967295}, create_schema
+                assert "requested_version" not in create_schema["required"], create_schema
+                assert "expected_profile" not in create_schema["properties"], create_schema
                 open_schema = catalog["project.open"]["inputSchema"]
                 open_parameters = open_schema["properties"]["parameters"]
                 open_descriptor = next(item for item in caps if item["name"] == "project.open")
@@ -118,6 +129,23 @@ def run(args):
                     "type": "integer", "minimum": 1, "maximum": 4294967295}, open_schema
                 assert "requested_version" not in open_schema["required"], open_schema
                 assert "expected_profile" not in open_schema["properties"], open_schema
+                for operation in ("project.save", "project.save_as", "project.close"):
+                    schema = catalog[operation]["inputSchema"]
+                    descriptor = next(item for item in caps if item["name"] == operation)
+                    parameters = schema["properties"]["parameters"]
+                    assert parameters == descriptor["parameters_schema"], (schema, descriptor)
+                    expected = {"type": "object", "additionalProperties": False}
+                    if operation == "project.close":
+                        expected.update(properties={"policy": {"type": "string", "minLength": 1,
+                            "enum": ["discard", "keep_recovery"]}}, required=["policy"])
+                    else:
+                        expected.update(properties={"path": {"type": "string"}}, required=[])
+                    assert parameters == expected, schema
+                    assert schema["properties"]["requested_version"] == {
+                        "type": "integer", "minimum": 1, "maximum": 4294967295}, schema
+                    assert "requested_version" not in schema["required"], schema
+                    assert "expected_profile" not in schema["properties"], schema
+                    assert {"document_id", "document_epoch", "expected_revision", "idempotency_key"} <= set(schema["required"]), schema
                 material_schema = catalog["material.create"]["inputSchema"]
                 assert material_schema["properties"]["parameters"]["properties"]["young_modulus"]["required"] == ["value", "unit"]
                 assert "expected_revision" in material_schema["required"]
@@ -141,7 +169,9 @@ def run(args):
                 assert second.request("tools/call", {"name": "analysis.start"})["error"]["code"] == -32602
                 assert second.request("unknown.method")["error"]["code"] == -32601
                 assert second.request("initialize", {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {}})["error"]["code"] == -32600
-                first.call("project.create", {"name": "MCP shared model"}, key="mcp-create")
+                created = first.call("project.create", {"name": "MCP shared model"}, key="mcp-create")
+                replayed = first.call("project.create", {"name": "MCP shared model"}, key="mcp-create", version=1)
+                assert replayed["data"] == created["data"], (replayed, created)
                 context = first.current()
                 assert context == second.current()
                 first.call("entity.query", {"entity_type": "Node"}, context, status="failed")
@@ -190,6 +220,23 @@ def run(args):
                     invalid = first.raw(json.dumps({"jsonrpc": "2.0", "id": invalid_id, "method": "ping"}).encode())
                     assert invalid["id"] is None and invalid["error"]["code"] == -32600, invalid
                 assert first.request("ping")["result"] == {}
+                if args.durable:
+                    save_context = first.current()
+                    first.call("project.save", {"path": str(root / "model.qcae")}, save_context,
+                               "mcp-save", version=1)
+                    save_context = first.current()
+                    saved = first.call("project.save", context=save_context, key="mcp-save-default")
+                    empty_replay = first.call("project.save", {"path": ""}, save_context,
+                                              "mcp-save-default", version=1)
+                    assert empty_replay["data"] == saved["data"], (empty_replay, saved)
+                    assert first.current() == save_context
+                    copied = first.call("project.save_as", {"path": str(root / "copy.qcae")},
+                                        save_context, "mcp-save-as", version=1)
+                    copied_replay = first.call("project.save_as", {"path": str(root / "copy.qcae")},
+                                               save_context, "mcp-save-as")
+                    assert copied_replay["data"] == copied["data"], (copied_replay, copied)
+                    assert first.current()["document_id"] == save_context["document_id"]
+
                 for client in clients:
                     client.close()
                 clients.clear()
@@ -201,6 +248,22 @@ def run(args):
                 cli = subprocess.run([args.cli, "--socket", str(endpoint), "--no-start"],
                                      input=json.dumps(cli_request), capture_output=True, text=True, timeout=15)
                 assert cli.returncode == 0 and json.loads(cli.stdout)["data"]["document_id"] == context["document_id"]
+                closer = Client(command, endpoint)
+                clients.append(closer)
+                closer.initialize()
+                close_context = closer.current()
+                closed = closer.call("project.close", {"policy": "discard"}, close_context,
+                                     "mcp-close", version=1)
+                replayed_close = closer.call("project.close", {"policy": "discard"}, close_context,
+                                             "mcp-close")
+                assert replayed_close["data"] == closed["data"], (replayed_close, closed)
+                fact = closer.call("operations.get", {"lookup_scope": "host",
+                    "original_operation": "project.close", "idempotency_key": "mcp-close"})
+                assert fact["data"] == closed["data"], (fact, closed)
+                closer.call("project.current", status="failed")
+                closer.close()
+                clients.remove(closer)
+
             finally:
                 for client in clients:
                     if client.process.poll() is None:

@@ -98,9 +98,11 @@ add_subdirectory(modules/operations)
         self.assertEqual(self.header.stat().st_mtime_ns, timestamp,
                          "unchanged schemas should not regenerate")
 
-    def test_allow_empty_requires_boolean_entity_array_schema(self):
+    def test_allow_empty_requires_boolean_string_or_entity_array_schema(self):
         probe = self.write_probe_schema()
-        for kind, allowed in (("entity_id_array", "true"), ("string", True)):
+        for kind, allowed in (("entity_id_array", "true"), ("string", "true"),
+                              ("entity_id", True), ("finite_number", True),
+                              ("positive_uint32", False)):
             with self.subTest(kind=kind, allowed=allowed):
                 schema = json.loads(probe.read_text())
                 schema["operations"][0]["fields"] = [{"field_id": 1, "name": "items",
@@ -110,8 +112,54 @@ add_subdirectory(modules/operations)
                                          "qcae_generated_operation_inputs"],
                                         capture_output=True, text=True, check=False)
                 self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
-                self.assertIn("allow_empty must be a boolean on an entity ID array",
+                self.assertIn("allow_empty must be a boolean on a string or entity ID array",
                               result.stdout + result.stderr)
+
+    def test_allow_empty_string_preserves_optional_presence_and_default_rejection(self):
+        probe = self.write_probe_schema()
+        schema = json.loads(probe.read_text())
+        schema["operations"][0]["fields"] = [
+            {"field_id": 1, "name": "title", "type": "string"},
+            {"field_id": 2, "name": "path", "type": "string", "optional": True, "allow_empty": True},
+            {"field_id": 3, "name": "ids", "type": "entity_id_array", "allow_empty": True},
+        ]
+        probe.write_text(json.dumps(schema))
+        self.generate()
+        (self.source / "empty_string.cpp").write_text('''\
+#include "qcae/operation_inputs.hpp"
+using namespace qcae;
+using namespace qcae::operations;
+int main() {
+    const Value omitted(Value::Object{{"title", Value("Save")}, {"ids", Value(Value::Array{})}});
+    const Value explicit_empty(Value::Object{{"title", Value("Save")}, {"path", Value("")},
+                                            {"ids", Value(Value::Array{})}});
+    const auto absent = InputTraits<TestEmptyInput>::from_value(omitted);
+    const auto empty = InputTraits<TestEmptyInput>::from_value(explicit_empty);
+    const auto bad_title = InputTraits<TestEmptyInput>::from_value(
+        Value(Value::Object{{"title", Value("")}, {"ids", Value(Value::Array{})}}));
+    const auto bad_path = InputTraits<TestEmptyInput>::from_value(
+        Value(Value::Object{{"title", Value("Save")}, {"path", Value(true)},
+                           {"ids", Value(Value::Array{})}}));
+    const auto fields = InputTraits<TestEmptyInput>::definition().fields;
+    return absent.ok() && !absent.value->path && empty.ok() && empty.value->path &&
+        empty.value->path->empty() && empty.value->ids.empty() && !bad_title.ok() &&
+        !bad_path.ok() && !fields[0].allow_empty && fields[1].allow_empty &&
+        fields[2].allow_empty && InputTraits<TestEmptyInput>::to_value(*absent.value) == omitted &&
+        InputTraits<TestEmptyInput>::to_value(*empty.value) == explicit_empty ? 0 : 1;
+}
+''', encoding="utf-8")
+        with (self.source / "CMakeLists.txt").open("a", encoding="utf-8") as file:
+            file.write('''\
+add_executable(empty_string empty_string.cpp)
+target_link_libraries(empty_string PRIVATE qcae_operations)
+qcae_warnings(empty_string)
+''')
+        self.run_command("cmake", "-S", str(self.source), "-B", str(self.build))
+        self.run_command("cmake", "--build", str(self.build), "--target", "empty_string")
+        executable = self.build / ("empty_string.exe" if shutil.which("cl") else "empty_string")
+        if not executable.is_file():
+            executable = self.build / "Debug" / "empty_string.exe"
+        self.run_command(str(executable))
 
     def test_parameterless_input_compiles_and_checks_object_shape(self):
         self.write_probe_schema()

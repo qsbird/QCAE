@@ -3,6 +3,26 @@
   "status": "implemented_host_lifecycle_adapter_contract",
   "operations": [
     {
+      "operation_id": "project.create",
+      "version": 1,
+      "schema_id": "qcae.operation.project.create.v1",
+      "type_name": "ProjectCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "operation_id": "project.open",
       "version": 1,
       "schema_id": "qcae.operation.project.open.v1",
@@ -25,6 +45,70 @@
           "name": "path",
           "type": "string",
           "optional": true
+        }
+      ]
+    },
+    {
+      "operation_id": "project.save",
+      "version": 1,
+      "schema_id": "qcae.operation.project.save.v1",
+      "type_name": "ProjectSaveInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "path",
+          "type": "string",
+          "optional": true,
+          "allow_empty": true
+        }
+      ]
+    },
+    {
+      "operation_id": "project.save_as",
+      "version": 1,
+      "schema_id": "qcae.operation.project.save_as.v1",
+      "type_name": "ProjectSaveAsInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "path",
+          "type": "string",
+          "optional": true,
+          "allow_empty": true
+        }
+      ]
+    },
+    {
+      "operation_id": "project.close",
+      "version": 1,
+      "schema_id": "qcae.operation.project.close.v1",
+      "type_name": "ProjectCloseInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "policy",
+          "type": "string"
         }
       ]
     }

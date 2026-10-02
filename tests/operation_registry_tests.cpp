@@ -540,6 +540,61 @@ void owned_value_copy_ledger() {
                 0) > 0,
         "Receipt source scope records transaction H and restores physical Value classification");
 }
+void empty_string_contract() {
+    bad(wire::string_value(Value(""), "path"),
+        ErrorCode::invalid_input,
+        "strings remain nonempty by default");
+    check(
+        good(wire::string_value(Value(""), "path", true), "explicit empty string accepted").empty(),
+        "allow_empty preserves the exact empty string");
+    for (const auto& value : {Value(true), Value(1), Value{}})
+        bad(wire::string_value(value, "path", true),
+            ErrorCode::invalid_input,
+            "allow_empty still rejects nonstrings");
+    const Value empty_path(Value::Object{{"path", Value("")}});
+    const auto omitted =
+        good(InputTraits<ProjectSaveInput>::from_value(Value{}), "omitted save path decoded");
+    const auto empty =
+        good(InputTraits<ProjectSaveInput>::from_value(empty_path), "empty save path decoded");
+    check(!omitted.path && empty.path && empty.path->empty() &&
+              InputTraits<ProjectSaveInput>::to_value(omitted) == Value{} &&
+              InputTraits<ProjectSaveInput>::to_value(empty) == empty_path,
+          "save DTO distinguishes omission and empty until the host supplies raw empty path");
+    const auto save_as_omitted =
+        good(InputTraits<ProjectSaveAsInput>::from_value(Value{}), "omitted save-as path decoded");
+    const auto save_as_empty =
+        good(InputTraits<ProjectSaveAsInput>::from_value(empty_path), "empty save-as path decoded");
+    check(!save_as_omitted.path && save_as_empty.path && save_as_empty.path->empty(),
+          "save-as retains the same optional empty path contract");
+    bad(InputTraits<ProjectSaveInput>::from_value(Value(Value::Object{{"path", Value(1)}})),
+        ErrorCode::invalid_input,
+        "save path rejects numbers");
+    bad(InputTraits<ProjectSaveInput>::from_value(Value(Value::Object{{"extra", Value("")}})),
+        ErrorCode::invalid_input,
+        "save DTO rejects unknown fields even when empty");
+    bad(InputTraits<ProjectOpenInput>::from_value(
+            Value(Value::Object{{"mode", Value("normal")}, {"path", Value("")}})),
+        ErrorCode::invalid_input,
+        "normal open still rejects an empty path");
+    OperationRegistry allowed;
+    good(allowed.declare_unavailable(InputTraits<ProjectSaveInput>::definition(), "test-only"),
+         "registry accepts generated optional empty strings");
+    auto definition = InputTraits<ProjectSaveInput>::definition();
+    definition.operation_id = "test.empty_array";
+    definition.schema_id = "qcae.operation.test.empty_array.v1";
+    definition.fields[0].wire_type = "entity_id_array";
+    good(allowed.declare_unavailable(definition, "test-only"),
+         "registry still accepts optional empty entity ID arrays");
+    OperationRegistry rejected;
+    for (const auto* kind :
+         {"entity_id", "positive_uint32", "finite_number", "quantity", "vector3_mm"}) {
+        definition.fields[0].wire_type = kind;
+        bad(rejected.declare_unavailable(definition, "test-only"),
+            ErrorCode::invalid_input,
+            "registry rejects allow_empty for all other wire types");
+    }
+    check(rejected.descriptors().empty(), "invalid empty metadata publishes no descriptor");
+}
 void parameterless_contract() {
     OperationRegistry registry;
     int calls{};
@@ -572,6 +627,7 @@ int main() {
         receipt_projection();
         owned_value_copy_ledger();
         parameterless_contract();
+        empty_string_contract();
         std::cout
             << "PASS: typed operation registry, availability and mechanical wire validation\n";
     } catch (const std::exception& error) {
