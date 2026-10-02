@@ -1,4 +1,5 @@
 #include "qcae/engine_contributions.hpp"
+#include "qcae/json_ledger.hpp"
 #include "qcae/analysis_features.hpp"
 #include "qcae/records.hpp"
 #include "qcae/geometry_features.hpp"
@@ -10,6 +11,7 @@
 #include "qcae/solver_contribution.hpp"
 #endif
 #include "typed_values.hpp"
+#include <algorithm>
 #include <iterator>
 #include <set>
 
@@ -167,6 +169,7 @@ std::vector<EngineContribution> default_contributions(const LocalSolverConfigura
          },
          TypedHost::default_operations(),
          [] { return std::vector<OwnedRowHandler>{features::analysis::check_row_handler()}; }}};
+    result.front().core_rule_ids = {"qcae.model.relations"};
     if (nastran_package_enabled()) {
         const auto nastran = std::make_shared<NastranArtifactCoordinator>();
         auto contribution = nastran_engine_contribution(nastran);
@@ -217,10 +220,80 @@ const ProfileDefinition* EngineAssembly::profile_definition() const noexcept {
     return profile_codec && profile_codec->profile ? &profile_codec->profile->definition()
                                                    : nullptr;
 }
+const std::vector<EngineContributionRegistration>& EngineContributionCatalog::entries() const {
+    if (!operations_registered_)
+        throw std::logic_error("Engine contribution operations have not finished registering");
+    return entries_;
+}
+QJsonArray EngineContributionCatalog::describe() const {
+    QJsonArray result;
+    for (const auto& entry : entries()) {
+        QJsonArray core, registered_operations, codecs, validation, ui, render;
+        for (const auto type : entry.record_types) {
+            const auto* descriptor = records_->find(type);
+            core.append(QJsonObject{{"kind", "record"},
+                                    {"record_type", static_cast<qint64>(type.value)},
+                                    {"name", transport::json_ledger::from_utf8(descriptor->name)},
+                                    {"version", static_cast<qint64>(descriptor->current_version)}});
+        }
+        for (const auto& rule : entry.core_rules)
+            core.append(
+                QJsonObject{{"kind", "rule"}, {"id", transport::json_ledger::from_utf8(rule.id)}});
+        for (const auto& operation : entry.operations) {
+            const auto& definition = operation.definition;
+            registered_operations.append(
+                QJsonObject{{"name", transport::json_ledger::from_utf8(definition.operation_id)},
+                            {"version", static_cast<qint64>(definition.version)},
+                            {"schema_id", transport::json_ledger::from_utf8(definition.schema_id)},
+                            {"available", operation.available}});
+        }
+        if (entry.profile_codec) {
+            const auto& profile = entry.profile_codec->profile->definition().reference;
+            codecs.append(QJsonObject{
+                {"profile_ref",
+                 QJsonObject{{"profile_id", transport::json_ledger::from_utf8(profile.profile_id)},
+                             {"profile_version",
+                              transport::json_ledger::from_utf8(profile.profile_version)},
+                             {"definition_digest",
+                              transport::json_ledger::from_utf8(profile.definition_digest)}}}});
+        }
+        for (const auto& validator : entry.validators)
+            validation.append(QJsonObject{{"id", transport::json_ledger::from_utf8(validator.id)},
+                                          {"version", static_cast<qint64>(validator.version)}});
+        for (const auto& operation_id : entry.ui_operations) {
+            const auto operation = std::find_if(
+                entry.operations.begin(), entry.operations.end(), [&](const auto& item) {
+                    return item.definition.operation_id == operation_id;
+                });
+            // Registration validated this reference against its actual available handler.
+            ui.append(QJsonObject{{"operation", transport::json_ledger::from_utf8(operation_id)},
+                                  {"version", static_cast<qint64>(operation->definition.version)}});
+        }
+        for (const auto& projection : entry.render)
+            render.append(
+                QJsonObject{{"record_type", static_cast<qint64>(projection.record_type.value)},
+                            {"topology", transport::json_ledger::from_utf8(projection.topology)}});
+        result.append(QJsonObject{{"contribution_id", transport::json_ledger::from_utf8(entry.id)},
+                                  {"core", core},
+                                  {"operations", registered_operations},
+                                  {"codecs", codecs},
+                                  {"validation", validation},
+                                  {"ui", ui},
+                                  {"render", render}});
+    }
+    return result;
+}
 EngineAssembly assemble_engine(std::span<const EngineContribution> contributions) {
     auto registry = std::make_shared<RecordRegistry>();
     std::set<std::string> identities;
-    std::vector<TypedHost::OperationContributor> contributors;
+    struct Registration {
+        std::size_t index;
+        TypedHost::OperationContributor operations;
+    };
+    auto catalog = std::make_shared<EngineContributionCatalog>();
+    catalog->records_ = registry;
+    std::vector<Registration> contributors;
+    std::set<std::string> rule_ids, validator_ids;
     std::vector<OwnedRowHandler> owned_rows;
     TypedHost::TaskPublisherFactory publisher_factory;
     std::optional<EngineCodecBinding> profile_codec;
@@ -230,11 +303,22 @@ EngineAssembly assemble_engine(std::span<const EngineContribution> contributions
     for (const auto& contribution : contributions) {
         if (contribution.id.empty() || !identities.insert(contribution.id).second ||
             (!contribution.records && !contribution.operations && !contribution.profile_codec &&
-             !contribution.render_factory))
+             !contribution.render_factory && contribution.validators.empty()))
             throw RecordError(
                 ErrorCode::invalid_input,
                 "Engine contribution identity must be unique and nonempty, with a registration",
                 "contribution");
+        EngineContributionRegistration registration;
+        registration.id = contribution.id;
+        registration.ui_operations = contribution.ui_operations;
+        for (const auto& validator : contribution.validators) {
+            if (validator.id.empty() || validator.version == 0 || !validator.validate_export ||
+                !validator_ids.insert(validator.id).second)
+                throw RecordError(ErrorCode::invalid_input,
+                                  "Engine validator identity, version and callable must be valid",
+                                  "contribution");
+            registration.validators.push_back(validator);
+        }
         if (contribution.profile_codec) {
             const auto& binding = *contribution.profile_codec;
             if (profile_codec)
@@ -257,6 +341,7 @@ EngineAssembly assemble_engine(std::span<const EngineContribution> contributions
                                   "contribution");
             profile_codec = binding;
             profile_codec_owner = contribution.id;
+            registration.profile_codec = binding;
         }
         if (contribution.render_factory) {
             if (render)
@@ -268,13 +353,42 @@ EngineAssembly assemble_engine(std::span<const EngineContribution> contributions
                 throw RecordError(ErrorCode::invalid_input,
                                   "Engine render contributions must be frozen and nonempty",
                                   "contribution");
+            for (const auto& [type, projection] : selected.entries()) {
+                (void)type;
+                registration.render.push_back(projection);
+            }
             render = std::move(selected);
             render_owner = contribution.id;
         }
+        const auto previous_types = registry->types();
+        const auto previous_rules = registry->rules().size();
         if (contribution.records)
             contribution.records(*registry);
+        for (const auto type : registry->types())
+            if (std::find(previous_types.begin(), previous_types.end(), type) ==
+                previous_types.end())
+                registration.record_types.push_back(type);
+        if (!contribution.core_rule_ids.empty()) {
+            if (contribution.core_rule_ids.size() != registry->rules().size() - previous_rules)
+                throw RecordError(ErrorCode::invalid_input,
+                                  "Named core rules must match the actual registered rules",
+                                  "contribution");
+            for (std::size_t index = 0; index < contribution.core_rule_ids.size(); ++index) {
+                const auto& id = contribution.core_rule_ids[index];
+                if (id.empty() || !rule_ids.insert(id).second)
+                    throw RecordError(ErrorCode::invalid_input,
+                                      "Core rule identities must be unique and nonempty",
+                                      "contribution");
+                registration.core_rules.push_back({id, previous_rules + index});
+            }
+        }
+        if (!contribution.operations && !contribution.ui_operations.empty())
+            throw RecordError(ErrorCode::invalid_input,
+                              "UI contributions must reference their own registered operations",
+                              "contribution");
         if (contribution.operations)
-            contributors.push_back(contribution.operations);
+            contributors.push_back({catalog->entries_.size(), contribution.operations});
+        catalog->entries_.push_back(std::move(registration));
         if (contribution.owned_rows) {
             auto rows = contribution.owned_rows();
             owned_rows.insert(owned_rows.end(),
@@ -291,14 +405,40 @@ EngineAssembly assemble_engine(std::span<const EngineContribution> contributions
     }
     registry->freeze();
     return {std::move(registry),
-            [contributors = std::move(contributors)](operations::OperationRegistry& target,
-                                                     RecordApplication& app,
-                                                     std::function<TaskService&()> tasks) {
+            [contributors = std::move(contributors), catalog](operations::OperationRegistry& target,
+                                                              RecordApplication& app,
+                                                              std::function<TaskService&()> tasks) {
+                catalog->operations_registered_ = false;
+                std::vector<std::vector<OperationDescriptor>> registered(catalog->entries_.size());
                 for (const auto& contribute : contributors) {
-                    auto result = contribute(target, app, tasks);
+                    std::set<std::string> previous;
+                    for (const auto& descriptor : target.descriptors())
+                        previous.insert(descriptor.definition.operation_id);
+                    auto result = contribute.operations(target, app, tasks);
                     if (!result.ok())
                         return result;
+                    auto& installed = registered[contribute.index];
+                    for (const auto& descriptor : target.descriptors())
+                        if (!previous.contains(descriptor.definition.operation_id))
+                            installed.push_back(descriptor);
+                    std::set<std::string> ui_ids;
+                    for (const auto& id : catalog->entries_[contribute.index].ui_operations) {
+                        const auto handler = std::find_if(
+                            installed.begin(), installed.end(), [&](const auto& descriptor) {
+                                return descriptor.definition.operation_id == id;
+                            });
+                        if (!ui_ids.insert(id).second || handler == installed.end() ||
+                            !handler->available ||
+                            handler->definition.effect != OperationEffect::read_only)
+                            throw RecordError(
+                                ErrorCode::invalid_input,
+                                "UI reference must name its own available read-only operation",
+                                "contribution");
+                    }
                 }
+                for (std::size_t index = 0; index < registered.size(); ++index)
+                    catalog->entries_[index].operations = std::move(registered[index]);
+                catalog->operations_registered_ = true;
                 return Result<bool>{Status::success, true, {}};
             },
             std::move(owned_rows),
@@ -306,6 +446,7 @@ EngineAssembly assemble_engine(std::span<const EngineContribution> contributions
             std::move(profile_codec),
             std::move(profile_codec_owner),
             render ? std::move(*render) : default_render_contributions(),
-            std::move(render_owner)};
+            std::move(render_owner),
+            std::move(catalog)};
 }
 } // namespace qcae::ipc

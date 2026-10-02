@@ -248,6 +248,10 @@ if(QCAE_BUILD_IPC)
     target_link_libraries(qcae_engine_assembly_tests PRIVATE qcae_engine_api)
     qcae_warnings(qcae_engine_assembly_tests)
     add_test(NAME engine_assembly COMMAND qcae_engine_assembly_tests)
+    add_executable(qcae_engine_validation_binding_tests tests/engine_validation_binding_tests.cpp)
+    target_link_libraries(qcae_engine_validation_binding_tests PRIVATE qcae_engine_api)
+    qcae_warnings(qcae_engine_validation_binding_tests)
+    add_test(NAME engine_validation_binding COMMAND qcae_engine_validation_binding_tests)
   endif()
   if(BUILD_TESTING AND UNIX)
     add_test(NAME ipc COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/tests/ipc_tests.py"
@@ -322,6 +326,11 @@ if(QCAE_BUILD_IPC)
           "${CMAKE_CURRENT_SOURCE_DIR}/tests/nastran_artifact_ipc_tests.py"
           --engine $<TARGET_FILE:qcae-engine>)
         set_tests_properties(nastran_artifact_ipc PROPERTIES TIMEOUT 60)
+        add_test(NAME package_contributions_ipc COMMAND Python3::Interpreter
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/package_contributions_ipc_tests.py"
+          --engine $<TARGET_FILE:qcae-engine>
+          --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/package-contributions-evidence")
+        set_tests_properties(package_contributions_ipc PROPERTIES TIMEOUT 60)
         add_test(NAME result_fixture_ipc COMMAND Python3::Interpreter
           "${CMAKE_CURRENT_SOURCE_DIR}/tests/result_fixture_ipc_tests.py"
           --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)

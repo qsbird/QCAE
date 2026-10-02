@@ -19,6 +19,12 @@ def main():
             host = EngineProcess(args.engine, str(root / "engine.sock"), str(root / "workspace.sqlite"), log)
             try:
                 capabilities = host.start()
+                check(capabilities["package_contributions_version"] == 1,
+                      "Disabled/platform-only host returned an unsupported package catalog version")
+                contributions = capabilities["package_contributions"]
+                owners = [entry["contribution_id"] for entry in contributions]
+                check(len(owners) == len(set(owners)) and "qcae.nastran" not in owners,
+                      "Disabled/platform-only host retained or duplicated a Nastran package contribution")
                 check(capabilities["declared_solver_profiles"] == [], "Disabled package advertised a profile")
                 operations = {item["name"]: item for item in capabilities["operations"]}
                 for name in ("model.export", "model.export_preview", "artifact.get", "artifact.reconcile",

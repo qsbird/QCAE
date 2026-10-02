@@ -424,16 +424,24 @@ int run_engine(int argc,
                         send(client, events.dispatch(request, connection->id));
                     } else if (renders.supports(operation)) {
                         send(client, renders.dispatch(request, caller));
-                    } else
-                        send(client,
-                             qcae::ipc::dispatch(core,
-                                                 request,
-                                                 caller,
-                                                 assembly.model_codec(),
-                                                 assembly.profile_definition(),
-                                                 &selections,
-                                                 typed.get(),
-                                                 true));
+                    } else {
+                        auto response = qcae::ipc::dispatch(core,
+                                                            request,
+                                                            caller,
+                                                            assembly.model_codec(),
+                                                            assembly.profile_definition(),
+                                                            &selections,
+                                                            typed.get(),
+                                                            true);
+                        if (operation == "capabilities.list" &&
+                            response.value("status").toString() == "success") {
+                            auto data = response.value("data").toObject();
+                            data.insert("package_contributions_version", 1);
+                            data.insert("package_contributions", assembly.catalog->describe());
+                            response.insert("data", data);
+                        }
+                        send(client, response);
+                    }
                     publish_events();
                 }
             };

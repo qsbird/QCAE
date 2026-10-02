@@ -225,6 +225,13 @@ EngineCodecBinding NastranArtifactCoordinator::codec_binding() const {
     return {std::shared_ptr<const IModelCodec>(state_, &state_->codec),
             std::shared_ptr<const IProfileProvider>(state_, &state_->codec)};
 }
+EngineValidationBinding NastranArtifactCoordinator::export_validation() const {
+    return {"qcae.nastran.export",
+            1,
+            [state = state_](const DocumentView& view, const EntityId& analysis) {
+                return validate_nastran_export(view, analysis, state->codec);
+            }};
+}
 OwnedRowHandler NastranArtifactCoordinator::row_handler() {
     return {StoreSpace::artifact_record,
             std::string(owner),
@@ -367,6 +374,14 @@ Result<std::pair<FrozenInput, LocalArtifactIntent>> NastranArtifactCoordinator::
 Result<bool> NastranArtifactCoordinator::register_operations(OperationRegistry& registry,
                                                              RecordApplication& app,
                                                              std::function<TaskService&()> tasks) {
+    return register_operations(registry, app, std::move(tasks), export_validation());
+}
+Result<bool> NastranArtifactCoordinator::register_operations(OperationRegistry& registry,
+                                                             RecordApplication& app,
+                                                             std::function<TaskService&()> tasks,
+                                                             EngineValidationBinding validation) {
+    if (validation.id.empty() || validation.version == 0 || !validation.validate_export)
+        return bad<bool>(ErrorCode::invalid_input, "Export validation binding is incomplete");
     state_->app = &app;
     const auto state = state_;
     auto result = registry.register_typed<ProjectMigrateProfileInput>(
@@ -406,8 +421,8 @@ Result<bool> NastranArtifactCoordinator::register_operations(OperationRegistry& 
         return result;
     result = registry.register_typed<ModelExportInput>(
         InputTraits<ModelExportInput>::definition(),
-        [state, &app, tasks](const OperationContext& context,
-                             const ModelExportInput& input) -> Result<Value> {
+        [state, &app, tasks, validation = std::move(validation)](
+            const OperationContext& context, const ModelExportInput& input) -> Result<Value> {
             try {
                 if (*context.expected_profile != state->codec.definition().reference)
                     return bad<Value>(ErrorCode::schema_unsupported,
@@ -447,8 +462,8 @@ Result<bool> NastranArtifactCoordinator::register_operations(OperationRegistry& 
                 if (snapshot.value->info.revision != *context.expected_revision)
                     return bad<Value>(ErrorCode::revision_conflict,
                                       "Export input revision is stale");
-                const auto plan = validate_nastran_export(
-                    snapshot.value->records, input.analysis_id, state->codec);
+                const auto plan =
+                    validation.validate_export(snapshot.value->records, input.analysis_id);
                 if (!plan.ok())
                     return {plan.status, {}, plan.error};
                 const auto frozen_input =
@@ -679,16 +694,17 @@ EngineContribution
 nastran_engine_contribution(const std::shared_ptr<NastranArtifactCoordinator>& coordinator) {
     if (!coordinator)
         throw std::invalid_argument("Nastran package coordinator is required");
+    const auto validation = coordinator->export_validation();
     return {
         "qcae.nastran",
         [coordinator](RecordRegistry& registry) {
             register_nastran_core_rules(registry, coordinator->codec().definition().reference);
         },
-        [coordinator](OperationRegistry& registry,
-                      RecordApplication& app,
-                      std::function<TaskService&()> tasks) {
+        [coordinator, validation](OperationRegistry& registry,
+                                  RecordApplication& app,
+                                  std::function<TaskService&()> tasks) {
             const auto registered =
-                coordinator->register_operations(registry, app, std::move(tasks));
+                coordinator->register_operations(registry, app, std::move(tasks), validation);
             if (!registered.ok())
                 return registered;
             return register_fixture_result_handlers(
@@ -708,7 +724,10 @@ nastran_engine_contribution(const std::shared_ptr<NastranArtifactCoordinator>& c
             return coordinator->publisher(app, std::move(supported));
         },
         coordinator->codec_binding(),
-        [] { return nastran_render_contributions(); }};
+        [] { return nastran_render_contributions(); },
+        {"qcae.nastran.controlled_subset"},
+        {validation},
+        {"nastran.ui"}};
 }
 RenderContributions nastran_render_contributions() {
     RenderContributions result;

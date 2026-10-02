@@ -17,6 +17,10 @@ class NastranArtifactCoordinator {
     [[nodiscard]] Result<bool> register_operations(operations::OperationRegistry&,
                                                    RecordApplication&,
                                                    std::function<TaskService&()>);
+    [[nodiscard]] Result<bool> register_operations(operations::OperationRegistry&,
+                                                   RecordApplication&,
+                                                   std::function<TaskService&()>,
+                                                   EngineValidationBinding);
     [[nodiscard]] Result<features::analysis::FrozenAnalysisInput>
     frozen_input(const Caller&, const DocumentRef&, std::string_view artifact_id) const;
     // Uses the same principal, task/manifest cross-row and completed-file checks as results.
@@ -26,6 +30,7 @@ class NastranArtifactCoordinator {
     [[nodiscard]] static OwnedRowHandler reconcile_row_handler();
     [[nodiscard]] const NastranCodec& codec() const noexcept;
     [[nodiscard]] EngineCodecBinding codec_binding() const;
+    [[nodiscard]] EngineValidationBinding export_validation() const;
 
   private:
     struct State;

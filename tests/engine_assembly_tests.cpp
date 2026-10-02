@@ -2,7 +2,9 @@
 #include "qcae/core.hpp"
 #include "qcae/ipc_api.hpp"
 #include "qcae/nastran_contribution.hpp"
+#include "qcae/records_model_bridge.hpp"
 #include <QJsonArray>
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <fstream>
@@ -174,6 +176,7 @@ void keeps_selected_codec_alive() {
     // Remove other coordinator-owning callbacks so this checks the binding's own lifetime.
     selected.operations = {};
     selected.publisher_factory = {};
+    selected.catalog.reset();
     check(released.expired() && selected.model_codec() == actual &&
               selected.profile_codec->profile.get() == actual_profile &&
               selected.profile_codec_owner == "qcae.nastran",
@@ -250,6 +253,198 @@ void rejects_invalid_services() {
     };
     check(rejects({invalid}), "empty renderer must be rejected");
 }
+void invokes_discovered_package_contributions() {
+    using namespace qcae;
+    auto assembly = ipc::assemble_engine(ipc::default_engine_contributions());
+    bool premature_rejected{};
+    try {
+        (void)assembly.catalog->describe();
+    } catch (const std::logic_error&) {
+        premature_rejected = true;
+    }
+    check(premature_rejected, "discovery must wait for actual operation registration");
+    MemoryApplication facade({}, {}, {}, {}, assembly.records);
+    ipc::TypedHost host(facade.record_application(), {}, assembly.operations);
+    const auto& registered = assembly.catalog->entries();
+    const auto package = std::find_if(registered.begin(), registered.end(), [](const auto& entry) {
+        return entry.id == "qcae.nastran";
+    });
+    if (!ipc::nastran_package_enabled()) {
+        check(package == registered.end(), "disabled package must have no registration group");
+        check(!assembly.catalog->describe().isEmpty(), "common contributions must remain listed");
+        return;
+    }
+    check(package != registered.end() && package->core_rules.size() == 1 &&
+              !package->operations.empty() && package->profile_codec &&
+              package->validators.size() == 1 && package->ui_operations.size() == 1 &&
+              package->render.size() == 3,
+          "registered package must expose actual bindings for all six categories");
+    const auto& ports = *package->profile_codec;
+    check(ports.codec.get() == assembly.model_codec() &&
+              ports.profile.get() == assembly.profile_codec->profile.get(),
+          "discovered codec must be exactly the selected production ports");
+    const auto profile = ports.profile->definition().reference;
+    ImportRequest input{"cantilever.bdf", {}, profile, "contribution-fixture", "mm-N-MPa"};
+    const auto fixtures = std::filesystem::path(__FILE__).parent_path() / "fixtures/nastran";
+    for (const auto* path :
+         {"cantilever.bdf", "mesh/nodes.bdf", "mesh/beams.bdf", "properties.bdf"}) {
+        std::ifstream file(fixtures / path, std::ios::binary);
+        check(static_cast<bool>(file), "package contribution fixture is missing");
+        input.resources.push_back(
+            {path, {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()}});
+    }
+    const auto decoded = ports.codec->decode(input);
+    check(decoded.report.complete && decoded.candidate && !decoded.candidate->analyses.empty(),
+          "discovered codec must actually import engineering records");
+    const auto& model = *decoded.candidate;
+    const auto analysis = model.analyses.front().id;
+    const auto view = records_from_model(model, assembly.records);
+    const auto encoded = ports.codec->encode(model, analysis, profile);
+    const auto plan = package->validators.front().validate_export(view, analysis);
+    check(encoded.report.complete && encoded.artifact && plan.ok() &&
+              plan.value->identities.size() == encoded.artifact->identities.size() &&
+              plan.value->resources.size() == encoded.artifact->resources.size(),
+          "discovered codec and validator must produce the same controlled export");
+    for (std::size_t index = 0; index < plan.value->identities.size(); ++index) {
+        const auto& actual = plan.value->identities[index];
+        const auto& expected = encoded.artifact->identities[index];
+        check(actual.entity == expected.entity && actual.name_space == expected.name_space &&
+                  actual.number == expected.number,
+              "discovered validator must preserve the codec's engineering number map");
+    }
+    const auto& rule = package->core_rules.front();
+    check(rule.id == "qcae.nastran.controlled_subset", "core rule must retain its stable identity");
+    assembly.records->rules().at(rule.rule_index)(view);
+    auto unsupported = model;
+    unsupported.analyses.front().target.analysis_kind = "unsupported";
+    const auto invalid = records_from_model(unsupported, make_record_registry());
+    bool rule_rejected{};
+    try {
+        assembly.records->rules().at(rule.rule_index)(invalid);
+    } catch (const RecordError& error) {
+        rule_rejected = error.code() == ErrorCode::invalid_input;
+    }
+    check(rule_rejected, "enumerated core rule must reject a real unsupported analysis");
+    const auto ui =
+        host.dispatch({{"api_version", "1.1"},
+                       {"request_id", "discovered-ui"},
+                       {"operation", QString::fromStdString(package->ui_operations.front())},
+                       {"requested_version", 1},
+                       {"parameters", QJsonObject{}}},
+                      {"contribution-test"});
+    check(ui.value("status").toString() == "success" &&
+              ui.value("data").toObject().value("operation").toString() == "model.export",
+          "discovered UI reference must invoke the actual registered handler");
+    const auto described = host.capabilities();
+    for (const auto& operation : package->operations) {
+        bool matched{};
+        for (const auto& value : described) {
+            const auto descriptor = value.toObject();
+            if (descriptor.value("name").toString().toStdString() ==
+                operation.definition.operation_id) {
+                matched = descriptor.value("available").toBool() == operation.available &&
+                          descriptor.value("version").toInteger() ==
+                              static_cast<qint64>(operation.definition.version) &&
+                          descriptor.value("schema_id").toString().toStdString() ==
+                              operation.definition.schema_id;
+                break;
+            }
+        }
+        check(matched, "operation ownership must come from actual installed descriptors");
+    }
+    for (const auto& projection : package->render) {
+        if (projection.record_type == RecordTraits<records::GeometryLine>::type_id) {
+            const auto record = assembly.records->make(records::GeometryLine{
+                records::GeometryId("discovered-line"), {0, 0, 0}, {2, 0, 0}, 1});
+            check(std::get<RenderGeometryLine>(projection.project(record)).entity ==
+                      EntityId("discovered-line"),
+                  "enumerated geometry projector must actually preserve its identity");
+        } else {
+            Record record;
+            view.visit(projection.record_type, [&](const Record& candidate) {
+                if (!record)
+                    record = candidate;
+            });
+            check(static_cast<bool>(record), "discovered projector fixture is missing");
+            const auto projected = projection.project(record);
+            const auto identity =
+                std::visit([](const auto& value) { return value.entity.value; }, projected);
+            check(identity == record->key().identity,
+                  "enumerated projector must preserve the record identity");
+        }
+    }
+}
+void rejects_invalid_discovery_bindings() {
+    using namespace qcae;
+    const auto rejects = [](ipc::EngineContribution contribution) {
+        try {
+            (void)ipc::assemble_engine(std::array{std::move(contribution)});
+        } catch (const RecordError& error) {
+            return error.code() == ErrorCode::invalid_input && error.field() == "contribution";
+        }
+        return false;
+    };
+    auto invalid = contribution_test::contribution();
+    invalid.core_rule_ids = {"one", "two"};
+    check(rejects(invalid), "named rule counts must match real registrations");
+    invalid.core_rule_ids = {""};
+    check(rejects(invalid), "empty rule identity must be rejected");
+    invalid = contribution_test::contribution();
+    invalid.validators = {{"validator", 1, {}}};
+    check(rejects(invalid), "empty validator callable must be rejected");
+    invalid = contribution_test::contribution();
+    invalid.validators = {{"validator", 0, [](const DocumentView&, const EntityId&) {
+                               return Result<ArtifactPlan>{};
+                           }}};
+    check(rejects(invalid), "zero validator version must be rejected");
+    auto named_rule = contribution_test::contribution();
+    named_rule.core_rule_ids = {"qcae.model.relations"};
+    bool duplicate_rule_rejected{};
+    try {
+        (void)ipc::assemble_engine(
+            std::array{ipc::default_engine_contributions().front(), named_rule});
+    } catch (const RecordError& error) {
+        duplicate_rule_rejected = error.code() == ErrorCode::invalid_input;
+    }
+    check(duplicate_rule_rejected, "different contributors must not reuse a named rule identity");
+    ipc::EngineContribution validator_only;
+    validator_only.id = "validator-owner";
+    validator_only.validators = {{"same-validator", 1, [](const DocumentView&, const EntityId&) {
+                                      return Result<ArtifactPlan>{};
+                                  }}};
+    auto second_validator = validator_only;
+    second_validator.id = "other-validator-owner";
+    bool duplicate_validator_rejected{};
+    try {
+        (void)ipc::assemble_engine(std::array{validator_only, second_validator});
+    } catch (const RecordError& error) {
+        duplicate_validator_rejected = error.code() == ErrorCode::invalid_input;
+    }
+    check(duplicate_validator_rejected,
+          "different contributors must not reuse a validation binding identity");
+    for (const auto* reference : {"missing.operation", "test.relation.create"}) {
+        auto contribution = contribution_test::contribution();
+        contribution.ui_operations = {reference};
+        const auto platform = ipc::default_engine_contributions().front();
+        auto assembly = ipc::assemble_engine(std::array{platform, std::move(contribution)});
+        MemoryApplication facade({}, {}, {}, {}, assembly.records);
+        bool rejected{};
+        try {
+            ipc::TypedHost host(facade.record_application(), {}, assembly.operations);
+        } catch (const RecordError& error) {
+            rejected = error.code() == ErrorCode::invalid_input;
+        }
+        check(rejected,
+              "UI references must be available read-only registrations of their contributor");
+        bool catalog_hidden{};
+        try {
+            (void)assembly.catalog->entries();
+        } catch (const std::logic_error&) {
+            catalog_hidden = true;
+        }
+        check(catalog_hidden, "failed registration must not publish a partial catalog");
+    }
+}
 } // namespace
 int main() {
     try {
@@ -260,6 +455,8 @@ int main() {
         selects_only_installed_services();
         keeps_selected_codec_alive();
         rejects_invalid_services();
+        invokes_discovered_package_contributions();
+        rejects_invalid_discovery_bindings();
         std::cout << "PASS: static engine assembly, duplicate rejection and shared authority\n";
         return 0;
     } catch (const std::exception& error) {
