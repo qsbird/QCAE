@@ -219,6 +219,20 @@ class ArchitectureMutations(unittest.TestCase):
         self.write_configuration()
         self.assertTrue(any(e.startswith("core-framework:") for e in self.run_gate()))
 
+    def test_generated_root_cannot_expose_source_inside_build(self):
+        self.build = Path(self.temporary.name) / "nested-build"
+        self.build.mkdir()
+        moved = self.build / "source"
+        self.root.rename(moved)
+        self.root = moved
+        # Check this target's export even when no downstream target consumes it.
+        for row in self.rows:
+            row["public_dependencies"] = [name for name in row["public_dependencies"] if name != "qcae_document"]
+        self.row("qcae_document")["generated_public_include_dirs"] = ["source/modules/document/src"]
+        self.extra_cmake = 'target_include_directories(qcae_document PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/modules/document/src")\n'
+        self.write_configuration()
+        self.assertTrue(any(e.startswith("private-include:") for e in self.run_gate()))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

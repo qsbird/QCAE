@@ -233,6 +233,9 @@ def check(root: Path, manifest: dict, evidence: dict, commands: list[dict]) -> l
                 candidate = (build / directory).resolve()
                 if Path(directory).is_absolute() or not candidate.is_relative_to(build) or candidate == build:
                     reject("include-root", f"{name} declares unsafe generated include root {directory}")
+                elif any((root / filename).resolve().is_relative_to(candidate)
+                         for filename in owners if filename not in public):
+                    reject("private-include", f"{name} generated include root exposes registered private files: {directory}")
                 else:
                     generated.add(candidate)
             if absolute in generated:
