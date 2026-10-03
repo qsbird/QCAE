@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "status": "implemented_document_change_adapter_contract",
+  "operations": [
+    {
+      "operation_id": "changes.commit",
+      "version": 1,
+      "schema_id": "qcae.operation.changes.commit.v1",
+      "type_name": "ChangesCommitInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "preview_id",
+          "type": "string",
+          "allow_empty": false
+        }
+      ]
+    }
+  ]
+}

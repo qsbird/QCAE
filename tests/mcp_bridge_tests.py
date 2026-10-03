@@ -115,6 +115,19 @@ def run(args):
                     "type": "integer", "minimum": 1, "maximum": 4294967295}, create_schema
                 assert "requested_version" not in create_schema["required"], create_schema
                 assert "expected_profile" not in create_schema["properties"], create_schema
+                commit_schema = catalog["changes.commit"]["inputSchema"]
+                commit_descriptor = next(item for item in caps if item["name"] == "changes.commit")
+                assert commit_descriptor["schema_id"] == "qcae.operation.changes.commit.v1", commit_descriptor
+                assert commit_descriptor["version"] == 1, commit_descriptor
+                assert commit_schema["properties"]["parameters"] == commit_descriptor["parameters_schema"] == {
+                    "type": "object", "properties": {"preview_id": {"type": "string", "minLength": 1}},
+                    "required": ["preview_id"], "additionalProperties": False}, commit_schema
+                assert commit_schema["properties"]["requested_version"] == {
+                    "type": "integer", "minimum": 1, "maximum": 4294967295}, commit_schema
+                assert "requested_version" not in commit_schema["required"], commit_schema
+                assert all(field in commit_schema["required"] for field in
+                           ("parameters", "document_id", "document_epoch", "expected_revision", "idempotency_key")), commit_schema
+                assert "expected_profile" not in commit_schema["properties"], commit_schema
                 open_schema = catalog["project.open"]["inputSchema"]
                 open_parameters = open_schema["properties"]["parameters"]
                 open_descriptor = next(item for item in caps if item["name"] == "project.open")

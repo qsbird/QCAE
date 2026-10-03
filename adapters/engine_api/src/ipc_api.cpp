@@ -74,8 +74,8 @@ std::optional<QJsonObject> read_parameters_schema(std::string_view operation) {
                        {"required", required},
                        {"additionalProperties", false}};
 }
-// Host lifecycle DTOs contain strings; their application semantics stay explicit below.
-template <class Input> Input lifecycle_input(const QJsonObject& parameters) {
+// Generated host DTOs contain strings; their application semantics stay explicit below.
+template <class Input> Input string_input(const QJsonObject& parameters) {
     operations::Value::Object input;
     for (auto it = parameters.begin(); it != parameters.end(); ++it) {
         const auto name = transport::json_ledger::utf8(it.keyView());
@@ -89,9 +89,8 @@ template <class Input> Input lifecycle_input(const QJsonObject& parameters) {
         throw InvalidRequest(decoded.error->message, decoded.error->field);
     return std::move(*decoded.value);
 }
-std::optional<QJsonObject> lifecycle_version_rejection(const QJsonObject& request,
-                                                       const QString& id,
-                                                       std::uint32_t installed_version) {
+std::optional<QJsonObject>
+version_rejection(const QJsonObject& request, const QString& id, std::uint32_t installed_version) {
     if (!request.contains("requested_version"))
         return {};
     const auto value = request.value("requested_version");
@@ -108,9 +107,10 @@ std::optional<QJsonObject> lifecycle_version_rejection(const QJsonObject& reques
     rejected.insert("error", error);
     return rejected;
 }
-void describe_lifecycle_input(QJsonObject& entry,
-                              const operations::OperationDefinition& definition,
-                              std::string_view input_type) {
+void describe_string_input(QJsonObject& entry,
+                           const operations::OperationDefinition& definition,
+                           std::string_view input_type,
+                           std::string_view output_type = "DocumentInfo") {
     QJsonArray fields, required;
     QJsonObject properties;
     for (const auto& field : definition.fields) {
@@ -131,7 +131,7 @@ void describe_lifecycle_input(QJsonObject& entry,
     entry.insert("requested_version_field", "requested_version");
     entry.insert("omitted_version_policy", "installed_version");
     entry.insert("wire_input_type", qs(input_type));
-    entry.insert("wire_output_type", "DocumentInfo");
+    entry.insert("wire_output_type", qs(output_type));
     entry.insert("fields", fields);
     entry.insert("parameters_schema",
                  QJsonObject{{"type", "object"},
@@ -141,7 +141,7 @@ void describe_lifecycle_input(QJsonObject& entry,
 }
 void describe_project_open(QJsonObject& entry) {
     const auto definition = operations::InputTraits<operations::ProjectOpenInput>::definition();
-    describe_lifecycle_input(entry, definition, "ProjectOpenInput");
+    describe_string_input(entry, definition, "ProjectOpenInput");
     auto schema = entry.value("parameters_schema").toObject();
     auto properties = schema.value("properties").toObject();
     properties.insert("mode",
@@ -166,9 +166,9 @@ void describe_project_open(QJsonObject& entry) {
     entry.insert("parameters_schema", schema);
 }
 void describe_project_close(QJsonObject& entry) {
-    describe_lifecycle_input(entry,
-                             operations::InputTraits<operations::ProjectCloseInput>::definition(),
-                             "ProjectCloseInput");
+    describe_string_input(entry,
+                          operations::InputTraits<operations::ProjectCloseInput>::definition(),
+                          "ProjectCloseInput");
     auto schema = entry.value("parameters_schema").toObject();
     auto properties = schema.value("properties").toObject();
     auto policy = properties.value("policy").toObject();
@@ -320,10 +320,10 @@ QJsonObject dispatch(MemoryApplication& app,
         const auto params = request.value("parameters").toObject();
         if (typed && typed->supports(op))
             return typed->dispatch(request, caller);
-        const bool lifecycle = op == "project.open" || op == "project.create" ||
-                               op == "project.save" || op == "project.save_as" ||
-                               op == "project.close";
-        if ((request.contains("requested_version") && !lifecycle) ||
+        const bool generated_input = op == "project.open" || op == "project.create" ||
+                                     op == "project.save" || op == "project.save_as" ||
+                                     op == "project.close" || op == "changes.commit";
+        if ((request.contains("requested_version") && !generated_input) ||
             request.contains("expected_profile"))
             throw InvalidRequest("requested_version/expected_profile require a typed operation");
         if (selections) {
@@ -364,22 +364,28 @@ QJsonObject dispatch(MemoryApplication& app,
                 if (descriptor.name == "project.open")
                     describe_project_open(entry);
                 else if (descriptor.name == "project.create")
-                    describe_lifecycle_input(
+                    describe_string_input(
                         entry,
                         operations::InputTraits<operations::ProjectCreateInput>::definition(),
                         "ProjectCreateInput");
                 else if (descriptor.name == "project.save")
-                    describe_lifecycle_input(
+                    describe_string_input(
                         entry,
                         operations::InputTraits<operations::ProjectSaveInput>::definition(),
                         "ProjectSaveInput");
                 else if (descriptor.name == "project.save_as")
-                    describe_lifecycle_input(
+                    describe_string_input(
                         entry,
                         operations::InputTraits<operations::ProjectSaveAsInput>::definition(),
                         "ProjectSaveAsInput");
                 else if (descriptor.name == "project.close")
                     describe_project_close(entry);
+                else if (descriptor.name == "changes.commit")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::ChangesCommitInput>::definition(),
+                        "ChangesCommitInput",
+                        "ChangeReceipt");
                 entry.insert("available", available);
                 if (const auto schema = read_parameters_schema(descriptor.name))
                     entry.insert("parameters_schema", *schema);
@@ -426,9 +432,9 @@ QJsonObject dispatch(MemoryApplication& app,
         } else if (op == "project.open") {
             const auto definition =
                 operations::InputTraits<operations::ProjectOpenInput>::definition();
-            if (const auto rejected = lifecycle_version_rejection(request, id, definition.version))
+            if (const auto rejected = version_rejection(request, id, definition.version))
                 return *rejected;
-            const auto input = lifecycle_input<operations::ProjectOpenInput>(params);
+            const auto input = string_input<operations::ProjectOpenInput>(params);
             const auto key = string_field(request, "idempotency_key").toStdString();
             if (input.mode == "normal") {
                 if (!input.path)
@@ -448,12 +454,11 @@ QJsonObject dispatch(MemoryApplication& app,
             const auto definition =
                 save_as ? operations::InputTraits<operations::ProjectSaveAsInput>::definition()
                         : operations::InputTraits<operations::ProjectSaveInput>::definition();
-            if (const auto rejected = lifecycle_version_rejection(request, id, definition.version))
+            if (const auto rejected = version_rejection(request, id, definition.version))
                 return *rejected;
-            const auto path =
-                (save_as ? lifecycle_input<operations::ProjectSaveAsInput>(params).path
-                         : lifecycle_input<operations::ProjectSaveInput>(params).path)
-                    .value_or(std::string{});
+            const auto path = (save_as ? string_input<operations::ProjectSaveAsInput>(params).path
+                                       : string_input<operations::ProjectSaveInput>(params).path)
+                                  .value_or(std::string{});
             response = result_json(
                 id,
                 app.save_document(caller,
@@ -465,9 +470,9 @@ QJsonObject dispatch(MemoryApplication& app,
         } else if (op == "project.close") {
             const auto definition =
                 operations::InputTraits<operations::ProjectCloseInput>::definition();
-            if (const auto rejected = lifecycle_version_rejection(request, id, definition.version))
+            if (const auto rejected = version_rejection(request, id, definition.version))
                 return *rejected;
-            const auto input = lifecycle_input<operations::ProjectCloseInput>(params);
+            const auto input = string_input<operations::ProjectCloseInput>(params);
             const auto& policy = input.policy;
             if (policy != "discard" && policy != "keep_recovery")
                 throw InvalidRequest("Unknown close policy", "input.policy");
@@ -482,9 +487,9 @@ QJsonObject dispatch(MemoryApplication& app,
         } else if (op == "project.create") {
             const auto definition =
                 operations::InputTraits<operations::ProjectCreateInput>::definition();
-            if (const auto rejected = lifecycle_version_rejection(request, id, definition.version))
+            if (const auto rejected = version_rejection(request, id, definition.version))
                 return *rejected;
-            const auto input = lifecycle_input<operations::ProjectCreateInput>(params);
+            const auto input = string_input<operations::ProjectCreateInput>(params);
             response = result_json(
                 id,
                 app.create_document(
@@ -550,12 +555,16 @@ QJsonObject dispatch(MemoryApplication& app,
                         {"revision", number(preview.context.expected_revision)}};
                 });
         } else if (op == "changes.commit") {
-            fields(params, {"preview_id"});
+            const auto definition =
+                operations::InputTraits<operations::ChangesCommitInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+            const auto input = string_input<operations::ChangesCommitInput>(params);
             response =
                 result_json(id,
                             app.commit(caller,
                                        context(request),
-                                       PreviewId{string_field(params, "preview_id").toStdString()},
+                                       PreviewId{input.preview_id},
                                        string_field(request, "idempotency_key").toStdString()),
                             receipt_json);
         } else if (op == "history.undo" || op == "history.redo") {

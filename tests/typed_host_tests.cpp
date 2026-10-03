@@ -837,6 +837,216 @@ void project_save_close_contract_and_replay() {
                 open_contract_state(app, *store, caller) == before,
             "version 1 discard retry returns its original fact without recreating a document");
 }
+void changes_commit_contract_and_replay() {
+    using namespace qcae;
+    using namespace operations;
+    for (const bool explicit_version : {false, true}) {
+        auto store = std::make_shared<OpenContractStore>();
+        MemoryApplication app({}, store);
+        ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+        const Caller caller{"commit-contract-test"};
+        auto info = runtime_test::good(app.create_document(caller, "Commit contract", "create"));
+        const auto seed = runtime_test::good(
+            app.preview(caller, runtime_test::at(info), CreateMaterial{"Existing", {200, "GPa"}}));
+        runtime_test::good(app.commit(caller, runtime_test::at(info), seed.id, "seed"));
+        info = runtime_test::good(app.current_document());
+        const auto preview = runtime_test::good(
+            app.preview(caller, runtime_test::at(info), CreateMaterial{"Steel", {210, "GPa"}}));
+        const QJsonObject parameters{{"preview_id", QString::fromStdString(preview.id.value)}};
+        auto request = write_lifecycle_request("changes.commit", parameters, info, "commit-key");
+        request.insert("request_id", "commit-contract");
+        if (explicit_version)
+            request.insert("requested_version", 1);
+
+        const auto catalog = ipc::dispatch(app,
+                                           {{"api_version", "1.1"},
+                                            {"request_id", "commit-catalog"},
+                                            {"operation", "capabilities.list"},
+                                            {"parameters", QJsonObject{}}},
+                                           caller,
+                                           nullptr,
+                                           nullptr,
+                                           nullptr,
+                                           &host);
+        QJsonObject descriptor;
+        unsigned count{};
+        for (const auto& entry : catalog.value("data").toObject().value("operations").toArray())
+            if (entry.toObject().value("name") == "changes.commit") {
+                descriptor = entry.toObject();
+                ++count;
+            }
+        const auto definition = InputTraits<ChangesCommitInput>::definition();
+        require(count == 1 && descriptor.value("available") == true &&
+                    descriptor.value("version").toInt() == static_cast<int>(definition.version) &&
+                    descriptor.value("schema_id") == QString::fromStdString(definition.schema_id) &&
+                    descriptor.value("wire_input_type") == "ChangesCommitInput" &&
+                    descriptor.value("wire_output_type") == "ChangeReceipt" &&
+                    descriptor.value("requires_document").toBool() == definition.context.document &&
+                    descriptor.value("requires_epoch").toBool() == definition.context.epoch &&
+                    descriptor.value("requires_revision").toBool() ==
+                        definition.context.expected_revision &&
+                    descriptor.value("requires_idempotency_key").toBool() ==
+                        definition.context.idempotency_key &&
+                    descriptor.value("requested_version_field") == "requested_version" &&
+                    descriptor.value("omitted_version_policy") == "installed_version",
+                "commit discovery identifies its generated input and existing receipt output");
+        const auto fields = descriptor.value("fields").toArray();
+        require(fields.size() == 1 && definition.fields.size() == 1,
+                "commit has exactly one generated preview field");
+        const auto& field = definition.fields.front();
+        require(
+            field.name == "preview_id" && field.wire_type == "string" && field.required &&
+                !field.allow_empty &&
+                fields[0].toObject().value("name") == QString::fromStdString(field.name) &&
+                fields[0].toObject().value("wire_type") ==
+                    QString::fromStdString(field.wire_type) &&
+                fields[0].toObject().value("required").toBool() == field.required &&
+                fields[0].toObject().value("allow_empty").toBool() == field.allow_empty &&
+                descriptor.value("parameters_schema").toObject() ==
+                    QJsonObject{{"type", "object"},
+                                {"properties",
+                                 QJsonObject{{"preview_id",
+                                              QJsonObject{{"type", "string"}, {"minLength", 1}}}}},
+                                {"required", QJsonArray{"preview_id"}},
+                                {"additionalProperties", false}},
+            "commit discovery describes the generated required nonempty string");
+
+        const auto reject = [&](const QJsonObject& invalid,
+                                const char* code,
+                                const char* error_field,
+                                const char* status = "failed") {
+            const auto before = open_contract_state(app, *store, caller);
+            const auto before_view =
+                runtime_test::good(app.record_application().snapshot(info.document)).records;
+            for (int retry = 0; retry < 2; ++retry) {
+                const auto wire = QJsonDocument::fromJson(QJsonDocument(invalid).toJson()).object();
+                const auto response =
+                    ipc::dispatch(app, wire, caller, nullptr, nullptr, nullptr, &host);
+                const auto error = response.value("error").toObject();
+                const auto after =
+                    runtime_test::good(app.record_application().snapshot(info.document)).records;
+                require(response.value("status") == status && error.value("code") == code &&
+                            error.value("field").toString() == error_field,
+                        "commit refuses the expected input/version/context");
+                require(open_contract_state(app, *store, caller) == before &&
+                            after.matches_version(before_view.version()) &&
+                            diff_record_views(before_view, after).empty(),
+                        "rejected commit preserves every record, persistent row, generation and "
+                        "history on both attempts");
+            }
+        };
+        for (const auto& version : {QJsonValue(0),
+                                    QJsonValue(-1),
+                                    QJsonValue(1.5),
+                                    QJsonValue(4294967296.0),
+                                    QJsonValue(true),
+                                    QJsonValue("1"),
+                                    QJsonValue(QJsonValue::Null)}) {
+            auto invalid = request;
+            invalid.insert("requested_version", version);
+            reject(invalid, "INVALID_INPUT", "requested_version");
+        }
+        for (const auto& version : {QJsonValue(2), QJsonValue(4294967295.0)}) {
+            auto invalid = request;
+            invalid.insert("requested_version", version);
+            reject(invalid, "SCHEMA_UNSUPPORTED", "requested_version");
+        }
+        for (const auto& input : {QJsonObject{},
+                                  QJsonObject{{"preview_id", ""}},
+                                  QJsonObject{{"preview_id", 1}},
+                                  QJsonObject{{"preview_id", true}},
+                                  QJsonObject{{"preview_id", QJsonValue(QJsonValue::Null)}},
+                                  QJsonObject{{"preview_id", QJsonArray{}}},
+                                  QJsonObject{{"preview_id", QJsonObject{}}}}) {
+            auto invalid = request;
+            invalid.insert("parameters", input);
+            reject(invalid, "INVALID_INPUT", "input.preview_id");
+        }
+        auto invalid = request;
+        auto extra = parameters;
+        extra.insert("unexpected", "value");
+        invalid.insert("parameters", extra);
+        reject(invalid, "INVALID_INPUT", "input.unexpected");
+        for (const auto& shape : {QJsonValue(QJsonArray{}),
+                                  QJsonValue("preview"),
+                                  QJsonValue(1),
+                                  QJsonValue(QJsonValue::Null)}) {
+            invalid = request;
+            invalid.insert("parameters", shape);
+            reject(invalid, "INVALID_INPUT", "");
+        }
+        invalid = request;
+        invalid.insert("expected_profile", QJsonObject{});
+        reject(invalid, "INVALID_INPUT", "");
+
+        const auto before = open_contract_state(app, *store, caller);
+        const auto before_view =
+            runtime_test::good(app.record_application().snapshot(info.document)).records;
+        const auto committed =
+            ipc::dispatch(app, request, caller, nullptr, nullptr, nullptr, &host);
+        const auto original = committed.value("data").toObject();
+        const auto committed_info = runtime_test::good(app.current_document());
+        require(committed.value("status") == "success" && !original.value("replayed").toBool() &&
+                    !original.value("transaction_id").toString().isEmpty() &&
+                    original.value("entity_id") ==
+                        QString::fromStdString(preview.affected_entity.value) &&
+                    original.value("committed_revision") == QString::number(info.revision + 1) &&
+                    committed_info.revision == info.revision + 1 &&
+                    store->records.generation == before.generation + 1 &&
+                    store->commits == before.commits + 1 &&
+                    runtime_test::good(app.history(info.document)).items.size() == 2 &&
+                    runtime_test::good(app.snapshot(info.document)).materials.size() == 2,
+                "omitted and v1 commit each consume the preserved preview/key in one transaction");
+        const auto replay = [&] {
+            const auto unchanged = open_contract_state(app, *store, caller);
+            const auto snapshot =
+                runtime_test::good(app.record_application().snapshot(info.document));
+            auto expected = original;
+            expected.insert("replayed", true);
+            expected.insert("current_revision", QString::number(snapshot.info.revision));
+            expected.insert("current_content_state",
+                            QString::fromStdString(snapshot.info.content_state));
+            const auto response =
+                ipc::dispatch(app, request, caller, nullptr, nullptr, nullptr, &host);
+            const auto after =
+                runtime_test::good(app.record_application().snapshot(info.document)).records;
+            require(response.value("status") == "success" && response.value("data") == expected &&
+                        open_contract_state(app, *store, caller) == unchanged &&
+                        after.matches_version(snapshot.records.version()) &&
+                        diff_record_views(snapshot.records, after).empty(),
+                    "retry returns the original receipt with current state and no second write");
+        };
+        if (explicit_version)
+            request.remove("requested_version");
+        else
+            request.insert("requested_version", 1);
+        replay();
+        const auto changed_preview =
+            runtime_test::good(app.preview(caller,
+                                           runtime_test::at(committed_info),
+                                           SetYoungModulus{preview.affected_entity, {220, "GPa"}}));
+        auto conflict = write_lifecycle_request(
+            "changes.commit",
+            {{"preview_id", QString::fromStdString(changed_preview.id.value)}},
+            committed_info,
+            "commit-key");
+        conflict.insert("requested_version", 1);
+        reject(conflict, "IDEMPOTENCY_KEY_CONFLICT", "idempotency_key", "conflict");
+        auto stale = request;
+        stale.insert("idempotency_key", "stale-revision");
+        reject(stale, "REVISION_CONFLICT", "expected_revision", "conflict");
+        stale.insert("idempotency_key", "stale-epoch");
+        stale.insert("document_epoch", "old-epoch");
+        reject(stale, "DOCUMENT_EPOCH_EXPIRED", "document_epoch", "conflict");
+        runtime_test::good(app.undo(caller, runtime_test::at(committed_info), "undo"));
+        require(diff_record_views(
+                    before_view,
+                    runtime_test::good(app.record_application().snapshot(info.document)).records)
+                    .empty(),
+                "undo restores the complete precommit record view");
+        replay();
+    }
+}
 void diagnostic_reports_survive_transport() {
     using namespace qcae;
     using namespace operations;
@@ -1320,6 +1530,7 @@ int main() {
         project_open_contract_and_lifecycle();
         project_create_contract_and_replay();
         project_save_close_contract_and_replay();
+        changes_commit_contract_and_replay();
         std::cout << "PASS typed JSON transport, mesh idempotency and task fault recovery\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
