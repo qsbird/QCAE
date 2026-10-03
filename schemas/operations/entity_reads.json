@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "status": "implemented_entity_read_adapter_contracts",
+  "operations": [
+    {
+      "operation_id": "entity.query",
+      "version": 1,
+      "schema_id": "qcae.operation.entity.query.v1",
+      "type_name": "EntityQueryInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "kind",
+          "type": "string",
+          "optional": true
+        },
+        {
+          "field_id": 2,
+          "name": "name_contains",
+          "type": "string",
+          "optional": true,
+          "allow_empty": true
+        },
+        {
+          "field_id": 3,
+          "name": "ids",
+          "type": "entity_id_array",
+          "optional": true,
+          "allow_empty": true
+        },
+        {
+          "field_id": 4,
+          "name": "view",
+          "type": "string",
+          "optional": true
+        },
+        {
+          "field_id": 5,
+          "name": "owner_id",
+          "type": "entity_id",
+          "optional": true
+        },
+        {
+          "field_id": 6,
+          "name": "offset",
+          "type": "finite_number",
+          "units": [
+            "1"
+          ],
+          "optional": true
+        },
+        {
+          "field_id": 7,
+          "name": "limit",
+          "type": "finite_number",
+          "units": [
+            "1"
+          ],
+          "optional": true
+        }
+      ]
+    },
+    {
+      "operation_id": "entity.references",
+      "version": 1,
+      "schema_id": "qcae.operation.entity.references.v1",
+      "type_name": "EntityReferencesInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "entity_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "direction",
+          "type": "string",
+          "optional": true
+        }
+      ]
+    }
+  ]
+}

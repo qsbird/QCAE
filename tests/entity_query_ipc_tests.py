@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -11,6 +12,7 @@ import tempfile
 import time
 
 from c2_workflow_tests import Client
+from changes_commit_ipc_tests import snapshot
 from m1_ipc_tests import ROOT_DECK, NODE_DECK, BEAM_DECK
 
 
@@ -39,6 +41,119 @@ def engine_client(engine, cli, root, evidence):
                 evidence.mkdir(parents=True, exist_ok=True)
                 (evidence / f"{root.name}-transcript.json").write_text(
                     json.dumps(client.transcript, indent=2) + "\n")
+                (evidence / f"{root.name}-contract-observations.json").write_text(
+                    json.dumps(getattr(client, "contract_observations", []), indent=2) + "\n")
+                if hasattr(client, "contract_initial_state"):
+                    (evidence / f"{root.name}-authority-initial.json").write_text(
+                        json.dumps(client.contract_initial_state, indent=2) + "\n")
+
+
+def contract_call(client, operation, parameters, document, extra=None, expected="success"):
+    """A thin CLI request with only the read context; application validation stays in engine."""
+    client.sequence += 1
+    request = {"api_version": "1.1", "request_id": f"entity-contract-{client.sequence}",
+               "operation": operation, "parameters": parameters,
+               "document_id": document["document_id"], "document_epoch": document["document_epoch"]}
+    request.update(extra or {})
+    argv = [client.cli, "--socket", client.endpoint, "--no-start"]
+    process = subprocess.run(argv, input=json.dumps(request), text=True, capture_output=True, timeout=15)
+    assert process.stdout, process.stderr
+    response = json.loads(process.stdout)
+    assert response["request_id"] == request["request_id"] and response["status"] == expected, response
+    assert process.returncode == (0 if expected == "success" else 2), (response, process.stderr)
+    client.transcript.append({"request": request, "response": response,
+                              "actual_exit_code": process.returncode, "argv": argv})
+    return response
+
+
+def contract_pair(client, workspace, operation, parameters, expected="success", extra=None):
+    before = snapshot(client, workspace)
+    omitted = contract_call(client, operation, parameters, before["document"], extra, expected)
+    explicit = contract_call(client, operation, parameters, before["document"],
+                             {**(extra or {}), "requested_version": 1}, expected)
+    assert {key: value for key, value in omitted.items() if key != "request_id"} == {
+        key: value for key, value in explicit.items() if key != "request_id"}, (omitted, explicit)
+    after = snapshot(client, workspace)
+    assert after == before, "Read/refusal changed complete SQLite authority"
+    observations = getattr(client, "contract_observations", [])
+    observations.append({"operation": operation, "parameters": parameters, "omitted": omitted,
+                         "explicit": explicit, "complete_state_unchanged": True,
+                         "authority_before_sha256": state_digest(before),
+                         "authority_after_sha256": state_digest(after)})
+    client.contract_observations = observations
+    return explicit
+
+
+def state_digest(state):
+    return hashlib.sha256(json.dumps(state, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def read_contracts(client, workspace, entity):
+    client.contract_initial_state = snapshot(client, workspace)
+    assert not client.contract_initial_state["document"]["dirty"]
+    assert client.contract_initial_state["document"]["saved_content_state"]
+    catalog = client.call("capabilities.list")
+    for operation, input_type, output_type in (
+            ("entity.query", "EntityQueryInput", "SelectionResult"),
+            ("entity.references", "EntityReferencesInput", "ReferenceResult")):
+        entries = [item for item in catalog["operations"] if item["name"] == operation]
+        assert len(entries) == 1
+        descriptor = entries[0]
+        assert descriptor["available"] and descriptor["version"] == 1
+        assert descriptor["schema_id"] == f"qcae.operation.{operation}.v1"
+        assert descriptor["wire_input_type"] == input_type and descriptor["wire_output_type"] == output_type
+        assert descriptor["requires_document"] and descriptor["requires_epoch"]
+        assert all(descriptor[name] is False for name in (
+            "requires_revision", "requires_idempotency_key", "requires_profile_match"))
+        schema = descriptor["arguments_schema"]
+        required = {"document_id", "document_epoch"}
+        if operation == "entity.references":
+            required.add("parameters")
+        assert set(schema["required"]) == required and schema["additionalProperties"] is False
+        assert schema["properties"]["parameters"] == descriptor["parameters_schema"]
+        assert schema["properties"]["expected_revision"] == schema["properties"]["idempotency_key"] == {}
+    for parameters in ({}, {"ids": []}, {"ids": [entity, entity, "unknown", " "]},
+                       {"name_contains": ""}, {"offset": 0, "limit": 0},
+                       {"offset": -0.0, "limit": 1000}, {"offset": 100000.0}):
+        contract_pair(client, workspace, "entity.query", parameters,
+                      extra={"expected_revision": None, "idempotency_key": {"ignored": None}})
+    duplicated = contract_pair(client, workspace, "entity.query", {"ids": [entity, entity]})
+    unique = contract_pair(client, workspace, "entity.query", {"ids": [entity]})
+    assert duplicated["data"] == unique["data"]
+    for parameters in ({"entity_id": entity}, {"entity_id": entity, "direction": "incoming"},
+                       {"entity_id": entity, "direction": "outgoing"}):
+        contract_pair(client, workspace, "entity.references", parameters,
+                      extra={"expected_revision": {"ignored": None}, "idempotency_key": []})
+    invalid = {
+        "entity.query": ({"extra": None}, {"kind": None}, {"kind": "\t"},
+                         {"name_contains": 7}, {"ids": None}, {"ids": [None]}, {"ids": [""]},
+                         {"view": ""}, {"owner_id": None}, {"offset": .5}, {"offset": -1},
+                         {"offset": 100001}, {"limit": True}, {"limit": 1001}),
+        "entity.references": ({}, {"entity_id": None}, {"entity_id": " "},
+                              {"entity_id": entity, "direction": None},
+                              {"entity_id": entity, "direction": "both"},
+                              {"entity_id": entity, "extra": {"nested": None}}),
+    }
+    for operation, parameters in (("entity.query", {"kind": None}),
+                                  ("entity.references", {"entity_id": None})):
+        for bad in (True, "1", None, 0, -1, .5, 4294967296, 2, 4294967295):
+            before = snapshot(client, workspace)
+            response = contract_call(client, operation, parameters, before["document"],
+                                     {"document_epoch": "old", "requested_version": bad}, "failed")
+            code = "SCHEMA_UNSUPPORTED" if type(bad) is int and bad in (2, 4294967295) else "INVALID_INPUT"
+            assert response["error"]["code"] == code and response["error"]["field"] == "requested_version"
+            after = snapshot(client, workspace)
+            assert after == before
+            client.contract_observations.append({"operation": operation, "response": response,
+                                                "complete_state_unchanged": True,
+                                                "authority_before_sha256": state_digest(before),
+                                                "authority_after_sha256": state_digest(after)})
+        expired = contract_pair(client, workspace, operation, parameters, "conflict",
+                                {"document_epoch": "old"})
+        assert expired["error"]["code"] == "DOCUMENT_EPOCH_EXPIRED"
+        for parameters in invalid[operation]:
+            rejected = contract_pair(client, workspace, operation, parameters, "failed")
+            assert rejected["error"]["code"] == "INVALID_INPUT"
 
 
 def query(client, **parameters):
@@ -102,6 +217,9 @@ def geometry_queries(client):
             assert query(client, kind=kind, ids=[row["entity_id"], "unknown"])["entities"] == [row]
             check_fields(client, row)
     mesh = query(client, kind="mesh")["entities"][0]
+    client.call("project.save_as", {"path": str(Path(client.endpoint).parent / "read-contracts.qcae")},
+                client.current(), "save-before-read-contracts")
+    read_contracts(client, Path(client.endpoint).parent / "work.sqlite", line)
     assert query(client, name_contains=mesh["name"])["entities"] == [mesh]
     assert query(client, kind="geometry", name_contains="missing")["total"] == 0
     assert query(client, ids=[])["total"] == query(client, ids=["unknown"])["total"] == 0
@@ -148,6 +266,9 @@ def geometry_queries(client):
     incoming = references(client, second_mesh["entity_id"], "incoming")
     assert len(incoming) == 1003 and len({ref["from"] for ref in incoming}) == 1003
     assert all(ref["to"] == second_mesh["entity_id"] for ref in incoming)
+    complete = contract_pair(client, Path(client.endpoint).parent / "work.sqlite", "entity.references",
+                             {"entity_id": second_mesh["entity_id"], "direction": "incoming"})
+    assert complete["data"]["references"] == incoming
 
 
 def edit(client, command, parameters):
@@ -211,6 +332,10 @@ def organization_queries(client):
                                                 "direction": "incoming"}, client.current())
     assert any(ref["role"] == "section.material" for ref in incoming["references"])
     assert analysis["entity_id"] in incoming["affected_analyses"]
+    workspace = Path(client.endpoint).parent / "work.sqlite"
+    contract_pair(client, workspace, "entity.query", {"view": "material", "owner_id": material["entity_id"]})
+    result = contract_pair(client, workspace, "entity.references", {"entity_id": material["entity_id"]})
+    assert result["data"]["affected_analyses"] == incoming["affected_analyses"]
 
 
 def main():

@@ -1,6 +1,7 @@
 #include "qcae/ipc_api.hpp"
 #include "qcae/typed_host.hpp"
 #include "qcae/operation_inputs.hpp"
+#include "qcae/query.hpp"
 #include "../adapters/engine_api/src/typed_json.hpp"
 #include "runtime_test_support.hpp"
 #include <QJsonArray>
@@ -1958,6 +1959,589 @@ void host_read_and_history_contracts() {
     host_outcome_lookup(app, *store, host, caller, "project.save_as", "save-as", saved_as);
     host_outcome_lookup(app, *store, host, caller, "project.close", "close", closed);
 }
+void entity_read_descriptors_and_projection(const QJsonArray& catalog) {
+    using namespace qcae;
+    using namespace operations;
+    struct Contract {
+        const char* operation;
+        const char* input;
+        const char* output;
+        const char* wire_input;
+        const char* target;
+        OperationDefinition definition;
+        std::vector<InputFieldDescriptor> fields;
+    };
+    const std::vector<Contract> contracts{{"entity.query",
+                                           "EntityQuery",
+                                           "SelectionResult",
+                                           "EntityQueryInput",
+                                           "conditional",
+                                           InputTraits<EntityQueryInput>::definition(),
+                                           {{1, "kind", "string", {}, false, false},
+                                            {2, "name_contains", "string", {}, false, true},
+                                            {3, "ids", "entity_id_array", {}, false, true},
+                                            {4, "view", "string", {}, false, false},
+                                            {5, "owner_id", "entity_id", {}, false, false},
+                                            {6, "offset", "finite_number", {"1"}, false, false},
+                                            {7, "limit", "finite_number", {"1"}, false, false}}},
+                                          {"entity.references",
+                                           "ReferenceQuery",
+                                           "ReferenceResult",
+                                           "EntityReferencesInput",
+                                           "none",
+                                           InputTraits<EntityReferencesInput>::definition(),
+                                           {{1, "entity_id", "entity_id", {}, true, false},
+                                            {2, "direction", "string", {}, false, false}}}};
+    const QJsonObject identity{{"type", "string"}, {"minLength", 1}};
+    for (const auto& contract : contracts) {
+        const bool query = std::string_view(contract.operation) == "entity.query";
+        const OperationDefinition expected{contract.operation,
+                                           1,
+                                           "qcae.operation." + std::string(contract.operation) +
+                                               ".v1",
+                                           OperationEffect::read_only,
+                                           {true, true, false, false, false},
+                                           contract.fields};
+        QJsonObject descriptor;
+        unsigned count{};
+        for (const auto& entry : catalog)
+            if (entry.toObject().value("name") == contract.operation) {
+                descriptor = entry.toObject();
+                ++count;
+            }
+        require(
+            contract.definition == expected && count == 1 &&
+                descriptor.value("available") == true && descriptor.value("version") == 1 &&
+                descriptor.value("schema_id") == QString::fromStdString(expected.schema_id) &&
+                descriptor.value("input_type") == contract.input &&
+                descriptor.value("output_type") == contract.output &&
+                descriptor.value("wire_input_type") == contract.wire_input &&
+                descriptor.value("wire_output_type") == contract.output &&
+                descriptor.value("effect") == "query" &&
+                descriptor.value("target_context") == contract.target &&
+                descriptor.value("requires_document") == true &&
+                descriptor.value("requires_epoch") == true &&
+                descriptor.value("requires_revision") == false &&
+                descriptor.value("requires_idempotency_key") == false &&
+                descriptor.value("requires_profile_match") == false &&
+                descriptor.value("requested_version_field") == "requested_version" &&
+                descriptor.value("omitted_version_policy") == "installed_version" &&
+                !descriptor.contains("requested_version"),
+            "both entity reads discover one exact semantic v1 contract and existing result labels");
+        const auto fields = descriptor.value("fields").toArray();
+        require(fields.size() == static_cast<qsizetype>(contract.fields.size()),
+                "entity read discovery preserves all generated fields in definition order");
+        for (qsizetype index = 0; index < fields.size(); ++index) {
+            const auto field = fields[index].toObject();
+            const auto& semantic = contract.fields[static_cast<std::size_t>(index)];
+            const bool page = semantic.wire_type == "finite_number";
+            require(field.value("field_id").toInt() == static_cast<int>(semantic.field_id) &&
+                        field.value("name") == QString::fromStdString(semantic.name) &&
+                        field.value("wire_type") ==
+                            QString::fromStdString(page ? "integer" : semantic.wire_type) &&
+                        field.value("required") == semantic.required &&
+                        field.value("allow_empty") == semantic.allow_empty &&
+                        field.value("units") == (page ? QJsonArray{"1"} : QJsonArray{}),
+                    "raw field metadata retains identities, requirements, emptiness and units");
+            if (page)
+                require(field.value("semantic_wire_type") == "finite_number" &&
+                            !field.value("description").toString().isEmpty(),
+                        "integer pagination explains its validated finite-number projection");
+        }
+        const auto schema = descriptor.value("parameters_schema").toObject();
+        const auto properties = schema.value("properties").toObject();
+        require(
+            schema.value("type") == "object" && schema.value("additionalProperties") == false &&
+                schema.value("required") == (query ? QJsonArray{} : QJsonArray{"entity_id"}) &&
+                properties.size() == fields.size(),
+            "raw entity read parameters remain closed and retain their original required fields");
+        if (query) {
+            require(properties.value("kind").toObject().value("type") == "string" &&
+                        properties.value("kind").toObject().value("minLength") == 1 &&
+                        !properties.value("kind").toObject().contains("enum") &&
+                        properties.value("name_contains").toObject().value("type") == "string" &&
+                        !properties.value("name_contains").toObject().contains("minLength") &&
+                        properties.value("ids").toObject().value("type") == "array" &&
+                        properties.value("ids").toObject().value("items") == identity &&
+                        !properties.value("ids").toObject().contains("uniqueItems") &&
+                        properties.value("view").toObject().value("type") == "string" &&
+                        properties.value("owner_id").toObject().value("minLength") == 1,
+                    "kind stays registry-defined and raw IDs permit empty and duplicate filters");
+            for (const auto& [name, maximum] :
+                 std::vector<std::pair<const char*, int>>{{"offset", 100000}, {"limit", 1000}}) {
+                const auto page = properties.value(name).toObject();
+                require(
+                    page.value("type") == "integer" && page.value("minimum") == 0 &&
+                        page.value("maximum") == maximum,
+                    "raw pagination remains integer, including zero and the established bounds");
+            }
+        } else
+            require(properties.value("entity_id").toObject().value("type") == "string" &&
+                        properties.value("entity_id").toObject().value("minLength") == 1 &&
+                        properties.value("direction").toObject().value("type") == "string" &&
+                        properties.value("direction").toObject().value("enum") ==
+                            QJsonArray{"incoming", "outgoing"},
+                    "references retain the required identity and optional bounded direction");
+        const auto arguments = descriptor.value("arguments_schema").toObject();
+        const auto context = arguments.value("properties").toObject();
+        require(
+            arguments.value("type") == "object" &&
+                arguments.value("additionalProperties") == false && !arguments.contains("oneOf") &&
+                arguments.value("required") ==
+                    (query ? QJsonArray{"document_id", "document_epoch"}
+                           : QJsonArray{"parameters", "document_id", "document_epoch"}) &&
+                context.size() == 6 && context.value("parameters") == schema &&
+                context.value("document_id") == identity &&
+                context.value("document_epoch") == identity &&
+                context.value("expected_revision") == QJsonObject{} &&
+                context.value("idempotency_key") == QJsonObject{} &&
+                context.value("requested_version") ==
+                    QJsonObject{{"type", "integer"}, {"minimum", 1}, {"maximum", 4294967295.0}} &&
+                !context.contains("expected_profile"),
+            "complete arguments reuse raw parameters and require only actual read context");
+    }
+    for (const auto& value :
+         {Value(Value::Object{}),
+          Value(Value::Object{{"name_contains", Value("")},
+                              {"ids", Value(Value::Array{})},
+                              {"offset", Value(0.0)},
+                              {"limit", Value(0.0)}}),
+          Value(Value::Object{
+              {"kind", Value("local_geometry")},
+              {"name_contains", Value(" ")},
+              {"ids", Value(Value::Array{Value("right"), Value("left"), Value("unknown")})},
+              {"view", Value("part")},
+              {"owner_id", Value("part")},
+              {"offset", Value(100000.0)},
+              {"limit", Value(1000.0)}})}) {
+        const auto decoded = runtime_test::good(InputTraits<EntityQueryInput>::from_value(value));
+        const auto& projected = std::get<Value::Object>(value.data);
+        require(InputTraits<EntityQueryInput>::to_value(decoded) == value &&
+                    decoded.ids.has_value() == projected.contains("ids") &&
+                    decoded.offset.has_value() == projected.contains("offset") &&
+                    decoded.limit.has_value() == projected.contains("limit"),
+                "generated projection retains absent/empty filters, string bytes, zero and ordered "
+                "unique IDs");
+    }
+    require(!InputTraits<EntityQueryInput>::from_value(
+                 Value(Value::Object{{"ids", Value(Value::Array{Value("left"), Value("left")})}}))
+                 .ok(),
+            "semantic ID arrays are unique; the adapter must project accepted raw duplicates");
+    for (const auto& direction : {std::optional<std::string>{},
+                                  std::optional<std::string>{"incoming"},
+                                  std::optional<std::string>{"outgoing"}}) {
+        const EntityReferencesInput input{EntityId("left"), direction};
+        const auto value = InputTraits<EntityReferencesInput>::to_value(input);
+        const auto decoded =
+            runtime_test::good(InputTraits<EntityReferencesInput>::from_value(value));
+        require(
+            decoded.entity_id == input.entity_id && decoded.direction == direction &&
+                InputTraits<EntityReferencesInput>::to_value(decoded) == value,
+            "references preserve required identity and omitted or explicit direction projection");
+    }
+}
+void entity_read_contracts_preserve_application() {
+    using namespace qcae;
+    using namespace operations;
+    auto registry = std::make_shared<RecordRegistry>();
+    for (auto descriptor : generated_record_descriptors()) {
+        if (descriptor.type == RecordTraits<records::GeometryLine>::type_id)
+            descriptor.query_kind = "local_geometry";
+        registry->add(std::move(descriptor));
+    }
+    registry->add_rule(records::validate_relations);
+    registry->freeze();
+    auto store = std::make_shared<OpenContractStore>();
+    MemoryApplication app({}, store, {}, {}, registry);
+    ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+    const Caller caller{"entity-read-contract"}, other{"another-entity-reader"};
+    auto info = runtime_test::good(app.create_document(caller, "Entity reads", "create"));
+    runtime_test::good(app.record_application().execute(
+        caller,
+        runtime_test::at(info),
+        "test.entity.seed",
+        "entity-read-seed",
+        [](const DocumentView& view,
+           const RecordIdentityAllocator&) -> Result<RecordPreparedOperation> {
+            EditSession edit(view);
+            edit.put(records::Material{EntityId("material"), "Steel grade", 210000, .3});
+            edit.put(records::BeamSection{
+                EntityId("section"), "Section", EntityId("material"), 1, 1, 1, 1});
+            edit.put(records::Node{EntityId("left"), {0, 0, 0}, {}});
+            edit.put(records::Node{EntityId("right"), {1, 0, 0}, {}});
+            edit.put(records::Beam{EntityId("beam"),
+                                   EntityId("section"),
+                                   {EntityId("left"), EntityId("right")},
+                                   {0, 1, 0},
+                                   {}});
+            edit.put(records::Part{EntityId("part"), "Part", {EntityId("beam")}});
+            edit.put(records::Assembly{EntityId("assembly"), "Assembly", {EntityId("part")}});
+            edit.put(records::EntitySet{EntityId("set"), "Set", {EntityId("beam")}});
+            edit.put(
+                records::IncludeDocument{EntityId("include"),
+                                         "root.bdf",
+                                         {},
+                                         {EntityId("left"), EntityId("right"), EntityId("beam")}});
+            edit.put(records::SourceIdentifier{EntityId("source"),
+                                               EntityId("left"),
+                                               "source-model",
+                                               EntityId("include"),
+                                               runtime_test::profile,
+                                               "GRID",
+                                               1});
+            edit.put(records::AnalysisDefinition{
+                EntityId("analysis"), "Case", {runtime_test::profile, "linear_static"}, {}, {}});
+            edit.put(
+                records::GeometryLine{records::GeometryId("geometry"), {0, 0, 0}, {1, 0, 0}, 1});
+            edit.put(records::Mesh{records::MeshId("mesh"),
+                                   "Line mesh",
+                                   "geometry",
+                                   records::GeometryId("geometry"),
+                                   1,
+                                   false});
+            return {Status::success,
+                    RecordPreparedOperation{edit.prepare(),
+                                            "Entity fixture",
+                                            EntityId("material"),
+                                            "entity-read-seed",
+                                            210000,
+                                            true},
+                    {}};
+        },
+        "seed"));
+    info = runtime_test::good(app.current_document());
+    runtime_test::good(
+        app.save_document(caller, runtime_test::at(info), "/entity-read.qcae", false, "save"));
+    runtime_test::good(app.record_application().execute(caller,
+                                                        runtime_test::at(info),
+                                                        "test.entity.edit",
+                                                        runtime_test::modulus_signature(220000),
+                                                        runtime_test::material_change(220000),
+                                                        "edit"));
+    info = runtime_test::good(app.current_document());
+    require(info.dirty && !info.saved_content_state.empty() &&
+                runtime_test::good(app.history(info.document)).cursor == 2 && store->publishes == 1,
+            "entity read fixture has complete records, a save point and subsequent dirty history");
+    const auto before = open_contract_state(app, *store, caller);
+    const auto view = runtime_test::good(app.record_application().snapshot(info.document)).records;
+    const auto host_fact =
+        ipc::info_json(runtime_test::good(app.host_operation(caller, "create_document", "create")));
+    const auto saved_fact =
+        ipc::info_json(runtime_test::good(app.host_operation(caller, "save_document", "save")));
+    const auto receipt =
+        change_receipt_value(runtime_test::good(app.record_application().action_outcome(
+            caller, info.document, "test.entity.seed", "seed")));
+    const auto request_for = [&](const char* operation, const QJsonObject& parameters) {
+        return QJsonObject{{"api_version", "1.1"},
+                           {"request_id", "entity-read-contract"},
+                           {"operation", operation},
+                           {"parameters", parameters},
+                           {"document_id", QString::fromStdString(info.document.id.value)},
+                           {"document_epoch", QString::fromStdString(info.document.epoch.value)}};
+    };
+    const auto invoke = [&](const QJsonObject& request) {
+        const auto response = lookup_installed_versions(app, *store, host, caller, request, caller);
+        if ((request.value("operation") == "entity.query" ||
+             request.value("operation") == "entity.references") &&
+            response.value("status") == "success")
+            require(
+                response.value("revision") == QString::number(info.revision) &&
+                    response.value("data").toObject().value("revision") ==
+                        response.value("revision"),
+                "all successful entity reads preserve equal inner and outer snapshot revisions");
+        return response;
+    };
+    const auto query = [&](const QJsonObject& parameters) {
+        return invoke(request_for("entity.query", parameters));
+    };
+    const auto reject = [&](const QJsonObject& request,
+                            const char* code,
+                            const char* field,
+                            const char* message = nullptr,
+                            const char* status = "failed") {
+        const auto response =
+            request.contains("requested_version")
+                ? lookup_without_effects(app, *store, host, caller, request, caller)
+                : invoke(request);
+        const auto error = response.value("error").toObject();
+        require(response.value("status") == status && error.value("code") == code &&
+                    error.value("field").toString() == field,
+                "entity reads preserve exact version, raw-input and application/service refusals");
+        if (message) {
+            require(error.value("message") == message,
+                    "entity read refusal preserves its existing diagnostic text");
+            if (std::string_view(field).empty())
+                require(response == ipc::failure("entity-read-contract", code, message, status),
+                        "legacy raw refusal retains its entire unfielded response envelope");
+        }
+    };
+    const auto catalog = invoke(request_for("capabilities.list", {}));
+    entity_read_descriptors_and_projection(
+        catalog.value("data").toObject().value("operations").toArray());
+    const auto all = query({});
+    const auto rows = all.value("data").toObject().value("entities").toArray();
+    require(all.value("status") == "success" && rows.size() == 12 &&
+                all.value("data").toObject().value("total") == 12 &&
+                all.value("data").toObject().value("offset") == 0 &&
+                all.value("data").toObject().value("limit") == 100 &&
+                all.value("revision") == QString::number(info.revision) &&
+                query({{"name_contains", ""}, {"view", "all"}}) == all,
+            "omitted and empty-name filters read the same complete registry-backed record rows");
+    require(query({{"kind", "local_geometry"}}).value("data").toObject().value("total") == 1 &&
+                query({{"kind", "mesh"}}).value("data").toObject().value("total") == 1 &&
+                query({{"name_contains", " "}}).value("data").toObject().value("total") == 2,
+            "registry-contributed kinds and untrimmed name substrings reach the existing query "
+            "service");
+    const auto unique = query({{"ids", QJsonArray{"right", "left", "unknown"}}});
+    require(query({{"ids", QJsonArray{"right", "left", "right", "unknown", "left"}}}) == unique &&
+                unique.value("data").toObject().value("total") == 2,
+            "accepted raw duplicate IDs project to the same stable filtering set");
+    for (const auto& ids : {QJsonArray{}, QJsonArray{"unknown"}, QJsonArray{" "}})
+        require(query({{"ids", ids}}).value("data").toObject().value("total") == 0,
+                "explicit empty and unknown ID filters differ from an omitted ID filter without "
+                "rewriting bytes");
+    for (const auto& [offset, limit] : std::vector<std::pair<int, int>>{{0, 0}, {100000, 1000}}) {
+        const auto data = query({{"offset", offset}, {"limit", limit}}).value("data").toObject();
+        require(data.value("total") == rows.size() && data.value("offset") == offset &&
+                    data.value("limit") == limit && data.value("entities") == QJsonArray{},
+                "zero and boundary pagination preserve totals and exact page metadata");
+    }
+    require(query({{"offset", 1.0}, {"limit", 2.0}}).value("data").toObject().value("entities") ==
+                QJsonArray{rows[1], rows[2]},
+            "validated JSON integer-number pagination preserves record order");
+    for (const auto& [organization, owner, total] :
+         std::vector<std::tuple<const char*, const char*, int>>{{"part", "part", 3},
+                                                                {"assembly", "assembly", 4},
+                                                                {"set", "set", 1},
+                                                                {"include", "include", 3},
+                                                                {"material", "material", 4},
+                                                                {"property", "section", 3}})
+        require(query({{"view", organization}, {"owner_id", owner}})
+                        .value("data")
+                        .toObject()
+                        .value("total") == total,
+                "organization views retain intermediate rows and their service-owned closure");
+    for (const auto* direction : {"incoming", "outgoing"}) {
+        auto request =
+            request_for("entity.references", {{"entity_id", "left"}, {"direction", direction}});
+        const auto response = invoke(request);
+        QJsonArray references;
+        for (const auto& reference :
+             runtime_test::good(
+                 query_references(
+                     view, EntityId("left"), std::string_view(direction) == "incoming", 0, 1000))
+                 .references)
+            references.append(QJsonObject{{"from", QString::fromStdString(reference.from.value)},
+                                          {"to", QString::fromStdString(reference.to.value)},
+                                          {"role", QString::fromStdString(reference.role)}});
+        require(response.value("status") == "success" &&
+                    response.value("revision") == QString::number(info.revision) &&
+                    response.value("data") ==
+                        QJsonObject{{"references", references},
+                                    {"affected_analyses", QJsonArray{"analysis"}},
+                                    {"revision", QString::number(info.revision)}},
+                "references preserve the complete existing reference and affected-analysis result");
+        if (std::string_view(direction) == "incoming") {
+            request.insert("parameters", QJsonObject{{"entity_id", "left"}});
+            require(invoke(request) == response, "omitted reference direction remains incoming");
+        }
+        require(lookup_installed_versions(app, *store, host, caller, request, other) == response,
+                "ordinary reference reads share the same document facts across trusted callers");
+    }
+    const auto query_request = request_for("entity.query", {});
+    require(lookup_installed_versions(app, *store, host, caller, query_request, other) == all,
+            "ordinary entity reads do not inherit caller-scoped mutation-outcome visibility");
+    for (const auto* operation : {"entity.query", "entity.references"}) {
+        const auto parameters = std::string_view(operation) == "entity.query"
+                                    ? QJsonObject{}
+                                    : QJsonObject{{"entity_id", "left"}};
+        auto valid = request_for(operation, parameters);
+        const auto expected = invoke(valid);
+        auto correlated = valid;
+        correlated.insert("requested_version", 1);
+        correlated.insert("request_id", "entity-read-v1");
+        auto returned = lookup_without_effects(app, *store, host, caller, correlated, caller);
+        require(returned.value("request_id") == "entity-read-v1",
+                "v1 reads retain request correlation");
+        returned.insert("request_id", expected.value("request_id"));
+        require(returned == expected,
+                "different request IDs change only response correlation for omitted/v1 reads");
+        for (const auto& unused :
+             {QJsonValue("unused"),
+              QJsonValue(""),
+              QJsonValue(7),
+              QJsonValue(true),
+              QJsonValue(QJsonValue::Null),
+              QJsonValue(QJsonArray{}),
+              QJsonValue(QJsonArray{QJsonValue(QJsonValue::Null)}),
+              QJsonValue(QJsonObject{}),
+              QJsonValue(QJsonObject{{"nested", QJsonValue(QJsonValue::Null)}})}) {
+            auto request = valid;
+            request.insert("expected_revision", unused);
+            request.insert("idempotency_key", unused);
+            require(invoke(request) == expected,
+                    "all unused revision/key JSON shapes preserve the full read result");
+        }
+        auto invalid = valid;
+        invalid.insert("parameters", QJsonObject{{"extra", QJsonValue(QJsonValue::Null)}});
+        for (const auto* context : {"document_id", "document_epoch"}) {
+            auto wrong = invalid;
+            wrong.insert(context, "old-context");
+            for (const auto& version : {QJsonValue(0),
+                                        QJsonValue(-1),
+                                        QJsonValue(1.5),
+                                        QJsonValue(4294967296.0),
+                                        QJsonValue(true),
+                                        QJsonValue("1"),
+                                        QJsonValue(QJsonValue::Null),
+                                        QJsonValue(QJsonArray{}),
+                                        QJsonValue(QJsonObject{})}) {
+                wrong.insert("requested_version", version);
+                reject(wrong, "INVALID_INPUT", "requested_version");
+            }
+            for (const auto& version : {QJsonValue(2), QJsonValue(4294967295.0)}) {
+                wrong.insert("requested_version", version);
+                reject(wrong, "SCHEMA_UNSUPPORTED", "requested_version");
+            }
+            wrong.remove("requested_version");
+            reject(wrong,
+                   std::string_view(context) == "document_epoch" ? "DOCUMENT_EPOCH_EXPIRED"
+                                                                 : "DOCUMENT_NOT_FOUND",
+                   context,
+                   nullptr,
+                   std::string_view(context) == "document_epoch" ? "conflict" : "failed");
+            wrong = invalid;
+            wrong.remove(context);
+            wrong.insert("requested_version", 2);
+            reject(wrong, "SCHEMA_UNSUPPORTED", "requested_version");
+            wrong.remove("requested_version");
+            const auto message = std::string("Expected string: ") + context;
+            reject(wrong, "INVALID_INPUT", "", message.c_str());
+        }
+        reject(invalid, "INVALID_INPUT", "", "Unexpected field: extra");
+        for (const auto& shape : {QJsonValue(QJsonValue::Null),
+                                  QJsonValue(1),
+                                  QJsonValue("input"),
+                                  QJsonValue(true),
+                                  QJsonValue(QJsonArray{})}) {
+            invalid = valid;
+            invalid.insert("parameters", shape);
+            invalid.insert("requested_version", 2);
+            reject(invalid, "INVALID_INPUT", "", "parameters must be an object");
+        }
+        invalid = valid;
+        invalid.remove("parameters");
+        reject(invalid, "INVALID_INPUT", "", "parameters must be an object");
+        invalid = valid;
+        invalid.insert("expected_profile", QJsonObject{});
+        invalid.insert("requested_version", 2);
+        reject(invalid,
+               "INVALID_INPUT",
+               "",
+               "requested_version/expected_profile require a typed operation");
+    }
+    for (const auto* field :
+         {"kind", "name_contains", "view", "owner_id", "entity_id", "direction"}) {
+        const bool reference =
+            std::string_view(field) == "entity_id" || std::string_view(field) == "direction";
+        for (const auto& invalid : {QJsonValue(1),
+                                    QJsonValue(true),
+                                    QJsonValue(QJsonValue::Null),
+                                    QJsonValue(QJsonArray{}),
+                                    QJsonValue(QJsonObject{{"nested", 1}}),
+                                    QJsonValue(""),
+                                    QJsonValue(" ")}) {
+            if (std::string_view(field) == "name_contains" && invalid.isString())
+                continue;
+            QJsonObject parameters = reference ? QJsonObject{{"entity_id", "left"}} : QJsonObject{};
+            parameters.insert(field, invalid);
+            const auto message = std::string("Expected string: ") + field;
+            reject(request_for(reference ? "entity.references" : "entity.query", parameters),
+                   "INVALID_INPUT",
+                   "",
+                   message.c_str());
+        }
+    }
+    reject(request_for("entity.references", {}), "INVALID_INPUT", "", "Expected string: entity_id");
+    reject(request_for("entity.references", {{"entity_id", "left"}, {"direction", "both"}}),
+           "INVALID_INPUT",
+           "",
+           "Unknown reference direction");
+    for (const auto& invalid : {QJsonValue(QJsonValue::Null),
+                                QJsonValue(1),
+                                QJsonValue(true),
+                                QJsonValue("left"),
+                                QJsonValue(QJsonObject{}),
+                                QJsonValue(QJsonArray{1}),
+                                QJsonValue(QJsonArray{QJsonValue(QJsonValue::Null)}),
+                                QJsonValue(QJsonArray{QJsonObject{{"nested", 1}}}),
+                                QJsonValue(QJsonArray{""})})
+        reject(request_for("entity.query", {{"ids", invalid}}),
+               "INVALID_INPUT",
+               "",
+               invalid.isArray() ? "Invalid entity ID" : "Expected entity array: ids");
+    for (const auto& [field, maximum] :
+         std::vector<std::pair<const char*, int>>{{"offset", 100000}, {"limit", 1000}})
+        for (const auto& invalid : {QJsonValue(-1),
+                                    QJsonValue(maximum + 1),
+                                    QJsonValue(.5),
+                                    QJsonValue("0"),
+                                    QJsonValue(true),
+                                    QJsonValue(QJsonValue::Null),
+                                    QJsonValue(QJsonArray{}),
+                                    QJsonValue(QJsonObject{})})
+            reject(request_for("entity.query", {{field, invalid}}),
+                   "INVALID_INPUT",
+                   "",
+                   "Invalid pagination");
+    for (const auto& [parameters, code, message] :
+         std::vector<std::tuple<QJsonObject, const char*, const char*>>{
+             {{{"kind", "unknown"}}, "INVALID_INPUT", "Unknown entity kind"},
+             {{{"kind", "Local_geometry"}}, "INVALID_INPUT", "Unknown entity kind"},
+             {{{"owner_id", "part"}}, "INVALID_INPUT", "owner_id requires an organization view"},
+             {{{"view", "part"}},
+              "INVALID_INPUT",
+              "Organization view requires a supported view and owner"},
+             {{{"view", "unknown"}, {"owner_id", "part"}},
+              "INVALID_INPUT",
+              "Organization view requires a supported view and owner"},
+             {{{"view", "part"}, {"owner_id", "unknown"}},
+              "ENTITY_NOT_FOUND",
+              "Unknown view owner"},
+             {{{"view", "part"}, {"owner_id", "left"}},
+              "INVALID_INPUT",
+              "View owner kind does not match"}}) {
+        const auto response = query(parameters);
+        const auto error = response.value("error").toObject();
+        require(response.value("status") == "failed" && error.value("code") == code &&
+                    error.value("field") == "query" && error.value("message") == message,
+                "registry and view/owner checks remain in the existing query service");
+    }
+    reject(request_for("entity.references", {{"entity_id", "unknown"}}),
+           "ENTITY_NOT_FOUND",
+           "query",
+           "Entity does not exist");
+    const auto after = runtime_test::good(app.record_application().snapshot(info.document)).records;
+    require(open_contract_state(app, *store, caller) == before &&
+                after.matches_version(view.version()) && diff_record_views(view, after).empty() &&
+                ipc::info_json(runtime_test::good(
+                    app.host_operation(caller, "create_document", "create"))) == host_fact &&
+                ipc::info_json(runtime_test::good(
+                    app.host_operation(caller, "save_document", "save"))) == saved_fact &&
+                change_receipt_value(runtime_test::good(app.record_application().action_outcome(
+                    caller, info.document, "test.entity.seed", "seed"))) == receipt &&
+                !app.record_application()
+                     .action_outcome(other, info.document, "test.entity.seed", "seed")
+                     .ok() &&
+                !app.record_application()
+                     .action_outcome(caller, info.document, "entity.query", "unused")
+                     .ok() &&
+                !app.record_application()
+                     .action_outcome(caller, info.document, "entity.references", "unused")
+                     .ok(),
+            "all grouped reads preserve full records, store/history/metadata/I/O and original "
+            "caller facts without retaining write keys");
+}
 void diagnostic_reports_survive_transport() {
     using namespace qcae;
     using namespace operations;
@@ -2477,6 +3061,7 @@ int main() {
         project_save_close_contract_and_replay();
         changes_commit_contract_and_replay();
         host_read_and_history_contracts();
+        entity_read_contracts_preserve_application();
         std::cout << "PASS typed JSON transport, mesh idempotency and task fault recovery\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

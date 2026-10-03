@@ -1,5 +1,6 @@
 #include "qcae/ipc_model.hpp"
 #include "qcae/json_ledger.hpp"
+#include "qcae/operation_inputs.hpp"
 #include "qcae/query.hpp"
 #include "qcae/records.hpp"
 #include <QJsonArray>
@@ -327,22 +328,64 @@ int page_index(const QJsonObject& parameters, const char* key, int fallback, int
         throw BadInput("Invalid pagination");
     return value.toInt();
 }
-QJsonObject
-entity_query(const QString& id, const QJsonObject& parameters, const RecordSnapshot& snapshot) {
+template <class Input> Input validated_input(operations::Value::Object input) {
+    auto decoded = operations::InputTraits<Input>::from_value(operations::Value(std::move(input)));
+    if (!decoded.ok())
+        throw BadInput(decoded.error->message);
+    return std::move(*decoded.value);
+}
+operations::EntityQueryInput entity_query_input(const QJsonObject& parameters) {
+    // Keep raw validation and its error order before projecting the semantic DTO.
     fields(parameters, {"kind", "name_contains", "ids", "view", "owner_id", "offset", "limit"});
-    EntityFilter filter;
+    EntityFilter parsed;
     if (parameters.contains("kind"))
-        filter.kind = str(parameters, "kind");
+        parsed.kind = str(parameters, "kind");
     if (parameters.contains("name_contains"))
-        filter.name_contains = str(parameters, "name_contains", true);
+        parsed.name_contains = str(parameters, "name_contains", true);
     if (parameters.contains("ids"))
-        filter.ids = ids(parameters, "ids");
+        parsed.ids = ids(parameters, "ids");
     if (parameters.contains("view"))
-        filter.view = str(parameters, "view");
+        parsed.view = str(parameters, "view");
     if (parameters.contains("owner_id"))
-        filter.owner = EntityId(str(parameters, "owner_id"));
+        parsed.owner = EntityId(str(parameters, "owner_id"));
     const auto offset = page_index(parameters, "offset", 0, 100000);
     const auto limit = page_index(parameters, "limit", 100, 1000);
+
+    operations::Value::Object input;
+    if (parameters.contains("kind"))
+        input.emplace("kind", operations::Value(std::move(parsed.kind)));
+    if (parameters.contains("name_contains"))
+        input.emplace("name_contains", operations::Value(std::move(parsed.name_contains)));
+    if (parsed.ids) {
+        operations::Value::Array identities;
+        std::set<std::string> seen;
+        // IDs are a filter set: raw duplicates remain accepted, and [] stays distinct
+        // from omission. Preserve the first occurrence of every unchanged identity.
+        for (const auto& identity : *parsed.ids)
+            if (seen.insert(identity.value).second)
+                identities.emplace_back(identity.value);
+        input.emplace("ids", operations::Value(std::move(identities)));
+    }
+    if (parameters.contains("view"))
+        input.emplace("view", operations::Value(std::move(parsed.view)));
+    if (parsed.owner)
+        input.emplace("owner_id", operations::Value(std::move(parsed.owner->value)));
+    if (parameters.contains("offset"))
+        input.emplace("offset", operations::Value(offset));
+    if (parameters.contains("limit"))
+        input.emplace("limit", operations::Value(limit));
+    return validated_input<operations::EntityQueryInput>(std::move(input));
+}
+QJsonObject
+entity_query(const QString& id, const QJsonObject& parameters, const RecordSnapshot& snapshot) {
+    const auto input = entity_query_input(parameters);
+    const EntityFilter filter{input.kind.value_or(std::string{}),
+                              input.name_contains.value_or(std::string{}),
+                              input.ids,
+                              input.view.value_or("all"),
+                              input.owner_id};
+    const auto offset = static_cast<int>(input.offset.value_or(0));
+    const auto limit = static_cast<int>(input.limit.value_or(100));
     const auto page = query_page(snapshot.records, filter, offset, limit);
     if (!page.ok())
         return error(id, page);
@@ -354,15 +397,24 @@ entity_query(const QString& id, const QJsonObject& parameters, const RecordSnaps
     transport::json_ledger::object(data, {"entities", "total", "offset", "limit"});
     return ok(id, data, snapshot.info.revision);
 }
-QJsonObject entity_references(const QString& id,
-                              const QJsonObject& parameters,
-                              const RecordSnapshot& snapshot) {
+operations::EntityReferencesInput entity_references_input(const QJsonObject& parameters) {
     fields(parameters, {"entity_id", "direction"});
     const EntityId selected{str(parameters, "entity_id")};
     const auto direction =
         parameters.contains("direction") ? str(parameters, "direction") : "incoming";
     if (direction != "incoming" && direction != "outgoing")
         throw BadInput("Unknown reference direction");
+    operations::Value::Object input{{"entity_id", operations::Value(selected.value)}};
+    if (parameters.contains("direction"))
+        input.emplace("direction", operations::Value(direction));
+    return validated_input<operations::EntityReferencesInput>(std::move(input));
+}
+QJsonObject entity_references(const QString& id,
+                              const QJsonObject& parameters,
+                              const RecordSnapshot& snapshot) {
+    const auto input = entity_references_input(parameters);
+    const auto& selected = input.entity_id;
+    const auto direction = input.direction.value_or("incoming");
     QJsonArray rows;
     std::size_t offset = 0;
     // The existing response contains every reference. Read bounded record pages without

@@ -42,7 +42,7 @@ void fields(const QJsonObject& object, std::initializer_list<const char*> allowe
             }))
             throw InvalidRequest("Unexpected field: " + it.key().toStdString());
 }
-// Explicit legacy read contracts use the same names and bounds as dispatch_model.
+// Raw read contracts use the same names and bounds as dispatch_model.
 // Absence means the legacy contract has not yet been described, not an empty input.
 std::optional<QJsonObject> read_parameters_schema(std::string_view operation) {
     QJsonObject properties;
@@ -53,18 +53,63 @@ std::optional<QJsonObject> read_parameters_schema(std::string_view operation) {
             {"kind",
              QJsonObject{{"type", "string"},
                          {"minLength", 1},
-                         {"description", "Case-sensitive query kind, for example node or beam."}}},
-            {"name_contains", QJsonObject{{"type", "string"}}},
-            {"ids", QJsonObject{{"type", "array"}, {"items", identity}}},
-            {"view", identity},
-            {"owner_id", identity},
-            {"offset", QJsonObject{{"type", "integer"}, {"minimum", 0}, {"maximum", 100000}}},
-            {"limit", QJsonObject{{"type", "integer"}, {"minimum", 0}, {"maximum", 1000}}}};
+                         {"description",
+                          "Case-sensitive kind from the current record registry. Empty or "
+                          "whitespace-only text is rejected; unknown kinds are diagnosed by the "
+                          "query service."}}},
+            {"name_contains",
+             QJsonObject{
+                 {"type", "string"},
+                 {"description", "Substring filter; empty and whitespace text are preserved."}}},
+            {"ids",
+             QJsonObject{{"type", "array"},
+                         {"items", identity},
+                         {"description",
+                          "Omission leaves IDs unrestricted; an empty array matches no entities. "
+                          "Duplicates are accepted and projected once in first-occurrence order. "
+                          "Nonempty IDs are preserved, including whitespace."}}},
+            {"view",
+             QJsonObject{{"type", "string"},
+                         {"minLength", 1},
+                         {"description",
+                          "Omission selects all. Empty or whitespace-only text is rejected; the "
+                          "query service validates the view and its owner relationship."}}},
+            {"owner_id",
+             QJsonObject{
+                 {"type", "string"},
+                 {"minLength", 1},
+                 {"description",
+                  "Empty or whitespace-only text is rejected. Owner existence, kind and "
+                  "requirements depend on the view and are validated by the query service."}}},
+            {"offset",
+             QJsonObject{{"type", "integer"},
+                         {"minimum", 0},
+                         {"maximum", 100000},
+                         {"description",
+                          "Omission selects 0. The raw integer and range are checked before "
+                          "projection to the finite-number DTO field."}}},
+            {"limit",
+             QJsonObject{
+                 {"type", "integer"},
+                 {"minimum", 0},
+                 {"maximum", 1000},
+                 {"description",
+                  "Omission selects 100; zero returns no rows with the total count. The raw "
+                  "integer and range are checked before projection to the finite-number DTO "
+                  "field."}}}};
     } else if (operation == "entity.references") {
         properties = QJsonObject{
-            {"entity_id", identity},
+            {"entity_id",
+             QJsonObject{{"type", "string"},
+                         {"minLength", 1},
+                         {"description",
+                          "Empty or whitespace-only text is rejected; the query service validates "
+                          "entity existence."}}},
             {"direction",
-             QJsonObject{{"type", "string"}, {"enum", QJsonArray{"incoming", "outgoing"}}}}};
+             QJsonObject{
+                 {"type", "string"},
+                 {"enum", QJsonArray{"incoming", "outgoing"}},
+                 {"description", "Omission selects incoming; all references are returned."}}}};
         required.append("entity_id");
     } else {
         return {};
@@ -164,6 +209,62 @@ void describe_string_input(QJsonObject& entry,
                  QJsonObject{{"type", "object"},
                              {"properties", properties},
                              {"required", required},
+                             {"additionalProperties", false}});
+}
+void describe_entity_read(QJsonObject& entry,
+                          const operations::OperationDefinition& definition,
+                          std::string_view input_type,
+                          const QJsonObject& parameters_schema) {
+    const auto properties = parameters_schema.value("properties").toObject();
+    QJsonArray fields;
+    for (const auto& field : definition.fields) {
+        QJsonArray units;
+        for (const auto& unit : field.units)
+            units.append(qs(unit));
+        QJsonObject metadata{{"field_id", static_cast<qint64>(field.field_id)},
+                             {"name", qs(field.name)},
+                             {"wire_type", qs(field.wire_type)},
+                             {"required", field.required},
+                             {"allow_empty", field.allow_empty},
+                             {"units", units}};
+        const auto raw = properties.value(qs(field.name)).toObject();
+        if (field.wire_type == "finite_number") {
+            // Discovery describes accepted raw pagination; the DTO receives checked integers.
+            metadata.insert("wire_type", "integer");
+            metadata.insert("semantic_wire_type", qs(field.wire_type));
+        }
+        metadata.insert("description", raw.value("description"));
+        fields.append(metadata);
+    }
+    entry.insert("version", static_cast<qint64>(definition.version));
+    entry.insert("schema_id", qs(definition.schema_id));
+    entry.insert("requested_version_field", "requested_version");
+    entry.insert("omitted_version_policy", "installed_version");
+    entry.insert("wire_input_type", qs(input_type));
+    // These labels describe the existing serializers, not generated output DTOs.
+    entry.insert("wire_output_type", entry.value("output_type"));
+    entry.insert("fields", fields);
+
+    const QJsonObject identity{{"type", "string"}, {"minLength", 1}};
+    QJsonArray required_arguments;
+    // The MCP bridge supplies {} when the all-optional query parameters are omitted.
+    if (definition.operation_id == "entity.references")
+        required_arguments.append("parameters");
+    required_arguments.append("document_id");
+    required_arguments.append("document_epoch");
+    entry.insert("arguments_schema",
+                 QJsonObject{{"type", "object"},
+                             {"properties",
+                              QJsonObject{{"parameters", parameters_schema},
+                                          {"document_id", identity},
+                                          {"document_epoch", identity},
+                                          {"expected_revision", QJsonObject{}},
+                                          {"idempotency_key", QJsonObject{}},
+                                          {"requested_version",
+                                           QJsonObject{{"type", "integer"},
+                                                       {"minimum", 1},
+                                                       {"maximum", 4294967295.0}}}}},
+                             {"required", required_arguments},
                              {"additionalProperties", false}});
 }
 void describe_project_open(QJsonObject& entry) {
@@ -454,10 +555,19 @@ QJsonObject dispatch(MemoryApplication& app,
             op == "project.save_as" || op == "project.close" || op == "changes.commit" ||
             op == "capabilities.list" || op == "project.current" || op == "project.status" ||
             op == "model.summary" || op == "history.list" || op == "history.undo" ||
-            op == "history.redo" || op == "operations.get";
+            op == "history.redo" || op == "operations.get" || op == "entity.query" ||
+            op == "entity.references";
         if ((request.contains("requested_version") && !generated_input) ||
             request.contains("expected_profile"))
             throw InvalidRequest("requested_version/expected_profile require a typed operation");
+        if (op == "entity.query" || op == "entity.references") {
+            const auto definition =
+                op == "entity.query"
+                    ? operations::InputTraits<operations::EntityQueryInput>::definition()
+                    : operations::InputTraits<operations::EntityReferencesInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+        }
         if (selections) {
             if (const auto selection_response =
                     dispatch_selection(app, *selections, request, caller))
@@ -566,8 +676,21 @@ QJsonObject dispatch(MemoryApplication& app,
                 else if (descriptor.name == "operations.get")
                     describe_operation_lookup(entry);
                 entry.insert("available", available);
-                if (const auto schema = read_parameters_schema(descriptor.name))
+                if (const auto schema = read_parameters_schema(descriptor.name)) {
                     entry.insert("parameters_schema", *schema);
+                    if (descriptor.name == "entity.query")
+                        describe_entity_read(
+                            entry,
+                            operations::InputTraits<operations::EntityQueryInput>::definition(),
+                            "EntityQueryInput",
+                            *schema);
+                    else if (descriptor.name == "entity.references")
+                        describe_entity_read(entry,
+                                             operations::InputTraits<
+                                                 operations::EntityReferencesInput>::definition(),
+                                             "EntityReferencesInput",
+                                             *schema);
+                }
                 if (descriptor.name == "changes.preview") {
                     QJsonArray commands{"material.create",
                                         "material.set_young_modulus",

@@ -30,6 +30,23 @@ HOST_CONTROLS = {
 }
 
 
+ENTITY_READS = {
+    "entity.query": ("EntityQueryInput", "EntityQuery", "SelectionResult", "conditional", (
+        ("kind", "string", False, False, []),
+        ("name_contains", "string", False, True, []),
+        ("ids", "entity_id_array", False, True, []),
+        ("view", "string", False, False, []),
+        ("owner_id", "entity_id", False, False, []),
+        ("offset", "integer", False, False, ["1"]),
+        ("limit", "integer", False, False, ["1"]),
+    )),
+    "entity.references": ("EntityReferencesInput", "ReferenceQuery", "ReferenceResult", "none", (
+        ("entity_id", "entity_id", True, False, []),
+        ("direction", "string", False, False, []),
+    )),
+}
+
+
 class Client:
     def __init__(self, command, endpoint):
         self.process = subprocess.Popen([*command, "--endpoint", str(endpoint)], stdin=subprocess.PIPE,
@@ -105,6 +122,210 @@ def read_context(context):
 
 def envelope(response):
     return {key: value for key, value in response.items() if key != "request_id"}
+
+
+def assert_entity_read_discovery(catalog, capabilities):
+    identity = {"type": "string", "minLength": 1}
+    raw_properties = {
+        "entity.query": {"kind": identity, "name_contains": {"type": "string"},
+                         "ids": {"type": "array", "items": identity}, "view": identity,
+                         "owner_id": identity,
+                         "offset": {"type": "integer", "minimum": 0, "maximum": 100000},
+                         "limit": {"type": "integer", "minimum": 0, "maximum": 1000}},
+        "entity.references": {"entity_id": identity,
+                              "direction": {"type": "string", "enum": ["incoming", "outgoing"]}},
+    }
+    for operation, contract in ENTITY_READS.items():
+        wire_input, catalog_input, output, target, expected_fields = contract
+        entries = [entry for entry in capabilities if entry["name"] == operation]
+        assert len(entries) == 1 and entries[0]["available"] is True, entries
+        descriptor, tool = entries[0], catalog[operation]
+        caption, separator, source = tool["description"].partition("\nEngine capability: ")
+        assert separator and caption == descriptor["description"] and json.loads(source) == descriptor, tool
+        assert caption, descriptor
+        expected = {"version": 1, "schema_id": f"qcae.operation.{operation}.v1",
+                    "requested_version_field": "requested_version", "omitted_version_policy": "installed_version",
+                    "wire_input_type": wire_input, "wire_output_type": output, "input_type": catalog_input,
+                    "output_type": output, "effect": "query", "target_context": target,
+                    "requires_document": True, "requires_epoch": True, "requires_revision": False,
+                    "requires_idempotency_key": False, "requires_profile_match": False}
+        assert {key: descriptor.get(key) for key in expected} == expected, descriptor
+        fields = descriptor["fields"]
+        assert len(fields) == len(expected_fields), fields
+        for field_id, (field, contract_field) in enumerate(zip(fields, expected_fields), 1):
+            name, wire_type, required, allow_empty, units = contract_field
+            expected_field = {"field_id": field_id, "name": name, "wire_type": wire_type,
+                              "required": required, "allow_empty": allow_empty, "units": units}
+            assert {key: field.get(key) for key in expected_field} == expected_field, field
+            assert isinstance(field.get("description"), str) and field["description"], field
+            if wire_type == "integer":
+                assert field["semantic_wire_type"] == "finite_number", field
+        parameters = descriptor["parameters_schema"]
+        parameter_required = ["entity_id"] if operation == "entity.references" else []
+        # Descriptions can explain raw semantics; all structural constraints stay exact.
+        constraints = {**parameters, "properties": {
+            name: {key: value for key, value in schema.items() if key != "description"}
+            for name, schema in parameters["properties"].items()}}
+        assert constraints == {"type": "object", "properties": raw_properties[operation],
+                               "required": parameter_required, "additionalProperties": False}, parameters
+        arguments = descriptor["arguments_schema"]
+        required = (["parameters"] if parameter_required else []) + ["document_id", "document_epoch"]
+        assert arguments == {"type": "object", "properties": {
+            "parameters": parameters, "document_id": identity, "document_epoch": identity,
+            "expected_revision": {}, "idempotency_key": {},
+            "requested_version": {"type": "integer", "minimum": 1, "maximum": 4294967295}},
+            "required": required, "additionalProperties": False}, arguments
+        assert tool["inputSchema"] == arguments, (tool, descriptor)
+
+
+def assert_entity_read_pair(first, second, operation, arguments, context, status="success"):
+    omitted = first.call_arguments(operation, arguments, status)
+    explicit = second.call_arguments(operation, {**arguments, "requested_version": 1}, status)
+    assert envelope(omitted) == envelope(explicit), (omitted, explicit)
+    assert omitted["request_id"] != explicit["request_id"], (omitted, explicit)
+    if status == "success":
+        assert omitted["revision"] == omitted["data"]["revision"] == context["revision"], omitted
+    return omitted
+
+
+def entity_read_state(client, context, entity_id):
+    arguments = {"parameters": {}, **read_context(context)}
+    return {**document_state(client, context),
+            "entities": envelope(client.call_arguments("entity.query", arguments)),
+            "fields": envelope(client.call("entity.fields", {"entity_id": entity_id}, read_context(context)))}
+
+
+def assert_cli_entity_read(cli, endpoint, operation, arguments, expected):
+    # MCP supplies {} when parameters is omitted; the engine API still requires the object.
+    request = {"api_version": "1.1", "request_id": f"mcp-cli-{operation}", "operation": operation,
+               "parameters": {}, **arguments}
+    result = subprocess.run([cli, "--socket", str(endpoint), "--no-start"],
+                            input=json.dumps(request), capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, (result.returncode, result.stderr, result.stdout)
+    response = json.loads(result.stdout)
+    assert response["request_id"] == request["request_id"], response
+    assert envelope(response) == envelope(expected), (response, expected)
+
+
+def assert_entity_read_calls(first, second, context, entity_id, cli, endpoint):
+    # Both actual MCP connections have the trusted local-user identity. These reads
+    # observe the Material already committed by this fixture; no extra model is created.
+    document = read_context(context)
+    before = entity_read_state(second, context, entity_id)
+    unfiltered = assert_entity_read_pair(first, second, "entity.query", document, context)
+    explicit_empty = assert_entity_read_pair(first, second, "entity.query", {"parameters": {}, **document}, context)
+    assert envelope(unfiltered) == envelope(explicit_empty), (unfiltered, explicit_empty)
+    rows = unfiltered["data"]["entities"]
+    assert unfiltered["data"]["total"] == len(rows) == 1 and rows[0]["entity_id"] == entity_id, unfiltered
+    assert rows[0]["kind"] == "material" and rows[0]["name"] == "Steel", rows
+    assert rows[0]["sources"] == [], rows
+
+    query_cases = (
+        ({"kind": "material"}, rows, 1, 0, 100),
+        ({"kind": "geometry"}, [], 0, 0, 100),
+        ({"name_contains": ""}, rows, 1, 0, 100),
+        ({"name_contains": "Steel"}, rows, 1, 0, 100),
+        ({"name_contains": " "}, [], 0, 0, 100),
+        ({"ids": [entity_id]}, rows, 1, 0, 100),
+        ({"ids": [entity_id, "unknown", entity_id]}, rows, 1, 0, 100),
+        ({"ids": []}, [], 0, 0, 100),
+        ({"ids": ["unknown"]}, [], 0, 0, 100),
+        ({"view": "all"}, rows, 1, 0, 100),
+        ({"view": "material", "owner_id": entity_id}, [], 0, 0, 100),
+        ({"offset": 0, "limit": 0}, [], 1, 0, 0),
+        ({"offset": 0, "limit": 1000}, rows, 1, 0, 1000),
+        ({"offset": 100000.0, "limit": 1000.0}, [], 1, 100000, 1000),
+    )
+    successful = [("entity.query", document, unfiltered),
+                  ("entity.query", {"parameters": {}, **document}, explicit_empty)]
+    for parameters, entities, total, offset, limit in query_cases:
+        arguments = {"parameters": parameters, **document}
+        response = assert_entity_read_pair(first, second, "entity.query", arguments, context)
+        assert response["data"] == {"entities": entities, "total": total, "offset": offset,
+                                    "limit": limit, "revision": context["revision"]}, response
+        successful.append(("entity.query", arguments, response))
+    for parameters in ({"entity_id": entity_id}, {"entity_id": entity_id, "direction": "incoming"},
+                       {"entity_id": entity_id, "direction": "outgoing"}):
+        arguments = {"parameters": parameters, **document}
+        response = assert_entity_read_pair(first, second, "entity.references", arguments, context)
+        assert response["data"] == {"references": [], "affected_analyses": [],
+                                    "revision": context["revision"]}, response
+        successful.append(("entity.references", arguments, response))
+    for operation, arguments, expected in successful:
+        for version in (None, 1):
+            requested = {**arguments, **({"requested_version": version} if version is not None else {})}
+            assert_cli_entity_read(cli, endpoint, operation, requested, expected)
+    for operation, parameters in (("entity.query", {}), ("entity.references", {"entity_id": entity_id})):
+        arguments = {"parameters": parameters, **document}
+        baseline = first.call_arguments(operation, arguments)
+        for unused in (None, False, 0, "", [], [None, {"nested": True}], {"nested": [None]}):
+            response = second.call_arguments(operation, {**arguments, "expected_revision": unused,
+                "idempotency_key": unused, "requested_version": 1})
+            assert envelope(response) == envelope(baseline), (response, baseline, unused)
+    assert entity_read_state(first, context, entity_id) == before
+
+    query_refusals = (
+        ({"kind": "unknown"}, "INVALID_INPUT"), ({"kind": "Material"}, "INVALID_INPUT"),
+        ({"owner_id": entity_id}, "INVALID_INPUT"), ({"view": "part"}, "INVALID_INPUT"),
+        ({"view": "spatial", "owner_id": entity_id}, "INVALID_INPUT"),
+        ({"view": "part", "owner_id": entity_id}, "INVALID_INPUT"),
+        ({"view": "material", "owner_id": "unknown"}, "ENTITY_NOT_FOUND"),
+    )
+    reference_refusals = (({}, "INVALID_INPUT"), ({"entity_id": "unknown"}, "ENTITY_NOT_FOUND"),
+                          ({"entity_id": entity_id, "direction": "both"}, "INVALID_INPUT"))
+    for operation, cases in (("entity.query", query_refusals), ("entity.references", reference_refusals)):
+        for parameters, error_code in cases:
+            rejected = assert_entity_read_pair(first, second, operation, {"parameters": parameters, **document},
+                                              context, "failed")
+            assert rejected["error"]["code"] == error_code, rejected
+    missing_references = assert_entity_read_pair(first, second, "entity.references", document, context, "failed")
+    assert missing_references["error"]["code"] == "INVALID_INPUT", missing_references
+    raw_refusals = {
+        "entity.query": ({"extra": None}, {"kind": None}, {"kind": " "}, {"name_contains": []},
+                         {"ids": None}, {"ids": [[entity_id]]}, {"ids": [entity_id, None]}, {"ids": [""]},
+                         {"view": {}}, {"view": " "}, {"owner_id": []}, {"owner_id": " "},
+                         {"offset": None}, {"offset": True}, {"offset": -1}, {"offset": 0.5},
+                         {"offset": 100001}, {"limit": {}}, {"limit": -1}, {"limit": 0.5}, {"limit": 1001}),
+        "entity.references": ({"extra": None, "entity_id": entity_id}, {"entity_id": None},
+                              {"entity_id": []}, {"entity_id": " "},
+                              {"entity_id": entity_id, "direction": None},
+                              {"entity_id": entity_id, "direction": {}},
+                              {"entity_id": entity_id, "direction": " "}),
+    }
+    for operation, cases in raw_refusals.items():
+        for parameters in cases:
+            rejected = assert_entity_read_pair(first, second, operation, {"parameters": parameters, **document},
+                                              context, "failed")
+            assert rejected["error"]["code"] == "INVALID_INPUT", rejected
+        for shape in (None, [], "invalid", 7):
+            rejected = first.request("tools/call", {"name": operation,
+                "arguments": {"parameters": shape, **document}})
+            assert rejected["error"]["code"] == -32602, rejected
+    assert entity_read_state(second, context, entity_id) == before
+
+    for operation, parameters in (("entity.query", {}), ("entity.references", {"entity_id": entity_id})):
+        arguments = {"parameters": parameters, **document}
+        for missing in ("document_id", "document_epoch"):
+            rejected = assert_entity_read_pair(first, second, operation,
+                {key: value for key, value in arguments.items() if key != missing}, context, "failed")
+            assert rejected["error"]["code"] == "INVALID_INPUT", rejected
+        old_document = assert_entity_read_pair(first, second, operation,
+            {**arguments, "document_id": "old-document"}, context, "failed")
+        assert old_document["error"]["code"] == "DOCUMENT_NOT_FOUND", old_document
+        old_epoch = assert_entity_read_pair(first, second, operation,
+            {**arguments, "document_epoch": "old-epoch", "parameters": {"extra": None}}, context, "conflict")
+        assert old_epoch["error"]["code"] == "DOCUMENT_EPOCH_EXPIRED", old_epoch
+        for version in (None, True, "1", 0, -1, 1.5, 4294967296, [], {}, 2, 4294967295):
+            for invalid_context in ({}, {"document_id": "old-document", "document_epoch": "old-epoch"},
+                                    {**document, "document_epoch": "old-epoch"}):
+                rejected = second.call_arguments(operation, {"parameters": {"extra": None},
+                    **invalid_context, "requested_version": version}, "failed")
+                expected = "SCHEMA_UNSUPPORTED" if type(version) is int and version in (2, 4294967295) else "INVALID_INPUT"
+                assert rejected["error"]["code"] == expected and rejected["error"]["field"] == "requested_version", rejected
+        # expected_profile remains an earlier envelope rejection, including a future version.
+        rejected = first.call_arguments(operation, {**arguments, "expected_profile": None, "requested_version": 2}, "failed")
+        assert rejected["error"]["code"] == "INVALID_INPUT" and "field" not in rejected["error"], rejected
+    assert entity_read_state(first, context, entity_id) == before
 
 
 def assert_lookup_discovery(catalog, capabilities):
@@ -323,6 +544,7 @@ def run(args):
                 assert "analysis.start" not in catalog
                 assert_host_control_discovery(catalog, caps)
                 assert_lookup_discovery(catalog, caps)
+                assert_entity_read_discovery(catalog, caps)
                 create_schema = catalog["project.create"]["inputSchema"]
                 create_descriptor = next(item for item in caps if item["name"] == "project.create")
                 assert create_schema["properties"]["parameters"] == create_descriptor["parameters_schema"] == {
@@ -383,10 +605,6 @@ def run(args):
                 assert "expected_profile" not in material_schema["required"], material_schema
                 assert catalog["view.render_resource"]["inputSchema"]["properties"]["requested_version"]["const"] == 1
                 assert "requested_version" in catalog["view.render_resource"]["inputSchema"]["required"]
-                query_schema = catalog["entity.query"]["inputSchema"]["properties"]["parameters"]
-                assert query_schema["additionalProperties"] is False
-                assert set(query_schema["properties"]) == {"kind", "name_contains", "ids", "view", "owner_id", "offset", "limit"}
-                assert query_schema["properties"]["limit"] == {"type": "integer", "minimum": 0, "maximum": 1000}
                 fields_schema = catalog["entity.fields"]["inputSchema"]["properties"]["parameters"]
                 assert fields_schema["required"] == ["entity_id"] and fields_schema["additionalProperties"] is False
                 assert catalog["task.status"]["inputSchema"]["properties"]["parameters"]["required"] == ["task_id"]
@@ -428,6 +646,7 @@ def run(args):
                 updated = second.current()
                 assert int(updated["revision"]) == int(context["revision"]) + 1
                 same_commit(first.call("material.create", material, context, "mcp-material"), committed)
+                assert_entity_read_calls(first, second, updated, committed["data"]["entity_id"], args.cli, endpoint)
                 before_action_lookup = document_state(second, updated)
                 assert_lookup_calls(first, second, {"lookup_scope": "document", "original_operation": "material.create",
                     "idempotency_key": "mcp-material"}, updated, committed, ignored_modes=True)
@@ -599,7 +818,7 @@ def run(args):
                     client.process.wait(timeout=5)
                 engine.terminate()
                 engine.wait(timeout=5)
-    print("PASS: two actual MCP stdio clients and CLI share discovery, units, versions, idempotency and history")
+    print("PASS: two actual MCP stdio clients and CLI share discovery, entity reads, versions, idempotency and history")
 
 
 if __name__ == "__main__":
