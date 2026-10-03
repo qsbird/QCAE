@@ -52,8 +52,8 @@ before handler invocation; malformed values return `INVALID_INPUT`. Existing API
 may omit this field, deliberately selecting the installed typed version. Discovery publishes
 `requested_version_field` and `omitted_version_policy` so new clients can pin the contract.
 This is separate from transport `api_version`. The five intrinsic project lifecycle routes
-below and `changes.commit` also accept this operation version. Other legacy operations keep their existing request
-shape and reject the new context fields.
+below, `changes.commit`, and the seven host read/history routes also accept this operation
+version. Other legacy operations keep their existing request shape and reject the new context fields.
 
 A typed operation declaring `requires_expected_profile: true` requires top-level
 `expected_profile: {profile_id, profile_version, definition_digest}` with no extra members.
@@ -160,6 +160,19 @@ for this reserved compatibility route. Stable identity and fields survive explic
 storage iteration order is not an identity contract. Actual SQLite refusal/replay/recovery tests,
 the corrected test-only ordering assumption and retained graphical limits are in
 [the commit-contract evidence](../../docs/engineering/changes-commit-contract-2026-10-03.md).
+
+### Versioned host reads and history
+
+`capabilities.list`, `project.current`, `project.status`, `model.summary`, `history.list`,
+`history.undo` and `history.redo` decode generated empty v1 inputs and advertise closed
+empty parameter schemas. The first two need no document context; the next three need
+document/epoch only; undo/redo retain document/epoch/revision/key. Omitted/v1 requests use
+the installed contract. Invalid shape/version is rejected before the same application
+service call. Reads preserve authoritative state; history writes use the original one
+commit coordinator and retain replay facts after later undo/redo. Symbolic catalog labels
+and serializers are unchanged; wire result labels describe existing results rather than
+new generated output schemas. `operations.get` retains its conditional compatibility.
+See [actual tests and scope](../../docs/engineering/host-controls-contracts-2026-10-03.md).
 
 ### C3 versioned display resources and events
 

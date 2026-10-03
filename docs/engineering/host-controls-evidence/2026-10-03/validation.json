@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "status": "bounded_seven_contracts_validated_full_graphical_gate_open",
+  "implementation_commit": "89241496fa4f3b80886cd6a8560019686d5c6d4e",
+  "tested_source_count": 420,
+  "tested_source_dictionary_sha256": "fd726316a1bc0be0f282aaf0ed4dd8e2b82784e1d64e58c2921b74ae6272a3ce",
+  "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+  "configuration_counts": {
+    "core": 40,
+    "local": 55,
+    "sqlite-on": 87,
+    "sqlite-off": 78,
+    "sanitized": 1
+  },
+  "actual_ctest_executions": 261,
+  "actual_ctest_passed": 261,
+  "actual_ctest_failed": 0,
+  "complete_relevant_non_graphical_matrix_passed": true,
+  "compiler_warnings": 0,
+  "strict_cpp20": true,
+  "asan_ubsan_scope": "typed_host only",
+  "lsan": "NOT RUN",
+  "baseline": {
+    "final_existing_cases_passed": 4,
+    "first_sandbox_cpp_passed": 1,
+    "first_sandbox_ipc_failed_before_ready": 1,
+    "failure_preserved": true,
+    "not_in_261_ctest_denominator": true
+  },
+  "actual_SQLite": {
+    "sqlite-on": {
+      "refusals": 101,
+      "reads": 5,
+      "replays": 6,
+      "history_writes": 8,
+      "engine_exit_codes": [
+        -15,
+        -15
+      ],
+      "complete_logical_state_unchanged_around_refusals_reads_and_replays": true,
+      "independent_recovery_preserves_stable_records_history_and_operation_facts": true
+    },
+    "sqlite-off": {
+      "refusals": 101,
+      "reads": 5,
+      "replays": 6,
+      "history_writes": 8,
+      "engine_exit_codes": [
+        -15,
+        -15
+      ],
+      "complete_logical_state_unchanged_around_refusals_reads_and_replays": true,
+      "independent_recovery_preserves_stable_records_history_and_operation_facts": true
+    }
+  },
+  "independent_source_review_blockers": 0,
+  "archive": {
+    "bytes": 920290,
+    "sha256": "216218dcb314ad62605e8d5c446e309b85a7370c2eed728278a6f2e960b228f0",
+    "member_count": 154,
+    "all_members_and_origins_reverified": true
+  },
+  "docs_only_frozen_input_delta": [
+    "adapters/engine_api/README.md"
+  ],
+  "limits": [
+    "No new GUI execution or cumulative graphical failure closure",
+    "f2d local bundle remains unrefreshed; old package evidence keeps its source scope",
+    "No real solver/full external AI/performance/full SK or P0 acceptance",
+    "Full SDK copy coverage remains unknown/deferred only from C4 startup; measured constraints and material14/30 failures retained",
+    "Output labels describe existing results; no new generated output schemas",
+    "operations.get retains its conditional compatibility outside this implemented batch"
+  ]
+}

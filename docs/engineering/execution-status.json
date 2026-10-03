@@ -3,7 +3,7 @@
   "baseline_commit": "9e0a56b",
   "branch": "codex/c3-resource-sync",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-10-03T00:24:17.356358+00:00",
+  "updated_utc": "2026-10-03T01:00:11.305773+00:00",
   "status": "C3_closure_in_progress",
   "phases": {
     "R0": "partial_committed",
@@ -1065,22 +1065,14 @@
   },
   "historical_validation_report_before_core_framework": "docs/engineering/c3-sync-validation.md",
   "current_core_framework": {
-    "status": "generated_commit_contract_and_bounded_behavior_validated_full_graphical_gate_open",
-    "tested_implementation_commit": "88942c03da817110afa66675773f80dfc1bb2499",
-    "source_files_count": 418,
-    "source_dictionary_sha256": "4b09296e5af3bd4fe1982b9858c22169c96b8d9b1bbdb52e88ea87d3d41acfe6",
+    "status": "seven_generated_host_contracts_validated_non_graphical_full_graphical_gate_open",
+    "tested_implementation_commit": "89241496fa4f3b80886cd6a8560019686d5c6d4e",
+    "source_files_count": 420,
+    "source_dictionary_sha256": "fd726316a1bc0be0f282aaf0ed4dd8e2b82784e1d64e58c2921b74ae6272a3ce",
     "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
-    "manifest": "docs/engineering/changes-commit-evidence/2026-10-03/validation.json",
-    "report": "docs/engineering/changes-commit-contract-2026-10-03.md",
+    "manifest": "docs/engineering/host-controls-evidence/2026-10-03/validation.json",
+    "report": "docs/engineering/host-controls-contracts-2026-10-03.md",
     "handoff": "docs/implementation/core-local-handoff.md",
-    "full_regression_counts": [
-      40,
-      55,
-      85,
-      76,
-      1
-    ],
-    "cross_configuration_executions": 259,
     "configuration_order": [
       "core",
       "local",
@@ -1088,13 +1080,50 @@
       "sqlite_off_no_desktop",
       "asan_ubsan_typed_host"
     ],
+    "full_regression_counts": [
+      40,
+      55,
+      87,
+      78,
+      1
+    ],
+    "configuration_inventory_counts": [
+      40,
+      55,
+      87,
+      78,
+      55
+    ],
+    "cross_configuration_executions": 261,
+    "cross_configuration_passed": 261,
+    "actual_ctest_executions_with_rerun_and_repeat": 261,
+    "actual_ctest_passed_with_repeats": 261,
+    "actual_ctest_failures": 0,
+    "actual_ctest_timeouts": 0,
+    "full_matrix_passed": true,
+    "full_matrix_scope": "relevant non-graphical four full configurations plus one ASan/UBSan typed_host test",
     "versioned_existing_host_inputs": [
       "project.create",
       "project.open",
       "project.save",
       "project.save_as",
       "project.close",
-      "changes.commit"
+      "changes.commit",
+      "capabilities.list",
+      "project.current",
+      "project.status",
+      "model.summary",
+      "history.list",
+      "history.undo",
+      "history.redo"
+    ],
+    "actual_contribution_categories": [
+      "core",
+      "operations",
+      "codecs",
+      "validation",
+      "ui",
+      "render"
     ],
     "actual_contribution_selected_ports": [
       "model_codec",
@@ -1122,42 +1151,6 @@
       "mcp_notifications": 2,
       "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a"
     },
-    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
-    "post_validation_frozen_input_documentation_delta": [
-      "adapters/engine_api/README.md"
-    ],
-    "limits": [
-      "Initial259 executions257PASS/2FAIL remain; final test-only recovery comparison correction had4 passing same-product repeats, no full matrix rerun",
-      "Retained151 Qt binary isolated23 functions/69 data rows/115 including init/cleanup passed within one180s; diagnostic only, original GUI failures and current full gate remain open",
-      "Old f2d bundle unrefreshed; real solver/full external AI/LSan/performance/full SK/P0 unvalidated",
-      "No current GUI suite rerun or new bundle refresh; old f2d package remains valid only for its archived scope",
-      "Only three-record SQLite fixture, not complete M or real graphical selection through a headless engine",
-      "Full SDK copy coverage unknown/deferred from C4 startup only; measured budget constraints and original material14/30 failure remain"
-    ],
-    "full_regression_source_dictionary_sha256": "95ead5122da5f95d0c88ad6155773be241f0c67f76698a17a53e6c079b6d02e1",
-    "post_full_regression_source_delta": [
-      "tests/changes_commit_ipc_tests.py"
-    ],
-    "configuration_inventory_counts": [
-      40,
-      55,
-      86,
-      77,
-      1
-    ],
-    "cross_configuration_passed": 257,
-    "full_matrix_passed": false,
-    "actual_ctest_executions_with_rerun_and_repeat": 263,
-    "actual_ctest_passed_with_repeats": 261,
-    "actual_ctest_timeouts": 0,
-    "actual_contribution_categories": [
-      "core",
-      "operations",
-      "codecs",
-      "validation",
-      "ui",
-      "render"
-    ],
     "current_graphical_blocker": {
       "single_qt_slot": {
         "exit_code": 0,
@@ -1187,28 +1180,47 @@
       },
       "gate_closed": false
     },
-    "next_core_interface": "Seven empty-input host read/history routes in one generated-contract batch; operations.get conditional compatibility separately",
-    "actual_ctest_failures": 2,
-    "complete_matrix_rerun": false,
-    "final_same_product_targeted_executions": 4,
-    "final_targeted_passed": 4,
-    "initial_failure_reason": "Test incorrectly compared post-recovery entity iteration order; three stable identities and full exposed fields actually equal in both failed transcripts",
-    "bounded_commit_SQLite": {
-      "all_logical_rows_document_history_unchanged_around_refusals_and_replays": true,
-      "completed_final_runs": 4,
-      "engine_exit_codes_per_run": [
-        -15,
-        -15
-      ],
-      "independent_engine_processes_per_run": 2,
-      "per_run_commit_replays": 4,
-      "per_run_refusals": 18,
-      "physical_WAL_equivalence_claimed": false,
-      "real_engine": true,
-      "recovery_record_identity_fields_and_history_equal": true,
-      "stored_receipt_lookup_and_old_epoch_refusal": true,
-      "successful_commits_per_run": 2
-    }
+    "bounded_host_controls_SQLite": {
+      "sqlite-on": {
+        "refusals": 101,
+        "reads": 5,
+        "replays": 6,
+        "history_writes": 8,
+        "engine_exit_codes": [
+          -15,
+          -15
+        ],
+        "complete_logical_state_unchanged_around_refusals_reads_and_replays": true,
+        "independent_recovery_preserves_stable_records_history_and_operation_facts": true
+      },
+      "sqlite-off": {
+        "refusals": 101,
+        "reads": 5,
+        "replays": 6,
+        "history_writes": 8,
+        "engine_exit_codes": [
+          -15,
+          -15
+        ],
+        "complete_logical_state_unchanged_around_refusals_reads_and_replays": true,
+        "independent_recovery_preserves_stable_records_history_and_operation_facts": true
+      }
+    },
+    "post_validation_frozen_input_documentation_delta": [
+      "adapters/engine_api/README.md"
+    ],
+    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
+    "next_core_interface": "operations.get conditional parameter/context discovery and compatibility projection; plan177 only, not implemented",
+    "limits": [
+      "No new GUI execution or cumulative graphical failure closure",
+      "f2d local bundle remains unrefreshed; old package evidence keeps its source scope",
+      "No real solver/full external AI/performance/full SK or P0 acceptance",
+      "Full SDK copy coverage remains unknown/deferred only from C4 startup; measured constraints and material14/30 failures retained",
+      "Output labels describe existing results; no new generated output schemas",
+      "operations.get retains its conditional compatibility outside this implemented batch",
+      "ASan/UBSan typed_host only; LSan unmeasured",
+      "Prior commit-contract259/263 counts and original failures retained under historical_core_framework_before_host_controls"
+    ]
   },
   "historical_core_framework_before_local_delivery": {
     "status": "same_source_core_mechanisms_validated_full_acceptance_pending",
@@ -1423,5 +1435,151 @@
       }
     },
     "next_core_interface": "changes.commit generated input and discovery/version; preserve original application/replay/history path"
+  },
+  "historical_core_framework_before_host_controls": {
+    "status": "generated_commit_contract_and_bounded_behavior_validated_full_graphical_gate_open",
+    "tested_implementation_commit": "88942c03da817110afa66675773f80dfc1bb2499",
+    "source_files_count": 418,
+    "source_dictionary_sha256": "4b09296e5af3bd4fe1982b9858c22169c96b8d9b1bbdb52e88ea87d3d41acfe6",
+    "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+    "manifest": "docs/engineering/changes-commit-evidence/2026-10-03/validation.json",
+    "report": "docs/engineering/changes-commit-contract-2026-10-03.md",
+    "handoff": "docs/implementation/core-local-handoff.md",
+    "full_regression_counts": [
+      40,
+      55,
+      85,
+      76,
+      1
+    ],
+    "cross_configuration_executions": 259,
+    "configuration_order": [
+      "core",
+      "local",
+      "sqlite_on_no_desktop",
+      "sqlite_off_no_desktop",
+      "asan_ubsan_typed_host"
+    ],
+    "versioned_existing_host_inputs": [
+      "project.create",
+      "project.open",
+      "project.save",
+      "project.save_as",
+      "project.close",
+      "changes.commit"
+    ],
+    "actual_contribution_selected_ports": [
+      "model_codec",
+      "profile_provider",
+      "render_contributions"
+    ],
+    "local_package": {
+      "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
+      "bundle": "/Users/qs/Documents/ChatGPT/QCAE/out/local-delivery138-02/QCAE.app",
+      "regular_files": 419,
+      "macho_files": 145,
+      "relocated_non_system_edges": 925,
+      "adhoc_only": true,
+      "notarized": false,
+      "refreshed_for_current_implementation": false
+    },
+    "actual_packaged_workflows": {
+      "sqlite_process_commands": 39,
+      "mcp_process_commands": 5,
+      "gui_process_commands": 9,
+      "staging_and_codesign_commands": 2,
+      "cli_calls": 46,
+      "mcp_tools": 68,
+      "mcp_jsonrpc_requests": 13,
+      "mcp_notifications": 2,
+      "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a"
+    },
+    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
+    "post_validation_frozen_input_documentation_delta": [
+      "adapters/engine_api/README.md"
+    ],
+    "limits": [
+      "Initial259 executions257PASS/2FAIL remain; final test-only recovery comparison correction had4 passing same-product repeats, no full matrix rerun",
+      "Retained151 Qt binary isolated23 functions/69 data rows/115 including init/cleanup passed within one180s; diagnostic only, original GUI failures and current full gate remain open",
+      "Old f2d bundle unrefreshed; real solver/full external AI/LSan/performance/full SK/P0 unvalidated",
+      "No current GUI suite rerun or new bundle refresh; old f2d package remains valid only for its archived scope",
+      "Only three-record SQLite fixture, not complete M or real graphical selection through a headless engine",
+      "Full SDK copy coverage unknown/deferred from C4 startup only; measured budget constraints and original material14/30 failure remain"
+    ],
+    "full_regression_source_dictionary_sha256": "95ead5122da5f95d0c88ad6155773be241f0c67f76698a17a53e6c079b6d02e1",
+    "post_full_regression_source_delta": [
+      "tests/changes_commit_ipc_tests.py"
+    ],
+    "configuration_inventory_counts": [
+      40,
+      55,
+      86,
+      77,
+      1
+    ],
+    "cross_configuration_passed": 257,
+    "full_matrix_passed": false,
+    "actual_ctest_executions_with_rerun_and_repeat": 263,
+    "actual_ctest_passed_with_repeats": 261,
+    "actual_ctest_timeouts": 0,
+    "actual_contribution_categories": [
+      "core",
+      "operations",
+      "codecs",
+      "validation",
+      "ui",
+      "render"
+    ],
+    "current_graphical_blocker": {
+      "single_qt_slot": {
+        "exit_code": 0,
+        "elapsed_seconds": 1.7964129447937012,
+        "does_not_replace_full_suite": true
+      },
+      "full_qt_suite": {
+        "exit_code": -15,
+        "terminated_at_original180s": true,
+        "required_kill": false,
+        "sample_observation": "main thread in vtkHardwareSelector SavePixelBuffer -> glReadPixels -> AppleMetalOpenGLRenderer wait at150s; root cause unproven",
+        "source_unchanged": true
+      },
+      "original_source_scope": "Retained151; both CTest180s failures and full native timeout remain",
+      "isolated_retained_binary_diagnostic": {
+        "actual_processes": 24,
+        "all_functions_and_tags_exactly_matched": true,
+        "binary_scope": "Retained151 product; current contract implementation not compiled into it; three graphics sources byte-identical",
+        "current_graphical_gate_closed": false,
+        "elapsed_seconds": 119.97001541615464,
+        "function_processes": 23,
+        "old_full_suite_failures_remain": true,
+        "original_data_rows": 69,
+        "qt_pass_lines_with_init_cleanup": 115,
+        "root_cause_proven": false,
+        "shared_bound_seconds": 180
+      },
+      "gate_closed": false
+    },
+    "next_core_interface": "Seven empty-input host read/history routes in one generated-contract batch; operations.get conditional compatibility separately",
+    "actual_ctest_failures": 2,
+    "complete_matrix_rerun": false,
+    "final_same_product_targeted_executions": 4,
+    "final_targeted_passed": 4,
+    "initial_failure_reason": "Test incorrectly compared post-recovery entity iteration order; three stable identities and full exposed fields actually equal in both failed transcripts",
+    "bounded_commit_SQLite": {
+      "all_logical_rows_document_history_unchanged_around_refusals_and_replays": true,
+      "completed_final_runs": 4,
+      "engine_exit_codes_per_run": [
+        -15,
+        -15
+      ],
+      "independent_engine_processes_per_run": 2,
+      "per_run_commit_replays": 4,
+      "per_run_refusals": 18,
+      "physical_WAL_equivalence_claimed": false,
+      "real_engine": true,
+      "recovery_record_identity_fields_and_history_equal": true,
+      "stored_receipt_lookup_and_old_epoch_refusal": true,
+      "successful_commits_per_run": 2
+    }
   }
 }

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "final_document_gates_passed",
+  "implementation_commit": "89241496fa4f3b80886cd6a8560019686d5c6d4e",
+  "archive_sha256": "216218dcb314ad62605e8d5c446e309b85a7370c2eed728278a6f2e960b228f0",
+  "archive_member_count": 154,
+  "archive_review_sha256": "0de7ac83282543c0917ddb5e309f6d0188364fc3ddedd1e4a1a2f4aa7b980dce",
+  "archive_review_blockers": [],
+  "actual_commands": [
+    {
+      "name": "design",
+      "argv": [
+        "python3",
+        "tools/check_design.py"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "actual_exit_code": 0,
+      "stdout": "PASS: 196 portable links; 1142 JSON files; 32-module acyclic graph\nPASS: 41 operation descriptors; 12 contract examples; 20 requirements; 38 acceptance cases\nDesign checks only. This command does not run product builds, solver runs or AI acceptance.\n",
+      "stderr": ""
+    },
+    {
+      "name": "format",
+      "argv": [
+        "python3",
+        "tools/check_cpp_format.py"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "actual_exit_code": 0,
+      "stdout": "PASS: 236 C++ files match clang-format 21\n",
+      "stderr": ""
+    },
+    {
+      "name": "diff",
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "actual_exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "frozen_input_documentation_delta": [
+    "adapters/engine_api/README.md"
+  ],
+  "other419_compiled_inputs_unchanged": true,
+  "tested_products_before_after_equal": true,
+  "product_execution": "NOT RUN in document phase; actual261 results retain compiled source scope",
+  "prior_failures_graphical_and_package_scope_retained": true
+}

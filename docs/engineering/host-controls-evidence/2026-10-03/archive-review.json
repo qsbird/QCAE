@@ -1,0 +1,109 @@
+{
+  "audit_id": "host-controls180-archive-review",
+  "implementation_commit": "89241496fa4f3b80886cd6a8560019686d5c6d4e",
+  "conclusion": "No blocking discrepancy found in archive, results, source boundary or preserved scope.",
+  "blocking_findings": [],
+  "archive": {
+    "sha256": "216218dcb314ad62605e8d5c446e309b85a7370c2eed728278a6f2e960b228f0",
+    "bytes": 920290,
+    "members": 154,
+    "all_regular_files": true,
+    "every_member_and_retained_origin_matches_index": true,
+    "missing": 0,
+    "extra": 0,
+    "duplicates": 0,
+    "mismatches": 0,
+    "modified": false
+  },
+  "audited_document_hashes": {
+    "archive-index.json": "71523cc556a75860730749e9fcdae182b5805792d246b0c8341619019b18c6c0",
+    "validation.json": "e3f158d1dfb0b45d7c9126c684ac4b5c77329a644db93a897f1416d1d6a763d7",
+    "host-controls-contracts-2026-10-03.md": "5f07b67605aff9994a7d6b3dee22411ce7a7834914a53bfd62ad4e312bbab26e",
+    "docs/baseline/README.md": "5d77f714575ff330d6ffbfcc2a49fced4f220e97e0c5b87839475a12caaebef6",
+    "docs/implementation/core-local-handoff.md": "00d4e1cf8b69548b88d20ce31e94653531183fd1f36efad672a011ca348d1541"
+  },
+  "actual_archived_ctest": {
+    "core": {"raw_entries": 40, "passed": 40, "exit": 0, "configured": 40},
+    "local": {"raw_entries": 55, "passed": 55, "exit": 0, "configured": 55},
+    "sqlite-on": {"raw_entries": 87, "passed": 87, "exit": 0, "configured": 87},
+    "sqlite-off": {"raw_entries": 78, "passed": 78, "exit": 0, "configured": 78},
+    "sanitized": {"raw_entries": 1, "passed": 1, "exit": 0, "configured": 55, "executed_names": ["typed_host"]},
+    "total_executed": 261,
+    "total_passed": 261,
+    "total_failed": 0,
+    "raw_names_and_stdout_totals_match_machine": true,
+    "lsan": "NOT RUN"
+  },
+  "actual_archived_build": {
+    "all_five_configure_build_inventory_ctest_exits_zero": true,
+    "compile_command_hashes_match_summaries": true,
+    "strict_cpp20_every_listed_unit": true,
+    "compile_unit_counts": [70, 104, 119, 118, 104],
+    "raw_compiler_warning_lines": 0,
+    "archived_design_format_diff_exits_zero": true
+  },
+  "baseline": {
+    "initial_typed_host_exit": 0,
+    "initial_ipc_exit": 1,
+    "initial_engine_exit_before_ready": 4,
+    "initial_error": "QLocalServer::listen: Unknown error 1",
+    "failure_preserved": true,
+    "final_four_case_exits": [0, 0, 0, 0],
+    "initial_and_final_source_product_candidate_dictionaries_equal": true,
+    "six_baseline_attempts_excluded_from_261": true,
+    "old263_execution_record_not_claimed_current": true
+  },
+  "actual_sqlite": {
+    "per_configuration": {
+      "sqlite-on": {"refusals": 101, "reads": 5, "replays": 6, "history_writes": 8, "engine_exits": [-15, -15]},
+      "sqlite-off": {"refusals": 101, "reads": 5, "replays": 6, "history_writes": 8, "engine_exits": [-15, -15]}
+    },
+    "observations_match_actual_transcript_requests_and_results": true,
+    "recorded_refusal_and_read_state_unchanged_flags_all_true": true,
+    "fresh_write_receipts_all_nonreplayed": true,
+    "initial_revision": "2",
+    "final_and_recovered_revision": "10",
+    "actual_transcript_complete_entity_blocks_equal_before_after_recovery": true,
+    "recovered_entity_count": 2,
+    "stable_document_identity_new_epoch_and_same_history": true,
+    "three_original_recovered_facts_verified": ["history.undo", "history.redo", "changes.commit"],
+    "recovered_old_epoch_refusals_per_configuration": 5,
+    "limits": "Logical-row checks are frozen passing fixture observations; per-refusal full before/after database snapshots are not separately archived. No physical WAL equality claim."
+  },
+  "tested_source": {
+    "count": 420,
+    "canonical_dictionary_sha256": "fd726316a1bc0be0f282aaf0ed4dd8e2b82784e1d64e58c2921b74ae6272a3ce",
+    "algorithm": "sorted relative-path to SHA256 dictionary, canonical JSON; not C4-source-v1",
+    "equals_matrix_candidate_dictionary": true,
+    "seven_commit_source_hashes": {
+      "CMakeLists.txt": "6906b75127d94d16e7721e9af663e1f0fcef025ef2ce912e2a405919228ef1aa",
+      "adapters/engine_api/src/ipc_api.cpp": "6fafc3cd23841ab8cd2d31f0d7d5a9aba93b1620f29e309146b07c4cc13ebd34",
+      "schemas/operations/document_changes.json": "855db11f8b932c68642653de4f30a0ad870776891030ce0f26a23bf560cd912c",
+      "schemas/operations/host_reads.json": "350f29adce5dd83ff3be9b51f285ef8dc9ab8792b9363dd4b557245ee0f02396",
+      "tests/typed_host_tests.cpp": "a7a37c40bb6a3de51a6a812064ac9d03af4ef2db5a45bfa54579883699057b0e",
+      "tests/mcp_bridge_tests.py": "5d830b86a1b2fa2bf0f41dddb6ea0752a4318f8d95fbe8daf531f77b64836da3",
+      "tests/host_controls_ipc_tests.py": "d3eaf238ddeae8373701228302dbb7a8d2dad14a368ef809f26a7454b7b8c5ba"
+    },
+    "seven_archived_commit_sources_match_tested_dictionary_and_commit_paths": true,
+    "private_docs_only_delta": {
+      "path": "adapters/engine_api/README.md",
+      "tested_sha256": "3b3b07f10cb20ed7d5641e798e4218992764d37600adfcca64833d236fe97b27",
+      "documentation_sha256": "e53d929f140c98eb0b9cb4ce9d789380d6f867e0f9acfa9195024439600731e6"
+    },
+    "all_other419_inputs_unchanged_in_private_and_main": true,
+    "main_still_equals_all420_tested_inputs_at_audit_time": true,
+    "informational_finding": "The private documentation README change was not yet forwarded to primary at this read; operational inputs remain equal."
+  },
+  "scope_preserved": {
+    "five_configs_desktop_disabled": true,
+    "old_cumulative_graphical_failure_still_open": true,
+    "old_binary69_row_diagnostic_not_claimed_current_gui": true,
+    "f2d2e7f_bundle_unrefreshed": true,
+    "operations_get_plan_status": "READ_ONLY_PLAN_NOT_IMPLEMENTED",
+    "full_sk_p0_real_solver_full_ai_performance_not_claimed": true
+  },
+  "auditor_execution": "AUDIT ONLY; product/tests/generation/build/configure/gates/Git mutations NOT RUN",
+  "repository_edited": false,
+  "private_external_config_read": false,
+  "review_outside_immutable_archive": true
+}
