@@ -27,6 +27,8 @@
 
 ## 当前实现
 
+[预览提交契约与实际恢复验证](engineering/changes-commit-contract-2026-10-03.md)：`88942c0` 的生成输入/发现/版本、真实SQLite拒绝与重放；原259项257通过/2测试假设失败及修正后的四次专项通过分别记录。旧二进制图形隔离诊断保留全部69数据行，原累计压力失败仍未关闭。
+
 [六类能力包贡献验证](engineering/package-contributions-2026-10-03.md)：实际注册/调用和关闭包观察已补齐，269项通过/1桌面选择超时，原上限复验失败，图形门禁保持未关闭。
 
 [核心框架本机交接](implementation/core-local-handoff.md)与[本轮验证](engineering/core-local-delivery-2026-10-03.md)：五个工程生命周期输入合同、实际codec/显示贡献装配、265项适用回归及重定位包的SQLite/双MCP/真实桌面验证；完整SK/P0及真实环境、性能仍待接续。

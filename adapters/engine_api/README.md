@@ -52,7 +52,7 @@ before handler invocation; malformed values return `INVALID_INPUT`. Existing API
 may omit this field, deliberately selecting the installed typed version. Discovery publishes
 `requested_version_field` and `omitted_version_policy` so new clients can pin the contract.
 This is separate from transport `api_version`. The five intrinsic project lifecycle routes
-below also accept this operation version. Other legacy operations keep their existing request
+below and `changes.commit` also accept this operation version. Other legacy operations keep their existing request
 shape and reject the new context fields.
 
 A typed operation declaring `requires_expected_profile: true` requires top-level
@@ -146,6 +146,20 @@ explicit saved paths retain their existing signatures. Normal open and recovery 
 These contracts adapt existing routes; they do not register duplicate business handlers or
 complete every legacy contract. Actual tests and packaged execution are described in the
 [local delivery evidence](../../docs/engineering/core-local-delivery-2026-10-03.md).
+
+### Versioned preview commit input
+
+`changes.commit` decodes generated `ChangesCommitInput` with one required non-empty string
+`preview_id`, no extra fields, schema `qcae.operation.changes.commit.v1`, and installed version 1.
+Discovery adds `wire_input_type: ChangesCommitInput` and `wire_output_type: ChangeReceipt`.
+Omitted/v1 calls use the same version policy as lifecycle inputs. Malformed or unsupported
+versions and input shapes are refused before the existing application commit; `expected_profile`
+is not accepted. The original document/epoch/revision/key context, caller namespace, receipt,
+undo and persistent outcome lookup remain authoritative. No TypedHost registration is added
+for this reserved compatibility route. Stable identity and fields survive explicit recovery;
+storage iteration order is not an identity contract. Actual SQLite refusal/replay/recovery tests,
+the corrected test-only ordering assumption and retained graphical limits are in
+[the commit-contract evidence](../../docs/engineering/changes-commit-contract-2026-10-03.md).
 
 ### C3 versioned display resources and events
 

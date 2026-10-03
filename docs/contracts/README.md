@@ -80,7 +80,7 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 
 ## NEXT-02 当前 typed IPC 补充
 
-已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。五个宿主工程生命周期入口同样接受操作版本，见下节；其他旧非 typed 路径保持拒绝新增字段的规则。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
+已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。五个宿主工程生命周期入口及 `changes.commit` 同样接受操作版本，见下节；其他旧非 typed 路径保持拒绝新增字段的规则。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
 
 `operations.get` 的 document 作用域可以在贡献停用后查询原调用者的已保存回执，无需重新启用 handler；未知或未保留事实返回 `ENTITY_NOT_FOUND`。来源、测试及未完成范围见[NEXT验证](../engineering/next-validation.md)与[实际 wire 说明](../../adapters/engine_api/README.md)。
 
@@ -97,6 +97,10 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 | `project.close` | `ProjectCloseInput` | 必需policy，发现枚举 `discard` / `keep_recovery` |
 
 可省略 `requested_version` 选择安装版本；正uint32的不同版本返回 `SCHEMA_UNSUPPORTED`，非法版本或参数返回 `INVALID_INPUT` 及字段。拒绝发生在原应用生命周期和宿主幂等登记之前。上述入口不接受 `expected_profile`；成功、重试及结果查询继续走原服务/host操作事实，不增加写入链或重复handler。MCP保持有界schema及open的两个封闭 `oneOf` 分支，Profile字段只为显式声明 `requires_expected_profile` 的描述符公布。当前实际回归/打包范围见[本轮验证](../engineering/core-local-delivery-2026-10-03.md)；先前open专项保留[原来源记录](../engineering/project-open-contract-2026-10-03.md)。其余legacy合同及完整SK-04仍待完成。
+
+## 当前预览提交输入契约
+
+`changes.commit` 使用生成 `ChangesCommitInput`，schema为 `qcae.operation.changes.commit.v1`，唯一参数是必需非空字符串 `preview_id`；额外字段不被接受。发现保留设计符号类型并用 `wire_input_type:ChangesCommitInput` / `wire_output_type:ChangeReceipt` 公布实际DTO。省略/版本1规则与上述生命周期入口相同；无效形状和版本先于原应用提交，拒绝不消费预览或幂等键。写入仍需原文档/epoch/expected_revision/key上下文，`expected_profile`不被接受。合法调用、撤销后相同键重放和持久结果查询沿用同一RecordApplication；恢复更新epoch，旧epoch不能据旧回执绕过检查。实际范围和失败/复验记录见[本轮证据](../engineering/changes-commit-contract-2026-10-03.md)。
 
 ## 当前静态贡献发现
 

@@ -53,6 +53,8 @@ M0确定目标上下文及ProfileProvider契约；M1注册单一Nastran能力包
 
 ## C2之后的接续计划
 
+2026-10-03，`88942c0` 补齐已有 `changes.commit` 的生成输入/发现/版本及真实SQLite行为保护，见[验证](../engineering/changes-commit-contract-2026-10-03.md)。首轮40/55/86/77/专项ASan1共259项，其中257通过/2恢复顺序假设失败；仅测试修正后同产品包ON/OFF各连续两次通过。保留旧151二进制的23函数/69数据行隔离诊断约120秒通过，原累计窗口失败和当前完整图形门禁仍未关闭。下一核心切片成组处理 `capabilities.list/project.current/project.status/model.summary/history.list/history.undo/history.redo` 的同类空参数输入、版本与发现；`operations.get` 条件上下文和兼容语义单独保留。手写解析不等于缺少业务实现，28个剩余legacy入口不是28个功能缺陷；所有真实环境、性能、完整SK/P0门禁仍保留。
+
 2026-10-03，六类贡献的实际发现/调用已实现 `6eab0ca`，初始五配置269通过/1桌面选择超时，原180秒复验仍失败，见[实际验证和图形阻塞](../engineering/package-contributions-2026-10-03.md)。源码审查问题已修正，IPC连续两次复跑通过；完整SK/P0仍未通过。接下来并行推进原图形阻塞定位及changes.commit的生成输入/实际发现/版本拒绝，沿用提交、幂等和历史服务。
 
 2026-10-03，核心质量优先下新增实现 `f2d2e7f`：五个已有工程生命周期入口使用生成输入和版本拒绝；生产宿主选择实际贡献的codec/Profile/显示绑定。五配置265项及重定位包的SQLite、双MCP、真实桌面实际通过，见[验证记录](../engineering/core-local-delivery-2026-10-03.md)与[本机交接](../implementation/core-local-handoff.md)。下一步收敛六类实际贡献发现元数据、剩余legacy合同及正式核心验收；不新增空registry或非必要性能优化。真实求解、完整AI、SDK覆盖与已测原预算约束保持此前待验收状态。

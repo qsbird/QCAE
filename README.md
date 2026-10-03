@@ -4,7 +4,7 @@
 
 **当前状态：核心框架已有可运行的本机交付包，源码继续收敛接口。** 统一事务/历史、SQLite保存恢复、CLI/GUI/MCP共享engine已贯通。本机包对应 `f2d2e7f`，265项回归及包内SQLite、双MCP、真实桌面验证见[本机交接](docs/implementation/core-local-handoff.md)。
 
-最新源码 `6eab0ca` 已接入六类实际贡献发现与调用；初始五配置269项通过、1项桌面选择超时，原上限复验仍失败，见[本轮验证](docs/engineering/package-contributions-2026-10-03.md)。该源码尚未刷新到本机包。后续推进图形阻塞定位、`changes.commit`及其余legacy合同和核心正式验收；真实求解、完整AI、性能、完整SK/P0仍未验收，顺序与原约束见[开发计划](docs/baseline/development-plan.md#c2之后的接续计划)。
+最新源码 `88942c0` 已补齐 `changes.commit` 的生成输入、发现与版本拒绝，沿用原提交、历史和持久结果查询，见[本轮验证](docs/engineering/changes-commit-contract-2026-10-03.md)。首轮259项中257通过，两个恢复测试的顺序假设修正后，同产品专项四次通过。保留二进制的图形隔离诊断69个原数据行通过，原累计窗口失败及完整图形门禁仍未关闭；此前六类贡献范围见[原证据](docs/engineering/package-contributions-2026-10-03.md)。本机包尚未刷新。后续成组补齐七个读取/历史入口契约，继续图形生命周期调查及核心正式验收；真实求解、完整AI、性能、完整SK/P0仍未验收，顺序与原约束见[开发计划](docs/baseline/development-plan.md#c2之后的接续计划)。
 
 ## 从这里开始
 
