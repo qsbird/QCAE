@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "status": "implemented_operation_lookup_adapter_contract",
+  "operations": [
+    {
+      "operation_id": "operations.get",
+      "version": 1,
+      "schema_id": "qcae.operation.operations.get.v1",
+      "type_name": "OperationsGetInput",
+      "effect": "read_only",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "lookup_scope",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "original_operation",
+          "type": "string"
+        },
+        {
+          "field_id": 3,
+          "name": "idempotency_key",
+          "type": "string"
+        },
+        {
+          "field_id": 4,
+          "name": "original_mode",
+          "type": "string",
+          "optional": true
+        }
+      ]
+    }
+  ]
+}

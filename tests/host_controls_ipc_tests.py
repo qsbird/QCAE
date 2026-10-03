@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seven host contracts through production SQLite IPC and retained history.
+"""Host controls and outcome lookup through production SQLite IPC.
 
 Shared snapshots include every logical SQLite row, document metadata and history.
 Reads omit write context; undo/redo keep the application's original replay facts.
@@ -13,6 +13,7 @@ import tempfile
 
 from c3_sync_ipc_tests import EngineProcess, check
 from changes_commit_ipc_tests import entities, generation, preview, same_receipt, snapshot
+from package_contributions_ipc_tests import sqlite_rows
 
 
 CONTRACTS = (
@@ -48,6 +49,26 @@ def check_catalog(catalog):
         check(item["parameters_schema"] == {"type": "object", "properties": {},
               "required": [], "additionalProperties": False},
               f"Empty server input and discovered schema differ for {operation}")
+    lookup = [item for item in catalog["operations"] if item["name"] == "operations.get"]
+    check(len(lookup) == 1, "Expected one outcome lookup descriptor")
+    item = lookup[0]
+    check(item["available"] and item["version"] == 1 and
+          item["schema_id"] == "qcae.operation.operations.get.v1" and
+          item["wire_input_type"] == "OperationsGetInput" and
+          item["wire_output_types"] == ["DocumentInfo", "ChangeReceipt"] and
+          item["output_by_lookup_scope"] == {"host": "DocumentInfo", "document": "ChangeReceipt"} and
+          all(item[name] is False for name in ("requires_document", "requires_epoch",
+              "requires_revision", "requires_idempotency_key", "requires_profile_match")),
+          "Outcome discovery must retain conditional context and existing output types")
+    parameters = item["parameters_schema"]
+    arguments = item["arguments_schema"]
+    check(parameters["additionalProperties"] is False and len(parameters["oneOf"]) == 3 and
+          parameters["properties"]["original_mode"] == {} and
+          arguments["additionalProperties"] is False and arguments["required"] == ["parameters"] and
+          arguments["properties"]["parameters"] == parameters and len(arguments["oneOf"]) == 2 and
+          {tuple(branch["required"]) for branch in arguments["oneOf"]} == {
+              ("parameters",), ("parameters", "document_id", "document_epoch")},
+          "Lookup discovery must describe raw modes and branch-specific document context")
 
 
 def run(args):
@@ -56,8 +77,9 @@ def run(args):
         parent = Path(args.evidence_dir).resolve()
         parent.mkdir(parents=True, exist_ok=True)
         evidence = Path(tempfile.mkdtemp(prefix="run-", dir=parent))
-    observations = {"scope": "Seven actual host inputs and durable history; no GUI or external AI",
+    observations = {"scope": "Actual host controls, outcome lookup and durable history; no GUI or external AI",
                     "refusals": [], "reads": [], "replays": [], "history_writes": [],
+                    "lookup_reads": [], "lookup_refusals": [],
                     "engine_exit_codes": []}
     transcripts = []
     with tempfile.TemporaryDirectory(prefix="qhc-", dir=Path("/tmp").resolve()) as folder:
@@ -79,12 +101,13 @@ def run(args):
                           "Current requires no document context and retains the no-active result")
 
                 document = client.call("project.create", {"name": "Host controls"}, key="create")
-                client.call("geometry.create_line", {
+                created = document
+                line = client.call("geometry.create_line", {
                     "start_mm": [0, 0, 0], "end_mm": [1000, 0, 0]}, document, "line")
                 commit_context, parameters = preview(client, "Saved material")
                 committed = client.call("changes.commit", parameters, commit_context, "material")
-                client.call("project.save_as", {"path": str(root / "saved.qcae")},
-                            client.current(), "save")
+                saved = client.call("project.save_as", {"path": str(root / "saved.qcae")},
+                                    client.current(), "save")
                 initial = snapshot(client, workspace)
                 initial_entities = entities(client)
                 check(not initial["document"]["dirty"] and initial["history"]["cursor"] == 2 and
@@ -92,7 +115,7 @@ def run(args):
                       "Need a saved model and two real history entries")
 
                 def refuse(operation, parameters=None, extra=None, code="INVALID_INPUT",
-                           field=None, context=None, key=None):
+                           field=None, context=None, key=None, bucket="refusals"):
                     before = snapshot(client, workspace)
                     response = client.call(operation, parameters, context, key,
                                            extra=extra, expected=None)
@@ -103,8 +126,68 @@ def run(args):
                         check(response["error"].get("field") == field, f"Wrong field: {response}")
                     check(snapshot(client, workspace) == before,
                           "Refusal changed complete SQLite rows, document or history")
-                    observations["refusals"].append({"request": request, "response": response,
-                                                     "complete_state_unchanged": True})
+                    observations[bucket].append({"request": request, "response": response,
+                                                "complete_state_unchanged": True})
+
+                def lookup(scope, operation, key, original, document=None, extra=None,
+                           mode=None, include_mode=False):
+                    before = snapshot(client, workspace)
+                    parameters = {"lookup_scope": scope, "original_operation": operation,
+                                  "idempotency_key": key}
+                    if include_mode:
+                        parameters["original_mode"] = mode
+                    envelope = read_context(document) if document else {}
+                    envelope.update(extra or {})
+                    result = client.call("operations.get", parameters, extra=envelope)
+                    frame = client.transcript[-1]
+                    if scope == "host":
+                        check(result == original, "Host lookup changed its retained DocumentInfo")
+                    else:
+                        same_receipt(original, result, before["document"])
+                    mapped = scope == "document" and operation in {
+                        "changes.commit", "history.undo", "history.redo"}
+                    check(("revision" in frame["response"]) == mapped and
+                          snapshot(client, workspace) == before,
+                          "Lookup changed its existing envelope or complete authoritative state")
+                    observations["lookup_reads"].append({**frame, "complete_state_unchanged": True})
+
+                for version in ({}, {"requested_version": 1}):
+                    lookup("host", "project.create", "create", created, extra=version)
+                    lookup("host", "project.save_as", "save", saved, extra=version)
+                    lookup("document", "geometry.create_line", "line", line, saved, version)
+                    lookup("document", "changes.commit", "material", committed, saved, version)
+                ignored_context = {"document_id": None, "document_epoch": {"ignored": None},
+                                   "expected_revision": [], "idempotency_key": False,
+                                   "requested_version": 1}
+                ignored_modes = ("recover", "", 7, False, None, [], [None], {"nested": None})
+                for mode in ignored_modes:
+                    lookup("host", "project.create", "create", created, extra=ignored_context,
+                           mode=mode, include_mode=True)
+                    lookup("document", "geometry.create_line", "line", line, saved,
+                           {"requested_version": 1, "expected_revision": None,
+                            "idempotency_key": {"ignored": None}}, mode, True)
+                valid_lookup = {"lookup_scope": "document", "original_operation": "changes.commit",
+                                "idempotency_key": "material"}
+                for bad in (True, "1", None, 0, -1, 1.5, 4294967296, 2, 4294967295):
+                    refuse("operations.get", {"lookup_scope": "invalid"},
+                           {"requested_version": bad}, code=("SCHEMA_UNSUPPORTED"
+                           if type(bad) is int and bad in (2, 4294967295) else "INVALID_INPUT"),
+                           field="requested_version", bucket="lookup_refusals")
+                for field in ("lookup_scope", "original_operation", "idempotency_key"):
+                    missing = {name: value for name, value in valid_lookup.items() if name != field}
+                    for lookup_parameters in (missing, {**valid_lookup, field: ""},
+                                              {**valid_lookup, field: None}, {**valid_lookup, field: 7}):
+                        refuse("operations.get", lookup_parameters, read_context(saved),
+                               bucket="lookup_refusals")
+                refuse("operations.get", {**valid_lookup, "extra": None}, read_context(saved),
+                       bucket="lookup_refusals")
+                refuse("operations.get", valid_lookup, bucket="lookup_refusals")
+                refuse("operations.get", valid_lookup, {**read_context(saved), "document_epoch": "old"},
+                       code="DOCUMENT_EPOCH_EXPIRED", bucket="lookup_refusals")
+                for mode in ("invalid", "", None, False, 7, [], {"nested": None}):
+                    refuse("operations.get", {"lookup_scope": "host", "original_operation": "project.open",
+                           "idempotency_key": "not-recorded", "original_mode": mode},
+                           {"requested_version": 1}, bucket="lookup_refusals")
 
                 for operation, _, _, needs_document, write in CONTRACTS:
                     context = initial["document"] if write else None
@@ -176,6 +259,8 @@ def run(args):
                         "original_operation": operation, "idempotency_key": key}, after_redo["document"])
                     same_receipt(original, fact, after_redo["document"])
                     check(snapshot(client, workspace) == after_redo, "Outcome lookup changed state")
+                    lookup("document", operation, key, original, after_redo["document"],
+                           {"requested_version": 1}, {"ignored": None}, True)
                 refuse("operations.get", {"lookup_scope": "document",
                     "original_operation": "history.undo", "idempotency_key": "unrecorded"},
                     context=after_redo["document"], code="ENTITY_NOT_FOUND")
@@ -211,17 +296,44 @@ def run(args):
                       entities(client) == final_entities,
                       "Independent recovery lost stable records or history")
                 recovered_state = snapshot(client, workspace)
+                lookup("host", "project.open", "recover", recovered,
+                       extra={"requested_version": 1}, mode="recover", include_mode=True)
                 for operation, key, context, original in facts:
                     fact = client.call("operations.get", {"lookup_scope": "document",
                         "original_operation": operation, "idempotency_key": key}, recovered)
                     same_receipt(original, fact, recovered)
                     check(snapshot(client, workspace) == recovered_state, "Recovered fact read mutated state")
+                    lookup("document", operation, key, original, recovered,
+                           {"requested_version": 1}, None, True)
                     if operation != "changes.commit":
                         refuse(operation, context=context, key=key, code="DOCUMENT_EPOCH_EXPIRED")
                 for operation in ("project.status", "model.summary", "history.list"):
                     refuse(operation, extra=read_context(final["document"]), code="DOCUMENT_EPOCH_EXPIRED")
                 observations["recovered_state"] = recovered_state
                 observations["recovered_entities"] = final_entities
+                closed = client.call("project.close", {"policy": "discard"}, recovered, "close")
+                closed_rows = sqlite_rows(workspace)
+                for version in ({}, {"requested_version": 1}):
+                    outcome = client.call("operations.get", {"lookup_scope": "host",
+                        "original_operation": "project.close", "idempotency_key": "close",
+                        "original_mode": {"ignored": None}}, extra=version)
+                    frame = client.transcript[-1]
+                    check(outcome == closed and "revision" not in frame["response"] and
+                          sqlite_rows(workspace) == closed_rows,
+                          "Host lookup after close needs no active document and must not write")
+                    observations["lookup_reads"].append({**frame, "complete_state_unchanged": True})
+                absent = client.call("project.current", expected=None)
+                check(absent["error"]["code"] == "DOCUMENT_NOT_FOUND", "Close retained an active document")
+                opened = client.call("project.open", {"mode": "normal", "path": str(root / "saved.qcae")},
+                                     key="normal-open")
+                check(opened["document_id"] != recovered["document_id"] and
+                      opened["document_epoch"] != recovered["document_epoch"] and
+                      entities(client) == initial_entities,
+                      "Normal open must import the saved model into a fresh document identity")
+                lookup("host", "project.open", "normal-open", opened)
+                lookup("host", "project.open", "normal-open", opened,
+                       extra={"requested_version": 1}, mode="normal", include_mode=True)
+                observations["normal_open_state"] = snapshot(client, workspace)
             finally:
                 if engine.process:
                     process = engine.process
@@ -234,7 +346,7 @@ def run(args):
                     (evidence / "engine.log").write_text(log.read())
                     (evidence / "observations.json").write_text(json.dumps(observations, indent=2) + "\n")
                     (evidence / "transcripts.json").write_text(json.dumps(transcripts, indent=2) + "\n")
-    print("PASS: seven SQLite host contracts, read atomicity, undo/redo replay and recovery")
+    print("PASS: SQLite host contracts and outcome lookup, atomic reads, retained facts and recovery")
 
 
 if __name__ == "__main__":

@@ -22,6 +22,54 @@ def oneof_parameters_schema():
                     "required": ["mode"], "additionalProperties": False}]}
 
 
+def conditional_arguments_schema():
+    identity = {"type": "string", "minLength": 1}
+    return {"type": "object", "properties": {
+        "parameters": oneof_parameters_schema(), "document_id": {}, "document_epoch": {},
+        "expected_revision": {}, "idempotency_key": {},
+        "requested_version": {"type": "integer", "minimum": 1, "maximum": 4294967295}},
+        "required": ["parameters"], "additionalProperties": False, "oneOf": [
+            {"type": "object", "properties": {"parameters": {
+                "type": "object", "properties": {"mode": {"enum": ["normal"]}, "path": {}},
+                "required": ["mode"], "additionalProperties": False}, "document_id": identity,
+                "document_epoch": identity, "expected_revision": {}, "idempotency_key": {},
+                "requested_version": {}}, "required": ["parameters", "document_id", "document_epoch"],
+                "additionalProperties": False},
+            {"type": "object", "properties": {"parameters": {
+                "type": "object", "properties": {"mode": {"enum": ["recover"]}, "path": {}},
+                "required": ["mode"], "additionalProperties": False}, "document_id": {},
+                "document_epoch": {}, "expected_revision": {}, "idempotency_key": {},
+                "requested_version": {}}, "required": ["parameters"], "additionalProperties": False}]}
+
+
+def arguments_descriptor(behavior):
+    schema = conditional_arguments_schema()
+    if behavior == "bad-arguments-property":
+        schema["properties"]["actor"] = {}
+    elif behavior == "bad-arguments-nonclosed":
+        schema["additionalProperties"] = True
+    elif behavior == "bad-arguments-required":
+        schema["required"].append("unknown")
+    elif behavior == "bad-arguments-depth":
+        node = schema["properties"]["document_id"]
+        for index in range(17):
+            child = {"type": "object", "properties": {}}
+            node["properties"] = {"next": child}
+            node = child
+    elif behavior == "bad-arguments-nodes":
+        schema["oneOf"] = [{"properties": {"document_id": {}}} for index in range(64)]
+    elif behavior == "bad-arguments-parameters":
+        schema["properties"]["parameters"] = {"type": "object", "properties": {}, "additionalProperties": False}
+    elif behavior == "bad-arguments-missing-parameters":
+        del schema["properties"]["parameters"]
+        schema["required"] = []
+    elif behavior == "bad-arguments-keyword":
+        schema["if"] = {}
+    return {"name": "test.write", "available": True, "description": "test-only transport",
+            "parameters_schema": oneof_parameters_schema(), "arguments_schema": schema,
+            "version": 1, "requires_document": True, "requires_epoch": True}
+
+
 def scenario(command, endpoint, behavior):
     requests = []
     error = []
@@ -108,6 +156,8 @@ def scenario(command, endpoint, behavior):
                                 data["operations"][0]["parameters_schema"] = schema
                             if behavior == "bad-context-flag":
                                 data["operations"][0]["requires_document"] = "false"
+                            if behavior.startswith("bad-arguments") or behavior == "valid-arguments":
+                                data["operations"] = [arguments_descriptor(behavior)]
                             response = {"request_id": request["request_id"], "status": "success", "data": data}
                             if behavior == "deep-metadata":
                                 nested = '{"node":' * 20000 + 'null' + '}' * 20000
@@ -149,7 +199,7 @@ def scenario(command, endpoint, behavior):
         child.stdin.flush()
         catalog = exchange({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         if (behavior in {"bad-handshake", "bad-field", "bad-units", "deep-metadata", "bad-context-flag"}
-                or behavior.startswith("bad-parameters")):
+                or behavior.startswith(("bad-parameters", "bad-arguments"))):
             assert catalog["error"]["code"] == -32000, catalog
             assert len(requests) <= 1, requests
             rejected = exchange({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
@@ -159,6 +209,7 @@ def scenario(command, endpoint, behavior):
         else:
             assert "result" in catalog, catalog
             parameters = {"value": "literal"}
+            arguments = {"parameters": parameters, "idempotency_key": "original-key"}
             if behavior == "valid-parameters-oneof":
                 tool = catalog["result"]["tools"][0]["inputSchema"]
                 schema = tool["properties"]["parameters"]
@@ -166,14 +217,28 @@ def scenario(command, endpoint, behavior):
                 assert "requested_version" in tool["properties"] and "requested_version" not in tool["required"], tool
                 assert "expected_profile" not in tool["properties"], tool
                 parameters = {"mode": "recover"}
-            result = exchange({"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {
-                "name": "test.write", "arguments": {"parameters": parameters,
-                "idempotency_key": "original-key"}}})["result"]
-            facts = result["structuredContent"]
-            assert result["isError"] is True and facts["status"] == "failed", result
-            assert facts["error"]["code"] == "mcp_transport_unknown", facts
-            assert facts["error"]["outcome"] == "unknown" and facts["error"]["idempotency_key"] == "original-key", facts
-            assert [request["operation"] for request in requests] == ["capabilities.list", "test.write"], requests
+                arguments["parameters"] = parameters
+            elif behavior == "valid-arguments":
+                tool = catalog["result"]["tools"][0]
+                assert tool["inputSchema"] == conditional_arguments_schema(), tool
+                _, separator, source = tool["description"].partition("\nEngine capability: ")
+                assert separator and json.loads(source) == arguments_descriptor(behavior), tool
+                arguments.update(parameters={"mode": "recover"}, document_id=None,
+                                 document_epoch={"ignored": None}, expected_revision=False, requested_version=2)
+            calls = [arguments]
+            if behavior == "valid-arguments":
+                # Schema metadata never turns the transport into a business input validator.
+                calls = [{**arguments, "parameters": {"mode": "recover", "path": value}} for value in
+                         ("literal", "", 7, False, None, [None], {"nested": None})]
+            for index, arguments in enumerate(calls):
+                result = exchange({"jsonrpc": "2.0", "id": 3 + index, "method": "tools/call", "params": {
+                    "name": "test.write", "arguments": arguments}})["result"]
+                facts = result["structuredContent"]
+                assert result["isError"] is True and facts["status"] == "failed", result
+                assert facts["error"]["code"] == "mcp_transport_unknown", facts
+                assert facts["error"]["outcome"] == "unknown" and facts["error"]["idempotency_key"] == "original-key", facts
+                assert {key: requests[-1][key] for key in arguments} == arguments, requests
+            assert [request["operation"] for request in requests] == ["capabilities.list"] + ["test.write"] * len(calls), requests
         # A malformed/lost engine reply does not kill the stdio server or cause a retry.
         assert exchange({"jsonrpc": "2.0", "id": 4, "method": "ping"})["result"] == {}
         child.stdin.close()
@@ -196,10 +261,13 @@ def run(args):
                          "bad-parameters-oneof-type", "bad-parameters-oneof-empty", "bad-parameters-oneof-branch",
                          "bad-parameters-oneof-width", "bad-parameters-oneof-depth", "bad-parameters-oneof-nodes",
                          "bad-parameters-oneof-required", "bad-parameters-oneof-keyword", "bad-parameters-keyword",
-                         "valid-parameters-oneof",
+                         "valid-parameters-oneof", "bad-arguments-property", "bad-arguments-nonclosed",
+                         "bad-arguments-required", "bad-arguments-depth", "bad-arguments-nodes",
+                         "bad-arguments-parameters", "bad-arguments-missing-parameters", "bad-arguments-keyword",
+                         "valid-arguments",
                          "deep-metadata", "bad-context-flag", "lost-response", "bad-status"):
             scenario([args.mcp], Path(temporary) / f"{behavior}.sock", behavior)
-    print("PASS: twenty-four metadata/transport peer scenarios, bounded oneOf discovery, original key, no retry")
+    print("PASS: thirty-three metadata/transport peer scenarios, bounded conditional discovery, unchanged arguments, no retry")
 
 
 if __name__ == "__main__":

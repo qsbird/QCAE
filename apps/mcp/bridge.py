@@ -196,6 +196,13 @@ def tool_schema(descriptor):
         parameters["properties"] = {field["name"]: field_schema(field) for field in fields}
         parameters["required"] = [field["name"] for field in fields if field.get("required")]
         parameters["additionalProperties"] = False
+    if "arguments_schema" in descriptor:
+        arguments = checked_parameters_schema(descriptor["arguments_schema"])
+        properties = arguments["properties"]
+        if (properties.keys() - CONTEXT - {"parameters"} or "parameters_schema" not in descriptor
+                or properties.get("parameters") != parameters):
+            raise TransportError("invalid engine arguments schema")
+        return arguments
     properties = {"parameters": parameters}
     for key in ("document_id", "document_epoch", "idempotency_key"):
         properties[key] = {"type": "string", "minLength": 1}

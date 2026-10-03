@@ -70,6 +70,9 @@ class Client:
             arguments["idempotency_key"] = key
         if version is not None:
             arguments["requested_version"] = version
+        return self.call_arguments(name, arguments, status)
+
+    def call_arguments(self, name, arguments, status="success"):
         response = self.request("tools/call", {"name": name, "arguments": arguments})
         assert "result" in response, response
         result = response["result"]
@@ -98,6 +101,125 @@ def same_commit(response, original):
 
 def read_context(context):
     return {key: context[key] for key in ("document_id", "document_epoch")}
+
+
+def envelope(response):
+    return {key: value for key, value in response.items() if key != "request_id"}
+
+
+def assert_lookup_discovery(catalog, capabilities):
+    entries = [entry for entry in capabilities if entry["name"] == "operations.get"]
+    assert len(entries) == 1 and entries[0]["available"] is True, entries
+    descriptor, tool = entries[0], catalog["operations.get"]
+    _, separator, source = tool["description"].partition("\nEngine capability: ")
+    assert separator and json.loads(source) == descriptor, tool
+    expected = {"version": 1, "schema_id": "qcae.operation.operations.get.v1",
+                "requested_version_field": "requested_version", "omitted_version_policy": "installed_version",
+                "wire_input_type": "OperationsGetInput", "input_type": "OperationLookup",
+                "output_type": "OperationOutcome", "effect": "query", "target_context": "none",
+                "supported_scope": "host_lifecycle_and_document_change_outcomes",
+                "requires_document": False, "requires_epoch": False, "requires_revision": False,
+                "requires_idempotency_key": False, "requires_profile_match": False}
+    assert {key: descriptor.get(key) for key in expected} == expected, descriptor
+    assert descriptor["output_by_lookup_scope"] == {"host": "DocumentInfo", "document": "ChangeReceipt"}, descriptor
+    assert set(descriptor["wire_output_types"]) == {"DocumentInfo", "ChangeReceipt"}, descriptor
+    fields = {field["name"]: field for field in descriptor["fields"]}
+    assert fields["original_mode"]["wire_type"] == "json_value" and fields["original_mode"]["required"] is False, fields
+    parameters = descriptor["parameters_schema"]
+    common = {"lookup_scope", "original_operation", "idempotency_key"}
+    assert parameters["type"] == "object" and parameters["additionalProperties"] is False, parameters
+    assert set(parameters["properties"]) == common | {"original_mode"}, parameters
+    assert set(parameters["required"]) == common and parameters["properties"]["original_mode"] == {}, parameters
+    assert all(parameters["properties"][key] == {"type": "string", "minLength": 1} for key in common), parameters
+    branches = parameters["oneOf"]
+    assert len(branches) == 3, parameters
+    host_open, host_other, document = branches
+    for branch in branches:
+        assert branch["type"] == "object" and branch["additionalProperties"] is False, branch
+        assert set(branch["properties"]) == common | {"original_mode"} and set(branch["required"]) == common, branch
+    assert host_open["properties"]["lookup_scope"]["enum"] == ["host"], host_open
+    assert host_open["properties"]["original_operation"]["enum"] == ["project.open"], host_open
+    assert host_open["properties"]["original_mode"] == {"type": "string", "enum": ["normal", "recover"]}, host_open
+    assert host_other["properties"]["lookup_scope"]["enum"] == ["host"], host_other
+    assert set(host_other["properties"]["original_operation"]["enum"]) == {
+        "project.create", "project.save", "project.save_as", "project.close"}, host_other
+    assert host_other["properties"]["original_mode"] == {}, host_other
+    assert document["properties"]["lookup_scope"]["enum"] == ["document"], document
+    assert document["properties"]["original_operation"] == {"type": "string", "minLength": 1}, document
+    assert document["properties"]["original_mode"] == {}, document
+    arguments = descriptor["arguments_schema"]
+    assert tool["inputSchema"] == arguments and arguments["properties"]["parameters"] == parameters, tool
+    assert arguments["type"] == "object" and arguments["additionalProperties"] is False, arguments
+    assert set(arguments["properties"]) == {"parameters", "document_id", "document_epoch",
+                                           "expected_revision", "idempotency_key", "requested_version"}, arguments
+    assert arguments["required"] == ["parameters"], arguments
+    assert arguments["properties"]["requested_version"] == {"type": "integer", "minimum": 1, "maximum": 4294967295}, arguments
+    scopes = {branch["properties"]["parameters"]["properties"]["lookup_scope"]["enum"][0]: branch
+              for branch in arguments["oneOf"]}
+    assert len(arguments["oneOf"]) == 2 and set(scopes) == {"host", "document"}, arguments
+    for scope, branch in scopes.items():
+        assert branch["type"] == "object" and branch["additionalProperties"] is False, branch
+        required = {"parameters", "document_id", "document_epoch"} if scope == "document" else {"parameters"}
+        assert set(branch["required"]) == required, branch
+        identity = {"type": "string", "minLength": 1} if scope == "document" else {}
+        assert all(branch["properties"][key] == identity for key in ("document_id", "document_epoch")), branch
+        assert all(branch["properties"][key] == {} for key in ("expected_revision", "idempotency_key")), branch
+
+
+def assert_lookup_calls(first, second, parameters, context=None, original=None, ignored_modes=False):
+    arguments = {"parameters": parameters, **(read_context(context) if context else {})}
+    omitted = first.call_arguments("operations.get", arguments)
+    explicit = second.call_arguments("operations.get", {**arguments, "requested_version": 1})
+    assert envelope(omitted) == envelope(explicit), (omitted, explicit)
+    assert ("revision" in omitted) == (parameters["original_operation"] in {
+        "changes.commit", "history.undo", "history.redo"} and parameters["lookup_scope"] == "document"), omitted
+    if original:
+        if parameters["lookup_scope"] == "host":
+            assert omitted["data"] == original["data"], (omitted, original)
+        else:
+            same_commit(omitted, original)
+            assert omitted["data"]["current_revision"] == context["revision"], omitted
+            assert omitted["data"]["current_content_state"] == context["content_state"], omitted
+    if ignored_modes:
+        for value in ("irrelevant", "", 7, False, None, [None], {"nested": None}):
+            varied = {**arguments, "parameters": {**parameters, "original_mode": value},
+                      "expected_revision": {"unused": None}, "idempotency_key": ["unused"], "requested_version": 1}
+            if parameters["lookup_scope"] == "host":
+                varied.update(document_id=None, document_epoch={"unused": None})
+            response = second.call_arguments("operations.get", varied)
+            assert envelope(response) == envelope(omitted), (response, omitted, value)
+    return omitted
+
+
+def assert_lookup_refusals(first, second, context):
+    before = document_state(second, context)
+    document = {"parameters": {"lookup_scope": "document", "original_operation": "material.create",
+                               "idempotency_key": "mcp-material"}, **read_context(context)}
+    for missing in ("document_id", "document_epoch"):
+        first.call_arguments("operations.get", {key: value for key, value in document.items() if key != missing}, "failed")
+    old_document = first.call_arguments("operations.get", {**document, "document_id": "old-document"}, "failed")
+    old_epoch = first.call_arguments("operations.get", {**document, "document_epoch": "old-epoch"}, "conflict")
+    assert old_document["error"]["code"] == "DOCUMENT_NOT_FOUND", old_document
+    assert old_epoch["error"]["code"] == "DOCUMENT_EPOCH_EXPIRED", old_epoch
+    missing_fact = {**document, "parameters": {**document["parameters"], "original_operation": "unavailable.action"}}
+    assert first.call_arguments("operations.get", missing_fact, "failed")["error"]["code"] == "ENTITY_NOT_FOUND"
+    host_open = {"parameters": {"lookup_scope": "host", "original_operation": "project.open",
+                                "idempotency_key": "not-an-open-fact"}}
+    omitted = first.call_arguments("operations.get", host_open, "failed")
+    normal = second.call_arguments("operations.get", {"parameters": {**host_open["parameters"], "original_mode": "normal"},
+                                                      "requested_version": 1}, "failed")
+    assert envelope(omitted) == envelope(normal) and omitted["error"]["code"] == "ENTITY_NOT_FOUND", (omitted, normal)
+    recovered = first.call_arguments("operations.get", {"parameters": {**host_open["parameters"], "original_mode": "recover"}}, "failed")
+    assert recovered["error"]["code"] == "ENTITY_NOT_FOUND", recovered
+    for mode in ("", "unused", 7, False, None, [None], {"nested": None}):
+        rejected = first.call_arguments("operations.get", {"parameters": {**host_open["parameters"], "original_mode": mode}}, "failed")
+        assert rejected["error"]["code"] == "INVALID_INPUT", rejected
+    for version in (None, True, "1", 0, -1, 1.5, 4294967296, [], {}, 2, 4294967295):
+        rejected = second.call_arguments("operations.get", {"parameters": {"lookup_scope": "invalid",
+            "original_operation": "invalid", "original_mode": None}, "requested_version": version}, "failed")
+        expected = "SCHEMA_UNSUPPORTED" if type(version) is int and version in (2, 4294967295) else "INVALID_INPUT"
+        assert rejected["error"]["code"] == expected and rejected["error"]["field"] == "requested_version", rejected
+    assert document_state(second, context) == before
 
 
 def document_state(client, context):
@@ -193,11 +315,14 @@ def run(args):
                 assert "result" in discovery, discovery
                 tools = discovery["result"]["tools"]
                 catalog = {tool["name"]: tool for tool in tools}
+                second_catalog = {tool["name"]: tool for tool in second.request("tools/list")["result"]["tools"]}
+                assert second_catalog == catalog, (second_catalog, catalog)
                 caps = first.call("capabilities.list")["data"]["operations"]
                 assert set(catalog) == {item["name"] for item in caps if item["available"] and item["name"] != "events.subscribe"}
                 assert "events.subscribe" not in catalog and "events.read" in catalog
                 assert "analysis.start" not in catalog
                 assert_host_control_discovery(catalog, caps)
+                assert_lookup_discovery(catalog, caps)
                 create_schema = catalog["project.create"]["inputSchema"]
                 create_descriptor = next(item for item in caps if item["name"] == "project.create")
                 assert create_schema["properties"]["parameters"] == create_descriptor["parameters_schema"] == {
@@ -282,6 +407,10 @@ def run(args):
                 context = first.current()
                 assert context == second.current()
                 assert_host_read_calls(first, second, context)
+                before_host_lookup = document_state(second, context)
+                assert_lookup_calls(first, second, {"lookup_scope": "host", "original_operation": "project.create",
+                    "idempotency_key": "mcp-create"}, original=created, ignored_modes=True)
+                assert document_state(second, context) == before_host_lookup
                 first.call("entity.query", {"entity_type": "Node"}, context, status="failed")
                 first.call("entity.query", {"limit": 1001}, context, status="failed")
                 first.call("entity.fields", context=context, status="failed")
@@ -299,6 +428,11 @@ def run(args):
                 updated = second.current()
                 assert int(updated["revision"]) == int(context["revision"]) + 1
                 same_commit(first.call("material.create", material, context, "mcp-material"), committed)
+                before_action_lookup = document_state(second, updated)
+                assert_lookup_calls(first, second, {"lookup_scope": "document", "original_operation": "material.create",
+                    "idempotency_key": "mcp-material"}, updated, committed, ignored_modes=True)
+                assert_lookup_refusals(first, second, updated)
+                assert document_state(second, updated) == before_action_lookup
                 first.call("material.create", {**material, "name": "Different"}, context, "mcp-material", "conflict")
                 first.call("material.create", {**material, "name": "Stale"}, context, "stale-key", "conflict")
                 before_undo_refusal = document_state(second, updated)
@@ -311,6 +445,7 @@ def run(args):
                 cli = subprocess.run([args.cli, "--socket", str(endpoint), "--no-start"],
                                      input=json.dumps(cli_request), capture_output=True, text=True, timeout=15)
                 assert cli.returncode == 0 and json.loads(cli.stdout)["status"] == "success", cli.stderr
+                cli_undo = json.loads(cli.stdout)
                 undone = first.current()
                 assert undone == second.current() and int(undone["revision"]) == int(updated["revision"]) + 1
                 # A replay after undo reports the original commit without recreating the entity.
@@ -318,10 +453,23 @@ def run(args):
                 same_commit(replay, committed)
                 assert first.current() == undone
                 assert first.call("model.summary", context=undone)["data"]["materials"] == []
+                cli_lookup = {"api_version": "1.1", "request_id": "mcp-cli-lookup", "operation": "operations.get",
+                              "parameters": {"lookup_scope": "document", "original_operation": "history.undo",
+                                             "idempotency_key": "cli-undo", "original_mode": {"ignored": None}},
+                              **read_context(undone)}
+                mcp_fact = assert_lookup_calls(first, second, cli_lookup["parameters"], undone, cli_undo)
+                before_cli_lookup = document_state(second, undone)
+                for version in (None, 1):
+                    request = {**cli_lookup, **({"requested_version": version} if version else {})}
+                    cli = subprocess.run([args.cli, "--socket", str(endpoint), "--no-start"],
+                                         input=json.dumps(request), capture_output=True, text=True, timeout=15)
+                    assert cli.returncode == 0, cli.stderr
+                    assert envelope(json.loads(cli.stdout)) == envelope(mcp_fact), (cli.stdout, mcp_fact)
+                assert document_state(second, undone) == before_cli_lookup
                 before_redo_refusal = document_state(first, undone)
                 assert_empty_input_refusals(second, "history.redo", undone, "mcp-redo")
                 assert document_state(first, undone) == before_redo_refusal
-                history_context, undo_fact = undone, None
+                history_context, undo_fact, history_facts = undone, None, []
                 for client, operation, key, version in (
                         (second, "history.redo", "mcp-redo", 1),
                         (first, "history.undo", "mcp-undo", None),
@@ -345,9 +493,10 @@ def run(args):
                     assert len(after["model.summary"]["materials"]) == int(applied), after
                     same_commit(client.call(operation, context=move_context, key=key,
                                             version=1 if version is None else None), receipt)
-                    fact = client.call("operations.get", {"lookup_scope": "document",
-                        "original_operation": operation, "idempotency_key": key}, read_context(history_context))
-                    same_commit(fact, receipt)
+                    assert_lookup_calls(first, second, {"lookup_scope": "document",
+                        "original_operation": operation, "idempotency_key": key}, history_context, receipt,
+                        ignored_modes=key == "mcp-undo")
+                    history_facts.append((operation, key, receipt))
                     assert document_state(second, history_context) == after
                     if key == "mcp-undo":
                         undo_fact = (move_context, receipt)
@@ -357,6 +506,26 @@ def run(args):
                         assert retried_undo["data"]["current_revision"] == history_context["revision"], retried_undo
                         assert retried_undo["data"]["current_content_state"] == history_context["content_state"], retried_undo
                         assert document_state(second, history_context) == after
+                preview_context = first.current()
+                preview = first.call("changes.preview", {"command": "material.create", "name": "Preview material",
+                    "young_modulus": {"value": 70, "unit": "GPa"}}, preview_context)["data"]
+                preview_commit = first.call("changes.commit", {"preview_id": preview["preview_id"]},
+                                            preview_context, "mcp-preview-commit", version=1)
+                for operation, key in (("history.undo", "mcp-preview-undo"), ("history.redo", "mcp-preview-redo")):
+                    move_context = first.current()
+                    receipt = second.call(operation, context=move_context, key=key)
+                    lookup_context = first.current()
+                    before_retained_lookup = document_state(second, lookup_context)
+                    assert_lookup_calls(first, second, {"lookup_scope": "document", "original_operation": "changes.commit",
+                        "idempotency_key": "mcp-preview-commit"}, lookup_context, preview_commit, ignored_modes=True)
+                    assert_lookup_calls(first, second, {"lookup_scope": "document", "original_operation": operation,
+                        "idempotency_key": key}, lookup_context, receipt)
+                    for retained_operation, retained_key, retained_receipt in history_facts:
+                        assert_lookup_calls(first, second, {"lookup_scope": "document", "original_operation": retained_operation,
+                            "idempotency_key": retained_key}, lookup_context, retained_receipt)
+                    assert_lookup_calls(first, second, {"lookup_scope": "document", "original_operation": "material.create",
+                        "idempotency_key": "mcp-material"}, lookup_context, committed)
+                    assert document_state(second, lookup_context) == before_retained_lookup
                 wrong_epoch = {**first.current(), "document_epoch": "incorrect-epoch"}
                 first.call("model.summary", context=wrong_epoch, status="conflict")
                 assert first.request("tools/call", {"name": "project.current", "arguments": {"shell": "false"}})["error"]["code"] == -32602
@@ -370,8 +539,8 @@ def run(args):
                 assert first.request("ping")["result"] == {}
                 if args.durable:
                     save_context = first.current()
-                    first.call("project.save", {"path": str(root / "model.qcae")}, save_context,
-                               "mcp-save", version=1)
+                    saved_path = first.call("project.save", {"path": str(root / "model.qcae")}, save_context,
+                                            "mcp-save", version=1)
                     save_context = first.current()
                     saved = first.call("project.save", context=save_context, key="mcp-save-default")
                     empty_replay = first.call("project.save", {"path": ""}, save_context,
@@ -384,6 +553,13 @@ def run(args):
                                                save_context, "mcp-save-as")
                     assert copied_replay["data"] == copied["data"], (copied_replay, copied)
                     assert first.current()["document_id"] == save_context["document_id"]
+                    before_saved_lookup = document_state(second, first.current())
+                    for operation, key, original in (("project.save", "mcp-save", saved_path),
+                                                     ("project.save", "mcp-save-default", saved),
+                                                     ("project.save_as", "mcp-save-as", copied)):
+                        assert_lookup_calls(first, second, {"lookup_scope": "host", "original_operation": operation,
+                            "idempotency_key": key}, original=original, ignored_modes=True)
+                    assert document_state(second, first.current()) == before_saved_lookup
 
                 for client in clients:
                     client.close()
@@ -396,21 +572,25 @@ def run(args):
                 cli = subprocess.run([args.cli, "--socket", str(endpoint), "--no-start"],
                                      input=json.dumps(cli_request), capture_output=True, text=True, timeout=15)
                 assert cli.returncode == 0 and json.loads(cli.stdout)["data"]["document_id"] == context["document_id"]
-                closer = Client(command, endpoint)
-                clients.append(closer)
-                closer.initialize()
+                closer, observer = Client(command, endpoint), Client(command, endpoint)
+                clients.extend((closer, observer))
+                for client in clients:
+                    client.initialize()
                 close_context = closer.current()
                 closed = closer.call("project.close", {"policy": "discard"}, close_context,
                                      "mcp-close", version=1)
                 replayed_close = closer.call("project.close", {"policy": "discard"}, close_context,
                                              "mcp-close")
                 assert replayed_close["data"] == closed["data"], (replayed_close, closed)
-                fact = closer.call("operations.get", {"lookup_scope": "host",
-                    "original_operation": "project.close", "idempotency_key": "mcp-close"})
-                assert fact["data"] == closed["data"], (fact, closed)
+                assert_lookup_calls(closer, observer, {"lookup_scope": "host", "original_operation": "project.close",
+                    "idempotency_key": "mcp-close"}, original=closed, ignored_modes=True)
+                assert_lookup_calls(closer, observer, {"lookup_scope": "host", "original_operation": "project.create",
+                    "idempotency_key": "mcp-create"}, original=created)
                 closer.call("project.current", status="failed")
-                closer.close()
-                clients.remove(closer)
+                observer.call("project.current", status="failed")
+                for client in clients:
+                    client.close()
+                clients.clear()
 
             finally:
                 for client in clients:

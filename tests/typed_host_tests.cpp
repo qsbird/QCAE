@@ -136,6 +136,128 @@ OpenContractState open_contract_state(qcae::MemoryApplication& app,
     state.project_reads = store.project_reads;
     return state;
 }
+QJsonObject operation_lookup_request(const char* scope, const char* operation, const char* key) {
+    return {{"api_version", "1.1"},
+            {"request_id", "lookup-contract"},
+            {"operation", "operations.get"},
+            {"parameters",
+             QJsonObject{{"lookup_scope", scope},
+                         {"original_operation", operation},
+                         {"idempotency_key", key}}}};
+}
+QJsonObject lookup_without_effects(qcae::MemoryApplication& app,
+                                   OpenContractStore& store,
+                                   qcae::ipc::TypedHost& host,
+                                   const qcae::Caller& owner,
+                                   const QJsonObject& request,
+                                   const qcae::Caller& reader) {
+    const auto before = open_contract_state(app, store, owner);
+    std::optional<qcae::DocumentView> records;
+    const auto current = app.current_document();
+    if (current.ok())
+        records =
+            runtime_test::good(app.record_application().snapshot(current.value->document)).records;
+    const auto wire = QJsonDocument::fromJson(QJsonDocument(request).toJson()).object();
+    const auto response = qcae::ipc::dispatch(app, wire, reader, nullptr, nullptr, nullptr, &host);
+    require(open_contract_state(app, store, owner) == before,
+            "lookup preserves all lifecycle metadata, rows, project payloads, store generation, "
+            "history, retained facts and I/O counters");
+    if (records) {
+        const auto after =
+            runtime_test::good(app.record_application().snapshot(current.value->document)).records;
+        require(after.matches_version(records->version()) &&
+                    qcae::diff_record_views(*records, after).empty(),
+                "lookup preserves the complete record view and its version");
+    }
+    return response;
+}
+QJsonObject lookup_installed_versions(qcae::MemoryApplication& app,
+                                      OpenContractStore& store,
+                                      qcae::ipc::TypedHost& host,
+                                      const qcae::Caller& owner,
+                                      QJsonObject request,
+                                      const qcae::Caller& reader) {
+    request.remove("requested_version");
+    const auto response = lookup_without_effects(app, store, host, owner, request, reader);
+    request.insert("requested_version", 1);
+    require(lookup_without_effects(app, store, host, owner, request, reader) == response,
+            "omitted/v1 lookup preserves the complete successful or failed response envelope");
+    return response;
+}
+void ignored_lookup_modes(qcae::MemoryApplication& app,
+                          OpenContractStore& store,
+                          qcae::ipc::TypedHost& host,
+                          const qcae::Caller& caller,
+                          QJsonObject request,
+                          const QJsonObject& expected) {
+    for (const auto& mode : {QJsonValue("unused"),
+                             QJsonValue(""),
+                             QJsonValue(7),
+                             QJsonValue(true),
+                             QJsonValue(QJsonValue::Null),
+                             QJsonValue(QJsonArray{}),
+                             QJsonValue(QJsonArray{QJsonValue(QJsonValue::Null)}),
+                             QJsonValue(QJsonObject{}),
+                             QJsonValue(QJsonObject{{"nested", QJsonValue(QJsonValue::Null)}})}) {
+        auto parameters = request.value("parameters").toObject();
+        parameters.insert("original_mode", mode);
+        request.insert("parameters", parameters);
+        require(lookup_installed_versions(app, store, host, caller, request, caller) == expected,
+                "irrelevant raw JSON mode, including empty and nested null values, is ignored");
+    }
+    // These envelope values are not a write context or a new mutation key.
+    request.insert("expected_revision", QJsonObject{{"ignored", QJsonValue(QJsonValue::Null)}});
+    request.insert("idempotency_key", QJsonValue(QJsonValue::Null));
+    if (request.value("parameters").toObject().value("lookup_scope") == "host") {
+        request.insert("document_id", QJsonArray{});
+        request.insert("document_epoch", QJsonValue(QJsonValue::Null));
+    }
+    require(lookup_installed_versions(app, store, host, caller, request, caller) == expected,
+            "lookup ignores unused envelope revision/key and host document context");
+}
+void host_outcome_lookup(qcae::MemoryApplication& app,
+                         OpenContractStore& store,
+                         qcae::ipc::TypedHost& host,
+                         const qcae::Caller& caller,
+                         const char* operation,
+                         const char* key,
+                         const qcae::DocumentInfo& fact,
+                         const char* mode = nullptr) {
+    auto request = operation_lookup_request("host", operation, key);
+    if (mode) {
+        auto parameters = request.value("parameters").toObject();
+        parameters.insert("original_mode", mode);
+        request.insert("parameters", parameters);
+    }
+    const QJsonObject expected{{"request_id", "lookup-contract"},
+                               {"status", "success"},
+                               {"data", qcae::ipc::info_json(fact)}};
+    require(lookup_installed_versions(app, store, host, caller, request, caller) == expected,
+            "host lookup returns the complete original DocumentInfo with no outer revision");
+    auto ignored_context = request;
+    ignored_context.insert("document_id", QJsonArray{});
+    ignored_context.insert("document_epoch", QJsonValue(QJsonValue::Null));
+    ignored_context.insert("expected_revision", QJsonObject{});
+    ignored_context.insert("idempotency_key", QJsonValue(QJsonValue::Null));
+    require(lookup_installed_versions(app, store, host, caller, ignored_context, caller) ==
+                expected,
+            "all host lookups ignore unused document and mutation envelope fields");
+    if (std::string_view(operation) != "project.open")
+        ignored_lookup_modes(app, store, host, caller, request, expected);
+    const auto foreign = lookup_installed_versions(
+        app, store, host, caller, request, qcae::Caller{"another-lookup-caller"});
+    require(foreign.value("status") == "failed" &&
+                foreign.value("error").toObject().value("code") == "ENTITY_NOT_FOUND",
+            "host outcomes retain their trusted caller scope");
+    auto parameters = request.value("parameters").toObject();
+    parameters.insert("idempotency_key", "not-recorded");
+    request.insert("parameters", parameters);
+    const auto missing = lookup_installed_versions(app, store, host, caller, request, caller);
+    require(missing == foreign,
+            "unrecorded and cross-caller host facts have the same full refusal");
+    if (std::string_view(operation) != "project.open")
+        ignored_lookup_modes(app, store, host, caller, request, missing);
+}
 QJsonObject open_request(QJsonObject parameters, const char* key) {
     return {{"api_version", "1.1"},
             {"request_id", "open-contract"},
@@ -191,16 +313,12 @@ void rejected_open_inputs_are_atomic(qcae::MemoryApplication& app,
              {{{"mode", "recover"}, {"extra", "unknown"}}, "input.extra"}})
         reject(open_request(input, key), "INVALID_INPUT", field);
     auto legacy = open_request({}, key);
-    legacy.insert("operation", "operations.get");
-    legacy.insert("parameters",
-                  QJsonObject{{"lookup_scope", "host"},
-                              {"original_operation", "project.create"},
-                              {"idempotency_key", "not-recorded"}});
+    legacy.insert("operation", "changes.preview");
     legacy.insert("requested_version", 1);
     const auto legacy_failure = qcae::ipc::dispatch(app, legacy, caller);
     require(legacy_failure.value("error").toObject().value("code") == "INVALID_INPUT" &&
                 open_contract_state(app, store, caller) == before,
-            "the excluded compatibility lookup keeps its version-field rejection");
+            "an unaffected legacy preview keeps its version-field rejection");
     auto profile = open_request(normal, key);
     profile.insert("expected_profile", QJsonObject{});
     require(qcae::ipc::dispatch(app, profile, caller).value("error").toObject().value("code") ==
@@ -314,6 +432,8 @@ void project_open_contract_and_lifecycle() {
                     runtime_test::good(app.history(info.document)).items.empty(),
                 "version-one normal open preserves DocumentInfo/model and creates its documented "
                 "lifecycle");
+        host_outcome_lookup(app, *store, host, caller, "project.open", "open", info);
+        host_outcome_lookup(app, *store, host, caller, "project.open", "open", info, "normal");
         rejected_open_inputs_are_atomic(app, *store, host, caller, "active-open-rejections");
         const auto after_open = open_contract_state(app, *store, caller);
         request.remove("requested_version");
@@ -357,6 +477,20 @@ void project_open_contract_and_lifecycle() {
                     .value("data") == recovered.value("data") &&
             open_contract_state(recovered_app, *store, caller) == state,
         "explicit installed version replays recovery without another write");
+    host_outcome_lookup(
+        recovered_app, *store, recovered_host, caller, "project.open", "recover", info, "recover");
+    auto normal_lookup = operation_lookup_request("host", "project.open", "recover");
+    const auto normal_missing = lookup_installed_versions(
+        recovered_app, *store, recovered_host, caller, normal_lookup, caller);
+    require(normal_missing.value("error").toObject().value("code") == "ENTITY_NOT_FOUND",
+            "omitted original_mode selects normal and cannot read a recovery-namespace fact");
+    auto normal_parameters = normal_lookup.value("parameters").toObject();
+    normal_parameters.insert("original_mode", "normal");
+    normal_lookup.insert("parameters", normal_parameters);
+    require(lookup_installed_versions(
+                recovered_app, *store, recovered_host, caller, normal_lookup, caller) ==
+                normal_missing,
+            "explicit normal and omitted mode have the same complete namespace-specific refusal");
 }
 QJsonObject create_request(QJsonObject parameters, const char* key) {
     auto request = open_request(std::move(parameters), key);
@@ -1051,6 +1185,289 @@ void changes_commit_contract_and_replay() {
         replay();
     }
 }
+void operation_lookup_rejections(qcae::MemoryApplication& app,
+                                 OpenContractStore& store,
+                                 qcae::ipc::TypedHost& host,
+                                 const qcae::Caller& caller,
+                                 const qcae::DocumentInfo& info) {
+    auto valid = operation_lookup_request("document", "changes.commit", "history-C");
+    valid.insert("document_id", QString::fromStdString(info.document.id.value));
+    valid.insert("document_epoch", QString::fromStdString(info.document.epoch.value));
+    const auto reject = [&](const QJsonObject& request,
+                            const char* code,
+                            const char* field,
+                            const char* message = nullptr) {
+        for (int retry = 0; retry < 2; ++retry) {
+            const auto response =
+                request.contains("requested_version")
+                    ? lookup_without_effects(app, store, host, caller, request, caller)
+                    : lookup_installed_versions(app, store, host, caller, request, caller);
+            const auto error = response.value("error").toObject();
+            require(response.value("status") == "failed" && error.value("code") == code &&
+                        error.value("field").toString() == field,
+                    "lookup refuses the exact invalid input or version without retaining effects");
+            if (message)
+                require(response == qcae::ipc::failure("lookup-contract", code, message),
+                        "existing raw-input refusals retain their complete legacy envelope");
+        }
+    };
+    std::vector<QJsonObject> invalid_after_version{valid};
+    for (const auto& parameters :
+         {QJsonObject{{"lookup_scope", "other"}},
+          QJsonObject{{"lookup_scope", "host"}, {"original_operation", "unknown.lifecycle"}},
+          QJsonObject{{"lookup_scope", "host"},
+                      {"original_operation", "project.open"},
+                      {"original_mode", QJsonValue(QJsonValue::Null)}},
+          QJsonObject{{"lookup_scope", "document"}, {"original_operation", "changes.commit"}}}) {
+        auto request = valid;
+        request.insert("parameters", parameters);
+        invalid_after_version.push_back(request);
+    }
+    auto missing_context = valid;
+    missing_context.remove("document_epoch");
+    invalid_after_version.push_back(missing_context);
+    auto unknown_field = valid;
+    auto extra_parameters = unknown_field.value("parameters").toObject();
+    extra_parameters.insert("extra", QJsonValue(QJsonValue::Null));
+    unknown_field.insert("parameters", extra_parameters);
+    invalid_after_version.push_back(unknown_field);
+    for (auto request : invalid_after_version) {
+        for (const auto& version : {QJsonValue(0),
+                                    QJsonValue(-1),
+                                    QJsonValue(1.5),
+                                    QJsonValue(4294967296.0),
+                                    QJsonValue(true),
+                                    QJsonValue("1"),
+                                    QJsonValue(QJsonValue::Null),
+                                    QJsonValue(QJsonArray{}),
+                                    QJsonValue(QJsonObject{})}) {
+            request.insert("requested_version", version);
+            reject(request, "INVALID_INPUT", "requested_version");
+        }
+        for (const auto& version : {QJsonValue(2), QJsonValue(4294967295.0)}) {
+            request.insert("requested_version", version);
+            reject(request, "SCHEMA_UNSUPPORTED", "requested_version");
+        }
+    }
+    for (const auto* field : {"lookup_scope", "original_operation", "idempotency_key"}) {
+        auto parameters = valid.value("parameters").toObject();
+        parameters.remove(field);
+        auto request = valid;
+        request.insert("parameters", parameters);
+        const auto message = std::string("Expected a non-empty string: ") + field;
+        reject(request, "INVALID_INPUT", "", message.c_str());
+        for (const auto& value : {QJsonValue(""), QJsonValue(1), QJsonValue(QJsonValue::Null)}) {
+            parameters.insert(field, value);
+            request.insert("parameters", parameters);
+            reject(request, "INVALID_INPUT", "", message.c_str());
+        }
+    }
+    for (const auto& [parameters, message] : std::vector<std::pair<QJsonObject, const char*>>{
+             {{{"lookup_scope", "other"}}, "Unknown lookup_scope"},
+             {{{"lookup_scope", "host"}, {"original_operation", "unknown.lifecycle"}},
+              "Unknown lifecycle operation"},
+             {{{"lookup_scope", "host"},
+               {"original_operation", "project.open"},
+               {"original_mode", "other"}},
+              "Invalid original_mode"}}) {
+        auto request = valid;
+        request.insert("parameters", parameters);
+        reject(request, "INVALID_INPUT", "", message);
+    }
+    for (const auto& mode : {QJsonValue(""),
+                             QJsonValue(7),
+                             QJsonValue(true),
+                             QJsonValue(QJsonValue::Null),
+                             QJsonValue(QJsonArray{}),
+                             QJsonValue(QJsonObject{{"nested", QJsonValue(QJsonValue::Null)}})}) {
+        auto request = operation_lookup_request("host", "project.open", "not-recorded");
+        auto parameters = request.value("parameters").toObject();
+        parameters.insert("original_mode", mode);
+        request.insert("parameters", parameters);
+        reject(request, "INVALID_INPUT", "", "Expected a non-empty string: original_mode");
+    }
+    auto extra = valid;
+    auto parameters = extra.value("parameters").toObject();
+    parameters.insert("extra", QJsonValue(QJsonValue::Null));
+    extra.insert("parameters", parameters);
+    reject(extra, "INVALID_INPUT", "", "Unexpected field: extra");
+    for (const auto& shape : {QJsonValue(QJsonArray{}),
+                              QJsonValue("input"),
+                              QJsonValue(1),
+                              QJsonValue(QJsonValue::Null)}) {
+        auto request = valid;
+        request.insert("parameters", shape);
+        request.insert("requested_version", 2);
+        reject(request, "INVALID_INPUT", "", "parameters must be an object");
+    }
+    auto profile = valid;
+    profile.insert("expected_profile", QJsonObject{});
+    profile.insert("requested_version", 2);
+    reject(profile,
+           "INVALID_INPUT",
+           "",
+           "requested_version/expected_profile require a typed operation");
+    for (const auto* field : {"document_id", "document_epoch"}) {
+        auto request = valid;
+        request.remove(field);
+        const auto message = std::string("Expected a non-empty string: ") + field;
+        reject(request, "INVALID_INPUT", "", message.c_str());
+    }
+}
+void operation_lookup_descriptor_and_projection(const QJsonObject& descriptor) {
+    using namespace qcae::operations;
+    const auto definition = InputTraits<OperationsGetInput>::definition();
+    const OperationDefinition expected{"operations.get",
+                                       1,
+                                       "qcae.operation.operations.get.v1",
+                                       OperationEffect::read_only,
+                                       {false, false, false, false, false},
+                                       {{1, "lookup_scope", "string", {}, true, false},
+                                        {2, "original_operation", "string", {}, true, false},
+                                        {3, "idempotency_key", "string", {}, true, false},
+                                        {4, "original_mode", "string", {}, false, false}}};
+    require(
+        definition == expected && descriptor.value("available") == true &&
+            descriptor.value("version") == 1 &&
+            descriptor.value("schema_id") == "qcae.operation.operations.get.v1" &&
+            descriptor.value("input_type") == "OperationLookup" &&
+            descriptor.value("output_type") == "OperationOutcome" &&
+            descriptor.value("wire_input_type") == "OperationsGetInput" &&
+            !descriptor.contains("wire_output_type") &&
+            descriptor.value("wire_output_types") == QJsonArray{"DocumentInfo", "ChangeReceipt"} &&
+            descriptor.value("output_by_lookup_scope") ==
+                QJsonObject{{"host", "DocumentInfo"}, {"document", "ChangeReceipt"}} &&
+            descriptor.value("effect") == "query" && descriptor.value("target_context") == "none" &&
+            descriptor.value("supported_scope") == "host_lifecycle_and_document_change_outcomes" &&
+            descriptor.value("requires_document") == false &&
+            descriptor.value("requires_epoch") == false &&
+            descriptor.value("requires_revision") == false &&
+            descriptor.value("requires_idempotency_key") == false &&
+            descriptor.value("requires_profile_match") == false &&
+            descriptor.value("requested_version_field") == "requested_version" &&
+            descriptor.value("omitted_version_policy") == "installed_version" &&
+            !descriptor.contains("requested_version"),
+        "lookup advertises one semantic v1 contract with conditional context and existing "
+        "scope-specific output labels");
+    const auto fields = descriptor.value("fields").toArray();
+    require(fields.size() == 4, "lookup discovers all four fields");
+    for (qsizetype index = 0; index < fields.size(); ++index) {
+        const auto field = fields[index].toObject();
+        const auto& semantic = definition.fields[static_cast<std::size_t>(index)];
+        require(
+            field.value("name") == QString::fromStdString(semantic.name) &&
+                field.value("required") == semantic.required &&
+                field.value("wire_type") == (index == 3 ? "json_value" : "string") &&
+                field.value("units") == QJsonArray{} &&
+                (index == 3 ? !field.contains("allow_empty") : field.value("allow_empty") == false),
+            "raw mode metadata is honest about the compatibility projection");
+    }
+    require(!fields[3].toObject().value("description").toString().isEmpty(),
+            "raw mode metadata explains its host-open condition");
+    const QJsonArray required{"lookup_scope", "original_operation", "idempotency_key"};
+    const QJsonObject identity{{"type", "string"}, {"minLength", 1}};
+    const auto schema = descriptor.value("parameters_schema").toObject();
+    const auto properties = schema.value("properties").toObject();
+    const auto branches = schema.value("oneOf").toArray();
+    require(
+        schema.value("type") == "object" && schema.value("required") == required &&
+            schema.value("additionalProperties") == false && properties.size() == 4 &&
+            properties.value("lookup_scope") == identity &&
+            properties.value("original_operation") == identity &&
+            properties.value("idempotency_key") == identity &&
+            properties.value("original_mode") == QJsonObject{} && branches.size() == 3,
+        "raw lookup parameters form a closed three-branch schema with unconstrained ignored mode");
+    for (qsizetype index = 0; index < branches.size(); ++index) {
+        const auto branch = branches[index].toObject();
+        const auto members = branch.value("properties").toObject();
+        require(branch.value("type") == "object" && branch.value("required") == required &&
+                    branch.value("additionalProperties") == false && members.size() == 4 &&
+                    members.value("lookup_scope").toObject().value("enum") ==
+                        (index == 2 ? QJsonArray{"document"} : QJsonArray{"host"}) &&
+                    members.value("idempotency_key") == identity,
+                "each raw branch closes the same common names and selects its lookup scope");
+        if (index == 0)
+            require(members.value("original_operation").toObject().value("enum") ==
+                            QJsonArray{"project.open"} &&
+                        members.value("original_mode").toObject().value("type") == "string" &&
+                        members.value("original_mode").toObject().value("enum") ==
+                            QJsonArray{"normal", "recover"},
+                    "only host-open constrains the optional mode");
+        else
+            require(members.value("original_mode") == QJsonObject{} &&
+                        (index == 1
+                             ? members.value("original_operation").toObject().value("enum") ==
+                                   QJsonArray{"project.create",
+                                              "project.save",
+                                              "project.save_as",
+                                              "project.close"}
+                             : members.value("original_operation") == identity),
+                    "other host names are bounded and document action names remain unrestricted");
+    }
+    const auto arguments = descriptor.value("arguments_schema").toObject();
+    const auto context = arguments.value("properties").toObject();
+    const auto scopes = arguments.value("oneOf").toArray();
+    require(arguments.value("type") == "object" &&
+                arguments.value("required") == QJsonArray{"parameters"} &&
+                arguments.value("additionalProperties") == false && context.size() == 6 &&
+                context.value("parameters") == schema &&
+                context.value("document_id") == QJsonObject{} &&
+                context.value("document_epoch") == QJsonObject{} &&
+                context.value("expected_revision") == QJsonObject{} &&
+                context.value("idempotency_key") == QJsonObject{} &&
+                context.value("requested_version") ==
+                    QJsonObject{{"type", "integer"}, {"minimum", 1}, {"maximum", 4294967295.0}} &&
+                !context.contains("expected_profile") && scopes.size() == 2,
+            "complete arguments reuse the exact raw schema and expose optional version and ignored "
+            "context");
+    for (qsizetype index = 0; index < scopes.size(); ++index) {
+        const auto scope = scopes[index].toObject();
+        const auto scoped = scope.value("properties").toObject();
+        const auto selector = scoped.value("parameters").toObject();
+        require(
+            scope.value("type") == "object" && scope.value("additionalProperties") == false &&
+                scoped.size() == 6 && scoped.value("expected_revision") == QJsonObject{} &&
+                scoped.value("idempotency_key") == QJsonObject{} &&
+                scoped.value("requested_version") == context.value("requested_version") &&
+                selector.value("type") == "object" &&
+                selector.value("required") == QJsonArray{"lookup_scope"} &&
+                selector.value("additionalProperties") == false &&
+                selector.value("properties").toObject().size() == 4 &&
+                selector.value("properties").toObject().value("original_operation") == identity &&
+                selector.value("properties").toObject().value("idempotency_key") == identity &&
+                selector.value("properties").toObject().value("original_mode") == QJsonObject{} &&
+                scope.value("required") ==
+                    (index == 0 ? QJsonArray{"parameters"}
+                                : QJsonArray{"parameters", "document_id", "document_epoch"}) &&
+                selector.value("properties")
+                        .toObject()
+                        .value("lookup_scope")
+                        .toObject()
+                        .value("enum") ==
+                    (index == 0 ? QJsonArray{"host"} : QJsonArray{"document"}) &&
+                scoped.value("document_id") == (index == 0 ? QJsonObject{} : identity) &&
+                scoped.value("document_epoch") == (index == 0 ? QJsonObject{} : identity),
+            "only the document branch requires nonempty document identity and epoch");
+    }
+    // Generated strings describe the semantic projection; irrelevant raw JSON never enters Value.
+    for (const auto& [scope, operation, mode] :
+         std::vector<std::tuple<const char*, const char*, std::optional<std::string>>>{
+             {"host", "project.create", {}},
+             {"document", "unknown.action", {}},
+             {"host", "project.open", {}},
+             {"host", "project.open", "normal"},
+             {"host", "project.open", "recover"}}) {
+        const OperationsGetInput input{scope, operation, "original-key", mode};
+        const auto value = InputTraits<OperationsGetInput>::to_value(input);
+        const auto decoded = runtime_test::good(InputTraits<OperationsGetInput>::from_value(value));
+        require(decoded.lookup_scope == scope && decoded.original_operation == operation &&
+                    decoded.idempotency_key == "original-key" && decoded.original_mode == mode &&
+                    InputTraits<OperationsGetInput>::to_value(decoded) == value &&
+                    std::get<Value::Object>(value.data).contains("original_mode") ==
+                        mode.has_value(),
+                "generated projected strings decode deterministically and omit unused mode");
+    }
+}
 void host_read_and_history_contracts() {
     using namespace qcae;
     using namespace operations;
@@ -1203,21 +1620,14 @@ void host_read_and_history_contracts() {
                     "catalog discovery retains its supported scope");
     }
     QJsonObject lookup_descriptor;
+    unsigned lookup_count{};
     for (const auto& entry : catalog_data.value("operations").toArray())
-        if (entry.toObject().value("name") == "operations.get")
+        if (entry.toObject().value("name") == "operations.get") {
             lookup_descriptor = entry.toObject();
-    require(lookup_descriptor.value("available") == true &&
-                lookup_descriptor.value("supported_scope") ==
-                    "host_lifecycle_and_document_change_outcomes" &&
-                lookup_descriptor.value("requires_document") == false &&
-                lookup_descriptor.value("requires_epoch") == false &&
-                lookup_descriptor.value("requires_revision") == false &&
-                lookup_descriptor.value("requires_idempotency_key") == false &&
-                !lookup_descriptor.contains("version") &&
-                !lookup_descriptor.contains("schema_id") &&
-                !lookup_descriptor.contains("wire_input_type") &&
-                !lookup_descriptor.contains("parameters_schema"),
-            "conditional outcome lookup retains its existing descriptor outside this batch");
+            ++lookup_count;
+        }
+    require(lookup_count == 1, "exactly one outcome lookup descriptor is available");
+    operation_lookup_descriptor_and_projection(lookup_descriptor);
     auto current_request = read_request("project.current");
     const auto no_document = dispatch(current_request, caller);
     current_request.insert("requested_version", 1);
@@ -1243,12 +1653,14 @@ void host_read_and_history_contracts() {
     info = runtime_test::good(app.current_document());
     info = runtime_test::good(
         app.save_document(caller, runtime_test::at(info), "/host-controls.qcae", false, "save"));
+    const auto saved = info;
     const auto saved_view =
         runtime_test::good(app.record_application().snapshot(info.document)).records;
     const auto saved_history = runtime_test::good(app.history(info.document));
     require(!info.dirty && info.material_count == 1 && saved_history.items.size() == 1 &&
                 saved_history.cursor == 1 && store->projects.contains("/host-controls.qcae"),
             "shared scenario starts with one saved model and a real application history");
+    operation_lookup_rejections(app, *store, host, caller, info);
     const auto unchanged = [&](const OpenContractState& before, const DocumentView& before_view) {
         const auto after =
             runtime_test::good(app.record_application().snapshot(info.document)).records;
@@ -1453,9 +1865,12 @@ void host_read_and_history_contracts() {
         expected.insert("replayed", true);
         expected.insert("current_revision", QString::number(info.revision));
         expected.insert("current_content_state", QString::fromStdString(info.content_state));
+        const QJsonObject envelope{{"request_id", request.value("request_id")},
+                                   {"status", "success"},
+                                   {"data", expected},
+                                   {"revision", QString::number(info.revision)}};
         const auto response = dispatch(request, caller);
-        require(response.value("status") == "success" && response.value("data") == expected &&
-                    response.value("revision") == QString::number(info.revision),
+        require(response == envelope,
                 "retry/lookup returns the original transaction with current state facts");
         unchanged(before, before_view);
     };
@@ -1505,34 +1920,43 @@ void host_read_and_history_contracts() {
              {"changes.commit", "history-C", committed.value("data").toObject()},
              {"history.undo", "history-U", undone},
              {"history.redo", "history-R", redone}}) {
-        auto lookup = document_request("operations.get");
-        lookup.insert("parameters",
-                      QJsonObject{{"lookup_scope", "document"},
-                                  {"original_operation", operation},
-                                  {"original_mode", 7},
-                                  {"idempotency_key", key}});
+        auto lookup = operation_lookup_request("document", operation, key);
+        lookup.insert("document_id", QString::fromStdString(info.document.id.value));
+        lookup.insert("document_epoch", QString::fromStdString(info.document.epoch.value));
         replay(lookup, original);
+        auto expected_data = original;
+        expected_data.insert("replayed", true);
+        expected_data.insert("current_revision", QString::number(info.revision));
+        expected_data.insert("current_content_state", QString::fromStdString(info.content_state));
+        const QJsonObject expected{{"request_id", "lookup-contract"},
+                                   {"status", "success"},
+                                   {"data", expected_data},
+                                   {"revision", QString::number(info.revision)}};
+        require(lookup_installed_versions(app, *store, host, caller, lookup, caller) == expected,
+                "mapped document lookup retains the complete receipt and outer current revision");
+        ignored_lookup_modes(app, *store, host, caller, lookup, expected);
         reject(lookup, "ENTITY_NOT_FOUND", "idempotency_key", "failed", other);
+        auto expired = lookup;
+        expired.insert("document_epoch", "old-epoch");
+        reject(expired, "DOCUMENT_EPOCH_EXPIRED", "document_epoch", "conflict");
+        expired.insert("document_id", "another-document");
+        reject(expired, "DOCUMENT_NOT_FOUND", "document_id");
         auto parameters = lookup.value("parameters").toObject();
         parameters.insert("idempotency_key", "unrecorded-key");
         lookup.insert("parameters", parameters);
         reject(lookup, "ENTITY_NOT_FOUND", "idempotency_key");
-        lookup.insert("requested_version", 1);
-        reject(lookup, "INVALID_INPUT", "");
+        const auto missing = lookup_installed_versions(app, *store, host, caller, lookup, caller);
+        ignored_lookup_modes(app, *store, host, caller, lookup, missing);
     }
-    auto host_lookup = read_request("operations.get");
-    host_lookup.insert("parameters",
-                       QJsonObject{{"lookup_scope", "host"},
-                                   {"original_operation", "project.create"},
-                                   {"original_mode", QJsonValue(QJsonValue::Null)},
-                                   {"idempotency_key", "create"}});
-    const auto before_lookup = open_contract_state(app, *store, caller);
-    const auto before_lookup_view =
-        runtime_test::good(app.record_application().snapshot(info.document)).records;
-    const auto found = dispatch(host_lookup, caller);
-    require(found.value("status") == "success" && found.value("data") == ipc::info_json(created),
-            "host lookup still needs no document and ignores irrelevant original_mode values");
-    unchanged(before_lookup, before_lookup_view);
+    const auto saved_as = runtime_test::good(app.save_document(
+        caller, runtime_test::at(info), "/host-controls-copy.qcae", true, "save-as"));
+    const auto closed = runtime_test::good(
+        app.close_document(caller, runtime_test::at(saved_as), ClosePolicy::discard, "close"));
+    require(!app.current_document().ok(), "host lookup also runs without an active document");
+    host_outcome_lookup(app, *store, host, caller, "project.create", "create", created);
+    host_outcome_lookup(app, *store, host, caller, "project.save", "save", saved);
+    host_outcome_lookup(app, *store, host, caller, "project.save_as", "save-as", saved_as);
+    host_outcome_lookup(app, *store, host, caller, "project.close", "close", closed);
 }
 void diagnostic_reports_survive_transport() {
     using namespace qcae;
@@ -1579,6 +2003,7 @@ void diagnostic_reports_survive_transport() {
             "reading a diagnostic response adds no model change or history");
 }
 void retained_outcome_without_handler(qcae::MemoryApplication& application,
+                                      OpenContractStore& store,
                                       const qcae::Caller& caller,
                                       QJsonObject request,
                                       const QJsonObject& original_receipt) {
@@ -1595,40 +2020,73 @@ void retained_outcome_without_handler(qcae::MemoryApplication& application,
                 "removed handler must not advertise availability");
     const auto before = runtime_test::good(application.current_document());
     const auto rejected =
-        ipc::dispatch(application, request, caller, nullptr, nullptr, nullptr, &reduced);
+        lookup_without_effects(application, store, reduced, caller, request, caller);
     require(rejected.value("error").toObject().value("code") == "UNSUPPORTED_CAPABILITY",
             "removed handler rejects a new invocation");
     request.remove("requested_version");
     request.remove("expected_profile");
+    request.remove("expected_revision");
+    request.remove("idempotency_key");
     request.insert("operation", "operations.get");
     QJsonObject parameters{{"lookup_scope", "document"},
                            {"original_operation", "test.profile_write"},
                            {"idempotency_key", "profile-write"}};
     request.insert("parameters", parameters);
-    auto lookup = [&](const Caller& reader) {
-        return ipc::dispatch(application, request, reader, nullptr, nullptr, nullptr, &reduced);
+    const auto lookup = [&](const Caller& reader) {
+        return lookup_installed_versions(application, store, reduced, caller, request, reader);
     };
-    const auto fact = lookup(caller);
-    const auto receipt = fact.value("data").toObject();
-    require(fact.value("status") == "success" && receipt.value("replayed") == true &&
-                receipt.value("transaction_id") == original_receipt.value("transaction_id") &&
-                receipt.value("entity_id") == original_receipt.value("entity_id"),
-            "removed handler cannot hide retained action facts");
+    const auto retained_fact = [&] {
+        const auto info = runtime_test::good(application.current_document());
+        auto receipt = original_receipt;
+        receipt.insert("replayed", true);
+        receipt.insert("current_revision", QString::number(info.revision));
+        receipt.insert("current_content_state", QString::fromStdString(info.content_state));
+        const QJsonObject expected{
+            {"request_id", request.value("request_id")}, {"status", "success"}, {"data", receipt}};
+        require(lookup(caller) == expected,
+                "removed handler cannot hide the complete retained receipt and direct-return "
+                "envelope without an outer revision");
+        ignored_lookup_modes(application, store, reduced, caller, request, expected);
+    };
+    retained_fact();
     require(lookup(Caller{"another-caller"}).value("error").toObject().value("code") ==
                 "ENTITY_NOT_FOUND",
             "retained action lookup is caller scoped");
+    for (const auto& [field, value, code] :
+         std::vector<std::tuple<const char*, const char*, const char*>>{
+             {"document_epoch", "old-epoch", "DOCUMENT_EPOCH_EXPIRED"},
+             {"document_id", "another-document", "DOCUMENT_NOT_FOUND"}}) {
+        auto stale = request;
+        stale.insert(field, value);
+        const auto refusal =
+            lookup_installed_versions(application, store, reduced, caller, stale, caller);
+        require(refusal.value("error").toObject().value("code") == code &&
+                    refusal.value("error").toObject().value("field") == field,
+                "retained actions still check the original document and active epoch");
+    }
     parameters.insert("original_operation", "unknown.action");
     request.insert("parameters", parameters);
-    require(lookup(caller).value("error").toObject().value("code") == "ENTITY_NOT_FOUND",
+    const auto unknown = lookup(caller);
+    require(unknown.value("error").toObject().value("code") == "ENTITY_NOT_FOUND",
             "unrecorded operation returns not found independently of current capabilities");
-    const auto after = runtime_test::good(application.current_document());
-    require(after.revision == before.revision && after.material_count == before.material_count,
-            "retained lookup and unavailable invocation have no document effects");
+    ignored_lookup_modes(application, store, reduced, caller, request, unknown);
+    parameters.insert("original_operation", "test.profile_write");
+    request.insert("parameters", parameters);
+    runtime_test::good(application.undo(caller, runtime_test::at(before), "retained-undo"));
+    retained_fact();
+    runtime_test::good(
+        application.redo(caller,
+                         runtime_test::at(runtime_test::good(application.current_document())),
+                         "retained-redo"));
+    retained_fact();
+    require(!reduced.supports("test.profile_write"),
+            "history moves and lookup never reinstall the removed contributor");
 }
 void version_and_profile_contract() {
     using namespace qcae;
     using namespace qcae::operations;
-    MemoryApplication application;
+    auto store = std::make_shared<OpenContractStore>();
+    MemoryApplication application({}, store);
     const Caller caller{"profile-contract"};
     auto installed = runtime_test::profile;
     unsigned calls{};
@@ -1779,7 +2237,7 @@ void version_and_profile_contract() {
     const auto current = runtime_test::good(application.current_document());
     require(current.revision == 1 && current.material_count == 1,
             "profile errors/retries never duplicate or revise committed work");
-    retained_outcome_without_handler(application, caller, request, receipt);
+    retained_outcome_without_handler(application, *store, caller, request, receipt);
 }
 struct FaultFixture {
     std::shared_ptr<runtime_test::Store> store = std::make_shared<runtime_test::Store>();

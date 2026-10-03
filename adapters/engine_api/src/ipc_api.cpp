@@ -89,6 +89,33 @@ template <class Input> Input string_input(const QJsonObject& parameters) {
         throw InvalidRequest(decoded.error->message, decoded.error->field);
     return std::move(*decoded.value);
 }
+operations::OperationsGetInput operation_lookup_input(const QJsonObject& parameters) {
+    fields(parameters, {"lookup_scope", "original_operation", "original_mode", "idempotency_key"});
+    const auto scope = string_field(parameters, "lookup_scope");
+    bool uses_mode = false;
+    if (scope == "host") {
+        const auto original = string_field(parameters, "original_operation");
+        uses_mode = original == "project.open";
+        if (uses_mode) {
+            const auto mode = parameters.contains("original_mode")
+                                  ? string_field(parameters, "original_mode")
+                                  : QStringLiteral("normal");
+            if (mode != "normal" && mode != "recover")
+                throw InvalidRequest("Invalid original_mode");
+        } else if (original != "project.create" && original != "project.save" &&
+                   original != "project.save_as" && original != "project.close")
+            throw InvalidRequest("Unknown lifecycle operation");
+    } else if (scope == "document")
+        (void)string_field(parameters, "original_operation");
+    else
+        throw InvalidRequest("Unknown lookup_scope");
+    (void)string_field(parameters, "idempotency_key");
+    // The DTO describes semantic input. Ignored raw JSON, including null, never enters Value.
+    auto semantic_parameters = parameters;
+    if (!uses_mode)
+        semantic_parameters.remove("original_mode");
+    return string_input<operations::OperationsGetInput>(semantic_parameters);
+}
 std::optional<QJsonObject>
 version_rejection(const QJsonObject& request, const QString& id, std::uint32_t installed_version) {
     if (!request.contains("requested_version"))
@@ -164,6 +191,108 @@ void describe_project_open(QJsonObject& entry) {
     schema.insert("properties", properties);
     schema.insert("oneOf", modes);
     entry.insert("parameters_schema", schema);
+}
+void describe_operation_lookup(QJsonObject& entry) {
+    describe_string_input(entry,
+                          operations::InputTraits<operations::OperationsGetInput>::definition(),
+                          "OperationsGetInput");
+    entry.remove("wire_output_type");
+    entry.insert("wire_output_types", QJsonArray{"DocumentInfo", "ChangeReceipt"});
+    entry.insert("output_by_lookup_scope",
+                 QJsonObject{{"host", "DocumentInfo"}, {"document", "ChangeReceipt"}});
+    // Generated fields describe the projection; discovery describes accepted raw parameters.
+    auto raw_fields = entry.value("fields").toArray();
+    for (qsizetype index = 0; index < raw_fields.size(); ++index) {
+        auto field = raw_fields.at(index).toObject();
+        if (field.value("name").toString() != "original_mode")
+            continue;
+        field.insert("wire_type", "json_value");
+        field.remove("allow_empty");
+        field.insert("description",
+                     "Used only for host project.open: normal or recover; omission selects "
+                     "normal. Any JSON value is ignored for other lookups.");
+        raw_fields.replace(index, field);
+    }
+    entry.insert("fields", raw_fields);
+
+    const QJsonObject identity{{"type", "string"}, {"minLength", 1}};
+    const QJsonArray required{"lookup_scope", "original_operation", "idempotency_key"};
+    const QJsonObject properties{{"lookup_scope", identity},
+                                 {"original_operation", identity},
+                                 {"idempotency_key", identity},
+                                 {"original_mode", QJsonObject{}}};
+    auto parameter_branch = [&](const char* scope,
+                                const QJsonObject& original_operation,
+                                const QJsonObject& original_mode) {
+        auto branch_properties = properties;
+        branch_properties.insert("lookup_scope",
+                                 QJsonObject{{"type", "string"}, {"enum", QJsonArray{scope}}});
+        branch_properties.insert("original_operation", original_operation);
+        branch_properties.insert("original_mode", original_mode);
+        return QJsonObject{{"type", "object"},
+                           {"properties", branch_properties},
+                           {"required", required},
+                           {"additionalProperties", false}};
+    };
+    const QJsonObject parameters_schema{
+        {"type", "object"},
+        {"properties", properties},
+        {"required", required},
+        {"additionalProperties", false},
+        {"oneOf",
+         QJsonArray{parameter_branch(
+                        "host",
+                        QJsonObject{{"type", "string"}, {"enum", QJsonArray{"project.open"}}},
+                        QJsonObject{{"type", "string"}, {"enum", QJsonArray{"normal", "recover"}}}),
+                    parameter_branch("host",
+                                     QJsonObject{{"type", "string"},
+                                                 {"enum",
+                                                  QJsonArray{"project.create",
+                                                             "project.save",
+                                                             "project.save_as",
+                                                             "project.close"}}},
+                                     QJsonObject{}),
+                    parameter_branch("document", identity, QJsonObject{})}}};
+    entry.insert("parameters_schema", parameters_schema);
+
+    const QJsonObject arguments_properties{
+        {"parameters", parameters_schema},
+        {"document_id", QJsonObject{}},
+        {"document_epoch", QJsonObject{}},
+        {"expected_revision", QJsonObject{}},
+        {"idempotency_key", QJsonObject{}},
+        {"requested_version",
+         QJsonObject{{"type", "integer"}, {"minimum", 1}, {"maximum", 4294967295.0}}}};
+    auto arguments_branch = [&](const char* scope, bool document) {
+        auto branch_properties = arguments_properties;
+        auto scope_properties = properties;
+        scope_properties.insert("lookup_scope",
+                                QJsonObject{{"type", "string"}, {"enum", QJsonArray{scope}}});
+        branch_properties.insert("parameters",
+                                 QJsonObject{{"type", "object"},
+                                             {"properties", scope_properties},
+                                             {"required", QJsonArray{"lookup_scope"}},
+                                             {"additionalProperties", false}});
+        QJsonArray required_arguments{"parameters"};
+        if (document) {
+            branch_properties.insert("document_id", identity);
+            branch_properties.insert("document_epoch", identity);
+            required_arguments.append("document_id");
+            required_arguments.append("document_epoch");
+        }
+        return QJsonObject{{"type", "object"},
+                           {"properties", branch_properties},
+                           {"required", required_arguments},
+                           {"additionalProperties", false}};
+    };
+    entry.insert("arguments_schema",
+                 QJsonObject{{"type", "object"},
+                             {"properties", arguments_properties},
+                             {"required", QJsonArray{"parameters"}},
+                             {"additionalProperties", false},
+                             {"oneOf",
+                              QJsonArray{arguments_branch("host", false),
+                                         arguments_branch("document", true)}}});
 }
 void describe_project_close(QJsonObject& entry) {
     describe_string_input(entry,
@@ -325,7 +454,7 @@ QJsonObject dispatch(MemoryApplication& app,
             op == "project.save_as" || op == "project.close" || op == "changes.commit" ||
             op == "capabilities.list" || op == "project.current" || op == "project.status" ||
             op == "model.summary" || op == "history.list" || op == "history.undo" ||
-            op == "history.redo";
+            op == "history.redo" || op == "operations.get";
         if ((request.contains("requested_version") && !generated_input) ||
             request.contains("expected_profile"))
             throw InvalidRequest("requested_version/expected_profile require a typed operation");
@@ -434,6 +563,8 @@ QJsonObject dispatch(MemoryApplication& app,
                         operations::InputTraits<operations::HistoryRedoInput>::definition(),
                         "HistoryRedoInput",
                         "ChangeReceipt");
+                else if (descriptor.name == "operations.get")
+                    describe_operation_lookup(entry);
                 entry.insert("available", available);
                 if (const auto schema = read_parameters_schema(descriptor.name))
                     entry.insert("parameters_schema", *schema);
@@ -663,36 +794,26 @@ QJsonObject dispatch(MemoryApplication& app,
                                        {"revision", number(history.revision)}};
                 });
         } else if (op == "operations.get") {
-            fields(params,
-                   {"lookup_scope", "original_operation", "original_mode", "idempotency_key"});
-            const auto lookup_scope = string_field(params, "lookup_scope");
-            if (lookup_scope == "host") {
-                auto original = string_field(params, "original_operation");
+            const auto definition =
+                operations::InputTraits<operations::OperationsGetInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+            const auto input = operation_lookup_input(params);
+            if (input.lookup_scope == "host") {
+                auto original = input.original_operation;
                 if (original == "project.create")
                     original = "create_document";
                 else if (original == "project.open") {
-                    const auto mode = params.contains("original_mode")
-                                          ? string_field(params, "original_mode")
-                                          : QStringLiteral("normal");
-                    if (mode != "normal" && mode != "recover")
-                        throw InvalidRequest("Invalid original_mode");
+                    const auto mode = input.original_mode.value_or("normal");
                     original = mode == "recover" ? "recover_document" : "open_document";
                 } else if (original == "project.save" || original == "project.save_as")
                     original = "save_document";
                 else if (original == "project.close")
                     original = "close_document";
-                else
-                    throw InvalidRequest("Unknown lifecycle operation");
                 return result_json(
-                    id,
-                    app.host_operation(caller,
-                                       original.toStdString(),
-                                       string_field(params, "idempotency_key").toStdString()),
-                    info_json);
+                    id, app.host_operation(caller, original, input.idempotency_key), info_json);
             }
-            if (lookup_scope != "document")
-                throw InvalidRequest("Unknown lookup_scope");
-            auto original = string_field(params, "original_operation").toStdString();
+            auto original = input.original_operation;
             if (original == "changes.commit")
                 original = "commit";
             else if (original == "history.undo")
@@ -700,20 +821,15 @@ QJsonObject dispatch(MemoryApplication& app,
             else if (original == "history.redo")
                 original = "redo";
             else
-                return result_json(id,
-                                   app.record_application().action_outcome(
-                                       caller,
-                                       document_ref(request),
-                                       original,
-                                       string_field(params, "idempotency_key").toStdString()),
-                                   receipt_json);
-            response =
-                result_json(id,
-                            app.operation(caller,
-                                          document_ref(request),
-                                          original,
-                                          string_field(params, "idempotency_key").toStdString()),
-                            receipt_json);
+                return result_json(
+                    id,
+                    app.record_application().action_outcome(
+                        caller, document_ref(request), original, input.idempotency_key),
+                    receipt_json);
+            response = result_json(
+                id,
+                app.operation(caller, document_ref(request), original, input.idempotency_key),
+                receipt_json);
         }
         if (typed && response.value("status").toString() == "success" &&
             (op == "project.create" || op == "project.open" || op == "project.close")) {
