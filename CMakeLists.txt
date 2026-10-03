@@ -276,6 +276,11 @@ if(QCAE_BUILD_IPC)
         --engine $<TARGET_FILE:qcae-engine>
         --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/changes-commit-evidence")
       set_tests_properties(changes_commit_ipc PROPERTIES TIMEOUT 60)
+      add_test(NAME host_controls_ipc COMMAND Python3::Interpreter
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/host_controls_ipc_tests.py"
+        --engine $<TARGET_FILE:qcae-engine>
+        --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/host-controls-evidence")
+      set_tests_properties(host_controls_ipc PROPERTIES TIMEOUT 60)
       add_test(NAME mcp_bridge_durable COMMAND Python3::Interpreter
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/mcp_bridge_tests.py"
         --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>

@@ -66,7 +66,7 @@ std::optional<QJsonObject> read_parameters_schema(std::string_view operation) {
             {"direction",
              QJsonObject{{"type", "string"}, {"enum", QJsonArray{"incoming", "outgoing"}}}}};
         required.append("entity_id");
-    } else if (operation != "model.summary" && operation != "project.status") {
+    } else {
         return {};
     }
     return QJsonObject{{"type", "object"},
@@ -74,7 +74,7 @@ std::optional<QJsonObject> read_parameters_schema(std::string_view operation) {
                        {"required", required},
                        {"additionalProperties", false}};
 }
-// Generated host DTOs contain strings; their application semantics stay explicit below.
+// Generated host DTOs contain strings or no fields; application semantics stay explicit below.
 template <class Input> Input string_input(const QJsonObject& parameters) {
     operations::Value::Object input;
     for (auto it = parameters.begin(); it != parameters.end(); ++it) {
@@ -320,9 +320,12 @@ QJsonObject dispatch(MemoryApplication& app,
         const auto params = request.value("parameters").toObject();
         if (typed && typed->supports(op))
             return typed->dispatch(request, caller);
-        const bool generated_input = op == "project.open" || op == "project.create" ||
-                                     op == "project.save" || op == "project.save_as" ||
-                                     op == "project.close" || op == "changes.commit";
+        const bool generated_input =
+            op == "project.open" || op == "project.create" || op == "project.save" ||
+            op == "project.save_as" || op == "project.close" || op == "changes.commit" ||
+            op == "capabilities.list" || op == "project.current" || op == "project.status" ||
+            op == "model.summary" || op == "history.list" || op == "history.undo" ||
+            op == "history.redo";
         if ((request.contains("requested_version") && !generated_input) ||
             request.contains("expected_profile"))
             throw InvalidRequest("requested_version/expected_profile require a typed operation");
@@ -335,7 +338,11 @@ QJsonObject dispatch(MemoryApplication& app,
             return *model_response;
         QJsonObject response;
         if (op == "capabilities.list") {
-            fields(params, {});
+            const auto definition =
+                operations::InputTraits<operations::CapabilitiesListInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+            (void)string_input<operations::CapabilitiesListInput>(params);
             QJsonArray catalog;
             for (const auto& descriptor : operation_catalog) {
                 if (typed && typed->supports(descriptor.name))
@@ -386,6 +393,47 @@ QJsonObject dispatch(MemoryApplication& app,
                         operations::InputTraits<operations::ChangesCommitInput>::definition(),
                         "ChangesCommitInput",
                         "ChangeReceipt");
+                else if (descriptor.name == "capabilities.list")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::CapabilitiesListInput>::definition(),
+                        "CapabilitiesListInput",
+                        "CapabilityCatalog");
+                else if (descriptor.name == "project.current")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::ProjectCurrentInput>::definition(),
+                        "ProjectCurrentInput");
+                else if (descriptor.name == "project.status")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::ProjectStatusInput>::definition(),
+                        "ProjectStatusInput",
+                        "ProjectStatus");
+                else if (descriptor.name == "model.summary")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::ModelSummaryInput>::definition(),
+                        "ModelSummaryInput",
+                        "ModelSummary");
+                else if (descriptor.name == "history.list")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::HistoryListInput>::definition(),
+                        "HistoryListInput",
+                        "HistorySnapshot");
+                else if (descriptor.name == "history.undo")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::HistoryUndoInput>::definition(),
+                        "HistoryUndoInput",
+                        "ChangeReceipt");
+                else if (descriptor.name == "history.redo")
+                    describe_string_input(
+                        entry,
+                        operations::InputTraits<operations::HistoryRedoInput>::definition(),
+                        "HistoryRedoInput",
+                        "ChangeReceipt");
                 entry.insert("available", available);
                 if (const auto schema = read_parameters_schema(descriptor.name))
                     entry.insert("parameters_schema", *schema);
@@ -427,7 +475,11 @@ QJsonObject dispatch(MemoryApplication& app,
                 {"supported_pressure_units", QJsonArray{"Pa", "kPa", "MPa", "GPa"}}};
             response = {{"request_id", id}, {"status", "success"}, {"data", data}};
         } else if (op == "project.current") {
-            fields(params, {});
+            const auto definition =
+                operations::InputTraits<operations::ProjectCurrentInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+            (void)string_input<operations::ProjectCurrentInput>(params);
             response = result_json(id, app.current_document(), info_json);
         } else if (op == "project.open") {
             const auto definition =
@@ -496,7 +548,16 @@ QJsonObject dispatch(MemoryApplication& app,
                     caller, input.name, string_field(request, "idempotency_key").toStdString()),
                 info_json);
         } else if (op == "model.summary" || op == "project.status") {
-            fields(params, {});
+            const auto definition =
+                op == "model.summary"
+                    ? operations::InputTraits<operations::ModelSummaryInput>::definition()
+                    : operations::InputTraits<operations::ProjectStatusInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+            if (op == "model.summary")
+                (void)string_input<operations::ModelSummaryInput>(params);
+            else
+                (void)string_input<operations::ProjectStatusInput>(params);
             response = result_json(
                 id, app.snapshot(document_ref(request)), [&](const ModelSnapshot& snapshot) {
                     QJsonObject data = info_json(snapshot.info);
@@ -568,7 +629,16 @@ QJsonObject dispatch(MemoryApplication& app,
                                        string_field(request, "idempotency_key").toStdString()),
                             receipt_json);
         } else if (op == "history.undo" || op == "history.redo") {
-            fields(params, {});
+            const auto definition =
+                op == "history.undo"
+                    ? operations::InputTraits<operations::HistoryUndoInput>::definition()
+                    : operations::InputTraits<operations::HistoryRedoInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+            if (op == "history.undo")
+                (void)string_input<operations::HistoryUndoInput>(params);
+            else
+                (void)string_input<operations::HistoryRedoInput>(params);
             const auto ctx = context(request);
             const auto key = string_field(request, "idempotency_key").toStdString();
             response = result_json(id,
@@ -576,7 +646,11 @@ QJsonObject dispatch(MemoryApplication& app,
                                                         : app.redo(caller, ctx, key),
                                    receipt_json);
         } else if (op == "history.list") {
-            fields(params, {});
+            const auto definition =
+                operations::InputTraits<operations::HistoryListInput>::definition();
+            if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+            (void)string_input<operations::HistoryListInput>(params);
             response = result_json(
                 id, app.history(document_ref(request)), [](const HistorySnapshot& history) {
                     QJsonArray items;

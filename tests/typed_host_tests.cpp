@@ -191,12 +191,16 @@ void rejected_open_inputs_are_atomic(qcae::MemoryApplication& app,
              {{{"mode", "recover"}, {"extra", "unknown"}}, "input.extra"}})
         reject(open_request(input, key), "INVALID_INPUT", field);
     auto legacy = open_request({}, key);
-    legacy.insert("operation", "project.current");
+    legacy.insert("operation", "operations.get");
+    legacy.insert("parameters",
+                  QJsonObject{{"lookup_scope", "host"},
+                              {"original_operation", "project.create"},
+                              {"idempotency_key", "not-recorded"}});
     legacy.insert("requested_version", 1);
     const auto legacy_failure = qcae::ipc::dispatch(app, legacy, caller);
     require(legacy_failure.value("error").toObject().value("code") == "INVALID_INPUT" &&
                 open_contract_state(app, store, caller) == before,
-            "other compatibility operations keep their version-field rejection");
+            "the excluded compatibility lookup keeps its version-field rejection");
     auto profile = open_request(normal, key);
     profile.insert("expected_profile", QJsonObject{});
     require(qcae::ipc::dispatch(app, profile, caller).value("error").toObject().value("code") ==
@@ -1047,6 +1051,489 @@ void changes_commit_contract_and_replay() {
         replay();
     }
 }
+void host_read_and_history_contracts() {
+    using namespace qcae;
+    using namespace operations;
+    struct Contract {
+        const char* operation;
+        const char* wire_input;
+        const char* wire_output;
+        const char* catalog_input;
+        const char* catalog_output;
+        bool document;
+        bool write;
+        OperationDefinition definition;
+    };
+    const std::vector<Contract> contracts{{"capabilities.list",
+                                           "CapabilitiesListInput",
+                                           "CapabilityCatalog",
+                                           "CapabilityFilter",
+                                           "CapabilityCatalog",
+                                           false,
+                                           false,
+                                           InputTraits<CapabilitiesListInput>::definition()},
+                                          {"project.current",
+                                           "ProjectCurrentInput",
+                                           "DocumentInfo",
+                                           "CurrentProject",
+                                           "DocumentContext",
+                                           false,
+                                           false,
+                                           InputTraits<ProjectCurrentInput>::definition()},
+                                          {"project.status",
+                                           "ProjectStatusInput",
+                                           "ProjectStatus",
+                                           "ProjectStatusQuery",
+                                           "ProjectStatus",
+                                           true,
+                                           false,
+                                           InputTraits<ProjectStatusInput>::definition()},
+                                          {"model.summary",
+                                           "ModelSummaryInput",
+                                           "ModelSummary",
+                                           "SummaryQuery",
+                                           "ModelSummary",
+                                           true,
+                                           false,
+                                           InputTraits<ModelSummaryInput>::definition()},
+                                          {"history.list",
+                                           "HistoryListInput",
+                                           "HistorySnapshot",
+                                           "HistoryQuery",
+                                           "HistorySummary",
+                                           true,
+                                           false,
+                                           InputTraits<HistoryListInput>::definition()},
+                                          {"history.undo",
+                                           "HistoryUndoInput",
+                                           "ChangeReceipt",
+                                           "HistoryMove",
+                                           "ChangeReceipt",
+                                           true,
+                                           true,
+                                           InputTraits<HistoryUndoInput>::definition()},
+                                          {"history.redo",
+                                           "HistoryRedoInput",
+                                           "ChangeReceipt",
+                                           "HistoryMove",
+                                           "ChangeReceipt",
+                                           true,
+                                           true,
+                                           InputTraits<HistoryRedoInput>::definition()}};
+    auto store = std::make_shared<OpenContractStore>();
+    MemoryApplication app({}, store);
+    ipc::TypedHost host(app.record_application(), [](const auto&) { return true; });
+    const Caller caller{"host-controls-test"};
+    const Caller other{"another-host-controls-caller"};
+    const auto dispatch = [&](const QJsonObject& request, const Caller& actor) {
+        const auto wire = QJsonDocument::fromJson(QJsonDocument(request).toJson()).object();
+        return ipc::dispatch(app, wire, actor, nullptr, nullptr, nullptr, &host);
+    };
+    const auto read_request = [](const char* operation) {
+        return QJsonObject{{"api_version", "1.1"},
+                           {"request_id", "host-controls"},
+                           {"operation", operation},
+                           {"parameters", QJsonObject{}}};
+    };
+    const auto inactive = open_contract_state(app, *store, caller);
+    auto catalog_request = read_request("capabilities.list");
+    const auto catalog = dispatch(catalog_request, caller);
+    catalog_request.insert("requested_version", 1);
+    require(catalog.value("status") == "success" && dispatch(catalog_request, caller) == catalog &&
+                open_contract_state(app, *store, caller) == inactive,
+            "the global catalog accepts omitted/v1 without an active document or persistence");
+    const auto catalog_data = catalog.value("data").toObject();
+    require(catalog_data.value("storage_mode") == "sqlite" &&
+                catalog_data.value("durable") == true &&
+                catalog_data.value("recovery_available") == false &&
+                catalog_data.value("max_name_bytes") == 1024 &&
+                catalog_data.value("configured_solver_profiles").toArray().isEmpty() &&
+                catalog_data.value("declared_solver_profiles").toArray().isEmpty() &&
+                catalog_data.value("supported_pressure_units").toArray() ==
+                    QJsonArray{"Pa", "kPa", "MPa", "GPa"},
+            "the catalog preserves storage, recovery, profile and unit facts");
+    const QJsonObject empty_schema{{"type", "object"},
+                                   {"properties", QJsonObject{}},
+                                   {"required", QJsonArray{}},
+                                   {"additionalProperties", false}};
+    for (const auto& contract : contracts) {
+        const OperationDefinition expected{
+            contract.operation,
+            1,
+            "qcae.operation." + std::string(contract.operation) + ".v1",
+            contract.write ? OperationEffect::document_write : OperationEffect::read_only,
+            {contract.document, contract.document, contract.write, contract.write, false},
+            {}};
+        const char* target_context = contract.write ? "from_history"
+                                     : std::string_view(contract.operation) == "capabilities.list"
+                                         ? "optional_profile"
+                                         : "none";
+        require(contract.definition == expected,
+                "all seven generated definitions have the exact empty v1 context and effect");
+        QJsonObject descriptor;
+        unsigned count{};
+        for (const auto& entry : catalog_data.value("operations").toArray())
+            if (entry.toObject().value("name") == contract.operation) {
+                descriptor = entry.toObject();
+                ++count;
+            }
+        require(count == 1 && descriptor.value("available") == true &&
+                    descriptor.value("version") == 1 &&
+                    descriptor.value("schema_id") == QString::fromStdString(expected.schema_id) &&
+                    descriptor.value("wire_input_type") == contract.wire_input &&
+                    descriptor.value("wire_output_type") == contract.wire_output &&
+                    descriptor.value("input_type") == contract.catalog_input &&
+                    descriptor.value("output_type") == contract.catalog_output &&
+                    descriptor.value("effect") == (contract.write ? "model_write" : "query") &&
+                    descriptor.value("target_context") == target_context &&
+                    descriptor.value("requires_document") == contract.document &&
+                    descriptor.value("requires_epoch") == contract.document &&
+                    descriptor.value("requires_revision") == contract.write &&
+                    descriptor.value("requires_idempotency_key") == contract.write &&
+                    descriptor.value("requires_profile_match") == false &&
+                    descriptor.value("requested_version_field") == "requested_version" &&
+                    descriptor.value("omitted_version_policy") == "installed_version" &&
+                    !descriptor.contains("requested_version") &&
+                    descriptor.value("fields") == QJsonArray{} &&
+                    descriptor.value("parameters_schema") == empty_schema,
+                "each available host route advertises its exact generated input and existing "
+                "result labels with a closed empty schema");
+        if (std::string_view(contract.operation) == "capabilities.list")
+            require(descriptor.value("supported_scope") == "global_catalog_only",
+                    "catalog discovery retains its supported scope");
+    }
+    QJsonObject lookup_descriptor;
+    for (const auto& entry : catalog_data.value("operations").toArray())
+        if (entry.toObject().value("name") == "operations.get")
+            lookup_descriptor = entry.toObject();
+    require(lookup_descriptor.value("available") == true &&
+                lookup_descriptor.value("supported_scope") ==
+                    "host_lifecycle_and_document_change_outcomes" &&
+                lookup_descriptor.value("requires_document") == false &&
+                lookup_descriptor.value("requires_epoch") == false &&
+                lookup_descriptor.value("requires_revision") == false &&
+                lookup_descriptor.value("requires_idempotency_key") == false &&
+                !lookup_descriptor.contains("version") &&
+                !lookup_descriptor.contains("schema_id") &&
+                !lookup_descriptor.contains("wire_input_type") &&
+                !lookup_descriptor.contains("parameters_schema"),
+            "conditional outcome lookup retains its existing descriptor outside this batch");
+    auto current_request = read_request("project.current");
+    const auto no_document = dispatch(current_request, caller);
+    current_request.insert("requested_version", 1);
+    require(no_document.value("status") == "failed" &&
+                no_document.value("error").toObject().value("code") == "DOCUMENT_NOT_FOUND" &&
+                dispatch(current_request, caller) == no_document &&
+                open_contract_state(app, *store, caller) == inactive,
+            "current preserves its no-active-document result for omitted and installed versions");
+
+    const auto created = runtime_test::good(app.create_document(caller, "Host controls", "create"));
+    auto info = created;
+    const auto empty_view =
+        runtime_test::good(app.record_application().snapshot(info.document)).records;
+    const auto preview = runtime_test::good(
+        app.preview(caller, runtime_test::at(info), CreateMaterial{"Steel", {210, "GPa"}}));
+    const auto committed =
+        dispatch(write_lifecycle_request("changes.commit",
+                                         {{"preview_id", QString::fromStdString(preview.id.value)}},
+                                         info,
+                                         "history-C"),
+                 caller);
+    require(committed.value("status") == "success", "seed one actual committed history item");
+    info = runtime_test::good(app.current_document());
+    info = runtime_test::good(
+        app.save_document(caller, runtime_test::at(info), "/host-controls.qcae", false, "save"));
+    const auto saved_view =
+        runtime_test::good(app.record_application().snapshot(info.document)).records;
+    const auto saved_history = runtime_test::good(app.history(info.document));
+    require(!info.dirty && info.material_count == 1 && saved_history.items.size() == 1 &&
+                saved_history.cursor == 1 && store->projects.contains("/host-controls.qcae"),
+            "shared scenario starts with one saved model and a real application history");
+    const auto unchanged = [&](const OpenContractState& before, const DocumentView& before_view) {
+        const auto after =
+            runtime_test::good(app.record_application().snapshot(info.document)).records;
+        require(open_contract_state(app, *store, caller) == before &&
+                    after.matches_version(before_view.version()) &&
+                    diff_record_views(before_view, after).empty(),
+                "host reads/refusals/replays preserve the complete record view, saved/dirty "
+                "metadata, rows, projects, generations, history and store counters");
+    };
+    const auto reject = [&](const QJsonObject& invalid,
+                            const char* code,
+                            const char* field,
+                            const char* status = "failed",
+                            const Caller& actor = Caller{"host-controls-test"}) {
+        const auto before = open_contract_state(app, *store, caller);
+        const auto before_view =
+            runtime_test::good(app.record_application().snapshot(info.document)).records;
+        for (int retry = 0; retry < 2; ++retry) {
+            const auto response = dispatch(invalid, actor);
+            const auto error = response.value("error").toObject();
+            require(response.value("status") == status && error.value("code") == code &&
+                        error.value("field").toString() == field,
+                    "host boundary refuses the exact input/version/context without reserving a "
+                    "mutation key");
+            unchanged(before, before_view);
+        }
+    };
+    const auto document_request = [&](const char* operation) {
+        auto request = read_request(operation);
+        request.insert("document_id", QString::fromStdString(info.document.id.value));
+        request.insert("document_epoch", QString::fromStdString(info.document.epoch.value));
+        return request;
+    };
+    for (const auto& contract : contracts) {
+        auto request = contract.document ? document_request(contract.operation)
+                                         : read_request(contract.operation);
+        if (contract.write) {
+            request.insert("expected_revision", QString::number(info.revision));
+            request.insert("idempotency_key",
+                           std::string_view(contract.operation) == "history.undo" ? "history-U"
+                                                                                  : "history-R");
+        }
+        for (const auto& version : {QJsonValue(0),
+                                    QJsonValue(-1),
+                                    QJsonValue(1.5),
+                                    QJsonValue(4294967296.0),
+                                    QJsonValue(true),
+                                    QJsonValue("1"),
+                                    QJsonValue(QJsonValue::Null),
+                                    QJsonValue(QJsonArray{}),
+                                    QJsonValue(QJsonObject{})}) {
+            auto invalid = request;
+            invalid.insert("requested_version", version);
+            reject(invalid, "INVALID_INPUT", "requested_version");
+        }
+        for (const auto& version : {QJsonValue(2), QJsonValue(4294967295.0)}) {
+            auto invalid = request;
+            invalid.insert("requested_version", version);
+            reject(invalid, "SCHEMA_UNSUPPORTED", "requested_version");
+        }
+        for (const auto& extra :
+             {QJsonValue("unexpected"), QJsonValue(1), QJsonValue(QJsonValue::Null)}) {
+            auto invalid = request;
+            invalid.insert("parameters", QJsonObject{{"extra", extra}});
+            reject(invalid, "INVALID_INPUT", "input.extra");
+        }
+        for (const auto& shape : {QJsonValue(QJsonArray{}),
+                                  QJsonValue("input"),
+                                  QJsonValue(1),
+                                  QJsonValue(QJsonValue::Null)}) {
+            auto invalid = request;
+            invalid.insert("parameters", shape);
+            reject(invalid, "INVALID_INPUT", "");
+        }
+        auto invalid = request;
+        invalid.insert("expected_profile", QJsonObject{});
+        reject(invalid, "INVALID_INPUT", "");
+        // Input/version diagnostics precede context extraction and any application call.
+        for (const auto* field : {"document_id", "document_epoch", "expected_revision"})
+            invalid.remove(field);
+        invalid.remove("expected_profile");
+        invalid.insert("requested_version", 2);
+        reject(invalid, "SCHEMA_UNSUPPORTED", "requested_version");
+        invalid.remove("requested_version");
+        invalid.insert("parameters", QJsonObject{{"extra", "unexpected"}});
+        reject(invalid, "INVALID_INPUT", "input.extra");
+    }
+
+    auto status_data = ipc::info_json(info);
+    status_data.insert("geometry_count", 0);
+    status_data.insert("mesh_count", 0);
+    auto summary_data = status_data;
+    summary_data.insert(
+        "materials",
+        QJsonArray{QJsonObject{{"entity_id", QString::fromStdString(preview.affected_entity.value)},
+                               {"name", "Steel"},
+                               {"young_modulus_mpa", 210000}}});
+    for (const auto* count : {"node_count",
+                              "beam_count",
+                              "section_count",
+                              "part_count",
+                              "assembly_count",
+                              "set_count",
+                              "include_count",
+                              "analysis_count"})
+        summary_data.insert(count, 0);
+    const QJsonObject history_data{
+        {"items",
+         QJsonArray{QJsonObject{
+             {"transaction_id", QString::fromStdString(saved_history.items[0].transaction.value)},
+             {"label", QString::fromStdString(saved_history.items[0].label)},
+             {"applied", true}}}},
+        {"cursor", 1},
+        {"revision", QString::number(info.revision)}};
+    const std::map<std::string, QJsonObject> expected_reads{
+        {"capabilities.list",
+         dispatch(read_request("capabilities.list"), caller).value("data").toObject()},
+        {"project.current", ipc::info_json(info)},
+        {"project.status", status_data},
+        {"model.summary", summary_data},
+        {"history.list", history_data}};
+    for (const auto& contract : contracts) {
+        if (contract.write)
+            continue;
+        auto request = contract.document ? document_request(contract.operation)
+                                         : read_request(contract.operation);
+        require(!request.contains("expected_revision") && !request.contains("idempotency_key"),
+                "all five reads require no write revision or mutation key");
+        const auto before = open_contract_state(app, *store, caller);
+        const auto before_view =
+            runtime_test::good(app.record_application().snapshot(info.document)).records;
+        const auto response = dispatch(request, caller);
+        require(response.value("status") == "success" &&
+                    response.value("data") == expected_reads.at(contract.operation) &&
+                    (std::string_view(contract.operation) == "capabilities.list"
+                         ? !response.contains("revision")
+                         : response.value("revision") == QString::number(info.revision)),
+                "omitted-version reads preserve each full existing result and revision projection");
+        unchanged(before, before_view);
+        request.insert("requested_version", 1);
+        require(dispatch(request, caller) == response,
+                "installed-version reads return the identical complete wire response");
+        unchanged(before, before_view);
+        if (contract.document) {
+            for (const auto* field : {"document_id", "document_epoch"}) {
+                auto invalid = request;
+                invalid.remove(field);
+                reject(invalid, "INVALID_INPUT", "");
+            }
+            auto invalid = request;
+            invalid.insert("document_epoch", "old-epoch");
+            reject(invalid, "DOCUMENT_EPOCH_EXPIRED", "document_epoch", "conflict");
+            invalid.insert("document_id", "another-document");
+            reject(invalid, "DOCUMENT_NOT_FOUND", "document_id");
+        }
+    }
+
+    const auto move = [&](const QJsonObject& request,
+                          std::size_t cursor,
+                          bool dirty,
+                          const DocumentView& expected_view) {
+        const auto before = open_contract_state(app, *store, caller);
+        const auto revision = info.revision;
+        const auto response = dispatch(request, caller);
+        info = runtime_test::good(app.current_document());
+        const auto history = runtime_test::good(app.history(info.document));
+        const auto view =
+            runtime_test::good(app.record_application().snapshot(info.document)).records;
+        const auto data = response.value("data").toObject();
+        const QJsonObject expected{
+            {"transaction_id", data.value("transaction_id")},
+            {"committed_revision", QString::number(revision + 1)},
+            {"current_revision", QString::number(revision + 1)},
+            {"current_content_state", QString::fromStdString(info.content_state)},
+            {"replayed", false},
+            {"entity_id", ""}};
+        require(response.value("status") == "success" && data == expected &&
+                    !data.value("transaction_id").toString().isEmpty() &&
+                    response.value("revision") == QString::number(revision + 1) &&
+                    info.revision == revision + 1 && info.dirty == dirty &&
+                    info.saved_path == "/host-controls.qcae" &&
+                    info.saved_content_state ==
+                        before.document.value("saved_content_state").toString().toStdString() &&
+                    store->records.generation == before.generation + 1 &&
+                    store->commits == before.commits + 1 && store->publishes == before.publishes &&
+                    store->project_reads == before.project_reads &&
+                    history.revision == info.revision && history.items.size() == 1 &&
+                    history.cursor == cursor &&
+                    history.items[0].transaction == saved_history.items[0].transaction &&
+                    history.items[0].label == saved_history.items[0].label &&
+                    history.items[0].applied == (cursor == 1) &&
+                    diff_record_views(expected_view, view).empty(),
+                "undo/redo each perform one persistent revision and cursor move, preserve saved "
+                "metadata/history facts and return the unchanged complete receipt shape");
+        return data;
+    };
+    const auto replay = [&](const QJsonObject& request, const QJsonObject& original) {
+        const auto before = open_contract_state(app, *store, caller);
+        const auto before_view =
+            runtime_test::good(app.record_application().snapshot(info.document)).records;
+        auto expected = original;
+        expected.insert("replayed", true);
+        expected.insert("current_revision", QString::number(info.revision));
+        expected.insert("current_content_state", QString::fromStdString(info.content_state));
+        const auto response = dispatch(request, caller);
+        require(response.value("status") == "success" && response.value("data") == expected &&
+                    response.value("revision") == QString::number(info.revision),
+                "retry/lookup returns the original transaction with current state facts");
+        unchanged(before, before_view);
+    };
+    // Both keys survived every malformed input/version; an inapplicable redo also consumes none.
+    reject(write_lifecycle_request("history.redo", {}, info, "history-R"),
+           "NOTHING_TO_REDO",
+           "",
+           "conflict");
+    auto undo_request = write_lifecycle_request("history.undo", {}, info, "history-U");
+    const auto undone = move(undo_request, 0, true, empty_view);
+    undo_request.insert("requested_version", 1);
+    replay(undo_request, undone);
+    reject(write_lifecycle_request("history.undo", {}, info, "unavailable-undo"),
+           "NOTHING_TO_UNDO",
+           "",
+           "conflict");
+    auto redo_request = write_lifecycle_request("history.redo", {}, info, "history-R");
+    redo_request.insert("requested_version", 1);
+    const auto redone = move(redo_request, 1, false, saved_view);
+    redo_request.remove("requested_version");
+    replay(redo_request, redone);
+    replay(undo_request, undone);
+    require(undone.value("transaction_id") != redone.value("transaction_id") &&
+                runtime_test::good(app.history(info.document)).cursor == 1 &&
+                info.material_count == 1,
+            "undo U, redo R, retry original U retains the fully redone model and cursor");
+    reject(write_lifecycle_request("history.redo", {}, info, "unavailable-redo"),
+           "NOTHING_TO_REDO",
+           "",
+           "conflict");
+    for (const auto& request : {undo_request, redo_request}) {
+        auto invalid = request;
+        invalid.insert("idempotency_key", "unrecorded-key");
+        reject(invalid, "REVISION_CONFLICT", "expected_revision", "conflict");
+        reject(request, "REVISION_CONFLICT", "expected_revision", "conflict", other);
+        invalid = request;
+        invalid.insert("expected_revision", QString::number(info.revision));
+        reject(invalid, "IDEMPOTENCY_KEY_CONFLICT", "idempotency_key", "conflict");
+        invalid = request;
+        invalid.insert("document_epoch", "old-epoch");
+        reject(invalid, "DOCUMENT_EPOCH_EXPIRED", "document_epoch", "conflict");
+        invalid.insert("document_id", "another-document");
+        reject(invalid, "DOCUMENT_NOT_FOUND", "document_id");
+    }
+    for (const auto& [operation, key, original] :
+         std::vector<std::tuple<const char*, const char*, QJsonObject>>{
+             {"changes.commit", "history-C", committed.value("data").toObject()},
+             {"history.undo", "history-U", undone},
+             {"history.redo", "history-R", redone}}) {
+        auto lookup = document_request("operations.get");
+        lookup.insert("parameters",
+                      QJsonObject{{"lookup_scope", "document"},
+                                  {"original_operation", operation},
+                                  {"original_mode", 7},
+                                  {"idempotency_key", key}});
+        replay(lookup, original);
+        reject(lookup, "ENTITY_NOT_FOUND", "idempotency_key", "failed", other);
+        auto parameters = lookup.value("parameters").toObject();
+        parameters.insert("idempotency_key", "unrecorded-key");
+        lookup.insert("parameters", parameters);
+        reject(lookup, "ENTITY_NOT_FOUND", "idempotency_key");
+        lookup.insert("requested_version", 1);
+        reject(lookup, "INVALID_INPUT", "");
+    }
+    auto host_lookup = read_request("operations.get");
+    host_lookup.insert("parameters",
+                       QJsonObject{{"lookup_scope", "host"},
+                                   {"original_operation", "project.create"},
+                                   {"original_mode", QJsonValue(QJsonValue::Null)},
+                                   {"idempotency_key", "create"}});
+    const auto before_lookup = open_contract_state(app, *store, caller);
+    const auto before_lookup_view =
+        runtime_test::good(app.record_application().snapshot(info.document)).records;
+    const auto found = dispatch(host_lookup, caller);
+    require(found.value("status") == "success" && found.value("data") == ipc::info_json(created),
+            "host lookup still needs no document and ignores irrelevant original_mode values");
+    unchanged(before_lookup, before_lookup_view);
+}
 void diagnostic_reports_survive_transport() {
     using namespace qcae;
     using namespace operations;
@@ -1531,6 +2018,7 @@ int main() {
         project_create_contract_and_replay();
         project_save_close_contract_and_replay();
         changes_commit_contract_and_replay();
+        host_read_and_history_contracts();
         std::cout << "PASS typed JSON transport, mesh idempotency and task fault recovery\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

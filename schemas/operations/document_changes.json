@@ -22,6 +22,34 @@
           "allow_empty": false
         }
       ]
+    },
+    {
+      "operation_id": "history.undo",
+      "version": 1,
+      "schema_id": "qcae.operation.history.undo.v1",
+      "type_name": "HistoryUndoInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": []
+    },
+    {
+      "operation_id": "history.redo",
+      "version": 1,
+      "schema_id": "qcae.operation.history.redo.v1",
+      "type_name": "HistoryRedoInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": []
     }
   ]
 }

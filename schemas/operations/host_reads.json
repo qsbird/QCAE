@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "status": "implemented_host_read_adapter_contract",
+  "operations": [
+    {
+      "operation_id": "capabilities.list",
+      "version": 1,
+      "schema_id": "qcae.operation.capabilities.list.v1",
+      "type_name": "CapabilitiesListInput",
+      "effect": "read_only",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": []
+    },
+    {
+      "operation_id": "project.current",
+      "version": 1,
+      "schema_id": "qcae.operation.project.current.v1",
+      "type_name": "ProjectCurrentInput",
+      "effect": "read_only",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": []
+    },
+    {
+      "operation_id": "project.status",
+      "version": 1,
+      "schema_id": "qcae.operation.project.status.v1",
+      "type_name": "ProjectStatusInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": []
+    },
+    {
+      "operation_id": "model.summary",
+      "version": 1,
+      "schema_id": "qcae.operation.model.summary.v1",
+      "type_name": "ModelSummaryInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": []
+    },
+    {
+      "operation_id": "history.list",
+      "version": 1,
+      "schema_id": "qcae.operation.history.list.v1",
+      "type_name": "HistoryListInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": []
+    }
+  ]
+}
