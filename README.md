@@ -4,7 +4,7 @@
 
 **当前状态：核心框架已有可运行的本机交付包，源码继续收敛接口。** 统一事务/历史、SQLite保存恢复、CLI/GUI/MCP共享engine已贯通。本机包对应 `f2d2e7f`，265项回归及包内SQLite、双MCP、真实桌面验证见[本机交接](docs/implementation/core-local-handoff.md)。
 
-最新源码 `cf2f4c4` 已补齐 `operations.get` 条件输入、上下文及版本发现，五配置261/261实际通过，见[本轮证据](docs/engineering/operation-lookup-contract-2026-10-03.md)。宿主、文档及停用handler的原事实查询保持单一权威，真实SQLite与两个MCP/CLI流程已验证。本机包仍为 `f2d2e7f`，未刷新；原累计图形失败与完整图形门禁未关闭。继续剩余同质legacy合同及核心正式验收，真实求解/完整AI、性能、原已测约束与完整SK/P0保持未验收范围。
+最新源码 `a8f5573` 已补齐两个实体读取入口生成输入、发现及版本，初轮257/261加修正后4目标通过，见[本轮证据](docs/engineering/entity-read-contracts-2026-10-03.md)。原ID/分页/查询参数省略和引用返回兼容保持，SQLite与两个MCP/CLI读取/拒绝不写模型或历史。本机包仍为 `f2d2e7f`，未刷新；原累计图形失败与完整图形门禁未关闭。剩余8个兼容列表接口继续补齐合同，真实求解/完整AI、性能、原已测约束与完整SK/P0保持未验收范围。
 
 ## 从这里开始
 

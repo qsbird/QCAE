@@ -3,7 +3,7 @@
   "baseline_commit": "9e0a56b",
   "branch": "codex/c3-resource-sync",
   "acceptance_spec": "docs/baseline/skeleton-acceptance-targets.json",
-  "updated_utc": "2026-10-03T01:34:12.534678+00:00",
+  "updated_utc": "2026-10-03T02:25:05.370129+00:00",
   "status": "C3_closure_in_progress",
   "phases": {
     "R0": "partial_committed",
@@ -1065,13 +1065,13 @@
   },
   "historical_validation_report_before_core_framework": "docs/engineering/c3-sync-validation.md",
   "current_core_framework": {
-    "status": "lookup_conditional_contract_validated_non_graphical_full_graphical_gate_open",
-    "tested_implementation_commit": "cf2f4c447800ffecffa31263007fe21cce548b20",
-    "source_files_count": 421,
-    "source_dictionary_sha256": "c81d0e14a4b42bd7b86a2eb417a4e4531bf3a6e90604e428434a52c511960db4",
+    "status": "entity_read_contracts_validated_non_graphical_full_graphical_gate_open",
+    "tested_implementation_commit": "a8f557347920e8c4c16ee50d4e84401c03ebb859",
+    "source_files_count": 422,
+    "source_dictionary_sha256": "7cca4e73fe40063582588ca9b301055b2b6ca7617b0fa91b3afc5a92824f55f8",
     "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
-    "manifest": "docs/engineering/operation-lookup-evidence/2026-10-03/validation.json",
-    "report": "docs/engineering/operation-lookup-contract-2026-10-03.md",
+    "manifest": "docs/engineering/entity-read-evidence/2026-10-03/validation.json",
+    "report": "docs/engineering/entity-read-contracts-2026-10-03.md",
     "handoff": "docs/implementation/core-local-handoff.md",
     "configuration_order": [
       "core",
@@ -1095,13 +1095,13 @@
       55
     ],
     "cross_configuration_executions": 261,
-    "cross_configuration_passed": 261,
-    "actual_ctest_executions_with_rerun_and_repeat": 261,
+    "cross_configuration_passed": 257,
+    "actual_ctest_executions_with_rerun_and_repeat": 269,
     "actual_ctest_passed_with_repeats": 261,
-    "actual_ctest_failures": 0,
+    "actual_ctest_failures": 8,
     "actual_ctest_timeouts": 0,
-    "full_matrix_passed": true,
-    "full_matrix_scope": "relevant non-graphical four full configurations plus one ASan/UBSan typed_host test",
+    "full_matrix_passed": false,
+    "full_matrix_scope": "Initial five configurations257/261; two fixture-only corrections with4failed then4passed targeted typed_host tests. No fresh full matrix after fixes;13 unaffected products unchanged.",
     "versioned_existing_host_inputs": [
       "project.create",
       "project.open",
@@ -1116,7 +1116,9 @@
       "history.list",
       "history.undo",
       "history.redo",
-      "operations.get"
+      "operations.get",
+      "entity.query",
+      "entity.references"
     ],
     "actual_contribution_categories": [
       "core",
@@ -1211,17 +1213,17 @@
       "adapters/engine_api/README.md"
     ],
     "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
-    "next_core_interface": "Group entity.query and entity.references generated semantic input/version/context contracts; plan188 only, not implemented",
+    "next_core_interface": "view.create/view.update/view.render_data generated inputs and discovery; NOT IMPLEMENTED/NOT RUN",
     "limits": [
       "Current GUI cumulative failures and graphical gate remain open; no GUI executed in this matrix",
       "Old f2d local bundle is unrefreshed; package evidence keeps its original source scope",
       "No real solver/full external AI/performance/full SK or P0 acceptance",
-      "Unknown SDK copy coverage remains deferred only from C4 startup; measured budgets and original material14/30 failures retained",
-      "Output labels describe existing serializers, without a new generated output union",
-      "Actual MCP/CLI share fixed trusted caller local-user; distinct-caller isolation tested in C++",
-      "Other legacy contracts and complete SK-04 remain unclosed",
+      "Unknown SDK copy coverage deferred only from C4 startup; measured budgets and original material14/30 failures retained",
+      "Existing SelectionResult/ReferenceResult labels are serializers, not generated output DTOs",
+      "Actual MCP/CLI use fixed trusted caller local-user; distinct trusted callers checked in C++",
+      "Other legacy contracts and complete REQ-16/SK-04 remain open",
       "ASan/UBSan typed_host only; LSan unmeasured",
-      "Earlier seven-route results retained under historical_core_framework_before_operation_lookup"
+      "Previous lookup evidence retained under historical_core_framework_before_entity_reads"
     ],
     "bounded_operation_lookup_SQLite": {
       "sqlite-on": {
@@ -1255,7 +1257,76 @@
         "discard_then_normal_open_fresh_document_identity": true
       }
     },
-    "next_core_interface_plan": "docs/engineering/operation-lookup-evidence/2026-10-03/next-plan.md"
+    "next_core_interface_plan": "docs/engineering/entity-read-evidence/2026-10-03/next-plan.md",
+    "bounded_entity_reads_SQLite": {
+      "sqlite-on": {
+        "cases": {
+          "geometry": {
+            "observations": 53,
+            "omitted_v1_pairs": 35,
+            "version_single_requests": 18,
+            "actual_request_statuses": {
+              "success": 26,
+              "failed": 58,
+              "conflict": 4
+            },
+            "logical_rows_document_history_generation_unchanged": true
+          },
+          "organization": {
+            "observations": 2,
+            "omitted_v1_pairs": 2,
+            "version_single_requests": 0,
+            "actual_request_statuses": {
+              "success": 4,
+              "failed": 0,
+              "conflict": 0
+            },
+            "logical_rows_document_history_generation_unchanged": true
+          }
+        },
+        "saved_clean_initial_state": true,
+        "full_1003_reference_response_preserved": true,
+        "actual_contract_requests": 92
+      },
+      "sqlite-off": {
+        "cases": {
+          "geometry": {
+            "observations": 53,
+            "omitted_v1_pairs": 35,
+            "version_single_requests": 18,
+            "actual_request_statuses": {
+              "success": 26,
+              "failed": 58,
+              "conflict": 4
+            },
+            "logical_rows_document_history_generation_unchanged": true
+          }
+        },
+        "saved_clean_initial_state": true,
+        "full_1003_reference_response_preserved": true,
+        "actual_contract_requests": 88
+      }
+    },
+    "compatibility_list_contract_counts": {
+      "total": 24,
+      "generated": 16,
+      "remaining": 8,
+      "scope": "Compatibility supported list only; excludes TypedHost intrinsic and transport/resources"
+    },
+    "initial_matrix_failures": 4,
+    "initial_matrix_passed_counts": [
+      40,
+      54,
+      86,
+      77,
+      0
+    ],
+    "unresolved_failed_cases": 0,
+    "test_only_repair_executions": 8,
+    "test_only_repair_passed": 4,
+    "test_only_repair_failed_preserved": 4,
+    "resolved_configuration_case_count": 261,
+    "post_fix_fresh_full_matrix": "NOT RUN; four affected test binaries rebuilt and tested; other13recorded products byte-identical"
   },
   "historical_core_framework_before_local_delivery": {
     "status": "same_source_core_mechanisms_validated_full_acceptance_pending",
@@ -1774,5 +1845,198 @@
       "ASan/UBSan typed_host only; LSan unmeasured",
       "Prior commit-contract259/263 counts and original failures retained under historical_core_framework_before_host_controls"
     ]
+  },
+  "historical_core_framework_before_entity_reads": {
+    "status": "lookup_conditional_contract_validated_non_graphical_full_graphical_gate_open",
+    "tested_implementation_commit": "cf2f4c447800ffecffa31263007fe21cce548b20",
+    "source_files_count": 421,
+    "source_dictionary_sha256": "c81d0e14a4b42bd7b86a2eb417a4e4531bf3a6e90604e428434a52c511960db4",
+    "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+    "manifest": "docs/engineering/operation-lookup-evidence/2026-10-03/validation.json",
+    "report": "docs/engineering/operation-lookup-contract-2026-10-03.md",
+    "handoff": "docs/implementation/core-local-handoff.md",
+    "configuration_order": [
+      "core",
+      "local",
+      "sqlite_on_no_desktop",
+      "sqlite_off_no_desktop",
+      "asan_ubsan_typed_host"
+    ],
+    "full_regression_counts": [
+      40,
+      55,
+      87,
+      78,
+      1
+    ],
+    "configuration_inventory_counts": [
+      40,
+      55,
+      87,
+      78,
+      55
+    ],
+    "cross_configuration_executions": 261,
+    "cross_configuration_passed": 261,
+    "actual_ctest_executions_with_rerun_and_repeat": 261,
+    "actual_ctest_passed_with_repeats": 261,
+    "actual_ctest_failures": 0,
+    "actual_ctest_timeouts": 0,
+    "full_matrix_passed": true,
+    "full_matrix_scope": "relevant non-graphical four full configurations plus one ASan/UBSan typed_host test",
+    "versioned_existing_host_inputs": [
+      "project.create",
+      "project.open",
+      "project.save",
+      "project.save_as",
+      "project.close",
+      "changes.commit",
+      "capabilities.list",
+      "project.current",
+      "project.status",
+      "model.summary",
+      "history.list",
+      "history.undo",
+      "history.redo",
+      "operations.get"
+    ],
+    "actual_contribution_categories": [
+      "core",
+      "operations",
+      "codecs",
+      "validation",
+      "ui",
+      "render"
+    ],
+    "actual_contribution_selected_ports": [
+      "model_codec",
+      "profile_provider",
+      "render_contributions"
+    ],
+    "local_package": {
+      "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a",
+      "bundle": "/Users/qs/Documents/ChatGPT/QCAE/out/local-delivery138-02/QCAE.app",
+      "regular_files": 419,
+      "macho_files": 145,
+      "relocated_non_system_edges": 925,
+      "adhoc_only": true,
+      "notarized": false,
+      "refreshed_for_current_implementation": false
+    },
+    "actual_packaged_workflows": {
+      "sqlite_process_commands": 39,
+      "mcp_process_commands": 5,
+      "gui_process_commands": 9,
+      "staging_and_codesign_commands": 2,
+      "cli_calls": 46,
+      "mcp_tools": 68,
+      "mcp_jsonrpc_requests": 13,
+      "mcp_notifications": 2,
+      "source_commit": "f2d2e7f25eb2b6218f233c1612a0b16a7705f06a"
+    },
+    "current_graphical_blocker": {
+      "single_qt_slot": {
+        "exit_code": 0,
+        "elapsed_seconds": 1.7964129447937012,
+        "does_not_replace_full_suite": true
+      },
+      "full_qt_suite": {
+        "exit_code": -15,
+        "terminated_at_original180s": true,
+        "required_kill": false,
+        "sample_observation": "main thread in vtkHardwareSelector SavePixelBuffer -> glReadPixels -> AppleMetalOpenGLRenderer wait at150s; root cause unproven",
+        "source_unchanged": true
+      },
+      "original_source_scope": "Retained151; both CTest180s failures and full native timeout remain",
+      "isolated_retained_binary_diagnostic": {
+        "actual_processes": 24,
+        "all_functions_and_tags_exactly_matched": true,
+        "binary_scope": "Retained151 product; current contract implementation not compiled into it; three graphics sources byte-identical",
+        "current_graphical_gate_closed": false,
+        "elapsed_seconds": 119.97001541615464,
+        "function_processes": 23,
+        "old_full_suite_failures_remain": true,
+        "original_data_rows": 69,
+        "qt_pass_lines_with_init_cleanup": 115,
+        "root_cause_proven": false,
+        "shared_bound_seconds": 180
+      },
+      "gate_closed": false
+    },
+    "bounded_host_controls_SQLite": {
+      "sqlite-on": {
+        "refusals": 101,
+        "reads": 5,
+        "replays": 6,
+        "history_writes": 8,
+        "engine_exit_codes": [
+          -15,
+          -15
+        ],
+        "complete_logical_state_unchanged_around_refusals_reads_and_replays": true,
+        "independent_recovery_preserves_stable_records_history_and_operation_facts": true
+      },
+      "sqlite-off": {
+        "refusals": 101,
+        "reads": 5,
+        "replays": 6,
+        "history_writes": 8,
+        "engine_exit_codes": [
+          -15,
+          -15
+        ],
+        "complete_logical_state_unchanged_around_refusals_reads_and_replays": true,
+        "independent_recovery_preserves_stable_records_history_and_operation_facts": true
+      }
+    },
+    "post_validation_frozen_input_documentation_delta": [
+      "adapters/engine_api/README.md"
+    ],
+    "priority": "core_framework_quality; unnecessary_performance_optimization_paused",
+    "next_core_interface": "Group entity.query and entity.references generated semantic input/version/context contracts; plan188 only, not implemented",
+    "limits": [
+      "Current GUI cumulative failures and graphical gate remain open; no GUI executed in this matrix",
+      "Old f2d local bundle is unrefreshed; package evidence keeps its original source scope",
+      "No real solver/full external AI/performance/full SK or P0 acceptance",
+      "Unknown SDK copy coverage remains deferred only from C4 startup; measured budgets and original material14/30 failures retained",
+      "Output labels describe existing serializers, without a new generated output union",
+      "Actual MCP/CLI share fixed trusted caller local-user; distinct-caller isolation tested in C++",
+      "Other legacy contracts and complete SK-04 remain unclosed",
+      "ASan/UBSan typed_host only; LSan unmeasured",
+      "Earlier seven-route results retained under historical_core_framework_before_operation_lookup"
+    ],
+    "bounded_operation_lookup_SQLite": {
+      "sqlite-on": {
+        "lookup_reads": 35,
+        "lookup_refusals": 31,
+        "refusals": 101,
+        "reads": 5,
+        "history_writes": 8,
+        "replays": 6,
+        "engine_exit_codes": [
+          -15,
+          -15
+        ],
+        "logical_rows_document_history_generation_preserved_by_lookup": true,
+        "independent_recovery_preserves_original_facts": true,
+        "discard_then_normal_open_fresh_document_identity": true
+      },
+      "sqlite-off": {
+        "lookup_reads": 35,
+        "lookup_refusals": 31,
+        "refusals": 101,
+        "reads": 5,
+        "history_writes": 8,
+        "replays": 6,
+        "engine_exit_codes": [
+          -15,
+          -15
+        ],
+        "logical_rows_document_history_generation_preserved_by_lookup": true,
+        "independent_recovery_preserves_original_facts": true,
+        "discard_then_normal_open_fresh_document_identity": true
+      }
+    },
+    "next_core_interface_plan": "docs/engineering/operation-lookup-evidence/2026-10-03/next-plan.md"
   }
 }

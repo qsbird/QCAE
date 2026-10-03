@@ -27,6 +27,8 @@
 
 ## 当前实现
 
+[实体读取生成契约](engineering/entity-read-contracts-2026-10-03.md)：`a8f5573` 初轮257/261加修正后4目标通过，两个实际MCP/CLI及SQLite状态/历史保护验证；原图形与完整验收范围保留。
+
 [原结果查询条件契约](engineering/operation-lookup-contract-2026-10-03.md)：`cf2f4c4` 五配置261/261通过，真实SQLite状态/恢复及两个MCP/CLI一致，原图形失败及完整验收范围保留。
 
 [七个读取与历史入口契约](engineering/host-controls-contracts-2026-10-03.md)：`8924149` 五配置261/261通过，真实SQLite完整状态保护、原结果重放和恢复，以及双MCP/CLI元数据/调用。原图形失败、旧包及完整SK/P0范围保留。

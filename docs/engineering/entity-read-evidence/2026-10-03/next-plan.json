@@ -1,0 +1,260 @@
+{
+  "status": "NOT_IMPLEMENTED_NOT_RUN",
+  "source_root": "/private/tmp/qcae-framework-delivery80",
+  "task_scope": "Read-only plan for three existing view handlers; source owner did not modify repository or frozen entity candidates.",
+  "recommendation": "Implement view.create, view.update and view.render_data together as one bounded view-session contract group using existing generator types; no generator/Value/registry/SelectionService expansion is needed.",
+  "reason": "Simple strings plus optional/required allow-empty entity ID arrays express all current inputs. uint64 view revisions stay validated decimal strings, avoiding lossy numbers or uint32 restrictions. Existing auxiliary_write effect expresses disposable session state, while legacy discovery retains session_write.",
+  "operations": [
+    {
+      "operation_id": "view.create",
+      "type_name": "ViewCreateInput",
+      "schema_id": "qcae.operation.view.create.v1",
+      "generated_effect": "auxiliary_write",
+      "legacy_effect": "session_write",
+      "symbolic_input": "CreateView",
+      "symbolic_output": "ViewSession",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "hidden_ids",
+          "type": "entity_id_array",
+          "optional": true,
+          "allow_empty": true
+        },
+        {
+          "field_id": 2,
+          "name": "camera_fingerprint",
+          "type": "string",
+          "optional": true,
+          "allow_empty": true
+        }
+      ],
+      "arguments_required": [
+        "document_id",
+        "document_epoch",
+        "expected_revision"
+      ],
+      "parameters_required": [],
+      "state_effect": "Creates a caller-owned disposable session with view revision 1; valid create prunes other document/epoch sessions before live quota admission; no model/history/store commit.",
+      "version": 1,
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "target_context": "none"
+    },
+    {
+      "operation_id": "view.update",
+      "type_name": "ViewUpdateInput",
+      "schema_id": "qcae.operation.view.update.v1",
+      "generated_effect": "auxiliary_write",
+      "legacy_effect": "session_write",
+      "symbolic_input": "UpdateView",
+      "symbolic_output": "ViewSession",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "view_session_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "expected_view_revision",
+          "type": "string"
+        },
+        {
+          "field_id": 3,
+          "name": "hidden_ids",
+          "type": "entity_id_array",
+          "allow_empty": true
+        },
+        {
+          "field_id": 4,
+          "name": "camera_fingerprint",
+          "type": "string",
+          "allow_empty": true
+        }
+      ],
+      "arguments_required": [
+        "parameters",
+        "document_id",
+        "document_epoch",
+        "expected_revision"
+      ],
+      "parameters_required": [
+        "view_session_id",
+        "expected_view_revision",
+        "hidden_ids",
+        "camera_fingerprint"
+      ],
+      "state_effect": "Inspects owner/document/epoch without requiring current model revision, checks expected_view_revision before rebind, increments view revision only for changed hidden/camera/model revision; lazy handle invalidation; no model/history/store commit.",
+      "version": 1,
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "target_context": "none"
+    },
+    {
+      "operation_id": "view.render_data",
+      "type_name": "ViewRenderDataInput",
+      "schema_id": "qcae.operation.view.render_data.v1",
+      "generated_effect": "read_only",
+      "legacy_effect": "query",
+      "symbolic_input": "RenderDataQuery",
+      "symbolic_output": "RenderPacket",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "view_session_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "expected_view_revision",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "arguments_required": [
+        "parameters",
+        "document_id",
+        "document_epoch",
+        "expected_revision"
+      ],
+      "parameters_required": [
+        "view_session_id"
+      ],
+      "state_effect": "Strictly requires a view at current model revision; optional expected_view_revision check; returns existing points/beams/geometry_lines render packet, without UI rendering or state mutation.",
+      "version": 1,
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "target_context": "none"
+    }
+  ],
+  "raw_compatibility": {
+    "document_identity": "Nonempty strings; no trimming, so whitespace input reaches snapshot diagnostics.",
+    "expected_revision": "Required nonempty string parsed by std::from_chars into uint64; accepts zero and leading zeros, rejects sign/whitespace/overflow; compare with snapshot before parameters.",
+    "view_session_id": "Required nonempty string, including syntactically valid whitespace; service owns existence/ownership/epoch/model checks; do not use entity_id type.",
+    "expected_view_revision": "Required update, optional render; exact uint64 decimal string with zero/leading zeros parser semantics; do not use positive_uint32 or finite_number.",
+    "hidden_ids": "Optional create defaults []; required update, [] legal, raw duplicates legal; every member must be a nonempty string; preserve whitespace and service validates existing query-visible identity. Normalize duplicates only in semantic projection, preserving eventual service sort/unique output.",
+    "camera_fingerprint": "Optional create defaults empty; required update; any string including empty and whitespace; no invented max length or trimming.",
+    "unused_idempotency_key": "Ignored top-level arbitrary JSON; schema {}; no new idempotency behavior or write key.",
+    "expected_profile": "Still globally rejected by existing compatibility guard."
+  },
+  "error_order": [
+    "Existing envelope/API/known operation/parameters-object checks and expected_profile rejection stay first.",
+    "New shared version_rejection must execute before dispatch_selection snapshot, once added to generated admission; it may add only requested_version named errors.",
+    "Omitted/v1: parse document_id then document_epoch -> RecordApplication snapshot -> expected_revision parse and model revision comparison -> parameters.",
+    "create: closed fields check -> both optional raw argument checks -> generated semantic projection -> SelectionService::create_view.",
+    "update/render: parse view_session_id before closed fields check -> inspect_view for update or get_view for render -> required/optional expected_view_revision parse/comparison -> operation-specific closed fields check -> remaining raw arguments/projection -> existing service call.",
+    "Update must retain inspect_view rather than get_view so a stale model view can rebind only after matching the old view revision.",
+    "Legacy BadSelectionRequest and encode failure envelopes omit diagnostic field; preserve this even though core service diagnostics include fields."
+  ],
+  "evaluation_order_caveat": "Existing create/update parse hidden IDs and camera in separate C++ function argument expressions; their mutual evaluation order is not language-defined. Preserve guaranteed context/service/fields ordering; do not invent a historical deterministic winner for simultaneous malformed hidden_ids and camera. Before implementation validation, capture actual existing product behavior if exact same-toolchain envelope equivalence for that combined case is required.",
+  "discovery": {
+    "retain": [
+      "available from existing compatibility route",
+      "legacy effect",
+      "symbolic input/output labels",
+      "target_context none",
+      "existing context flags",
+      "existing serializers"
+    ],
+    "add": [
+      "version/schema_id",
+      "wire_input_type",
+      "wire_output_type repeating existing serializer label only",
+      "requested_version_field",
+      "omitted_version_policy",
+      "generated field IDs/order/type/required/allow_empty/units",
+      "closed raw parameters_schema",
+      "closed full arguments_schema"
+    ],
+    "parameters_schema": "Exact legacy names and types, no uniqueItems, no fixed camera/view ID constraints; uint64 fields described as strings with engine parser semantics. No pattern because existing MCP explicit-schema checker does not admit it.",
+    "arguments_schema": "Only parameters, document_id, document_epoch, expected_revision, idempotency_key and requested_version; same parameters schema value; identities/revision nonempty strings, unused key {}, optional positive uint32 requested_version. create parameters optional because MCP supplies {}; update/render required.",
+    "mcp": "Reuse existing arguments_schema passthrough; no new MCP production routes or validators.",
+    "caller_fact": "Production engine currently supplies the same trusted local-user principal for CLI and both MCP clients. Verify shared caller-owned views across these clients; cross-principal rejection belongs in direct C++ tests with explicit trusted Callers, not fabricated JSON actor fields."
+  },
+  "minimal_production_files": [
+    "NEW schemas/operations/view_sessions.json",
+    "adapters/engine_api/src/ipc_api.cpp",
+    "adapters/engine_api/src/ipc_selection.cpp"
+  ],
+  "proposed_test_edits_maximum": [
+    "tests/typed_host_tests.cpp",
+    "tests/c3_display_ipc_tests.py",
+    "tests/mcp_bridge_tests.py"
+  ],
+  "existing_regressions_to_reuse": [
+    "record_query",
+    "query",
+    "render_service",
+    "c3_display_ipc ON/OFF",
+    "m23_ipc ON only",
+    "c3_sync_ipc",
+    "desktop_selection existing scope and known failure boundaries",
+    "generation/freshness and public-header consumer"
+  ],
+  "state_protection": [
+    "All operations: complete DocumentView/metadata/save token/dirty/generation/history/retained operation facts/store I/O remain identical because no document commit path is called.",
+    "New version/schema/raw admission refusals: no create/update/render service invocation, so no new session ID/view revision/quota use or rebase.",
+    "Success create changes disposable session tables and ID sequence by existing service behavior; do not assert universal state immutability.",
+    "Success update changes only the existing view when hidden/camera/model revision differ; no-op update preserves view revision and handles; actual change invalidates old handles through existing lazy revision checks.",
+    "Existing create prunes stale document/epoch sessions before live-view quota admission; do not falsely claim every legacy business-level failed create leaves every disposable session table untouched."
+  ],
+  "not_in_scope": [
+    "selection.evaluate recursive predicate/scope generation",
+    "selection.combine/get generation",
+    "view.render_resource/session/resource protocol redesign",
+    "new registry/coordinator/output DTO",
+    "SelectionService implementation/store/history/application changes",
+    "generator/Value/MCP production/CMake/dependency changes",
+    "GUI or performance feature work"
+  ],
+  "validation_plan": "One frozen group validation across existing generation/header/design/format/diff gates and relevant core/local/SQLite/packageON/OFF configurations, with exact same-envelope omitted/v1 comparisons adjusted for fresh view IDs and request correlation, raw/null/extra/context/version precedence cases, duplicate/empty hidden set and unchanged/changed/rebased views, real SQLite shared MCP/CLI workflow, and persistent/session effects recorded separately.",
+  "fallback": "No simpler replacement group is needed: current view group is expressible without new abstractions. Keep recursive selection.evaluate and conditional previews for later.",
+  "source_sha256_static": {
+    "adapters/engine_api/src/ipc_selection.cpp": "2968f0d296b0555c3d8d8a94bf34a9196930fb034bc53dcd2b65ab4bea2ca85f",
+    "adapters/engine_api/src/ipc_api.cpp": "7b1e5e8ea102f97de10773f260df44aff667478cad3ee7f1abde47ffd4c927b3",
+    "modules/query/src/query.cpp": "8274a1e46030a7f076a692756da86a71a82de5d1ebdc24232343380f5c9b3739",
+    "modules/query/include/qcae/query.hpp": "9105cc5d21fce171031193450b576ffefa96e3f1da68caa0b7dd798285d94fb5",
+    "modules/contracts/include/qcae/view_session.hpp": "0589f97fa502fbbde4e2c83b673e4647cc7c85ef80c162fbcc7ccf2a571abf51",
+    "modules/operations/include/qcae/operation_registry.hpp": "a2f43f7421b8dd637f11c8b6eb51d4d91c1fd5251b4e46f35d3b620a121e1306",
+    "modules/operations/src/operation_registry.cpp": "a4d2ac049137e4e542674b528a766195776a654ab05d2d16440bede695cae5ca",
+    "tools/generate_operation_contracts.py": "c9bfd4f9ead15951ba51ae49ee90e9565bc1974fb83a7560296f9752c8444db2",
+    "docs/contracts/operations.json": "1f4edc5eff997ae37780d8d6c2216e2442bd6dad2a8744bc86558ad2729d27cd",
+    "apps/engine/engine_host.cpp": "6b7286d3dc8fef8d33c0c5deae3ad928fff573320d28ff58424fb42b2fe27988",
+    "apps/mcp/bridge.py": "6b3f94d2605b4aae81b3bc4c6e84e61262401a8532ba1631e70de426ff6da257",
+    "tests/typed_host_tests.cpp": "fb00e3c4d2f346684404105bffabc0ab82dfc56a427668dd600171f7d1a158b5",
+    "tests/query_tests.cpp": "40e2e83f502ed287058588807ca8f5117841228f582c63d9cc82e9af327dcc99",
+    "tests/record_query_tests.cpp": "0ea2529cd6ce6f66e83912e37bd2225eefa103b3f2f1c66432d6b1285193de6f",
+    "tests/m23_ipc_tests.py": "7f45000155421595d54f53a29a070aa2d1aa309486c06e24c3b6d1a9a4a64d96",
+    "tests/c3_display_ipc_tests.py": "afeb02c28ca5f9102f9e66abb5c7443867570946f6433e45501033f3d5aee736",
+    "tests/c3_sync_ipc_tests.py": "216c2f9e76c293ef7f36e9000e0646f984d5afbdaf93239e9c6f13a3dbe8f02b",
+    "tests/mcp_bridge_tests.py": "931019fa2038d45146e36d47020a88c07611f83b2900eca40d6cb65a17616936",
+    "CMakeLists.txt": "6906b75127d94d16e7721e9af663e1f0fcef025ef2ce912e2a405919228ef1aa"
+  },
+  "not_run": [
+    "implementation",
+    "repository writes",
+    "checks/formatting",
+    "generator/freshness",
+    "compilation/builds",
+    "products/engine/CLI/MCP/GUI",
+    "tests/CTest",
+    "Git commands or mutations"
+  ],
+  "acceptance_boundary": "Static planning only for REQ-16/TST-F08/TST-A01/QG-02, not delivery or full REQ-16/SK/P0 acceptance. Existing graphical/real-solver/real-AI/performance boundaries stay open."
+}

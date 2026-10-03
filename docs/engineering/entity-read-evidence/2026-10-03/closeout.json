@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "implementation_commit": "a8f557347920e8c4c16ee50d4e84401c03ebb859",
+  "actual_ctest_executions_passed": 261,
+  "baseline_executions_passed_not_in_269": 6,
+  "actual_ctest_executions": 269,
+  "historical_actual_failures_preserved": 8,
+  "unresolved_failed_cases": 0,
+  "initial_matrix_passed": 257,
+  "initial_matrix_executed": 261,
+  "final_targeted_passed": 4,
+  "post_fix_fresh_full_matrix": "NOT RUN;13 unaffected products identical",
+  "frozen_inputs": 422,
+  "documentation_only_frozen_input_delta": [
+    "adapters/engine_api/README.md"
+  ],
+  "other421_inputs_unchanged": true,
+  "recorded_products_unchanged": 17,
+  "copied_bridge_hashed_configurations": [
+    "local",
+    "sqlite-on",
+    "sqlite-off",
+    "sanitized"
+  ],
+  "copied_bridge_execution_in_sanitized": "NOT RUN; typed_host only",
+  "independent_archive_review": {
+    "findings": [],
+    "member_count": 290,
+    "review_sha256": "811d1ac96dc0e3caa5f556293a9298f305adea92a879063612a3d3a43fdae7cd"
+  },
+  "archive": {
+    "bytes": 955917,
+    "sha256": "f920e94cdb39daf627ca459b0486fa3294dab9da2ede824bce914c7ac713eb3e"
+  },
+  "old_bundle_manifest_sha256": "8d5fdd2df0a77aefa4fdc06ef53ae6ceb2155e65c1065745792efc787920af64",
+  "old_bundle_refreshed": false,
+  "unknown_AGENTS_preserved": "eaa469194e6952cc8e7a73859f8023216379fa65085ccd8bfd7efc075fe9eaa9",
+  "next_plan_203": "view.create/view.update/view.render_data; NOT IMPLEMENTED/NOT RUN",
+  "current_graphical_gate_closed": false,
+  "product_rerun_for_documentation": "NOT RUN; only README within frozen inputs changed",
+  "post_documentation_gates": {
+    "design": {
+      "argv": [
+        "python3",
+        "tools/check_design.py"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "actual_exit_code": 0,
+      "started_unix": 1790995092.335344,
+      "elapsed_seconds": 0.4670579433441162,
+      "stdout": "PASS: 203 portable links; 1153 JSON files; 32-module acyclic graph\nPASS: 41 operation descriptors; 12 contract examples; 20 requirements; 38 acceptance cases\nDesign checks only. This command does not run product builds, solver runs or AI acceptance.\n",
+      "stderr": ""
+    },
+    "format": {
+      "argv": [
+        "python3",
+        "tools/check_cpp_format.py"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "actual_exit_code": 0,
+      "started_unix": 1790995092.802525,
+      "elapsed_seconds": 1.3454289436340332,
+      "stdout": "PASS: 236 C++ files match clang-format 21\n",
+      "stderr": ""
+    },
+    "diff": {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/private/tmp/qcae-framework-delivery80",
+      "actual_exit_code": 0,
+      "started_unix": 1790995094.148064,
+      "elapsed_seconds": 0.021143198013305664,
+      "stdout": "",
+      "stderr": ""
+    }
+  }
+}

@@ -197,6 +197,27 @@ All calls read existing caller-scoped facts from the same application. Handler r
 not prevent action lookup. Host/action direct-return envelopes and mapped-history outer
 revision remain distinct. [Actual scope](../../docs/engineering/operation-lookup-contract-2026-10-03.md).
 
+### Versioned entity reads
+
+Existing entity.query/entity.references now consume generated EntityQueryInput and
+EntityReferencesInput, installed version1 with schema IDs qcae.operation.entity.query.v1
+and qcae.operation.entity.references.v1. Both require document_id/epoch only. Unused
+revision/key JSON values remain ignored. Closed complete argument discovery reuses raw
+parameters: query parameters remain optional in MCP, whose bridge defaults them to {};
+references parameters are required. The IPC envelope still requires a parameters object.
+
+Raw parsing keeps old field/error order before DTO projection. IDs preserve bytes; []
+matches none, omission is unrestricted, and accepted duplicates project once in encounter
+order. Pagination still accepts zero and integer JSON values within offset0..100000 and
+limit0..1000 (defaults0/100), validated before dimensionless finite_number DTO decoding.
+Discovery describes raw integer type and bounds explicitly. Kind comes from the registry.
+References keep the complete existing result across bounded internal pages.
+
+Version refusal precedes snapshot, after existing envelope/parameters/profile admission;
+omitted/v1 retain snapshot/context before raw parameter validation. Existing result labels
+and inner/outer revision remain. Neither call writes model/history or retains a write key.
+[Actual scope](../../docs/engineering/entity-read-contracts-2026-10-03.md).
+
 ### C3 versioned display resources and events
 
 A handshake advertises `capabilities.resources_version=1` and `events_version=1` only

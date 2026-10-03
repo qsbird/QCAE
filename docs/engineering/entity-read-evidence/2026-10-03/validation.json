@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "status": "entity_read_contracts_validated_non_graphical_full_acceptance_open",
+  "implementation_commit": "a8f557347920e8c4c16ee50d4e84401c03ebb859",
+  "tested_source_count": 422,
+  "tested_source_dictionary_sha256": "7cca4e73fe40063582588ca9b301055b2b6ca7617b0fa91b3afc5a92824f55f8",
+  "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+  "initial_configuration_counts": {
+    "core": {
+      "executed": 40,
+      "failed": 0,
+      "passed": 40
+    },
+    "local": {
+      "executed": 55,
+      "failed": 1,
+      "passed": 54
+    },
+    "sanitized": {
+      "executed": 1,
+      "failed": 1,
+      "passed": 0
+    },
+    "sqlite-off": {
+      "executed": 78,
+      "failed": 1,
+      "passed": 77
+    },
+    "sqlite-on": {
+      "executed": 87,
+      "failed": 1,
+      "passed": 86
+    }
+  },
+  "resolved_configuration_case_counts": {
+    "core": 40,
+    "local": 55,
+    "sanitized": 1,
+    "sqlite-off": 78,
+    "sqlite-on": 87
+  },
+  "targeted_repair_passed": 4,
+  "retained_unchanged_products_passed": 257,
+  "unresolved_failed_cases": 0,
+  "post_fix_fresh_full_matrix": "NOT RUN; only four test binaries changed,13 unaffected products identical",
+  "actual_ctest_executions": 269,
+  "actual_ctest_passed": 261,
+  "actual_ctest_failed_preserved": 8,
+  "compiler_warnings": 0,
+  "strict_cpp20": true,
+  "asan_ubsan_scope": "typed_host only",
+  "lsan": "NOT RUN",
+  "baseline": {
+    "existing_cases_passed": 6,
+    "not_in_261_ctest_denominator": true,
+    "copied_interpreted_bridge_identified_separately": true
+  },
+  "actual_SQLite": {
+    "sqlite-on": {
+      "cases": {
+        "geometry": {
+          "observations": 53,
+          "omitted_v1_pairs": 35,
+          "version_single_requests": 18,
+          "actual_request_statuses": {
+            "success": 26,
+            "failed": 58,
+            "conflict": 4
+          },
+          "logical_rows_document_history_generation_unchanged": true
+        },
+        "organization": {
+          "observations": 2,
+          "omitted_v1_pairs": 2,
+          "version_single_requests": 0,
+          "actual_request_statuses": {
+            "success": 4,
+            "failed": 0,
+            "conflict": 0
+          },
+          "logical_rows_document_history_generation_unchanged": true
+        }
+      },
+      "saved_clean_initial_state": true,
+      "full_1003_reference_response_preserved": true,
+      "actual_contract_requests": 92
+    },
+    "sqlite-off": {
+      "cases": {
+        "geometry": {
+          "observations": 53,
+          "omitted_v1_pairs": 35,
+          "version_single_requests": 18,
+          "actual_request_statuses": {
+            "success": 26,
+            "failed": 58,
+            "conflict": 4
+          },
+          "logical_rows_document_history_generation_unchanged": true
+        }
+      },
+      "saved_clean_initial_state": true,
+      "full_1003_reference_response_preserved": true,
+      "actual_contract_requests": 88
+    }
+  },
+  "independent_source_review_blockers": 0,
+  "source_review_findings": [
+    {
+      "id": "ENTITY197-01",
+      "priority": "P2",
+      "status": "FIXED_AND_STATICALLY_RECHECKED",
+      "file": "tests/typed_host_tests.cpp",
+      "location": "entity_read_contracts_preserve_application reference-result assertion",
+      "problem": "The initial exact references data expectation omitted the existing inner revision inserted by ipc_model.cpp::ok. lookup_without_effects returns the entire dispatch response without stripping revision.",
+      "fix": "Owner added revision to the exact references expectation and checked equal inner/outer snapshot revisions for every successful entity query/reference invoke.",
+      "fixed_source_sha256": "fb00e3c4d2f346684404105bffabc0ab82dfc56a427668dd600171f7d1a158b5",
+      "evidence_kind": "STATIC SOURCE REVIEW ONLY",
+      "execution_result": "NOT RUN; this is a statically found test defect, not an observed product test failure"
+    },
+    {
+      "id": "ENTITY197-02",
+      "priority": "P2",
+      "status": "TEST_SIGNATURE_FIXED_AND_STATICALLY_RECHECKED_FIRST_RETEST_FAILED_AT_ANOTHER_FIXTURE_LOOKUP",
+      "file": "tests/typed_host_tests.cpp",
+      "location": "entity_read_contracts_preserve_application dirty material edit fixture",
+      "problem": "The fixture provided literal material:220000 as its execute signature, while runtime_test::material_change(220000) produces material:220000.000000. The application correctly rejects the mismatched prepared-operation signature.",
+      "fix": "Root replaced only the fixture signature argument with existing runtime_test::modulus_signature(220000), paired with runtime_test::material_change(220000). Production sources and the other five reviewed source hashes are unchanged.",
+      "fixed_source_sha256": "2c24728e0745bbb75a3279df8aaaaf3541dd5ce605f20c3f1e9ed967425d85f1",
+      "evidence_kind": "ROOT-REPORTED ACTUAL REGRESSION FAILURE AND STATIC SOURCE FIX RECHECK",
+      "actual_initial_result": {
+        "executed": 261,
+        "passed": 257,
+        "failed": 4,
+        "failure_target": "typed_host in four configurations",
+        "failure_message": "Prepared operation signature mismatch",
+        "provenance": "Root task message; reviewer did not run tests or inspect product logs"
+      },
+      "runtime_retest": {
+        "executed": 4,
+        "passed": 0,
+        "failed": 4,
+        "message": "Unknown operation",
+        "source_sha256": "2c24728e0745bbb75a3279df8aaaaf3541dd5ce605f20c3f1e9ed967425d85f1",
+        "provenance": "Root task message; reviewer did not execute tests or inspect product logs",
+        "next_finding": "ENTITY197-03"
+      }
+    },
+    {
+      "id": "ENTITY197-03",
+      "priority": "P2",
+      "status": "FIXTURE_LOOKUP_FIXED_AND_STATICALLY_RECHECKED_SECOND_TARGETED_RETEST_PENDING",
+      "file": "tests/typed_host_tests.cpp",
+      "location": "entity_read_contracts_preserve_application five seed/read outcome lookups",
+      "problem": "Root reported all four signature-fixed typed_host targets then failed with Unknown operation. The new scene used MemoryApplication::operation for test.entity.seed and entity read lookups although that facade admits only commit/undo/redo. The earlier negative read-key assertions therefore observed facade rejection rather than absent retained record action facts.",
+      "fix": "Root replaced five new-scene calls with existing app.record_application().action_outcome: original seed receipt, retained seed receipt, foreign-caller seed refusal, and the two unused read-key absence checks. All five now query the record application action fact authority used by execute; no production route changed.",
+      "fixed_source_sha256": "467c883d9c126d9e6fb8e6bf80a5652985ce9d908219ca8b5e553501efd02fbc",
+      "evidence_kind": "ROOT-REPORTED ACTUAL TARGETED FAILURES AND STATIC SOURCE FIX RECHECK",
+      "actual_previous_targeted_result": {
+        "executed": 4,
+        "passed": 0,
+        "failed": 4,
+        "failure_target": "typed_host in four configurations",
+        "failure_message": "Unknown operation",
+        "provenance": "Root task message; reviewer did not run tests or inspect product logs"
+      },
+      "cumulative_historical_failures": 8,
+      "second_targeted_retest": "PENDING; no corrected-source runtime pass claimed"
+    }
+  ],
+  "repaired_actual_test_fixture_failures": [
+    "initial normalized-signature mismatch in4typed_host configs",
+    "legacy-fact lookup rejects custom action names in first4targeted retests"
+  ],
+  "production_source_unchanged_by_repairs": true,
+  "cancelled_attempt": {
+    "attempt": "attempt-01",
+    "CTest_executions": 0,
+    "reason": "Static review found omitted existing inner revision in a test assertion",
+    "original_candidate_method_build_logs_retained": true
+  },
+  "archive": {
+    "bytes": 955917,
+    "sha256": "f920e94cdb39daf627ca459b0486fa3294dab9da2ede824bce914c7ac713eb3e",
+    "member_count": 290,
+    "all_members_and_origins_reverified": true
+  },
+  "docs_only_frozen_input_delta": [
+    "adapters/engine_api/README.md"
+  ],
+  "limits": [
+    "Current GUI cumulative failures and graphical gate remain open; no GUI executed in this matrix",
+    "Old f2d local bundle is unrefreshed; package evidence keeps its original source scope",
+    "No real solver/full external AI/performance/full SK or P0 acceptance",
+    "Unknown SDK copy coverage deferred only from C4 startup; measured budgets and original material14/30 failures retained",
+    "Existing SelectionResult/ReferenceResult labels are serializers, not generated output DTOs",
+    "Actual MCP/CLI use fixed trusted caller local-user; distinct trusted callers checked in C++",
+    "Other legacy contracts and complete REQ-16/SK-04 remain open"
+  ]
+}
