@@ -80,7 +80,7 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 
 ## NEXT-02 当前 typed IPC 补充
 
-已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。五个宿主工程生命周期入口、`changes.commit` 及七个读取/历史入口同样接受操作版本，见下节；其他旧非 typed 路径保持拒绝新增字段的规则。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
+已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。五个宿主工程生命周期入口、`changes.commit`、七个读取/历史入口及 `operations.get` 同样接受操作版本，见下节；其他旧非 typed 路径保持拒绝新增字段的规则。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
 
 `operations.get` 的 document 作用域可以在贡献停用后查询原调用者的已保存回执，无需重新启用 handler；未知或未保留事实返回 `ENTITY_NOT_FOUND`。来源、测试及未完成范围见[NEXT验证](../engineering/next-validation.md)与[实际 wire 说明](../../adapters/engine_api/README.md)。
 
@@ -109,3 +109,7 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 ## 已有读取与历史输入
 
 `capabilities.list/project.current/project.status/model.summary/history.list/history.undo/history.redo` 使用生成版本1的空参数输入及闭合schema，省略版本选择安装版本，额外字段与非法/未安装版本在原应用调用前拒绝。前两项无文档上下文，中间三个读取只需document/epoch，undo/redo保持原document/epoch/revision/key。发现保留符号类型/效果并公布实际wire输入和既有结果标签；没有生成新的输出schema。`operations.get` 条件兼容仍单独保留。实际范围见[七入口验证](../engineering/host-controls-contracts-2026-10-03.md)，不据此声明完整目录/SK/P0通过。
+
+## 原结果查询条件输入
+
+`operations.get` 使用生成版本1语义输入与闭合原始三分支参数schema，模式仅用于host/project.open的normal/recover，其他查询继续忽略任意JSON模式。完整arguments_schema以宿主/文档两个分支描述最小上下文；宿主无文档要求，文档要求ID/epoch，原参数中的key是被查询操作的键。MCP有界验证后原样公布，版本/参数与caller事实仍由engine/应用校验；停用handler仍能查回原事实。现有结果wire标签与原返回包保留，实际范围见[验证](../engineering/operation-lookup-contract-2026-10-03.md)，其他legacy及完整SK/P0未验收。

@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "status": "bounded_lookup_contract_validated_graphical_and_full_acceptance_open",
+  "implementation_commit": "cf2f4c447800ffecffa31263007fe21cce548b20",
+  "tested_source_count": 421,
+  "tested_source_dictionary_sha256": "c81d0e14a4b42bd7b86a2eb417a4e4531bf3a6e90604e428434a52c511960db4",
+  "source_hash_algorithm": "canonical sorted relative-path to file-SHA256 JSON; not C4-source-v1",
+  "configuration_counts": {
+    "core": 40,
+    "local": 55,
+    "sqlite-on": 87,
+    "sqlite-off": 78,
+    "sanitized": 1
+  },
+  "actual_ctest_executions": 261,
+  "actual_ctest_passed": 261,
+  "actual_ctest_failed": 0,
+  "compiler_warnings": 0,
+  "strict_cpp20": true,
+  "asan_ubsan_scope": "typed_host only",
+  "lsan": "NOT RUN",
+  "baseline": {
+    "existing_cases_passed": 5,
+    "not_in_261_ctest_denominator": true,
+    "copied_interpreted_bridge_identified_separately": true
+  },
+  "actual_SQLite": {
+    "sqlite-on": {
+      "lookup_reads": 35,
+      "lookup_refusals": 31,
+      "refusals": 101,
+      "reads": 5,
+      "history_writes": 8,
+      "replays": 6,
+      "engine_exit_codes": [
+        -15,
+        -15
+      ],
+      "logical_rows_document_history_generation_preserved_by_lookup": true,
+      "independent_recovery_preserves_original_facts": true,
+      "discard_then_normal_open_fresh_document_identity": true
+    },
+    "sqlite-off": {
+      "lookup_reads": 35,
+      "lookup_refusals": 31,
+      "refusals": 101,
+      "reads": 5,
+      "history_writes": 8,
+      "replays": 6,
+      "engine_exit_codes": [
+        -15,
+        -15
+      ],
+      "logical_rows_document_history_generation_preserved_by_lookup": true,
+      "independent_recovery_preserves_original_facts": true,
+      "discard_then_normal_open_fresh_document_identity": true
+    }
+  },
+  "independent_source_review_blockers": 0,
+  "pre_execution_test_defects_found_and_fixed": [
+    {
+      "id": "REVIEW186-01",
+      "severity_before_fix": "blocking test defect",
+      "status": "RESOLVED_BEFORE_EXECUTION",
+      "file": "tests/host_controls_ipc_tests.py",
+      "final_source_line": 178,
+      "problem": "New lookup rejection loop reused parameters in run(), overwriting the preview_id arguments used by the later real changes.commit replay.",
+      "root_fix_observed": "Loop variable is lookup_parameters; preview/commit parameters binding remains available for the existing replay loop.",
+      "application_behavior_changed": false
+    },
+    {
+      "id": "REVIEW186-02",
+      "severity_before_fix": "blocking test lifecycle mismatch",
+      "status": "RESOLVED_BEFORE_EXECUTION",
+      "file": "tests/host_controls_ipc_tests.py",
+      "final_source_line": 314,
+      "problem": "New normal-open continuation followed keep_recovery close. Existing application retains Data.document for keep_recovery and normal open refuses DOCUMENT_ALREADY_OPEN even though current_document has no active document.",
+      "root_fix_observed": "The final close uses discard before saved-project normal open. Independent-process fault recovery stays above this transition.",
+      "application_behavior_changed": false
+    }
+  ],
+  "archive": {
+    "bytes": 851451,
+    "sha256": "f8389d90c77b40a0b2ddde7b028795ca75e15f80c6850892cbe235d6f3544bbb",
+    "member_count": 138,
+    "all_members_and_origins_reverified": true
+  },
+  "docs_only_frozen_input_delta": [
+    "adapters/engine_api/README.md"
+  ],
+  "limits": [
+    "Current GUI cumulative failures and graphical gate remain open; no GUI executed in this matrix",
+    "Old f2d local bundle is unrefreshed; package evidence keeps its original source scope",
+    "No real solver/full external AI/performance/full SK or P0 acceptance",
+    "Unknown SDK copy coverage remains deferred only from C4 startup; measured budgets and original material14/30 failures retained",
+    "Output labels describe existing serializers, without a new generated output union",
+    "Actual MCP/CLI share fixed trusted caller local-user; distinct-caller isolation tested in C++",
+    "Other legacy contracts and complete SK-04 remain unclosed"
+  ]
+}

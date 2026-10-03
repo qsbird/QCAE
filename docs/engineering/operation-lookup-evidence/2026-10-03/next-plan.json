@@ -1,0 +1,135 @@
+{
+  "plan_id": 188,
+  "status": "READ_ONLY_PLAN_NOT_IMPLEMENTED",
+  "workspace": "/private/tmp/qcae-framework-delivery80",
+  "operations_get_status": "UNDER_ROOT_VALIDATION_NOT_CLAIMED_COMPLETE",
+  "recommended_group": ["entity.query", "entity.references"],
+  "reason": "Existing immutable RecordSnapshot reads with identical unconditional document/epoch context; real handlers and raw parameter discovery already exist. Add generated semantic input, named version admission and accurate discovery together.",
+  "candidate_static_inventory": {
+    "compatibility_supported_entries": 24,
+    "with_candidate_generated_inputs": 14,
+    "remaining_compatibility_entries": 10,
+    "scope_note": "Includes operations.get candidate under validation; excludes TypedHost intrinsic and host transport/event/resource routes; not a runtime/full-SK attestation."
+  },
+  "definitions": [
+    {
+      "operation_id": "entity.query",
+      "version": 1,
+      "schema_id": "qcae.operation.entity.query.v1",
+      "type_name": "EntityQueryInput",
+      "effect": "read_only",
+      "context": {"document": true, "epoch": true, "expected_revision": false, "idempotency_key": false, "expected_profile": false},
+      "fields": [
+        {"field_id": 1, "name": "kind", "type": "string", "optional": true},
+        {"field_id": 2, "name": "name_contains", "type": "string", "optional": true, "allow_empty": true},
+        {"field_id": 3, "name": "ids", "type": "entity_id_array", "optional": true, "allow_empty": true},
+        {"field_id": 4, "name": "view", "type": "string", "optional": true},
+        {"field_id": 5, "name": "owner_id", "type": "entity_id", "optional": true},
+        {"field_id": 6, "name": "offset", "type": "finite_number", "optional": true, "units": ["1"]},
+        {"field_id": 7, "name": "limit", "type": "finite_number", "optional": true, "units": ["1"]}
+      ],
+      "raw_pagination": {"offset": {"default": 0, "minimum": 0, "maximum": 100000}, "limit": {"default": 100, "minimum": 0, "maximum": 1000}},
+      "raw_id_compatibility": "Omitted means unconstrained; empty means zero selected IDs; duplicates accepted, unknown IDs allowed; adapter stable-deduplicates validated set semantics before existing generated entity_id_array decoder.",
+      "existing_call": "RecordApplication.snapshot -> query_entities(DocumentView, EntityFilter) -> current record entity JSON",
+      "symbolic_labels_preserved": {"input_type": "EntityQuery", "output_type": "SelectionResult", "target_context": "conditional"}
+    },
+    {
+      "operation_id": "entity.references",
+      "version": 1,
+      "schema_id": "qcae.operation.entity.references.v1",
+      "type_name": "EntityReferencesInput",
+      "effect": "read_only",
+      "context": {"document": true, "epoch": true, "expected_revision": false, "idempotency_key": false, "expected_profile": false},
+      "fields": [
+        {"field_id": 1, "name": "entity_id", "type": "entity_id"},
+        {"field_id": 2, "name": "direction", "type": "string", "optional": true}
+      ],
+      "raw_direction": {"default": "incoming", "enum": ["incoming", "outgoing"]},
+      "existing_call": "RecordApplication.snapshot -> query_references bounded internal pages + query_affected_analyses -> complete legacy wire response",
+      "symbolic_labels_preserved": {"input_type": "ReferenceQuery", "output_type": "ReferenceResult", "target_context": "none"}
+    }
+  ],
+  "arguments_schema": {
+    "mode": "Reuse existing optional full schema pass-through, no MCP production change",
+    "closed": true,
+    "required": ["parameters", "document_id", "document_epoch"],
+    "properties": ["parameters", "document_id", "document_epoch", "expected_revision", "idempotency_key", "requested_version"],
+    "parameters": "exact descriptor.parameters_schema",
+    "document_id_epoch": "nonempty string; legacy trimmed-blank rejection remains in adapter",
+    "expected_revision_top_level_key": "unconstrained unused JSON",
+    "requested_version": "optional positive uint32 integer",
+    "expected_profile": "excluded; existing early engine rejection retained"
+  },
+  "error_ordering": {
+    "earlier": "envelope/API/operation/parameters-object and expected_profile checks",
+    "new_version_check": "existing version_rejection before dispatch_model snapshot/branch parsing for only these two routes",
+    "omitted_v1": "preserve original snapshot/document/epoch before raw parameter fields/types and existing query service rules",
+    "old_errors": "preserve old messages, status, diagnostic field presence and complete envelopes"
+  },
+  "minimum_production_files": [
+    "schemas/operations/entity_reads.json (new)",
+    "adapters/engine_api/src/ipc_api.cpp",
+    "adapters/engine_api/src/ipc_model.cpp"
+  ],
+  "existing_test_files_to_extend": [
+    "tests/typed_host_tests.cpp",
+    "tests/entity_query_ipc_tests.py",
+    "tests/mcp_bridge_tests.py"
+  ],
+  "reuse_without_required_source_change": [
+    "tests/test_operation_generation.py",
+    "tests/record_query_tests.cpp",
+    "existing CMake entity_query_ipc and MCP targets",
+    "existing generator/Value/InputTraits, application snapshot, query services and serializers"
+  ],
+  "grouped_validation_plan": [
+    "one descriptor/semantic DTO/raw/arguments schema table",
+    "one populated application/store full-envelope and full-state invariance scenario",
+    "existing SQLite/CLI Geometry/Mesh/organization/reference fixtures, package ON/OFF applicable cases",
+    "same-engine dual MCP/CLI discovery/version/context/read purity continuation",
+    "one root-owned frozen generation/public-header/design/format/diff/CMake+CTest matrix with actual hashes/results"
+  ],
+  "explicitly_excluded": [
+    "generator/Value/null/recursive schema extension",
+    "application/history/storage/registry/TypedHost changes",
+    "MCP business decoder, route literals or production bridge changes",
+    "new dependencies, CMake targets, empty registries or architecture shells",
+    "selection/view ephemeral state contracts or recursive predicate contracts",
+    "changes.preview command union and model.export_preview codec/Profile contract",
+    "new performance, graphics, solver/AI environment work or full SK/P0 claims"
+  ],
+  "execution": {
+    "source_modified": false,
+    "git_commands": "NOT RUN",
+    "generator_or_scripts": "NOT RUN",
+    "formatter_or_checks": "NOT RUN",
+    "build_or_tests": "NOT RUN",
+    "products": "NOT RUN",
+    "performed": "static source/document reads and SHA256 only; wrote plan.md/json outside repository"
+  },
+  "source_sha256": {
+    "adapters/engine_api/src/ipc_api.cpp": "252409df3721da662b9585cae8b1657b0f296ebaf5435c8312e96dcfdc657e25",
+    "adapters/engine_api/src/ipc_model.cpp": "f18fc68a097bda33949d1c1e38df58460f96692cdb5b0c20b10dbfd4c1e1b7fb",
+    "adapters/engine_api/src/ipc_selection.cpp": "2968f0d296b0555c3d8d8a94bf34a9196930fb034bc53dcd2b65ab4bea2ca85f",
+    "adapters/engine_api/src/typed_host.cpp": "39b7478957cd45f6f1d7593c0df83dda67a85f023eaaf445712a81ce32700c98",
+    "schemas/operations/basic.json": "162fc8e50f3d186ffc85637020820dae45b08fb3c0c141f6fb8fc23e8b2cd3ee",
+    "schemas/operations/operation_lookup.json": "1bb29046685907b3d1fb694875ca3a2c4766b7ba3cf2ba1bfdcd6f8fe1198ee7",
+    "tools/generate_operation_contracts.py": "c9bfd4f9ead15951ba51ae49ee90e9565bc1974fb83a7560296f9752c8444db2",
+    "modules/operations/src/operation_registry.cpp": "a4d2ac049137e4e542674b528a766195776a654ab05d2d16440bede695cae5ca",
+    "modules/query/src/entity_queries.cpp": "b185497ef754d506b857b6236246aec4de94824ba7efdfbb221e58095500feba",
+    "tests/entity_query_ipc_tests.py": "05ba30e142c88584e7853f17edebc267e649caf3b4aa5667f264c37893afd9ad",
+    "tests/mcp_bridge_tests.py": "920799449a187200cdc84f99dbe9a58371c1e65e88bb7f32acccc623704d7041",
+    "tests/typed_host_tests.cpp": "ac21252f9fab87799c4b9cdcfded1a9e362a41fd4e2c5a418ea1db75c9de7000",
+    "tests/test_operation_generation.py": "78465b3c364b943b5ab0a34f9a07db0629ee4de1f97408f392514041a2bec496",
+    "docs/contracts/operations.json": "1f4edc5eff997ae37780d8d6c2216e2442bd6dad2a8744bc86558ad2729d27cd",
+    "docs/baseline/README.md": "5d77f714575ff330d6ffbfcc2a49fced4f220e97e0c5b87839475a12caaebef6",
+    "docs/architecture/module-dependencies.json": "3c86ec0dd866c0eb3acbf4cdeb0641cdb477b456c953418eb635d90eb0030645"
+  },
+  "raw_duplicate_array_roundtrip_claimed": false,
+  "operations_get_complete_claimed": false,
+  "existing_query_functions_claimed_missing": false,
+  "full_req16_sk04_or_p0_claimed": false,
+  "root_graphical_failure_closed_claimed": false,
+  "old_package_refreshed_claimed": false,
+  "real_environment_complete_claimed": false
+}

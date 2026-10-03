@@ -53,6 +53,8 @@ M0确定目标上下文及ProfileProvider契约；M1注册单一Nastran能力包
 
 ## C2之后的接续计划
 
+2026-10-03，`cf2f4c4` 已完成 `operations.get` 生成语义输入、条件参数/上下文发现、兼容投影及MCP原样schema适配；统一421输入五配置261/261实际通过，见[验证](../engineering/operation-lookup-contract-2026-10-03.md)。宿主不需文档，文档查回只需ID/epoch，原caller事实、停用handler与忽略JSON兼容均保留。继续其余同质legacy合同与核心正式验收；原图形失败、旧包、真实环境、性能及完整SK/P0范围不变。
+
 2026-10-03，`8924149` 已成组完成七个读取/历史入口生成合同及发现、版本与原子性保护；五配置261/261实际通过，见[验证](../engineering/host-controls-contracts-2026-10-03.md)。读取不要求写修订/键，历史提交与原结果重放保持单一应用权威。下一切片为 `operations.get` 条件输入/上下文与兼容投影，方案未执行；原图形累计失败、未刷新本机包、真实环境、性能和完整SK/P0仍保持未完成范围，不做非必要性能优化。
 
 2026-10-03，`88942c0` 补齐已有 `changes.commit` 的生成输入/发现/版本及真实SQLite行为保护，见[验证](../engineering/changes-commit-contract-2026-10-03.md)。首轮40/55/86/77/专项ASan1共259项，其中257通过/2恢复顺序假设失败；仅测试修正后同产品包ON/OFF各连续两次通过。保留旧151二进制的23函数/69数据行隔离诊断约120秒通过，原累计窗口失败和当前完整图形门禁仍未关闭。下一核心切片成组处理 `capabilities.list/project.current/project.status/model.summary/history.list/history.undo/history.redo` 的同类空参数输入、版本与发现；`operations.get` 条件上下文和兼容语义单独保留。手写解析不等于缺少业务实现，28个剩余legacy入口不是28个功能缺陷；所有真实环境、性能、完整SK/P0门禁仍保留。

@@ -53,7 +53,8 @@ may omit this field, deliberately selecting the installed typed version. Discove
 `requested_version_field` and `omitted_version_policy` so new clients can pin the contract.
 This is separate from transport `api_version`. The five intrinsic project lifecycle routes
 below, `changes.commit`, and the seven host read/history routes also accept this operation
-version. Other legacy operations keep their existing request shape and reject the new context fields.
+version. `operations.get` also accepts it with conditional context as described below.
+Other legacy operations keep their existing request shape and reject the new context fields.
 
 A typed operation declaring `requires_expected_profile: true` requires top-level
 `expected_profile: {profile_id, profile_version, definition_digest}` with no extra members.
@@ -173,6 +174,28 @@ commit coordinator and retain replay facts after later undo/redo. Symbolic catal
 and serializers are unchanged; wire result labels describe existing results rather than
 new generated output schemas. `operations.get` retains its conditional compatibility.
 See [actual tests and scope](../../docs/engineering/host-controls-contracts-2026-10-03.md).
+
+### Versioned outcome lookup
+
+`operations.get` uses generated semantic `OperationsGetInput`, schema
+`qcae.operation.operations.get.v1`, with the same omitted/v1 and version refusal rules.
+Closed raw parameters require nonempty `lookup_scope`, `original_operation` and the original
+operation's `idempotency_key`. Only host `project.open` uses optional `original_mode`:
+omission means `normal`, with `recover` also supported. Other host/document lookups ignore
+any JSON mode value; the adapter projects only that unused field before string decoding.
+
+Three disjoint parameter branches describe host-open, other known host lifecycle names and
+any nonempty document action name. Complete `arguments_schema` reuses that parameter schema
+and two conditional context branches: host needs parameters only; document also needs
+nonempty document_id/epoch. Unused revision/top-level key and host document context are
+ignored. Optional requested_version remains positive uint32, without const. MCP validates
+bounded complete schema metadata then publishes it unchanged; business admission remains
+in the engine. `wire_output_types` and `output_by_lookup_scope` label existing DocumentInfo
+and ChangeReceipt serializers, not a new generated output union.
+
+All calls read existing caller-scoped facts from the same application. Handler removal does
+not prevent action lookup. Host/action direct-return envelopes and mapped-history outer
+revision remain distinct. [Actual scope](../../docs/engineering/operation-lookup-contract-2026-10-03.md).
 
 ### C3 versioned display resources and events
 

@@ -27,6 +27,8 @@
 
 ## 当前实现
 
+[原结果查询条件契约](engineering/operation-lookup-contract-2026-10-03.md)：`cf2f4c4` 五配置261/261通过，真实SQLite状态/恢复及两个MCP/CLI一致，原图形失败及完整验收范围保留。
+
 [七个读取与历史入口契约](engineering/host-controls-contracts-2026-10-03.md)：`8924149` 五配置261/261通过，真实SQLite完整状态保护、原结果重放和恢复，以及双MCP/CLI元数据/调用。原图形失败、旧包及完整SK/P0范围保留。
 
 [预览提交契约与实际恢复验证](engineering/changes-commit-contract-2026-10-03.md)：`88942c0` 的生成输入/发现/版本、真实SQLite拒绝与重放；原259项257通过/2测试假设失败及修正后的四次专项通过分别记录。旧二进制图形隔离诊断保留全部69数据行，原累计压力失败仍未关闭。
