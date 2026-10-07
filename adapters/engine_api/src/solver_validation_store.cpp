@@ -117,7 +117,8 @@ void validate_fact(const SolverValidationFact& fact) {
                 signature[7] == fact.registered_profile.definition_digest,
             "Validation signature differs from its request/profile");
     (void)number(signature[2]);
-    require(fact.reader.reader_version == "qcae.nastran.static-f06.v1" &&
+    require((fact.reader.reader_version == "qcae.nastran.static-f06.v1" ||
+             fact.reader.reader_version == "qcae.mystran.static-f06.v1") &&
                 bounded(fact.reader.resource, 4096) && fact.reader.subcase == 1 &&
                 fact.reader.unit_system == "mm-N-MPa" && fact.reader.coordinate_basis == "basic",
             "Validation reader contract is unsupported");

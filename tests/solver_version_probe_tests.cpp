@@ -88,9 +88,10 @@ int main(int argc, char**) {
         require(::setrlimit(RLIMIT_NOFILE, &descriptor_limit) == 0,
                 "Descriptor limit restoration failed");
 #endif
-        check(matching.ok() && matching.value->reported_version == "2024.1" &&
-                  matching.value->exit_code == 0 && matching.value->synthetic &&
-                  matching.value->stdout_bytes > 0 && matching.value->stderr_bytes > 0 &&
+        check(matching.ok() && matching.value->protocol == "msc.help.v1" &&
+                  matching.value->reported_version == "2024.1" && matching.value->exit_code == 0 &&
+                  matching.value->synthetic && matching.value->stdout_bytes > 0 &&
+                  matching.value->stderr_bytes > 0 &&
                   !matching.value->process.start_identity.empty(),
               "Actual fixed help probe did not capture its synthetic observation");
         check(!detail::solver_version_allows_execution(*matching.value, "2024.1"),
@@ -105,6 +106,103 @@ int main(int argc, char**) {
         changed_evidence.stdout_sha256 = artifact_sha256("different test-only output");
         check(solver_version_configuration_digest(declaration, changed_evidence) != config_digest,
               "Configuration digest did not bind actual probe output");
+        constexpr std::string_view mystran_protocol = "mystran.version.v1";
+        auto mystran_probe = [&](const char* mode) {
+            return detail::probe_solver_version(
+                executable(mode), directory, "19.0.0", {}, mystran_protocol);
+        };
+        const auto mystran = mystran_probe("synthetic-mystran-matching");
+        check(mystran.ok() && mystran.value->protocol == mystran_protocol &&
+                  mystran.value->reported_version == "19.0.0" && mystran.value->exit_code == 0 &&
+                  mystran.value->synthetic && mystran.value->stdout_bytes > 0 &&
+                  mystran.value->stderr_bytes > 0 && !mystran.value->process.start_identity.empty(),
+              "Actual fixed --version probe did not capture its synthetic MYSTRAN observation");
+        check(!detail::solver_version_allows_execution(*mystran.value, "19.0.0"),
+              "Synthetic MYSTRAN probe became validated real solver configuration");
+        check(decode_solver_version_evidence(encode_solver_version_evidence(*mystran.value)) ==
+                  *mystran.value,
+              "MYSTRAN evidence codec changed observed protocol/identity/bytes");
+        // Only exercise the readiness predicate; this copy never configures or starts a solver.
+        auto gate_only = *mystran.value;
+        gate_only.synthetic = false;
+        check(detail::solver_version_allows_execution(gate_only, "19.0.0") &&
+                  !detail::solver_version_allows_execution(gate_only, "2024.1") &&
+                  !detail::solver_version_allows_execution(gate_only, "18.0.0"),
+              "Execution readiness did not require the protocol's exact observed version");
+        gate_only.protocol = "msc.help.v1";
+        check(!detail::solver_version_allows_execution(gate_only, "19.0.0"),
+              "MYSTRAN observation could be relabeled as MSC evidence");
+        gate_only = *matching.value;
+        gate_only.synthetic = false;
+        check(detail::solver_version_allows_execution(gate_only, "2024.1"),
+              "Legacy MSC readiness predicate changed");
+        gate_only.protocol = "mystran.version.v1";
+        check(!detail::solver_version_allows_execution(gate_only, "2024.1"),
+              "MSC observation could be relabeled as MYSTRAN evidence");
+        bool invalid_codec_rejected{};
+        try {
+            (void)encode_solver_version_evidence(gate_only);
+        } catch (const std::exception&) {
+            invalid_codec_rejected = true;
+        }
+        check(invalid_codec_rejected, "Evidence codec accepted a protocol/version mismatch");
+        auto protocol_bound = *matching.value;
+        protocol_bound.protocol = mystran_protocol;
+        protocol_bound.reported_version = "19.0.0";
+        check(solver_version_configuration_digest(declaration, protocol_bound) != config_digest,
+              "Configuration digest did not bind version-protocol evidence");
+        for (const auto& mode : {"synthetic-mystran-noheader",
+                                 "synthetic-mystran-substring",
+                                 "synthetic-mystran-word",
+                                 "synthetic-mystran-token",
+                                 "synthetic-mystran-patch",
+                                 "synthetic-mystran-old",
+                                 "synthetic-mystran-prefix",
+                                 "synthetic-mystran-vprefix",
+                                 "synthetic-mystran-wrong-vendor",
+                                 "synthetic-mystran-many",
+                                 "synthetic-mystran-versions",
+                                 "synthetic-mystran-mixed",
+                                 "synthetic-mystran-stderr-conflict"}) {
+            const auto observed = mystran_probe(mode);
+            check(observed.ok() && observed.value->reported_version.empty() &&
+                      !detail::solver_version_allows_execution(*observed.value, "19.0.0"),
+                  "Unsupported, duplicate or ambiguous MYSTRAN output was accepted");
+        }
+        const auto mystran_stderr = mystran_probe("synthetic-mystran-stderr");
+        check(mystran_stderr.ok() && mystran_stderr.value->reported_version == "19.0.0" &&
+                  mystran_stderr.value->synthetic,
+              "MYSTRAN stderr banner with exact whitespace/end boundaries was misread");
+        const auto mystran_nonzero = mystran_probe("synthetic-mystran-nonzero");
+        check(mystran_nonzero.ok() && mystran_nonzero.value->reported_version == "19.0.0" &&
+                  mystran_nonzero.value->exit_code == 7 &&
+                  !detail::solver_version_allows_execution(*mystran_nonzero.value, "19.0.0"),
+              "MYSTRAN version-looking text hid an actual nonzero exit");
+        check(!mystran_probe("synthetic-mystran-nul").ok(),
+              "NUL in MYSTRAN version output was accepted");
+        check(!detail::probe_solver_version(
+                   directory / "synthetic-mystran-matching", directory, "19.0.0")
+                   .ok(),
+              "Default legacy MSC protocol accepted a MYSTRAN expected version");
+        check(!detail::probe_solver_version(directory / "synthetic-mystran-matching",
+                                            directory,
+                                            "2024.1",
+                                            {},
+                                            mystran_protocol)
+                   .ok(),
+              "MYSTRAN protocol accepted an MSC expected version");
+        check(!detail::probe_solver_version(directory / "synthetic-mystran-matching",
+                                            directory,
+                                            "19.0.0",
+                                            {},
+                                            "mystran.version.v2")
+                   .ok(),
+              "Unknown version protocol was silently downgraded");
+        const auto wrong_argv = detail::probe_solver_version(
+            directory / "synthetic-mystran-matching", directory, "2024.1");
+        check(wrong_argv.ok() && wrong_argv.value->exit_code != 0 &&
+                  wrong_argv.value->reported_version.empty(),
+              "Default MSC protocol sent --version to a MYSTRAN-only fixture");
         for (const auto& mode :
              {"synthetic-noheader", "synthetic-substring", "synthetic-many", "synthetic-patch"}) {
             const auto observed =

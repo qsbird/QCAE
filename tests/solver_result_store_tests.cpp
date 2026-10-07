@@ -1,6 +1,9 @@
 #include "solver_result_store.hpp"
+#include "qcae/nastran_codec.hpp"
 #include "qcae/record_application.hpp"
 #include "qcae/records.hpp"
+#include "qcae/records_model_bridge.hpp"
+#include <algorithm>
 #include <csignal>
 #include <fstream>
 #include <iostream>
@@ -73,6 +76,33 @@ features::analysis::FrozenAnalysisInput frozen_input() {
     return good(features::analysis::freeze_analysis_input(
         snapshot.records, EntityId("analysis"), profile, mapping));
 }
+features::analysis::FrozenAnalysisInput benchmark_input() {
+    NastranCodec codec;
+    ImportRequest request;
+    request.root_resource = "cantilever.bdf";
+    request.source_profile = codec.definition().reference;
+    request.source_model_id = "synthetic-mystran-binding-unit";
+    request.unit_system = "mm-N-MPa";
+    const auto fixtures = fs::path(__FILE__).parent_path() / "fixtures";
+    for (const char* name : {"cantilever.bdf", "nodes.bdf", "properties.bdf", "beams.bdf"}) {
+        std::ifstream source(fixtures / "nastran-real-benchmark-v3" / name);
+        require(source.good(), "Frozen benchmark source is missing");
+        request.resources.push_back({name, {std::istreambuf_iterator<char>(source), {}}});
+    }
+    const auto imported = codec.decode(request);
+    require(imported.candidate && imported.report.complete && imported.report.issues.empty(),
+            "Benchmark input did not pass the production import codec");
+    const auto& model = *imported.candidate;
+    const auto exported = codec.encode(model, model.analyses.front().id, request.source_profile);
+    require(exported.artifact && exported.report.complete,
+            "Benchmark lacks the original frozen export mapping");
+    const auto view = records_from_model(
+        model,
+        make_record_registry(),
+        {{DocumentId("synthetic-binding-document"), DocumentEpoch("synthetic-binding-epoch")}, 20});
+    return good(features::analysis::freeze_analysis_input(
+        view, model.analyses.front().id, request.source_profile, exported.artifact->identities));
+}
 const std::string synthetic = "1 EXPLICIT SYNTHETIC RESULT UNIT PAGE 1\nSUBCASE 1\n"
                               "D I S P L A C E M E N T V E C T O R\n"
                               "POINT ID. TYPE T1 T2 T3 R1 R2 R3\n"
@@ -84,17 +114,27 @@ void write(const fs::path& path, std::string_view bytes) {
     output.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
     require(output.good(), "Synthetic unit output write failed");
 }
-SolverOwnedRun origin(const fs::path& directory) {
+void bind_configuration(SolverOwnedRun& fact) {
+    auto& configuration = fact.run.request.configuration;
+    if (fact.version_probe)
+        configuration.configuration_digest =
+            solver_version_configuration_digest(fact.declaration_digest, *fact.version_probe);
+    fact.signature = solver_run_signature(fact.source_input.analysis,
+                                          fact.run.request.input.artifact_id,
+                                          configuration.id,
+                                          configuration.configuration_digest);
+}
+SolverOwnedRun origin(const fs::path& directory, bool mystran = false) {
     SolverOwnedRun fact;
     fact.principal = "explicit-test-only-result-unit";
     fact.idempotency_key = "unit-key";
     fact.test_only = true;
     fact.startup_intent_persisted = true;
-    fact.source_input = frozen_input();
+    fact.source_input = mystran ? benchmark_input() : frozen_input();
     const auto& input = fact.source_input;
     auto& request = fact.run.request;
-    request.run_id = "run-unit";
-    request.task_id = "unit";
+    request.run_id = mystran ? "run-mystran-unit" : "run-unit";
+    request.task_id = mystran ? "mystran-unit" : "unit";
     request.run_directory = directory.string();
     request.input = {input.version.document.id,
                      input.version.document.epoch,
@@ -106,7 +146,7 @@ SolverOwnedRun origin(const fs::path& directory) {
                      artifact_sha256(input.input_signature),
                      solver_export_identity_digest(input),
                      "test-only-export",
-                     "qcae.nastran.static-f06.v1",
+                     mystran ? "qcae.mystran.static-f06.v1" : "qcae.nastran.static-f06.v1",
                      features::analysis::encode_frozen_analysis_input(input)};
     request.configuration = {"test-only",
                              "/not-executed/test-only-program",
@@ -117,10 +157,6 @@ SolverOwnedRun origin(const fs::path& directory) {
                              "explicit file/format unit, not a process execution proof",
                              artifact_sha256("explicit test-only configuration"),
                              {"result.f06"}};
-    fact.signature = solver_run_signature(input.analysis,
-                                          request.input.artifact_id,
-                                          request.configuration.id,
-                                          request.configuration.configuration_digest);
     fact.run.sequence = 3;
     fact.run.execution = SolverExecutionState::exited;
     fact.run.process = SolverProcessIdentity{1, "explicit-synthetic-record-not-an-executed-solver"};
@@ -128,10 +164,54 @@ SolverOwnedRun origin(const fs::path& directory) {
     fact.run.output_state = SolverOutputState::collected;
     fact.result_reader = SolverResultReaderConfiguration{};
     fact.result_reader->resource = "result.f06";
-    for (const auto& file :
-         std::vector<TextResource>{{"result.f06", synthetic},
-                                   {"runner.stdout", "explicit synthetic fixture\n"},
-                                   {"runner.stderr", ""}}) {
+    std::vector<TextResource> resources{{"result.f06", synthetic},
+                                        {"runner.stdout", "explicit synthetic fixture\n"},
+                                        {"runner.stderr", ""}};
+    if (mystran) {
+        // All execution/version fields below are fabricated binding-test data. The false
+        // synthetic flag exercises production provenance validation; no process is started.
+        fact.test_only = false;
+        fact.principal = "explicit-synthetic-mystran-binding-unit-no-process-proof";
+        request.configuration = {"synthetic-mystran-binding-unit",
+                                 "/not-executed/synthetic-mystran-binding-program",
+                                 {"cantilever.bdf"},
+                                 "MYSTRAN",
+                                 "MYSTRAN",
+                                 "19.0.0",
+                                 "fabricated unit version fields, not an execution observation",
+                                 artifact_sha256("synthetic configuration before binding"),
+                                 {"work/cantilever.F06", "work/cantilever.ERR"}};
+        SolverVersionEvidence version;
+        version.protocol = "mystran.version.v1";
+        version.reported_version = "19.0.0";
+        version.executable.inode = 1;
+        version.executable.byte_length = 1;
+        version.executable.sha256 = artifact_sha256("synthetic executable identity");
+        version.process = {1, "synthetic-version-identity-not-an-observed-process"};
+        version.stdout_bytes = 1;
+        version.stdout_sha256 = artifact_sha256("synthetic version bytes");
+        version.stderr_sha256 = artifact_sha256("");
+        version.synthetic = false;
+        fact.version_probe = version;
+        fact.declaration_digest = artifact_sha256("synthetic version declaration");
+        fact.result_reader->reader_version = "qcae.mystran.static-f06.v1";
+        fact.result_reader->resource = "work/cantilever.F06";
+        std::ifstream reference(fs::path(__FILE__).parent_path() /
+                                "fixtures/mystran/cantilever-19.0.0.F06");
+        require(reference.good(), "Sanitized MYSTRAN result reference is missing");
+        resources = {{"work/cantilever.F06", {std::istreambuf_iterator<char>(reference), {}}},
+                     {"work/cantilever.ERR",
+                      "explicit synthetic ERR, no process proof\n"
+                      "*LOADB-WARNING: synthetic INCLUDE warning 1\n"
+                      "*LOADB-WARNING: synthetic INCLUDE warning 2\n"
+                      "*LOADB-WARNING: synthetic INCLUDE warning 3\n"},
+                     {"runner.stdout", "explicit synthetic process record, no execution proof\n"},
+                     {"runner.stderr", ""}};
+        require(fs::create_directory(directory / "work"),
+                "Synthetic MYSTRAN working directory already exists");
+    }
+    bind_configuration(fact);
+    for (const auto& file : resources) {
         write(directory / file.path, file.text);
         fact.run.outputs.push_back({file.path, file.text.size(), artifact_sha256(file.text)});
     }
@@ -381,6 +461,124 @@ int main() {
         write(intent.directory / "manifest.json", std::string(intent.manifest.size(), 'x'));
         check(rejects([&] { (void)store.verify(intent); }),
               "Corrupt final result manifest remained valid");
+        require(fs::create_directory(root / "run-mystran-unit"),
+                "Synthetic MYSTRAN binding directory already exists");
+        const auto mystran = origin(root / "run-mystran-unit", true);
+        const auto mystran_row = solver_owned_row(mystran);
+        const auto decoded_mystran = decode_solver_owned_run(*mystran_row);
+        check(mystran_row->schema_version == 3 &&
+                  encode_solver_owned_run(decoded_mystran) == *mystran_row->payload &&
+                  decoded_mystran.version_probe->protocol == "mystran.version.v1" &&
+                  decoded_mystran.run.request.configuration.solver_family == "MYSTRAN",
+              "Owned-run persistence lost the MYSTRAN backend or original version binding");
+        const auto mystran_resources = good(detail::read_verified_solver_outputs(mystran.run));
+        const auto mystran_parsed =
+            good(detail::prepare_solver_result(mystran, *mystran.result_reader, mystran_resources));
+        const auto tip = std::find_if(mystran_parsed.fields.displacements.begin(),
+                                      mystran_parsed.fields.displacements.end(),
+                                      [](const auto& row) { return row.solver_number == 21; });
+        const auto tip_identity =
+            std::find_if(mystran.source_input.identities.begin(),
+                         mystran.source_input.identities.end(),
+                         [](const auto& identity) {
+                             return identity.name_space == "GRID" && identity.number == 21;
+                         });
+        check(mystran_parsed.fields.reader_version == "qcae.mystran.static-f06.v1" &&
+                  mystran_parsed.fields.displacements.size() == 21 &&
+                  mystran_parsed.fields.spc_reactions.size() == 1 &&
+                  tip != mystran_parsed.fields.displacements.end() &&
+                  tip_identity != mystran.source_input.identities.end() &&
+                  tip->entity == tip_identity->entity && tip->components[1] == -1.904763 &&
+                  mystran_parsed.fields.spc_reactions.front().components[5] == 1000,
+              "MYSTRAN reader dispatch lost benchmark identities or parsed result components");
+        const auto mystran_encoded = encode_solver_parsed_result(mystran_parsed);
+        check(encode_solver_parsed_result(decode_solver_parsed_result(mystran_encoded)) ==
+                  mystran_encoded,
+              "MYSTRAN parsed-result persistence changed original backend/version evidence");
+        const auto mystran_intent =
+            detail::solver_result_artifact(mystran_parsed, root / "run-mystran-unit/.qcae-result");
+        auto mystran_pending = mystran;
+        ++mystran_pending.run.sequence;
+        mystran_pending.run.parsing = SolverParsingState::parsed;
+        mystran_pending.result_artifact = mystran_intent;
+        check(!rejects(
+                  [&] { detail::validate_solver_result_link(mystran_parsed, mystran_pending); }) &&
+                  encode_solver_owned_run(decode_solver_owned_run(*solver_owned_row(
+                      mystran_pending))) == encode_solver_owned_run(mystran_pending),
+              "MYSTRAN durable parse intent lost the original run/configuration link");
+        for (const bool published_state : {false, true}) {
+            const auto row =
+                detail::solver_result_row({mystran_parsed, mystran_intent, published_state});
+            const auto decoded = detail::decode_solver_result_row(*row);
+            check(decoded.published == published_state &&
+                      encode_solver_parsed_result(decoded.parsed) == mystran_encoded,
+                  "MYSTRAN pending/published row changed frozen parsed provenance");
+        }
+        auto reject_mystran_binding = [&](SolverOwnedRun candidate) {
+            bind_configuration(candidate);
+            check(rejects([&] { (void)encode_solver_owned_run(candidate); }) &&
+                      !detail::prepare_solver_result(
+                           candidate, *candidate.result_reader, mystran_resources)
+                           .ok(),
+                  "A mismatched MYSTRAN backend/probe/reader/path reached persisted results");
+        };
+        auto misbound = mystran;
+        misbound.version_probe->protocol = "msc.help.v1";
+        misbound.version_probe->reported_version = "2024.1";
+        reject_mystran_binding(misbound);
+        misbound.run.request.configuration.solver_family = "Nastran";
+        misbound.run.request.configuration.dialect = "MSC";
+        misbound.run.request.configuration.solver_version = "2024.1";
+        reject_mystran_binding(misbound);
+        misbound = mystran;
+        misbound.result_reader->reader_version = "qcae.nastran.static-f06.v1";
+        misbound.run.request.input.result_reader_version = misbound.result_reader->reader_version;
+        reject_mystran_binding(misbound);
+        misbound = mystran;
+        misbound.version_probe.reset();
+        misbound.declaration_digest.clear();
+        reject_mystran_binding(misbound);
+        for (const auto* path : {"cantilever.F06", "work/other.F06", "work/cantilever.f06"}) {
+            misbound = mystran;
+            misbound.run.request.configuration.expected_outputs.front() = path;
+            misbound.result_reader->resource = path;
+            misbound.run.outputs.front().path = path;
+            reject_mystran_binding(misbound);
+        }
+        for (const auto& diagnostic : std::vector<TextResource>{
+                 {"work/cantilever.ERR", " *ERROR 1701: synthetic failure\n"},
+                 {"runner.stderr", " *FATAL: synthetic failure\n"},
+                 {"runner.stdout", "ERROR: synthetic failure\n"},
+                 {"work/cantilever.ERR", std::string("synthetic\0ERR", 13)}}) {
+            auto diagnostic_origin = mystran;
+            auto diagnostic_resources = mystran_resources;
+            for (auto& file : diagnostic_origin.run.outputs)
+                if (file.path == diagnostic.path) {
+                    file.byte_length = diagnostic.text.size();
+                    file.sha256 = artifact_sha256(diagnostic.text);
+                }
+            for (auto& resource : diagnostic_resources)
+                if (resource.path == diagnostic.path)
+                    resource.text = diagnostic.text;
+            check(!rejects([&] { (void)encode_solver_owned_run(diagnostic_origin); }) &&
+                      !detail::prepare_solver_result(
+                           diagnostic_origin, *mystran.result_reader, diagnostic_resources)
+                           .ok(),
+                  "Zero-exit MYSTRAN with coherent F06/manifest hid fatal or NUL diagnostics");
+        }
+        const auto mystran_copies =
+            detail::solver_result_resources(mystran_parsed, mystran_resources);
+        check(store.stage(mystran_intent, mystran_copies, {}).size() == 5 &&
+                  !fs::exists(mystran_intent.directory / "manifest.json"),
+              "MYSTRAN staging falsely published its durable result intent");
+        store.publish(mystran_intent);
+        check(store.verify(mystran_intent).size() == 5 &&
+                  mystran_intent.root_resource == "work/cantilever.F06" &&
+                  mystran_intent.manifest.find("qcae.mystran.static-f06.v1") !=
+                      mystran_intent.manifest.npos &&
+                  mystran_intent.manifest.find("\"numerical_validation\":\"not_run\"") !=
+                      mystran_intent.manifest.npos,
+              "MYSTRAN publication lost nested outputs, reader or unrun numerical stage");
         fs::remove_all(root);
         std::cout
             << "PASS: " << count

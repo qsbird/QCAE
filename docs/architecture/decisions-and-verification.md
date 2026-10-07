@@ -2,6 +2,10 @@
 
 本文补充 [架构总览](README.md)。以下ADR在设计基线1.0中接受；设计已确定不等于产品已实现或测试通过。
 
+2026-10-03 接续决策 [ADR-09：MYSTRAN 本地后端](mystran-backend.md) 增加显式
+本机版本/输入/结果适配，复用共享 BDF 与单一运行链；实际门禁和未关闭范围见
+[本轮验证](../engineering/mystran-local-validation-2026-10-03.md)。
+
 ## ADR-01：单一本地engine宿主
 
 决定：采用独立qcae-engine，GUI、CLI、MCP连接同一业务宿主。

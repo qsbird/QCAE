@@ -28,4 +28,8 @@ struct NastranStaticResult {
 read_nastran_static_f06(std::string_view text,
                         const NastranStaticReadContext&,
                         std::span<const ExportIdentifier> frozen_identities);
+[[nodiscard]] Result<NastranStaticResult>
+read_mystran_static_f06(std::string_view text,
+                        const NastranStaticReadContext&,
+                        std::span<const ExportIdentifier> frozen_identities);
 } // namespace qcae

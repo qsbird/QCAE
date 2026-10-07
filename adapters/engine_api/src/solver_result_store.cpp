@@ -1,5 +1,6 @@
 #include "solver_result_store.hpp"
 #include "solver_version_probe.hpp"
+#include "solver_backend.hpp"
 #include "qcae/record_registry.hpp"
 #include <algorithm>
 #include <cerrno>
@@ -37,10 +38,12 @@ bool resource_path(std::string_view text) {
     return true;
 }
 void validate_reader(const SolverResultReaderConfiguration& reader) {
-    require(reader.reader_version == "qcae.nastran.static-f06.v1" && reader.subcase == 1 &&
-                reader.unit_system == "mm-N-MPa" && reader.coordinate_basis == "basic" &&
-                resource_path(reader.resource) && reader.resource != parsed_resource &&
-                reader.resource != "runner.stdout" && reader.resource != "runner.stderr",
+    require((reader.reader_version == "qcae.nastran.static-f06.v1" ||
+             reader.reader_version == "qcae.mystran.static-f06.v1") &&
+                reader.subcase == 1 && reader.unit_system == "mm-N-MPa" &&
+                reader.coordinate_basis == "basic" && resource_path(reader.resource) &&
+                reader.resource != parsed_resource && reader.resource != "runner.stdout" &&
+                reader.resource != "runner.stderr",
             "The controlled result reader requires explicit F06/SUBCASE1/mm-N-MPa/basic");
 }
 std::vector<ArtifactFileDigest> output_manifest(const SolverRunRecord& run) {
@@ -94,6 +97,27 @@ void verify_resources(std::span<const ArtifactFileDigest> files,
         expected.erase(found);
     }
     require(expected.empty(), "Verified output bytes omit an expected file");
+}
+void verify_mystran_diagnostics(std::span<const TextResource> resources) {
+    for (const auto& resource : resources) {
+        if (fs::path(resource.path).extension() != ".ERR" && resource.path != "runner.stdout" &&
+            resource.path != "runner.stderr")
+            continue;
+        require(resource.text.find('\0') == resource.text.npos, "MYSTRAN diagnostics contain NUL");
+        std::string_view remaining(resource.text);
+        while (!remaining.empty()) {
+            const auto end = remaining.find('\n');
+            auto line = remaining.substr(0, end);
+            remaining = end == remaining.npos ? std::string_view{} : remaining.substr(end + 1);
+            const auto start = line.find_first_not_of(" \t\r\f*");
+            if (start == line.npos)
+                continue;
+            line.remove_prefix(start);
+            require(!line.starts_with("ERROR") && !line.starts_with("FATAL") &&
+                        line.find("*ERROR") == line.npos && line.find("*FATAL") == line.npos,
+                    "MYSTRAN diagnostics report an error or fatal failure despite process exit");
+        }
+    }
 }
 void validate(const SolverParsedResult& result) {
     (void)encode_solver_owned_run(result.origin);
@@ -315,6 +339,9 @@ namespace detail {
 void validate_solver_result_reader(const SolverResultReaderConfiguration& reader,
                                    const SolverRunConfiguration& config) {
     validate_reader(reader);
+    require(detail::mystran_backend(config) ? reader.reader_version == "qcae.mystran.static-f06.v1"
+                                            : reader.reader_version == "qcae.nastran.static-f06.v1",
+            "The result reader differs from the frozen solver backend");
     require(std::find(config.expected_outputs.begin(),
                       config.expected_outputs.end(),
                       reader.resource) != config.expected_outputs.end(),
@@ -394,16 +421,19 @@ Result<SolverParsedResult> prepare_solver_result(const SolverOwnedRun& run,
         validate_reader(reader);
         const auto files = output_manifest(run.run);
         verify_resources(files, resources);
+        if (detail::mystran_backend(run.run.request.configuration))
+            verify_mystran_diagnostics(resources);
         const auto found = std::find_if(resources.begin(), resources.end(), [&](const auto& item) {
             return item.path == reader.resource;
         });
         require(found != resources.end(), "The configured F06 resource is absent");
         const auto input = features::analysis::decode_frozen_analysis_input(
             run.run.request.input.frozen_analysis_input);
-        const auto parsed =
-            read_nastran_static_f06(found->text,
-                                    {reader.subcase, reader.unit_system, reader.coordinate_basis},
-                                    input.identities);
+        const NastranStaticReadContext context{
+            reader.subcase, reader.unit_system, reader.coordinate_basis};
+        const auto parsed = reader.reader_version == "qcae.mystran.static-f06.v1"
+                                ? read_mystran_static_f06(found->text, context, input.identities)
+                                : read_nastran_static_f06(found->text, context, input.identities);
         if (!parsed.ok())
             return {parsed.status, {}, parsed.error};
         SolverParsedResult result{run, reader, files, *parsed.value};

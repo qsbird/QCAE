@@ -76,6 +76,10 @@ bool relative_file(std::string_view text) {
             return false;
     return true;
 }
+bool mystran_workspace(const SolverRunConfiguration& config) {
+    return config.solver_family == "MYSTRAN" && config.dialect == "MYSTRAN" &&
+           config.solver_version == "19.0.0";
+}
 void no_symlinks(const fs::path& path) {
     require(path.is_absolute() && path.lexically_normal() == path,
             "Path must be absolute and normalized");
@@ -246,6 +250,11 @@ void check_output_budget(const SolverRunRecord& record) {
 void collect_outputs(SolverRunRecord& record, const LocalArtifactIntent& copy) {
     try {
         (void)LocalArtifactStore{}.verify(copy);
+        if (mystran_workspace(record.request.configuration)) {
+            auto work = copy;
+            work.directory = fs::path(record.request.run_directory) / "work";
+            (void)LocalArtifactStore{}.verify(work);
+        }
         check_output_budget(record);
         const fs::path root(record.request.run_directory);
         auto paths = record.request.configuration.expected_outputs;
@@ -485,6 +494,21 @@ Result<SolverRunRecord> LocalSolverRunner::start(const SolverRunRequest& request
             copy.directory = directory / "input";
             (void)LocalArtifactStore{}.stage(copy, resources, [] {});
             LocalArtifactStore{}.publish(copy);
+            const bool mystran = mystran_workspace(request.configuration);
+            const auto working_directory = (mystran ? directory / "work" : directory).string();
+            const auto temporary_directory = directory / "tmp";
+            if (mystran) {
+                auto work = copy;
+                work.directory = working_directory;
+                (void)LocalArtifactStore{}.stage(work, resources, [] {});
+                LocalArtifactStore{}.publish(work);
+                fs::permissions(work.directory, fs::perms::owner_all, fs::perm_options::replace);
+                require(fs::create_directory(temporary_directory),
+                        "MYSTRAN temporary directory could not be created");
+                fs::permissions(
+                    temporary_directory, fs::perms::owner_all, fs::perm_options::replace);
+                sync_directory(temporary_directory);
+            }
             FileDescriptor output(
                 owned_descriptor(::open((directory / "runner.stdout").c_str(),
                                         O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC,
@@ -497,13 +521,17 @@ Result<SolverRunRecord> LocalSolverRunner::start(const SolverRunRequest& request
             require(output.get() >= 0 && errors.get() >= 0 && null_input.get() >= 0,
                     "Run log descriptors could not be created");
             sync_directory(directory);
+            if (mystran)
+                check_output_budget(record);
             std::vector<char*> arguments;
             arguments.push_back(const_cast<char*>(request.configuration.executable.c_str()));
             for (const auto& argument : request.configuration.argv)
                 arguments.push_back(const_cast<char*>(argument.c_str()));
             arguments.push_back(nullptr);
             char locale[] = "LANG=C", locale_all[] = "LC_ALL=C";
-            char* environment[] = {locale, locale_all, nullptr};
+            std::string temporary_environment = "TMPDIR=" + temporary_directory.string();
+            char* environment[] = {
+                locale, locale_all, mystran ? temporary_environment.data() : nullptr, nullptr};
             int gate[2], exec_error[2];
             make_gate(gate);
             FileDescriptor gate_read(gate[0]), gate_write(gate[1]);
@@ -522,7 +550,7 @@ Result<SolverRunRecord> LocalSolverRunner::start(const SolverRunRequest& request
                     if (fd != gate_read.get() && fd != error_write.get() && fd != output.get() &&
                         fd != errors.get() && fd != null_input.get())
                         ::close(fd);
-                if (::setpgid(0, 0) != 0 || ::chdir(request.run_directory.c_str()) != 0 ||
+                if (::setpgid(0, 0) != 0 || ::chdir(working_directory.c_str()) != 0 ||
                     ::dup2(null_input.get(), STDIN_FILENO) < 0 ||
                     ::dup2(output.get(), STDOUT_FILENO) < 0 ||
                     ::dup2(errors.get(), STDERR_FILENO) < 0 ||

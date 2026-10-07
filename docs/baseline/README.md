@@ -4,6 +4,13 @@
 
 ## 确定决策
 
+2026-10-03，按用户本机求解器接续指令，新增显式 MYSTRAN 19.0.0 后端，复用
+共享 Nastran/BDF 语义、唯一 engine、TaskService 与 SQLite 结果发布链。真实
+悬臂梁三次运行共396/396分量通过，已验证幂等、陈旧/undo、文件破坏拒绝、
+终态重启恢复及CLI共享结果；见[本轮证据](../engineering/mystran-local-validation-2026-10-03.md)
+和[ADR-09](../architecture/mystran-backend.md)。完整M4的在途取消/故障、GUI/AI、
+其他场景与性能仍未验收；此前旧包和图形阻塞保持原范围。
+
 2026-10-03，`a8f5573` 成组补齐 entity.query/entity.references 的生成语义输入、真实发现和版本拒绝；初轮257/261，测试夹具修正后的4目标专项通过，未受影响产品保持，见[验证](../engineering/entity-read-contracts-2026-10-03.md)。空/重复ID、零分页、MCP省略查询参数及完整引用兼容保持，真实SQLite读/拒绝不写模型或历史。继续其余同质接口合同与核心正式验收；原图形失败、旧包、真实环境、性能及完整SK/P0范围不变。
 
 2026-10-03，`cf2f4c4` 已完成 `operations.get` 生成语义输入、条件参数/上下文发现、兼容投影及MCP原样schema适配；统一421输入五配置261/261实际通过，见[验证](../engineering/operation-lookup-contract-2026-10-03.md)。宿主不需文档，文档查回只需ID/epoch，原caller事实、停用handler与忽略JSON兼容均保留。继续其余同质legacy合同与核心正式验收；原图形失败、旧包、真实环境、性能及完整SK/P0范围不变。

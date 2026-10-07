@@ -6,6 +6,8 @@
 #include "typed_json.hpp"
 #include "solver_version_probe.hpp"
 #include "solver_result_store.hpp"
+#include "solver_backend.hpp"
+#include "mystran_input.hpp"
 #include "solver_validation_store.hpp"
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -122,7 +124,17 @@ SolverRunConfiguration expanded_configuration(const LocalSolverConfiguration& co
                                               const std::string& directory,
                                               const std::string& root_resource) {
     auto run = config.run;
-    const auto input = (std::filesystem::path(directory) / "input" / root_resource).string();
+    const auto input = detail::mystran_backend(run)
+                           ? root_resource
+                           : (std::filesystem::path(directory) / "input" / root_resource).string();
+    if (detail::mystran_backend(run)) {
+        const auto stem = std::filesystem::path(root_resource).stem().string();
+        check(run.expected_outputs ==
+                      std::vector<std::string>{"work/" + stem + ".F06", "work/" + stem + ".ERR"} &&
+                  config.result_reader &&
+                  config.result_reader->resource == run.expected_outputs.front(),
+              "MYSTRAN outputs must match the frozen input filename in its private work directory");
+    }
     for (auto& argument : run.argv) {
         constexpr std::string_view token = "{input_root}";
         std::size_t offset{};
@@ -433,11 +445,14 @@ load_local_solver_configuration(const std::filesystem::path& path) {
                   config.run_root.lexically_normal() == config.run_root &&
                   std::filesystem::is_directory(config.run_root),
               "Configured executable and run root must be absolute local resources");
-        check(config.test_only
-                  ? run.solver_family == "test-only"
-                  : run.solver_family == "Nastran" && run.dialect == "MSC" &&
-                        (run.solver_version == "2022.1" || run.solver_version == "2024.1"),
+        check(config.test_only ? run.solver_family == "test-only"
+                               : detail::supported_solver_backend(run),
               "Configured solver family/dialect/version is outside the controlled subset");
+        if (detail::mystran_backend(run))
+            check(run.argv == std::vector<std::string>{"{input_root}"} && config.result_reader &&
+                      run.expected_outputs.size() == 2,
+                  "MYSTRAN requires one frozen deck argument, F06/ERR outputs and its explicit "
+                  "reader");
         run.configuration_digest =
             artifact_sha256(QJsonDocument(object).toJson(QJsonDocument::Compact).toStdString());
         config.declaration_digest = run.configuration_digest;
@@ -446,7 +461,11 @@ load_local_solver_configuration(const std::filesystem::path& path) {
         config.version_validated = false;
         if (!config.test_only) {
             const auto probe =
-                detail::probe_solver_version(run.executable, config.run_root, run.solver_version);
+                detail::probe_solver_version(run.executable,
+                                             config.run_root,
+                                             run.solver_version,
+                                             {},
+                                             detail::solver_backend_version_protocol(run));
             if (probe.ok()) {
                 config.version_probe = *probe.value;
                 config.version_validated =
@@ -1420,8 +1439,10 @@ Result<bool> SolverCoordinator::register_operations(OperationRegistry& registry,
                     snapshot.value->records, input.analysis_id, state->codec);
                 if (!plan.ok())
                     return {plan.status, {}, plan.error};
-                verify_nastran_readback(
-                    *plan.value, LocalArtifactStore{}.verify(source.value->second), state->codec);
+                const auto resources = LocalArtifactStore{}.verify(source.value->second);
+                verify_nastran_readback(*plan.value, resources, state->codec);
+                if (detail::mystran_backend(state->config->run))
+                    detail::validate_mystran_input(source.value->second.root_resource, resources);
                 const auto work = std::make_shared<FrozenRun>();
                 work->artifact = source.value->second;
                 auto& fact = work->fact;

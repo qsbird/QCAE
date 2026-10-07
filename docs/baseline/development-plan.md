@@ -1,5 +1,12 @@
 # 开发计划
 
+2026-10-03 本机求解器接续：显式 MYSTRAN 19.0.0 已接入原任务/SQLite/结果链，
+真实预登记悬臂梁三次共396/396分量通过，幂等、陈旧/undo、文件破坏拒绝、
+终态恢复和CLI共享已取得[实际证据](../engineering/mystran-local-validation-2026-10-03.md)。
+该切片按用户后续指令推进；下列骨架优先顺序保留原阶段背景。完整M4仍需
+真实在途取消/异常窗口、全部悬臂梁变体及三入口场景，M5/性能/完整SK和P0
+没有据此完成；运行包/GUI原阻塞仍保留。
+
 状态：设计基线1.1；M0/M1、M2持久化与M3桌面已有运行实现，平台骨架已通过[C1/C2阶段出口](../engineering/checkpoints-c1-c2.md)。C2新增记录事务、SQLite迁移和真实后台线网格流程；NEXT-01—03与C3首个显示/交互切片已实现；几何建线和网格工具已有GUI入口，见[C3切片记录](../engineering/c3-display-validation.md)。C3/C4、完整SK、真实求解/AI及P0发布尚未验收。需求见[requirements.md](requirements.md)，当前证据见[C2验证](../engineering/c2-validation.md)，完整标准见[acceptance.md](acceptance.md)。
 
 ## M0：最小核心与本地运行入口

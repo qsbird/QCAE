@@ -11,7 +11,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Root-level versioned `docs/*-v0.*.md` are historical research. `.omx/` is local runtime context, not canonical project documentation and not committed.
 
-The platform skeleton is delivered through C1/C2 on top of the M0/M1 and M2/M3 slices; see docs/implementation/c2-handoff.md and docs/engineering/c2-validation.md for current runtime and evidence. The Qt/VTK desktop retains the M2/M3 tools; C2 geometry and mesh tools are CLI/IPC only. NEXT-01/02/03 entry consistency is implemented; see docs/engineering/next-validation.md for its separate evidence. Follow-up priorities are recorded in docs/baseline/development-plan.md; planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
+The platform skeleton is delivered through C1/C2 on top of the M0/M1 and M2/M3 slices; see docs/implementation/c2-handoff.md and docs/engineering/c2-validation.md for archived evidence. NEXT-01/02/03 entry consistency and C3 geometry/mesh tools are implemented. Current C3 closure work, including analysis checks, real file publication and fixture result provenance, is described in docs/implementation/c3-closure.md; its integration acceptance is still in progress. Follow-up priorities are recorded in docs/baseline/development-plan.md; planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
 
 ## Binding architecture
 
@@ -34,7 +34,7 @@ For cleanup/refactoring, write a short plan and protect existing behavior before
 
 ## Checks and commits
 
-Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. The engine is durable only with an explicit SQLite workspace. Project snapshots/recovery and a small-model Qt/VTK GUI exist; Nastran export is still an in-memory preview. Do not claim solver execution, real AI integration, headless graphical selection, large-model performance or complete P0 acceptance.
+Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. The engine is durable only with an explicit SQLite workspace. Nastran file publication uses frozen provenance, semantic readback and a final manifest; results currently use explicit fixtures. Do not claim solver execution, real AI integration, headless graphical selection, large-model performance or complete P0 acceptance.
 
 New branches default to `codex/`. Every commit uses the Lore protocol: intent-first subject, context, and useful Git trailers such as `Constraint`, `Rejected`, `Confidence`, `Scope-risk`, `Directive`, `Tested`, and `Not-tested`. Never fabricate validation evidence.
 

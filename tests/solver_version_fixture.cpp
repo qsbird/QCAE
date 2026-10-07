@@ -20,6 +20,11 @@ void require(bool value, const char* message) {
 int child(std::string_view mode) {
     require(std::getenv("QCAE_VERSION_TEST_CANARY") == nullptr,
             "Probe inherited test-only host canary environment");
+    require(std::getenv("LANG") != nullptr && std::string_view(std::getenv("LANG")) == "C" &&
+                std::getenv("LC_ALL") != nullptr &&
+                std::string_view(std::getenv("LC_ALL")) == "C" &&
+                std::filesystem::current_path().filename().string().starts_with(".qcae-version-"),
+            "Probe did not use its fixed locale and private working directory");
     std::cout << "QCAE SYNTHETIC VERSION PROBE\n";
     if (mode == "synthetic-descendant") {
         int barrier[2];
@@ -56,6 +61,46 @@ int child(std::string_view mode) {
         std::cerr << std::string(30000, 'y') << std::flush;
         return 0;
     }
+    if (mode.starts_with("synthetic-mystran-")) {
+        constexpr std::string_view banner =
+            " MYSTRAN Version 19.0.0   JUN 28 2026 MYSTRAN developed by Dr Bill Case\n";
+        if (mode == "synthetic-mystran-noheader")
+            std::cout << "Compatible solver 19.0.0\n";
+        else if (mode == "synthetic-mystran-substring")
+            std::cout << "Advertisement MYSTRAN Version 19.0.0\n";
+        else if (mode == "synthetic-mystran-word")
+            std::cout << "MYSTRANX Version 19.0.0\n";
+        else if (mode == "synthetic-mystran-token")
+            std::cout << "MYSTRAN Version 19.0.0X\n";
+        else if (mode == "synthetic-mystran-patch")
+            std::cout << "MYSTRAN Version 19.0.0.1\n";
+        else if (mode == "synthetic-mystran-old")
+            std::cout << "MYSTRAN Version 18.0.0\n";
+        else if (mode == "synthetic-mystran-prefix")
+            std::cout << "MYSTRAN Version19.0.0\n";
+        else if (mode == "synthetic-mystran-vprefix")
+            std::cout << "MYSTRAN Version V19.0.0\n";
+        else if (mode == "synthetic-mystran-wrong-vendor")
+            std::cout << "MSC Nastran 2024.1\n";
+        else if (mode == "synthetic-mystran-many")
+            std::cout << banner << banner;
+        else if (mode == "synthetic-mystran-versions")
+            std::cout << banner << "MYSTRAN Version 18.0.0\n";
+        else if (mode == "synthetic-mystran-mixed")
+            std::cout << banner << "MSC Nastran 2024.1\n";
+        else if (mode == "synthetic-mystran-stderr-conflict") {
+            std::cout << banner;
+            std::cerr << "MSC Nastran V2022.1\n";
+        } else if (mode == "synthetic-mystran-stderr")
+            std::cerr << "\tMYSTRAN Version 19.0.0\r\n";
+        else {
+            std::cout << banner;
+            if (mode == "synthetic-mystran-nul")
+                std::cout.put('\0');
+        }
+        std::cerr << "Explicit test-only version output, not an installed MYSTRAN\n";
+        return mode == "synthetic-mystran-nonzero" ? 7 : 0;
+    }
     if (mode == "synthetic-noheader")
         std::cout << "Compatible solver 2024.1\n";
     else if (mode == "synthetic-substring")
@@ -77,11 +122,13 @@ int child(std::string_view mode) {
 
 int main(int argc, char** argv) {
     try {
-        if (argc != 2 || std::string_view(argv[1]) != "help")
-            throw std::runtime_error("Fixed synthetic helper accepts help only");
+        const auto mode = std::filesystem::path(argv[0]).filename().string();
+        const auto argument = mode.starts_with("synthetic-mystran-") ? "--version" : "help";
+        if (argc != 2 || std::string_view(argv[1]) != argument)
+            throw std::runtime_error("Fixed synthetic helper received an unexpected argument");
         require(::fcntl(QCAE_SOLVER_VERSION_FD_CANARY, F_GETFD) == -1 && errno == EBADF,
                 "Probe inherited a high host descriptor without close-on-exec");
-        return child(std::filesystem::path(argv[0]).filename().string());
+        return child(mode);
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;

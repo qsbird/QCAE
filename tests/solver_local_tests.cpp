@@ -1,6 +1,7 @@
 #include "qcae/solver_local.hpp"
 #include <chrono>
 #include <csignal>
+#include <cstdlib>
 #include <fcntl.h>
 #include <fstream>
 #include <iomanip>
@@ -18,6 +19,11 @@ const std::string frozen_input_bytes =
 void require(bool value, const char* message) {
     if (!value)
         throw std::runtime_error(message);
+}
+std::string read_text(const fs::path& path) {
+    std::ifstream input(path, std::ios::binary);
+    require(input.good(), "Test input file is missing");
+    return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
 }
 template <class T> Result<T> success(T value) {
     return {Status::success, std::move(value), std::nullopt};
@@ -279,6 +285,35 @@ class ClosedStandardInput {
 int child(int argc, char** argv) {
     require(argc == 5, "Test-only child arguments differ");
     const std::string mode(argv[2]);
+    const bool mystran = mode.starts_with("mystran-");
+    if (mystran) {
+        const auto cwd = fs::current_path();
+        const auto* temporary = std::getenv("TMPDIR");
+        require(cwd.filename() == "work" && temporary &&
+                    fs::path(temporary) == cwd.parent_path() / "tmp" &&
+                    fs::path(temporary).is_absolute() && fs::is_directory(temporary),
+                "MYSTRAN child lacks its work cwd or explicit local TMPDIR");
+        const auto permissions = fs::status(temporary).permissions();
+        require((permissions & (fs::perms::group_all | fs::perms::others_all)) == fs::perms::none,
+                "MYSTRAN scratch directory is not private");
+        require(fs::canonical(argv[4]) == cwd / "model.bdf" &&
+                    read_text("model.bdf") == read_text("../input/model.bdf") &&
+                    read_text("parts/nodes.bdf") == read_text("../input/parts/nodes.bdf") &&
+                    read_text("manifest.json") == read_text("../input/manifest.json"),
+                "MYSTRAN executable input differs from the verified frozen copy");
+        std::ofstream(fs::path(temporary) / "scratch.bin") << "test-only scratch\n";
+        if (mode == "mystran-tamper-work")
+            std::ofstream("model.bdf") << "damaged working input";
+        if (mode == "mystran-tamper-input")
+            std::ofstream("../input/model.bdf") << "damaged frozen input";
+        if (mode == "mystran-many-files") {
+            std::ofstream("extra-work.bin") << std::string(700000, 'x');
+            std::ofstream(fs::path(temporary) / "extra-tmp.bin") << std::string(700000, 'x');
+        }
+    } else {
+        require(!std::getenv("TMPDIR") && fs::current_path().filename() != "work",
+                "Existing test-only/MSC child environment or cwd changed");
+    }
     if (mode == "ignore-term")
         std::signal(SIGTERM, SIG_IGN);
     if (mode == "crash-on-term")
@@ -304,7 +339,7 @@ int child(int argc, char** argv) {
             std::ofstream("extra-" + std::to_string(i)) << std::string(700000, 'x');
     std::cout << "test-only execution; no Nastran solver or engineering result\n";
     if (mode == "sleep" || mode == "ignore-term" || mode == "many-files" ||
-        mode == "crash-on-term" || mode == "exit-on-term")
+        mode == "crash-on-term" || mode == "exit-on-term" || mode == "mystran-many-files")
         for (unsigned i = 0; i < 1000; ++i)
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     return 0;
@@ -402,6 +437,66 @@ int main(int argc, char** argv) {
         changed.configuration.argv.back() = "changed";
         check(runner.start(changed).status == Status::conflict,
               "Same run identity accepted different configuration");
+        // The same test executable exercises the MYSTRAN directory policy. These
+        // synthetic configuration strings do not certify a real solver/version.
+        auto mystran_request = [&](std::string id, std::string mode) {
+            auto value = request(std::move(id), std::move(mode));
+            value.configuration.solver_family = "MYSTRAN";
+            value.configuration.dialect = "MYSTRAN";
+            value.configuration.solver_version = "19.0.0";
+            value.configuration.expected_outputs = {"work/result.bin"};
+            value.configuration.argv.back() =
+                (fs::path(value.run_directory) / "work/model.bdf").string();
+            return value;
+        };
+        auto mystran = mystran_request("mystran-layout", "mystran-success");
+        check(runner.start(mystran).ok(), "MYSTRAN work-cwd child did not start");
+        const auto mystran_done = wait(runner, mystran.run_id);
+        auto mystran_copy = artifact;
+        mystran_copy.directory = fs::path(mystran.run_directory) / "input";
+        check(mystran_done.execution == SolverExecutionState::exited &&
+                  mystran_done.exit_code == 0 &&
+                  mystran_done.output_state == SolverOutputState::collected &&
+                  mystran_done.outputs.size() == 3 &&
+                  mystran_done.outputs.front().path == "work/result.bin" &&
+                  fs::exists(fs::path(mystran.run_directory) / "work/child.started") &&
+                  fs::exists(fs::path(mystran.run_directory) / "tmp/scratch.bin") &&
+                  artifact_store.verify(mystran_copy).size() == plan.resources.size() &&
+                  mystran_done.parsing == SolverParsingState::not_run &&
+                  mystran_done.numerical_validation == SolverNumericalState::not_run,
+              "MYSTRAN cwd/TMPDIR, exact frozen inputs or output observation failed");
+        check(runner.start(mystran).value->sequence == mystran_done.sequence,
+              "MYSTRAN run identity re-executed its process");
+        for (const auto& mode : {"mystran-tamper-work", "mystran-tamper-input"}) {
+            const auto value = mystran_request(mode, mode);
+            check(runner.start(value).ok(), "MYSTRAN input-tamper child did not start");
+            const auto observed = wait(runner, value.run_id);
+            check(observed.execution == SolverExecutionState::exited && observed.exit_code == 0 &&
+                      observed.output_state == SolverOutputState::incomplete,
+                  "MYSTRAN modified execution/frozen input was collected as valid output");
+        }
+        auto mystran_budget = mystran_request("mystran-budget", "mystran-many-files");
+        check(runner.start(mystran_budget).ok(), "MYSTRAN work/tmp budget child did not start");
+        const auto mystran_overflow = wait(runner, mystran_budget.run_id);
+        check(mystran_overflow.execution == SolverExecutionState::exited &&
+                  mystran_overflow.termination_signal.has_value() &&
+                  mystran_overflow.output_state == SolverOutputState::incomplete &&
+                  mystran_overflow.detail.find("byte budget") != std::string::npos,
+              "MYSTRAN work or tmp bytes escaped aggregate output budget enforcement");
+        auto mystran_preflight = mystran_request("mystran-preflight", "mystran-success");
+        mystran_preflight.configuration.max_output_bytes = 1;
+        const auto preflight = runner.start(mystran_preflight);
+        check(preflight.ok() && preflight.value->execution == SolverExecutionState::launch_failed &&
+                  !fs::exists(fs::path(mystran_preflight.run_directory) / "work/child.started"),
+              "MYSTRAN working input copy exceeded the budget but executed a child");
+        auto msc_layout = request("msc-layout");
+        msc_layout.configuration.solver_family = "Nastran";
+        msc_layout.configuration.dialect = "MSC";
+        msc_layout.configuration.solver_version = "2022.1";
+        check(runner.start(msc_layout).ok() && wait(runner, msc_layout.run_id).exit_code == 0 &&
+                  !fs::exists(fs::path(msc_layout.run_directory) / "work") &&
+                  !fs::exists(fs::path(msc_layout.run_directory) / "tmp"),
+              "MYSTRAN directory policy changed an existing MSC layout");
         {
             ClosedStandardInput closed_input;
             auto closed = request("closed-stdin");

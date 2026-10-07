@@ -8,6 +8,7 @@ option(QCAE_BUILD_IPC "Build the optional Qt local engine and CLI" OFF)
 option(QCAE_BUILD_STORAGE "Build the optional SQLite persistence adapter" OFF)
 option(QCAE_BUILD_DESKTOP "Build the Qt/VTK desktop client" OFF)
 option(QCAE_BUILD_SOLVER_LOCAL "Build the local POSIX solver process adapter" ${UNIX})
+set(QCAE_MYSTRAN_EXECUTABLE "" CACHE FILEPATH "Explicit MYSTRAN 19.0.0 binary for opt-in real solver acceptance")
 option(QCAE_ENABLE_NASTRAN_PACKAGE "Enable static Nastran engine contributions" ON)
 option(QCAE_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
 set(QCAE_C3_SQLITE_OBSERVED_OBJECT "" CACHE FILEPATH "Test-only audited SQLite 3.51.0 byte observer object")
@@ -351,6 +352,14 @@ if(QCAE_BUILD_IPC)
             --engine $<TARGET_FILE:qcae-engine>
             --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/m4-solver-run-evidence")
           set_tests_properties(solver_run_ipc PROPERTIES TIMEOUT 120)
+          if(QCAE_MYSTRAN_EXECUTABLE)
+            add_test(NAME mystran_real_integration COMMAND Python3::Interpreter
+              "${CMAKE_CURRENT_SOURCE_DIR}/tests/mystran_real_integration.py"
+              --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>
+              --solver "${QCAE_MYSTRAN_EXECUTABLE}"
+              --evidence-dir "${CMAKE_CURRENT_BINARY_DIR}/m4-mystran-real-evidence")
+            set_tests_properties(mystran_real_integration PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+          endif()
         endif()
       else()
         add_test(NAME nastran_disabled_ipc COMMAND Python3::Interpreter

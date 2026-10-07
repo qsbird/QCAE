@@ -28,6 +28,7 @@ target_compile_definitions(qcae_engine_api PRIVATE QCAE_NASTRAN_PACKAGE_ENABLED=
 target_link_libraries(qcae_engine_api PRIVATE qcae_transport_local)
 if(QCAE_BUILD_SOLVER_LOCAL)
   target_sources(qcae_engine_api PRIVATE src/solver_contribution.cpp src/solver_run_record.cpp
+    src/solver_backend.hpp src/mystran_input.cpp src/mystran_input.hpp
     src/solver_version_probe.cpp src/solver_version_probe.hpp
     src/solver_result_store.cpp src/solver_result_store.hpp
     src/solver_validation_store.cpp src/solver_validation_store.hpp
@@ -36,6 +37,12 @@ if(QCAE_BUILD_SOLVER_LOCAL)
   target_link_libraries(qcae_engine_api PUBLIC qcae_solver_local)
   target_compile_definitions(qcae_engine_api PRIVATE QCAE_HAS_SOLVER_LOCAL)
   if(BUILD_TESTING)
+    add_executable(qcae_mystran_input_tests "${PROJECT_SOURCE_DIR}/tests/mystran_input_tests.cpp")
+    target_include_directories(qcae_mystran_input_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+    target_compile_definitions(qcae_mystran_input_tests PRIVATE QCAE_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+    target_link_libraries(qcae_mystran_input_tests PRIVATE qcae_engine_api)
+    qcae_warnings(qcae_mystran_input_tests)
+    add_test(NAME mystran_input COMMAND qcae_mystran_input_tests)
     add_executable(qcae_solver_version_fixture "${PROJECT_SOURCE_DIR}/tests/solver_version_fixture.cpp")
     target_link_libraries(qcae_solver_version_fixture PRIVATE Threads::Threads)
     target_compile_definitions(qcae_solver_version_fixture PRIVATE

@@ -31,13 +31,18 @@ void require(bool value, const char* message) {
 bool digest(std::string_view value) {
     return value.size() == 64 && value.find_first_not_of("0123456789abcdef") == value.npos;
 }
-bool version(std::string_view value) {
-    return value == "2022.1" || value == "2024.1";
+bool protocol_supported(std::string_view protocol) {
+    return protocol == "msc.help.v1" || protocol == "mystran.version.v1";
+}
+bool version(std::string_view protocol, std::string_view value) {
+    if (protocol == "msc.help.v1")
+        return value == "2022.1" || value == "2024.1";
+    return protocol == "mystran.version.v1" && value == "19.0.0";
 }
 void validate_evidence(const SolverVersionEvidence& fact) {
     const auto& file = fact.executable;
-    require(fact.protocol == "msc.help.v1" &&
-                (fact.reported_version.empty() || version(fact.reported_version)) &&
+    require(protocol_supported(fact.protocol) &&
+                (fact.reported_version.empty() || version(fact.protocol, fact.reported_version)) &&
                 file.inode > 0 && file.byte_length > 0 && file.byte_length <= 134217728 &&
                 file.modified_nanoseconds < 1000000000 && file.changed_nanoseconds < 1000000000 &&
                 digest(file.sha256) && fact.process.pid > 0 && fact.process.pid <= INT32_MAX &&
@@ -142,7 +147,7 @@ std::optional<std::string> start_identity(pid_t pid) {
     return "linux:" + boot_id + ":" + token;
 #endif
 }
-std::string reported_version(std::string_view text) {
+std::string reported_msc_version(std::string_view text) {
     std::set<std::string> versions;
     while (!text.empty()) {
         const auto end = text.find('\n');
@@ -159,11 +164,43 @@ std::string reported_version(std::string_view text) {
             line.remove_prefix(1);
         const auto stop = line.find_first_of(" \t\r");
         const auto token = line.substr(0, stop);
-        if (!version(token))
+        if (!version("msc.help.v1", token))
             return {};
         versions.emplace(token);
     }
     return versions.size() == 1 ? *versions.begin() : "";
+}
+bool header_word(std::string_view line, std::string_view prefix) {
+    return line.starts_with(prefix) &&
+           (line.size() == prefix.size() || line[prefix.size()] == ' ' ||
+            line[prefix.size()] == '\t' || line[prefix.size()] == '\r');
+}
+std::string reported_mystran_version(std::string_view text) {
+    std::string result;
+    while (!text.empty()) {
+        const auto end = text.find('\n');
+        auto line = text.substr(0, end);
+        text = end == text.npos ? std::string_view{} : text.substr(end + 1);
+        while (!line.empty() && (line.front() == ' ' || line.front() == '\t'))
+            line.remove_prefix(1);
+        if (header_word(line, "MSC Nastran"))
+            return {};
+        if (!header_word(line, "MYSTRAN"))
+            continue;
+        // Match the observed --version banner, never arbitrary prose or a partial version.
+        constexpr std::string_view prefix = "MYSTRAN Version ";
+        if (!line.starts_with(prefix) || !result.empty())
+            return {};
+        line.remove_prefix(prefix.size());
+        const auto token = line.substr(0, line.find_first_of(" \t\r"));
+        if (!version("mystran.version.v1", token))
+            return {};
+        result = token;
+    }
+    return result;
+}
+std::string reported_version(std::string_view protocol, std::string_view text) {
+    return protocol == "msc.help.v1" ? reported_msc_version(text) : reported_mystran_version(text);
 }
 } // namespace
 
@@ -264,8 +301,8 @@ Result<SolverExecutableIdentity> solver_executable_identity(const fs::path& path
 bool solver_version_allows_execution(const SolverVersionEvidence& fact, std::string_view expected) {
     try {
         validate_evidence(fact);
-        return version(expected) && fact.reported_version == expected && fact.exit_code == 0 &&
-               !fact.synthetic;
+        return version(fact.protocol, expected) && fact.reported_version == expected &&
+               fact.exit_code == 0 && !fact.synthetic;
     } catch (...) {
         return false;
     }
@@ -273,14 +310,16 @@ bool solver_version_allows_execution(const SolverVersionEvidence& fact, std::str
 Result<SolverVersionEvidence> probe_solver_version(const fs::path& executable,
                                                    const fs::path& private_root,
                                                    std::string_view expected,
-                                                   const SolverVersionProbeLimits& limits) {
+                                                   const SolverVersionProbeLimits& limits,
+                                                   std::string_view protocol) {
     fs::path cwd;
     pid_t child = -1;
     std::optional<std::string> identity;
     bool reaped{};
     try {
-        require(version(expected) && limits.wall_time_ms > 0 && limits.wall_time_ms <= 5000 &&
-                    limits.max_output_bytes > 0 && limits.max_output_bytes <= 65536,
+        require(version(protocol, expected) && limits.wall_time_ms > 0 &&
+                    limits.wall_time_ms <= 5000 && limits.max_output_bytes > 0 &&
+                    limits.max_output_bytes <= 65536,
                 "Version probe limits or controlled version are invalid");
         no_symlinks(private_root);
         require(fs::is_directory(private_root), "Private version probe parent is missing");
@@ -320,9 +359,12 @@ Result<SolverVersionEvidence> probe_solver_version(const fs::path& executable,
                     preflight % sizeof(proc_fdinfo) == 0,
                 "Version descriptor snapshot is unavailable or truncated");
 #endif
-        char help[] = "help", locale[] = "LANG=C", all[] = "LC_ALL=C";
+        char help[] = "help", version_argument[] = "--version", locale[] = "LANG=C",
+             all[] = "LC_ALL=C";
         const auto executable_text = executable.string(), cwd_text = cwd.string();
-        char* argv[] = {const_cast<char*>(executable_text.c_str()), help, nullptr};
+        char* argv[] = {const_cast<char*>(executable_text.c_str()),
+                        protocol == "msc.help.v1" ? help : version_argument,
+                        nullptr};
         char* environment[] = {locale, all, nullptr};
         child = ::fork();
         require(child >= 0, "Version probe fork failed");
@@ -434,7 +476,8 @@ Result<SolverVersionEvidence> probe_solver_version(const fs::path& executable,
                     stderr_text.find('\0') == stderr_text.npos,
                 "Version output contains NUL");
         SolverVersionEvidence fact;
-        fact.reported_version = reported_version(stdout_text + "\n" + stderr_text);
+        fact.protocol = protocol;
+        fact.reported_version = reported_version(protocol, stdout_text + "\n" + stderr_text);
         fact.executable = *before.value;
         fact.process = {child, *identity};
         fact.stdout_bytes = stdout_text.size();

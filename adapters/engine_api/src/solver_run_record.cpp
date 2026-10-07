@@ -3,6 +3,7 @@
 #include "qcae/operation_registry.hpp"
 #include "solver_version_probe.hpp"
 #include "solver_result_store.hpp"
+#include "solver_backend.hpp"
 #include <algorithm>
 #include <charconv>
 #include <csignal>
@@ -82,6 +83,7 @@ void validate(const SolverOwnedRun& fact) {
           "Run task signature differs from analysis, artifact or configuration digest");
     if (fact.version_probe) {
         check(!fact.test_only && digest(fact.declaration_digest) &&
+                  fact.version_probe->protocol == detail::solver_backend_version_protocol(config) &&
                   detail::solver_version_allows_execution(*fact.version_probe,
                                                           config.solver_version) &&
                   config.configuration_digest == solver_version_configuration_digest(
@@ -90,11 +92,22 @@ void validate(const SolverOwnedRun& fact) {
     } else {
         check(fact.declaration_digest.empty(), "Legacy run contains unbound version evidence");
     }
-    check(fact.test_only
-              ? config.solver_family == "test-only"
-              : config.solver_family == "Nastran" && config.dialect == "MSC" &&
-                    (config.solver_version == "2022.1" || config.solver_version == "2024.1"),
+    check(fact.test_only ? config.solver_family == "test-only"
+                         : detail::supported_solver_backend(config),
           "Unsupported or falsely classified solver family/version");
+    check(!detail::mystran_backend(config) || fact.version_probe.has_value(),
+          "MYSTRAN execution requires its original vendor version observation");
+    if (detail::mystran_backend(config)) {
+        check(config.argv.size() == 1, "MYSTRAN requires one frozen input filename");
+        const std::filesystem::path root(config.argv.front());
+        const auto stem = root.stem().string();
+        check(root == root.filename() && root.extension() == ".bdf" && !stem.empty() &&
+                  config.expected_outputs ==
+                      std::vector<std::string>{"work/" + stem + ".F06", "work/" + stem + ".ERR"} &&
+                  fact.result_reader &&
+                  fact.result_reader->resource == config.expected_outputs.front(),
+              "MYSTRAN frozen input, output paths or reader are inconsistent");
+    }
     std::size_t argument_bytes{};
     for (const auto& argument : config.argv) {
         check(argument.size() <= 4096 && argument.find('\0') == std::string::npos,

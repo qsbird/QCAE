@@ -25,7 +25,8 @@ template <class T> T good(Result<T> result) {
     require(result.ok(), result.error ? result.error->message.c_str() : "Missing value");
     return std::move(*result.value);
 }
-StoredSolverResult synthetic_published(std::string task_id = "synthetic-unit") {
+StoredSolverResult synthetic_published(std::string task_id = "synthetic-unit",
+                                       bool mystran = false) {
     NastranCodec codec;
     ImportRequest request;
     request.root_resource = "cantilever.bdf";
@@ -112,9 +113,53 @@ StoredSolverResult synthetic_published(std::string task_id = "synthetic-unit") {
     f06 << "F O R C E S O F S I N G L E - P O I N T C O N S T R A I N T\n"
            "POINT ID. TYPE T1 T2 T3 R1 R2 R3\n"
         << support << " G 0 1 0 0 0 1000\n";
-    const std::vector<TextResource> resources{{"result.f06", f06.str()},
-                                              {"runner.stdout", "explicit synthetic unit\n"},
-                                              {"runner.stderr", ""}};
+    std::vector<TextResource> resources{{"result.f06", f06.str()},
+                                        {"runner.stdout", "explicit synthetic unit\n"},
+                                        {"runner.stderr", ""}};
+    if (mystran) {
+        // Fabricated external-classified fields exercise binding/codec only. The false
+        // synthetic flag never comes from a probe, and this helper never runs a process.
+        origin.test_only = false;
+        origin.principal = "explicit-synthetic-mystran-validation-unit-no-process-proof";
+        run.request.input.result_reader_version = "qcae.mystran.static-f06.v1";
+        run.request.configuration = {"synthetic-mystran-validation-unit",
+                                     "/not-executed/synthetic-mystran-validation-program",
+                                     {"cantilever.bdf"},
+                                     "MYSTRAN",
+                                     "MYSTRAN",
+                                     "19.0.0",
+                                     "fabricated version fields, not a process observation",
+                                     artifact_sha256("synthetic config before binding"),
+                                     {"work/cantilever.F06", "work/cantilever.ERR"}};
+        SolverVersionEvidence version;
+        version.protocol = "mystran.version.v1";
+        version.reported_version = "19.0.0";
+        version.executable.inode = 1;
+        version.executable.byte_length = 1;
+        version.executable.sha256 = artifact_sha256("synthetic executable identity");
+        version.process = {1, "synthetic-version-identity-not-an-observed-process"};
+        version.stdout_bytes = 1;
+        version.stdout_sha256 = artifact_sha256("synthetic version bytes");
+        version.stderr_sha256 = artifact_sha256("");
+        version.synthetic = false;
+        origin.version_probe = version;
+        origin.declaration_digest = artifact_sha256("synthetic version declaration");
+        run.request.configuration.configuration_digest =
+            solver_version_configuration_digest(origin.declaration_digest, version);
+        origin.signature = solver_run_signature(input.analysis,
+                                                run.request.input.artifact_id,
+                                                run.request.configuration.id,
+                                                run.request.configuration.configuration_digest);
+        origin.result_reader->reader_version = "qcae.mystran.static-f06.v1";
+        origin.result_reader->resource = "work/cantilever.F06";
+        std::ifstream reference(std::string(QCAE_SOURCE_DIR) +
+                                "/tests/fixtures/mystran/cantilever-19.0.0.F06");
+        require(reference.good(), "Sanitized MYSTRAN parser reference is missing");
+        resources = {{"work/cantilever.F06", {std::istreambuf_iterator<char>(reference), {}}},
+                     {"work/cantilever.ERR", "explicit synthetic diagnostics, no process proof\n"},
+                     {"runner.stdout", "explicit synthetic process record, no execution proof\n"},
+                     {"runner.stderr", ""}};
+    }
     for (const auto& resource : resources)
         run.outputs.push_back(
             {resource.path, resource.text.size(), artifact_sha256(resource.text)});
@@ -195,6 +240,56 @@ int main() {
         detail::validate_solver_validation_link(decoded, stored, profile);
         check(*detail::solver_validation_row(decoded)->payload == *image->payload,
               "A full report must retain exact canonical bytes");
+        const auto mystran_stored = synthetic_published("synthetic-mystran-unit", true);
+        const auto mystran_fact = complete_fact(mystran_stored, "mystran-codec-comparison");
+        const auto mystran_image = detail::solver_validation_row(mystran_fact);
+        const auto mystran_decoded = detail::decode_solver_validation_row(*mystran_image);
+        detail::validate_solver_validation_link(mystran_decoded, mystran_stored, profile);
+        check(
+            mystran_decoded.report.matched && mystran_decoded.report.components.size() == 132 &&
+                mystran_decoded.report.reference_input == "nastran-real-benchmark-v3" &&
+                mystran_decoded.reader.reader_version == "qcae.mystran.static-f06.v1" &&
+                mystran_decoded.reader.resource == "work/cantilever.F06" &&
+                mystran_decoded.frozen_input_sha256 ==
+                    artifact_sha256(features::analysis::encode_frozen_analysis_input(
+                        mystran_stored.parsed.origin.source_input)) &&
+                *detail::solver_validation_row(mystran_decoded)->payload == *mystran_image->payload,
+            "MYSTRAN numerical fact codec lost its reader, full report or original input binding");
+        check(mystran_stored.parsed.origin.run.numerical_validation ==
+                  SolverNumericalState::not_run,
+              "A separate MYSTRAN report mutated the original unvalidated execution fact");
+        for (unsigned variant = 0; variant < 4; ++variant) {
+            auto altered = mystran_fact;
+            if (variant == 0)
+                altered.reader.reader_version = "qcae.nastran.static-f06.v1";
+            else if (variant == 1)
+                altered.frozen_input_sha256 = artifact_sha256("different synthetic frozen input");
+            else if (variant == 2)
+                altered.parsed_sha256 = artifact_sha256("different synthetic MYSTRAN fields");
+            else {
+                auto& component = altered.report.components.back();
+                component.actual = component.expected + std::max(1.0, component.tolerance * 4);
+                component.absolute_error = std::abs(component.actual - component.expected);
+                component.matched = false;
+                altered.report.matched = false;
+            }
+            const auto self_consistent =
+                detail::decode_solver_validation_row(*detail::solver_validation_row(altered));
+            check(rejects([&] {
+                      detail::validate_solver_validation_link(
+                          self_consistent, mystran_stored, profile);
+                  }),
+                  "A coherent MYSTRAN report changed reader, input, parsed source or components");
+        }
+        auto mystran_invalid = mystran_fact;
+        mystran_invalid.reader.reader_version = "qcae.mystran.static-f06.v2";
+        check(rejects([&] { (void)detail::solver_validation_row(mystran_invalid); }),
+              "An unknown MYSTRAN numerical reader version crossed the persisted codec");
+        auto altered_mystran_source = mystran_stored;
+        altered_mystran_source.parsed.origin.run.numerical_validation =
+            SolverNumericalState::passed;
+        check(!detail::prepare_solver_validation(altered_mystran_source, profile).ok(),
+              "A numerical report rewrote the immutable MYSTRAN execution observation");
         for (std::size_t component = 0; component < 132; ++component) {
             auto changed = fact;
             auto& item = changed.report.components[component];
@@ -313,6 +408,32 @@ int main() {
               "Losing report CAS left a partial row or changed model revision");
         check(!app.update_owned_rows(caller, created.document, first).ok(),
               "Direct duplicate insertion bypassed expected-row CAS");
+        RecordApplication mystran_app(options);
+        const Caller mystran_caller{mystran_fact.principal};
+        const auto mystran_document =
+            good(mystran_app.create_document(mystran_caller, "Synthetic MYSTRAN codec", "create"));
+        const auto mystran_head = detail::solver_validation_index_row(
+            {mystran_fact.run_id, mystran_fact.principal, {mystran_image->key.identity}});
+        const std::array<OwnedRowUpdate, 2> mystran_updates{
+            {{mystran_image->key, {}, mystran_image}, {mystran_head->key, {}, mystran_head}}};
+        good(mystran_app.update_owned_rows(
+            mystran_caller, mystran_document.document, mystran_updates));
+        const auto mystran_rows = good(mystran_app.owned_rows_with_prefix(
+            mystran_document.document,
+            StoreSpace::artifact_record,
+            detail::solver_validation_prefix(mystran_fact.run_id),
+            17));
+        const auto persisted_mystran =
+            std::find_if(mystran_rows.rows.begin(), mystran_rows.rows.end(), [&](const auto& row) {
+                return row->key == mystran_image->key;
+            });
+        check(mystran_rows.rows.size() == 2 && !mystran_rows.overflow &&
+                  persisted_mystran != mystran_rows.rows.end() &&
+                  *(*persisted_mystran)->payload == *mystran_image->payload &&
+                  good(mystran_app.current_document()).revision == mystran_document.revision,
+              "MYSTRAN immutable report/index persistence lost bytes or changed model revision");
+        detail::validate_solver_validation_link(
+            detail::decode_solver_validation_row(**persisted_mystran), mystran_stored, profile);
         for (const bool controls : {false, true}) {
             const std::string task_id(100, controls ? '\x01' : 'a');
             const auto linked_source = synthetic_published(task_id);
