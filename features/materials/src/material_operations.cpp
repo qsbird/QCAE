@@ -19,7 +19,7 @@ void observe_record_temporary(const records::BeamSection& value) noexcept {
                     value.material.value.size());
 }
 
-std::size_t moved_string_bytes(const std::string& value) noexcept {
+std::size_t moved_string_bytes([[maybe_unused]] const std::string& value) noexcept {
 #if defined(_LIBCPP_VERSION)
     return value.capacity() <= std::string{}.capacity() ? value.size() : 0;
 #else

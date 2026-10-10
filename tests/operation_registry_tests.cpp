@@ -533,9 +533,17 @@ void owned_value_copy_ledger() {
     }
     const auto receipt_values =
         receipt_operation->snapshot().values[static_cast<std::size_t>(ledger::Stage::application)];
-    check(
+#if defined(_LIBCPP_VERSION)
+    const bool model_bytes_classified =
         receipt_values[static_cast<std::size_t>(ledger::Metric::model_copy_bytes)] ==
-                sizeof(double) &&
+        sizeof(double);
+#else
+    // Without libc++ the short-string move cost is reported as unknown, never guessed.
+    const bool model_bytes_classified =
+        !receipt_values[static_cast<std::size_t>(ledger::Metric::model_copy_bytes)].has_value();
+#endif
+    check(
+        model_bytes_classified &&
             receipt_values[static_cast<std::size_t>(ledger::Metric::metadata_copy_bytes)].value_or(
                 0) > 0,
         "Receipt source scope records transaction H and restores physical Value classification");

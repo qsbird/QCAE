@@ -313,16 +313,21 @@ def render(schema: dict) -> str:
     return "\n".join(lines)
 
 
+class FormatterUnavailable(ValueError):
+    pass
+
+
 def formatter() -> str:
     candidate = shutil.which("clang-format-21")
-    if not candidate:
+    if not candidate and shutil.which("xcrun"):
         result = subprocess.run(["xcrun", "--find", "clang-format"], capture_output=True, text=True, check=False)
-        candidate = result.stdout.strip() if result.returncode == 0 else shutil.which("clang-format")
+        candidate = result.stdout.strip() if result.returncode == 0 else None
+    candidate = candidate or shutil.which("clang-format")
     if not candidate:
-        raise ValueError("clang-format 21 is required for deterministic generated formatting")
+        raise FormatterUnavailable("clang-format 21 is required for deterministic generated formatting")
     version = subprocess.check_output([candidate, "--version"], text=True)
     if "clang-format version 21." not in version:
-        raise ValueError("clang-format 21 is required")
+        raise FormatterUnavailable("clang-format 21 is required")
     return candidate
 
 
@@ -360,6 +365,10 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
+    except FormatterUnavailable as exc:
+        # Exit 77 lets CTest report a skip; no output was compared or written.
+        print(f"Entity generation skipped: {exc}", file=sys.stderr)
+        raise SystemExit(77) from exc
     except (ValueError, OSError, subprocess.SubprocessError) as exc:
         print(f"Entity generation failed: {exc}", file=sys.stderr)
         raise SystemExit(1) from exc

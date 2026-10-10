@@ -222,6 +222,9 @@ class OperationLedger {
 inline std::shared_ptr<OperationLedger> process_ledger;
 inline std::shared_ptr<OperationLedger> pending_ledger;
 inline thread_local std::shared_ptr<OperationLedger> scoped_ledger;
+// libc++ lacks std::atomic<std::shared_ptr>; libstdc++ deprecates the free functions in C++20.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 // The trusted test host may keep a run active across queued callbacks/events.
 inline void activate(std::shared_ptr<OperationLedger> ledger) noexcept {
     std::atomic_store_explicit(&process_ledger, std::move(ledger), std::memory_order_release);
@@ -254,6 +257,7 @@ inline std::shared_ptr<OperationLedger> current() noexcept {
     return scoped_ledger ? scoped_ledger
                          : std::atomic_load_explicit(&process_ledger, std::memory_order_acquire);
 }
+#pragma GCC diagnostic pop
 class Scope {
   public:
     explicit Scope(std::shared_ptr<OperationLedger> ledger) noexcept

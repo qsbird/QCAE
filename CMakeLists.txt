@@ -107,6 +107,7 @@ if(BUILD_TESTING)
   add_test(NAME record_query COMMAND qcae_record_query_tests)
   add_test(NAME cpp_format COMMAND Python3::Interpreter
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_cpp_format.py")
+  set_tests_properties(cpp_format PROPERTIES SKIP_RETURN_CODE 77)
   foreach(suite model nastran delta persistence query)
     add_executable(qcae_${suite}_tests tests/${suite}_tests.cpp)
     if(suite STREQUAL "nastran")

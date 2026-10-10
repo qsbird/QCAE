@@ -16,4 +16,5 @@ if(BUILD_TESTING)
   add_test(NAME record_document COMMAND qcae_record_document_tests)
   add_test(NAME generated_entities COMMAND Python3::Interpreter
     "${PROJECT_SOURCE_DIR}/tools/generate_entities.py" --check --permutation-check)
+  set_tests_properties(generated_entities PROPERTIES SKIP_RETURN_CODE 77)
 endif()

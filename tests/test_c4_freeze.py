@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -21,7 +22,8 @@ ADDITIONAL_PROTECTED = "adapters/engine_api/src/typed_json.hpp"
 
 class FreezeContract(unittest.TestCase):
     def setUp(self):
-        self.directory = tempfile.TemporaryDirectory(prefix="qc4-freeze-", dir="/private/tmp")
+        short_tmp = "/private/tmp" if os.path.isdir("/private/tmp") else tempfile.gettempdir()
+        self.directory = tempfile.TemporaryDirectory(prefix="qc4-freeze-", dir=short_tmp)
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         self.git("init", "--quiet")

@@ -13,6 +13,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIRS = ("modules", "features", "profiles", "adapters", "ui", "apps", "tests")
 SUFFIXES = {".cpp", ".hpp", ".h", ".cc"}
+# Nonzero, so the manual gate still fails; CTest reports it as skipped.
+FORMATTER_UNAVAILABLE = 77
 
 
 def formatter() -> str | None:
@@ -39,7 +41,7 @@ def main() -> int:
     executable = formatter()
     if not executable:
         print("clang-format 21 is required for the C++ readability gate", file=sys.stderr)
-        return 2
+        return FORMATTER_UNAVAILABLE
     try:
         version = subprocess.run(
             [executable, "--version"], capture_output=True, text=True, check=False
@@ -49,7 +51,7 @@ def main() -> int:
         return 2
     if version.returncode != 0 or "clang-format version 21." not in version.stdout:
         print(f"clang-format 21 required; found: {version.stdout.strip() or executable}", file=sys.stderr)
-        return 2
+        return FORMATTER_UNAVAILABLE
     paths = sorted(
         path
         for folder in SOURCE_DIRS

@@ -20,7 +20,7 @@ MetadataValueCopies::~MetadataValueCopies() {
 }
 } // namespace detail
 namespace {
-void observe_string_move(const std::string& value) noexcept {
+void observe_string_move([[maybe_unused]] const std::string& value) noexcept {
 #if defined(_LIBCPP_VERSION)
     // libc++'s allocator-free string move transfers long storage and copies the short rep.
     if (value.capacity() <= std::string{}.capacity())

@@ -6,6 +6,10 @@
 namespace {
 long fail_after = -1;
 }
+// GCC cannot see that the replaced operator new below returns malloc storage.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#endif
 void* operator new(std::size_t size) {
     if (fail_after == 0) {
         fail_after = -1;

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -21,7 +22,8 @@ class CopyBoundaryReached(RuntimeError):
 
 class StagePreflightTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="qcae-stage-contract-", dir="/private/tmp")
+        short_tmp = "/private/tmp" if os.path.isdir("/private/tmp") else tempfile.gettempdir()
+        self.temporary = tempfile.TemporaryDirectory(prefix="qcae-stage-contract-", dir=short_tmp)
         self.addCleanup(self.temporary.cleanup)
         self.base = Path(self.temporary.name)
         self.root = self.base / "workspace"
