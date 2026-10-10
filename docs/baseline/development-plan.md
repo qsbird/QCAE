@@ -41,7 +41,7 @@
 | 阶段 | 目标 | 检查点（退出条件） | 状态 |
 |---|---|---|---|
 | P1 仓库降噪 | 工作树只含产品源码、测试、生成输入和现行文档 | 跟踪文件≤500、`docs/`≤1MiB；无证据或旧代码副本进入代码索引；`check_design.py`通过；核心构建/测试不回退；备份可校验 | 完成（2026-10-10） |
-| P2 未知实体默认拒绝 | 分析输入/检查、Nastran导出、导出预览等消费者声明支持的记录类型，未声明类型自动 `unsupported_capability` | 新增测试实体不改任何消费者即被正确拒绝；Tri3的4处特例分支删除；“实体类型×消费者”矩阵测试 | 待开始 |
+| P2 未知实体默认拒绝 | 分析输入/检查、Nastran导出、导出预览等消费者声明支持的记录类型，未声明类型自动 `unsupported_capability` | 新增测试实体不改任何消费者即被正确拒绝；Tri3的4处特例分支删除；“实体类型×消费者”矩阵测试 | 完成（2026-10-10）；IPC导出预览一处改动待Qt 6.10环境编译 |
 | P3 测量与业务分离 | 复制账本移到registry/`RecordApplication`边界或编译开关 | `features/` 中ledger引用为0；移除无生成脚本的 `QCAE_C3_SQLITE_OBSERVED_OBJECT`/`QCAE_C3_QT_SHA256_CONFIG`；核心/IPC回归不变 | 待开始 |
 | P4 共享类型收敛 | 单一 `OperationPlan`、`Result` 工厂与错误传播辅助；`RecordPreparedOperation` 去掉 `normalized_value` | `OperationPlan` 定义1处；本地 `success<T>` 副本0；通用应用层无 `modulus` | 待开始 |
 | P5 单一调度路径 | 8个兼容接口迁入typed registry，删除手写分支；拆分超长注册函数 | `ipc_api.cpp` 无 `op == "` 分支；产品代码单函数≤150行 | 待开始 |

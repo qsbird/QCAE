@@ -15,6 +15,9 @@ struct FrozenAnalysisInput {
     std::string input_signature;
     std::vector<ExportIdentifier> identities;
 };
+// Record types the controlled cantilever analysis reads, plus organization, provenance and
+// geometry/mesh containers that add no physics. Analysis input and checks reject any other type.
+[[nodiscard]] std::span<const RecordTypeId> analysis_record_types() noexcept;
 // Resolves the controlled static physics and validates the supplied export map.
 // Organization, source numbering, names and view state do not enter the signature.
 [[nodiscard]] Result<FrozenAnalysisInput>

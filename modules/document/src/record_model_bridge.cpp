@@ -1,6 +1,7 @@
 #include "qcae/records_model_bridge.hpp"
 #include "qcae/records.hpp"
 
+#include <array>
 #include <iomanip>
 #include <set>
 #include <sstream>
@@ -98,6 +99,25 @@ DocumentView records_from_model(const Model& model,
     auto result = apply_record_changes(empty, changes, RecordDirection::forward, stats);
     result.validate();
     return result;
+}
+
+std::span<const RecordTypeId> model_projection_record_types() noexcept {
+    static constexpr std::array types{RecordTraits<records::Material>::type_id,
+                                      RecordTraits<records::Node>::type_id,
+                                      RecordTraits<records::BeamSection>::type_id,
+                                      RecordTraits<records::Beam>::type_id,
+                                      RecordTraits<records::Part>::type_id,
+                                      RecordTraits<records::Assembly>::type_id,
+                                      RecordTraits<records::EntitySet>::type_id,
+                                      RecordTraits<records::IncludeDocument>::type_id,
+                                      RecordTraits<records::NodalForce>::type_id,
+                                      RecordTraits<records::Constraint>::type_id,
+                                      RecordTraits<records::AnalysisDefinition>::type_id,
+                                      RecordTraits<records::LoadCase>::type_id,
+                                      RecordTraits<records::SourceIdentifier>::type_id,
+                                      RecordTraits<records::GeometryLine>::type_id,
+                                      RecordTraits<records::Mesh>::type_id};
+    return types;
 }
 
 Model model_from_records(const DocumentView& view, RecordStats* stats) {

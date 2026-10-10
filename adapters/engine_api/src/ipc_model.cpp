@@ -3,6 +3,7 @@
 #include "qcae/operation_inputs.hpp"
 #include "qcae/query.hpp"
 #include "qcae/records.hpp"
+#include "qcae/records_model_bridge.hpp"
 #include <QJsonArray>
 #include <QUuid>
 #include <algorithm>
@@ -535,9 +536,11 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
             if (ctx(r).expected_revision != records.value->info.revision)
                 return failure(
                     id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
-            if (records.value->records.count(RecordTraits<records::Tri3>::type_id))
-                return failure(
-                    id, "UNSUPPORTED_CAPABILITY", "Tri3 shell export is not implemented");
+            // Preview encodes the Model projection, which cannot carry other record types.
+            if (const auto unsupported = unsupported_record_type(records.value->records,
+                                                                 model_projection_record_types(),
+                                                                 "Model export preview"))
+                return failure(id, "UNSUPPORTED_CAPABILITY", qs(unsupported->what()));
         }
         const auto snap = app.snapshot(ref(r));
         if (!snap.ok())

@@ -1,6 +1,7 @@
 #include "qcae/analysis_input.hpp"
 #include "qcae/records.hpp"
 #include <algorithm>
+#include <array>
 #include <map>
 #include <set>
 #include <tuple>
@@ -49,15 +50,32 @@ void validate_map(const PhysicalInput& input, std::span<const ExportIdentifier> 
     }
 }
 } // namespace
+std::span<const RecordTypeId> analysis_record_types() noexcept {
+    static constexpr std::array types{RecordTraits<records::Material>::type_id,
+                                      RecordTraits<records::Node>::type_id,
+                                      RecordTraits<records::BeamSection>::type_id,
+                                      RecordTraits<records::Beam>::type_id,
+                                      RecordTraits<records::NodalForce>::type_id,
+                                      RecordTraits<records::Constraint>::type_id,
+                                      RecordTraits<records::LoadCase>::type_id,
+                                      RecordTraits<records::AnalysisDefinition>::type_id,
+                                      RecordTraits<records::Part>::type_id,
+                                      RecordTraits<records::Assembly>::type_id,
+                                      RecordTraits<records::EntitySet>::type_id,
+                                      RecordTraits<records::IncludeDocument>::type_id,
+                                      RecordTraits<records::SourceIdentifier>::type_id,
+                                      RecordTraits<records::GeometryLine>::type_id,
+                                      RecordTraits<records::Mesh>::type_id};
+    return types;
+}
 Result<FrozenAnalysisInput> freeze_analysis_input(const DocumentView& view,
                                                   const EntityId& identity,
                                                   const ProfileRef& profile,
                                                   std::span<const ExportIdentifier> mapping) {
     try {
-        if (view.count(RecordTraits<records::Tri3>::type_id))
-            invalid(ErrorCode::unsupported_capability,
-                    "Tri3 shell analysis is not implemented",
-                    "tri3");
+        if (auto unsupported =
+                unsupported_record_type(view, analysis_record_types(), "Cantilever analysis input"))
+            throw std::move(*unsupported);
         const auto record = view.find<records::AnalysisDefinition>(identity);
         if (!record)
             invalid(

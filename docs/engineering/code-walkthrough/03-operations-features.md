@@ -94,3 +94,5 @@ typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—10
 | [features/mesh_generation/CMakeLists.txt](../../../features/mesh_generation/CMakeLists.txt) | 构建线网格任务，依赖独立 task/application 桥，并登记 geometry_mesh 测试；不让通用应用反向依赖网格生成。 |
 
 可以沿 `geometry.create_line → mesh.generate_line → beam.assign_section → node.move` 阅读一次完整功能链。新增已有类型上的操作复用候选/提交模式，并从静态贡献注册；新增面/体单元仍须补拓扑、查询/显示和格式语义。
+
+把记录转换成其他表示的消费者各自声明理解的记录类型：分析输入与检查用 `analysis_record_types()`，Model投影（Nastran导出与导出预览）用 `model_projection_record_types()`。未列出的类型由 `unsupported_record_type` 统一返回 `unsupported_capability`，不会被静默丢弃。新增实体类型后，[`record_consumer_tests.cpp`](../../../tests/record_consumer_tests.cpp) 会要求逐个消费者归类：已支持则加入该消费者的列表，否则加入测试中的拒绝集合。

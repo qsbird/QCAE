@@ -61,10 +61,10 @@ void register_nastran_core_rules(RecordRegistry& registry, const ProfileRef& ins
 Result<ArtifactPlan> validate_nastran_export(const DocumentView& view,
                                              const EntityId& analysis,
                                              const NastranCodec& codec) {
-    if (view.count(RecordTraits<records::Tri3>::type_id))
-        return bad<ArtifactPlan>(
-            ErrorCode::unsupported_capability,
-            "Tri3 shell export is not implemented in the controlled Nastran profile");
+    // Export encodes the Model projection, which cannot carry other record types.
+    if (const auto unsupported =
+            unsupported_record_type(view, model_projection_record_types(), "Nastran export"))
+        return bad<ArtifactPlan>(unsupported->code(), unsupported->what());
     const auto exported =
         codec.encode(model_from_records(view), analysis, codec.definition().reference);
     if (!exported.report.complete || !exported.artifact) {

@@ -1,6 +1,9 @@
 #pragma once
 
 #include "qcae/record_registry.hpp"
+#include <optional>
+#include <span>
+#include <string_view>
 
 namespace qcae {
 inline constexpr std::size_t record_page_capacity = 1024;
@@ -72,4 +75,9 @@ void validate_record_candidate(const DocumentView&, const DocumentView&, const R
 RecordChangeSet diff_record_views(const DocumentView&, const DocumentView&);
 std::string encode_record_changes(const RecordChangeSet&, RecordStats* = nullptr);
 RecordChangeSet decode_record_changes(const RecordRegistry&, std::string_view);
+// Consumers that translate records into another representation list the record types they
+// understand. Returns an unsupported_capability error naming the first other type present in
+// the view, so a newly registered entity type is refused instead of silently dropped.
+[[nodiscard]] std::optional<RecordError> unsupported_record_type(
+    const DocumentView&, std::span<const RecordTypeId> understood, std::string_view consumer);
 } // namespace qcae

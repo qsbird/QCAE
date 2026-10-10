@@ -475,4 +475,19 @@ RecordChangeSet decode_record_changes(const RecordRegistry& registry, std::strin
     }
     return result;
 }
+std::optional<RecordError> unsupported_record_type(const DocumentView& view,
+                                                   std::span<const RecordTypeId> understood,
+                                                   std::string_view consumer) {
+    const auto registry = view.registry();
+    for (const auto type : registry->types()) {
+        if (view.count(type) == 0 || std::ranges::find(understood, type) != understood.end())
+            continue;
+        const auto& descriptor = *registry->find(type);
+        return RecordError(ErrorCode::unsupported_capability,
+                           std::string(consumer) + " does not support " + descriptor.name +
+                               " records",
+                           descriptor.query_kind);
+    }
+    return std::nullopt;
+}
 } // namespace qcae

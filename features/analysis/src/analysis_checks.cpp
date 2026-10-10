@@ -1,4 +1,5 @@
 #include "qcae/analysis_features.hpp"
+#include "qcae/analysis_input.hpp"
 #include "cantilever_checks.hpp"
 #include <algorithm>
 #include <array>
@@ -81,10 +82,10 @@ std::span<const RuleDefinition> RuleCatalog::definitions() const noexcept {
     return detail::cantilever_rules();
 }
 Result<CheckReport> RuleCatalog::check(const DocumentView& view, const EntityId& identity) const {
-    if (view.count(RecordTraits<records::Tri3>::type_id))
-        return failed<CheckReport>(ErrorCode::unsupported_capability,
-                                   "Tri3 shell analysis checks are not implemented",
-                                   "tri3");
+    if (const auto unsupported =
+            unsupported_record_type(view, analysis_record_types(), "Cantilever analysis checks"))
+        return failed<CheckReport>(
+            unsupported->code(), unsupported->what(), unsupported->field());
     const auto record = view.find<records::AnalysisDefinition>(identity);
     if (!record)
         return failed<CheckReport>(
