@@ -86,6 +86,8 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/schemas/operations" "${QCAE_GENERATED_DIR}/qcae/operation_inputs.hpp" --check)
   add_test(NAME operation_generation COMMAND Python3::Interpreter
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_operation_generation.py")
+  add_test(NAME new_operation_scaffold COMMAND Python3::Interpreter
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_new_operation.py")
   add_executable(qcae_parameter_tests tests/parameter_tests.cpp)
   target_link_libraries(qcae_parameter_tests PRIVATE qcae_parameters)
   qcae_warnings(qcae_parameter_tests)

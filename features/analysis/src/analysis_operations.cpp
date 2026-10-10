@@ -88,46 +88,39 @@ Result<OperationPlan> prepare_create_analysis(const AnalysisCreateInput& input,
 }
 
 Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& app) {
-    auto result = register_plan(registry, app, prepare_create_force);
-    if (!result.ok())
-        return result;
-    result = register_plan(registry, app, prepare_set_force_vector);
-    if (!result.ok())
-        return result;
-    result = registry.register_typed<ForcePreviewVectorInput>(
-        InputTraits<ForcePreviewVectorInput>::definition(),
-        [&app](const OperationContext& context,
-               const ForcePreviewVectorInput& input) -> Result<Value> {
-            const auto plan =
-                prepare_set_force_vector({input.force_id, input.x, input.y, input.z});
-            const auto preview = preview_plan(app, context, plan);
-            if (!preview.ok())
-                return forward_failure<Value>(preview);
-            return success(Value(Value::Object{
-                {"preview_id", Value(preview.value->id.value)},
-                {"affected_entity_id", Value(preview.value->affected_entity.value)},
-                {"creates_entity", Value(false)},
-                {"revision", Value(std::to_string(preview.value->context.expected_revision))}}));
-        });
-    if (!result.ok())
-        return result;
-    result = register_plan(registry, app, prepare_create_constraint);
-    if (!result.ok())
-        return result;
-    result = register_plan(registry, app, prepare_create_load_case);
-    if (!result.ok())
-        return result;
-    result = register_plan(registry, app, prepare_set_references);
-    if (!result.ok())
-        return result;
-    result = registry.register_typed<AnalysisCreateInput>(
-        InputTraits<AnalysisCreateInput>::definition(),
-        [&app](const OperationContext& context, const AnalysisCreateInput& input) {
-            return execute_plan<AnalysisCreateInput>(
-                app, context, prepare_create_analysis(input, *context.expected_profile));
-        });
-    if (!result.ok())
-        return result;
+    auto registered = register_plan(registry, app, prepare_create_force);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_set_force_vector);
+    if (registered.ok())
+        registered = registry.register_typed<ForcePreviewVectorInput>(
+            InputTraits<ForcePreviewVectorInput>::definition(),
+            [&app](const OperationContext& context,
+                   const ForcePreviewVectorInput& input) -> Result<Value> {
+                const auto plan =
+                    prepare_set_force_vector({input.force_id, input.x, input.y, input.z});
+                const auto preview = preview_plan(app, context, plan);
+                if (!preview.ok())
+                    return forward_failure<Value>(preview);
+                const auto revision = std::to_string(preview.value->context.expected_revision);
+                return success(Value(Value::Object{
+                    {"preview_id", Value(preview.value->id.value)},
+                    {"affected_entity_id", Value(preview.value->affected_entity.value)},
+                    {"creates_entity", Value(false)},
+                    {"revision", Value(revision)}}));
+            });
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_create_constraint);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_create_load_case);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_set_references);
+    if (registered.ok())
+        registered = registry.register_typed<AnalysisCreateInput>(
+            InputTraits<AnalysisCreateInput>::definition(),
+            [&app](const OperationContext& context, const AnalysisCreateInput& input) {
+                return execute_plan<AnalysisCreateInput>(
+                    app, context, prepare_create_analysis(input, *context.expected_profile));
+            });
     const auto checks = std::make_shared<CheckService>(app);
     auto response = [&app](const OperationContext& context,
                            const Result<CheckReport>& report) -> Result<Value> {
@@ -139,22 +132,24 @@ Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& a
         return {
             report.status, check_report_value(*report.value, current.value->records), report.error};
     };
-    result = registry.register_typed<AnalysisCheckInput>(
-        InputTraits<AnalysisCheckInput>::definition(),
-        [checks, response](const OperationContext& context, const AnalysisCheckInput& input) {
-            return response(context,
-                            checks->run(context.caller,
-                                        {*context.document, *context.expected_revision},
-                                        input.analysis_id,
-                                        context.idempotency_key));
-        });
-    if (!result.ok())
-        return result;
-    return registry.register_typed<AnalysisGetIssuesInput>(
-        InputTraits<AnalysisGetIssuesInput>::definition(),
-        [checks, response](const OperationContext& context, const AnalysisGetIssuesInput& input) {
-            return response(context,
-                            checks->get(context.caller, *context.document, input.check_id));
-        });
+    if (registered.ok())
+        registered = registry.register_typed<AnalysisCheckInput>(
+            InputTraits<AnalysisCheckInput>::definition(),
+            [checks, response](const OperationContext& context, const AnalysisCheckInput& input) {
+                return response(context,
+                                checks->run(context.caller,
+                                            {*context.document, *context.expected_revision},
+                                            input.analysis_id,
+                                            context.idempotency_key));
+            });
+    if (registered.ok())
+        registered = registry.register_typed<AnalysisGetIssuesInput>(
+            InputTraits<AnalysisGetIssuesInput>::definition(),
+            [checks, response](const OperationContext& context,
+                               const AnalysisGetIssuesInput& input) {
+                return response(context,
+                                checks->get(context.caller, *context.document, input.check_id));
+            });
+    return registered;
 }
 } // namespace qcae::features::analysis

@@ -44,7 +44,7 @@
 
 ### modules/feature_support/include/qcae/feature_operation.hpp
 
-[打开源码](../../../modules/feature_support/include/qcae/feature_operation.hpp)。新增写操作按固定步骤编写：`canonical_copy` 复制输入，`normalize` 换算单位，`check_record_fields` 复用生成的字段规则，`record_plan` 计算签名并在 `PlanEdit` 中描述记录修改、返回 `ChangeSummary`，`register_plan` 把plan接到唯一的 `RecordApplication.execute`。复制计量全部在这些步骤和按schema生成的 `InputTraits::observe_copy/moved_bytes` 中完成，功能代码不写ledger；向记录字段复制字符串等堆数据时用 `copy_into`，标量直接赋值。
+[打开源码](../../../modules/feature_support/include/qcae/feature_operation.hpp)。新增写操作按固定步骤编写：`canonical_copy` 复制输入，`normalize` 换算单位，`check_record_fields` 复用生成的字段规则，`record_plan` 计算签名并在 `PlanEdit` 中描述记录修改、返回 `ChangeSummary`，`register_plan` 把plan接到唯一的 `RecordApplication.execute`。复制计量全部在这些步骤和按schema生成的 `InputTraits::observe_copy/moved_bytes` 中完成，功能代码不写ledger；向记录字段复制字符串等堆数据时用 `copy_into`，标量直接赋值。完整步骤与脚手架见[新增操作、字段与实体](../adding-operations.md)。
 
 ## materials：材料与截面
 

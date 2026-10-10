@@ -30,6 +30,7 @@
 | [MYSTRAN本地接入](implementation/mystran-local.md) | MYSTRAN 19.0.0配置合同与运行链 |
 | [M5 MCP桥](implementation/m5-mcp-bridge.md) | stdio MCP桥 |
 | [M6本机包](implementation/m6-local-package.md)、[本机包运行](implementation/core-local-handoff.md) | macOS打包与运行步骤 |
+| [新增操作、字段与实体](engineering/adding-operations.md) | 扩展的固定步骤与脚手架 `tools/new_operation.py` |
 | [源码导读](engineering/code-walkthrough/README.md) | 按构建/入口、数据/提交、业务功能、查询/存储/桌面阅读生产源码 |
 | [C4扩展任务包](engineering/c4-executor-task.md) | 独立扩展实验的初始上下文与规则（[保护路径](engineering/c4-protected-paths.json)） |
 

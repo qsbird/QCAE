@@ -45,7 +45,7 @@
 | P3 测量与业务分离 | 复制账本由共享 `qcae_feature_support` 与按schema生成的输入计量承担 | `features/` 中ledger引用为0；材料操作计量与改造前逐项一致；移除无生成脚本的 `QCAE_C3_*` 测试选项；核心/IPC回归不变 | 核心完成（2026-10-10）；`QCAE_C3_*` 选项涉及Qt/桌面配置，待Qt 6.10环境再清理 |
 | P4 共享类型收敛 | 材料、网格编辑、分析三个功能统一使用 `qcae_feature_support`；`success`/`forward_failure` 移入foundation的 `Result` | `OperationPlan` 定义1处；本地 `success<T>` 副本0；功能内无自写execute/prepared辅助；材料计量不变 | 完成（2026-10-10）；`normalized_value` 是 `changes.preview` 旧wire字段及已持久提交签名的一部分，保留并在声明处注明；`resource_store.cpp` 的删除待Qt环境编译 |
 | P5 单一调度路径 | 8个兼容接口迁入typed registry，删除手写分支；拆分超长注册函数 | `ipc_api.cpp` 无 `op == "` 分支；产品代码单函数≤150行 | 待开始 |
-| P6 脚手架与配方 | `tools/new_operation.py`/`new_entity.py`；一页新增操作/字段/实体配方，以 `features/mesh_editing` 为范例；测试由功能目录注册 | 新增操作只改功能目录和schema，根 `CMakeLists.txt` 0改动 | 待开始 |
+| P6 脚手架与配方 | `tools/new_operation.py` 与一页[新增操作/字段/实体配方](../engineering/adding-operations.md)，以 `features/materials` 为范例 | 新增操作只改功能目录、schema和已有测试文件，根 `CMakeLists.txt` 0改动；骨架登记为不可用、桩函数拒绝且不提交 | 完成（2026-10-10）；实体字段/类型仍按配方手工改schema（`records.hpp` 重新生成需clang-format 21） |
 | P7 工具链与文档 | clang-format 21在Linux/macOS可固定获取；Python格式检查；文档只保留现行说明 | Linux上 `cpp_format`、`generated_entities` 实跑通过 | 待开始 |
 | P8 弱模型实测 | 用小模型从冻结基线重做EXT类任务 | 运行前登记成功率与成本阈值；记录真实token、失败原因与修正次数 | 待开始 |
 

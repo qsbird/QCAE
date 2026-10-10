@@ -185,4 +185,11 @@ Result<bool> register_plan(operations::OperationRegistry& registry,
             return execute_plan<Input>(app, context, prepare(input));
         });
 }
+
+// Lists a scaffolded operation as unavailable, so discovery never offers it before its plan exists.
+template <class Input> Result<bool> declare_unimplemented(operations::OperationRegistry& registry) {
+    return registry.declare_unavailable(
+        operations::InputTraits<Input>::definition(),
+        std::string(operations::InputTraits<Input>::operation_id) + " is not implemented");
+}
 } // namespace qcae::features

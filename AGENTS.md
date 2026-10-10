@@ -11,7 +11,7 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Stage reports, raw evidence and early designs were moved to the git tag `archive/pre-cleanup-2026-10-10`; they are history, not canonical documentation. `.omx/` is local runtime context, not canonical project documentation and not committed.
 
-Current status, confirmed user decisions and the active work track (weak-model extensibility, phases P1–P8 with checkpoints) are in `docs/baseline/development-plan.md`; update its status table instead of adding dated reports. Planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
+Current status, confirmed user decisions and the active work track (weak-model extensibility, phases P1–P8 with checkpoints) are in `docs/baseline/development-plan.md`; update its status table instead of adding dated reports. To add an operation, field or entity type, follow `docs/engineering/adding-operations.md`. Planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
 
 ## Binding architecture
 
