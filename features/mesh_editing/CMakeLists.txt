@@ -1,7 +1,7 @@
 add_library(qcae_mesh_editing STATIC src/mesh_editing_operations.cpp include/qcae/mesh_editing_operations.hpp)
 target_include_directories(qcae_mesh_editing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(qcae_mesh_editing PUBLIC cxx_std_20)
-target_link_libraries(qcae_mesh_editing PUBLIC qcae_application qcae_operations qcae_parameters)
+target_link_libraries(qcae_mesh_editing PUBLIC qcae_feature_support)
 qcae_warnings(qcae_mesh_editing)
 if(BUILD_TESTING AND QCAE_BUILD_IPC AND QCAE_BUILD_STORAGE AND UNIX)
   set(qcae_batch_translation_arguments)

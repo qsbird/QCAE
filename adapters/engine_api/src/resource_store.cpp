@@ -8,9 +8,6 @@
 
 namespace qcae::ipc {
 namespace {
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), std::nullopt};
-}
 template <class T> Result<T> failure(ErrorCode code, const char* message, const char* field) {
     const auto status =
         code == ErrorCode::revision_conflict || code == ErrorCode::document_epoch_expired

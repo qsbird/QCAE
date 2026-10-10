@@ -1,112 +1,52 @@
 #include "qcae/mesh_editing_operations.hpp"
-#include "qcae/quantities.hpp"
-#include "qcae/records.hpp"
 #include <algorithm>
 
 namespace qcae::features::mesh_editing {
-namespace {
 using namespace operations;
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), std::nullopt};
-}
-template <class T> Result<T> failed(const RecordError& error) {
-    return {Status::failed, std::nullopt, Diagnostic{error.code(), error.what(), error.field()}};
-}
 
-template <class Input, class Factory>
-Result<Value> execute(RecordApplication& app,
-                      const OperationContext& context,
-                      const Input& input,
-                      Factory factory) {
-    const auto plan = factory(input);
-    if (!plan.ok()) {
-        return {plan.status, std::nullopt, plan.error};
-    }
-    const auto receipt = app.execute(context.caller,
-                                     WriteContext{*context.document, *context.expected_revision},
-                                     std::string(InputTraits<Input>::operation_id),
-                                     plan.value->signature,
-                                     plan.value->prepare,
-                                     context.idempotency_key);
-    if (!receipt.ok()) {
-        return {receipt.status, std::nullopt, receipt.error};
-    }
-    return success(change_receipt_value(*receipt.value));
-}
-} // namespace
-
-Result<OperationPlan> prepare_move_node(const operations::NodeMoveInput& input) {
-    auto canonical = input;
+Result<OperationPlan> prepare_move_node(const NodeMoveInput& input) {
+    auto canonical = canonical_copy(input);
     for (std::size_t axis = 0; axis < 3; ++axis) {
         auto coordinate = parameters::canonical_quantity({input.position_mm[axis], "mm"},
                                                          parameters::Dimension::length);
         if (!coordinate.ok()) {
             coordinate.error->field = "position_mm[" + std::to_string(axis) + "]";
-            return {coordinate.status, std::nullopt, coordinate.error};
+            return forward_failure<OperationPlan>(coordinate);
         }
         canonical.position_mm[axis] = coordinate.value->value;
     }
-    const auto signature = canonical_value(InputTraits<NodeMoveInput>::to_value(canonical));
-    if (!signature.ok()) {
-        return {signature.status, std::nullopt, signature.error};
-    }
-    RecordPrepare prepare = [canonical, signature = *signature.value](
-                                const DocumentView& view, const RecordIdentityAllocator&) {
-        try {
-            EditSession edit(view);
-            edit.update<records::Node>(canonical.entity_id,
-                                       [&](auto& node) { node.position = canonical.position_mm; });
-            return success(RecordPreparedOperation{
-                edit.prepare(), "Move node", canonical.entity_id, signature, 0, false});
-        } catch (const RecordError& error) {
-            return failed<RecordPreparedOperation>(error);
-        }
-    };
-    return success(OperationPlan{*signature.value, std::move(prepare)});
+    return record_plan(std::move(canonical), [](const NodeMoveInput& canonical, PlanEdit& edit) {
+        edit.update<records::Node>(canonical.entity_id,
+                                   [&](auto& node) { node.position = canonical.position_mm; });
+        return ChangeSummary{"Move node", canonical.entity_id, 0, false};
+    });
 }
 
-Result<OperationPlan> prepare_assign_section(const operations::BeamAssignSectionInput& input) {
+Result<OperationPlan> prepare_assign_section(const BeamAssignSectionInput& input) {
     const auto identities = wire::entity_id_array(wire::to_value(input.beam_ids), "beam_ids");
+    if (!identities.ok())
+        return forward_failure<OperationPlan>(identities);
     const auto section = wire::entity_id(Value(input.section_id.value), "section_id");
-    if (!identities.ok()) {
-        return {identities.status, std::nullopt, identities.error};
-    }
-    if (!section.ok()) {
-        return {section.status, std::nullopt, section.error};
-    }
-    auto canonical = input;
+    if (!section.ok())
+        return forward_failure<OperationPlan>(section);
+    auto canonical = canonical_copy(input);
     std::sort(canonical.beam_ids.begin(), canonical.beam_ids.end());
-    const auto signature =
-        canonical_value(InputTraits<BeamAssignSectionInput>::to_value(canonical));
-    if (!signature.ok()) {
-        return {signature.status, std::nullopt, signature.error};
-    }
-    RecordPrepare prepare = [canonical, signature = *signature.value](
-                                const DocumentView& view, const RecordIdentityAllocator&) {
-        try {
-            EditSession edit(view);
-            for (const auto& beam : canonical.beam_ids) {
-                edit.update<records::Beam>(
-                    beam, [&](auto& record) { record.section = canonical.section_id; });
-            }
-            return success(RecordPreparedOperation{edit.prepare(),
-                                                   "Assign beam section",
-                                                   canonical.beam_ids.front(),
-                                                   signature,
-                                                   0,
-                                                   false});
-        } catch (const RecordError& error) {
-            return failed<RecordPreparedOperation>(error);
-        }
-    };
-    return success(OperationPlan{*signature.value, std::move(prepare)});
+    return record_plan(std::move(canonical),
+                       [](const BeamAssignSectionInput& canonical, PlanEdit& edit) {
+                           for (const auto& beam : canonical.beam_ids)
+                               edit.update<records::Beam>(beam, [&](auto& record) {
+                                   record.section = canonical.section_id;
+                               });
+                           return ChangeSummary{
+                               "Assign beam section", canonical.beam_ids.front(), 0, false};
+                       });
 }
 
-Result<OperationPlan> prepare_translate_nodes(const operations::NodeTranslateBatchInput& input) {
+Result<OperationPlan> prepare_translate_nodes(const NodeTranslateBatchInput& input) {
     const auto identities = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
     if (!identities.ok())
-        return {identities.status, std::nullopt, identities.error};
-    auto canonical = input;
+        return forward_failure<OperationPlan>(identities);
+    auto canonical = canonical_copy(input);
     const std::array components{&canonical.x, &canonical.y, &canonical.z};
     constexpr std::array names{"x", "y", "z"};
     for (std::size_t axis = 0; axis < components.size(); ++axis) {
@@ -114,19 +54,13 @@ Result<OperationPlan> prepare_translate_nodes(const operations::NodeTranslateBat
             parameters::canonical_quantity(*components[axis], parameters::Dimension::length);
         if (!component.ok()) {
             component.error->field = names[axis];
-            return {component.status, std::nullopt, component.error};
+            return forward_failure<OperationPlan>(component);
         }
         *components[axis] = std::move(*component.value);
     }
     std::sort(canonical.node_ids.begin(), canonical.node_ids.end());
-    const auto signature =
-        canonical_value(InputTraits<NodeTranslateBatchInput>::to_value(canonical));
-    if (!signature.ok())
-        return {signature.status, std::nullopt, signature.error};
-    RecordPrepare prepare = [canonical, signature = *signature.value](
-                                const DocumentView& view, const RecordIdentityAllocator&) {
-        try {
-            EditSession edit(view);
+    return record_plan(
+        std::move(canonical), [](const NodeTranslateBatchInput& canonical, PlanEdit& edit) {
             const std::array offset{canonical.x.value, canonical.y.value, canonical.z.value};
             for (const auto& identity : canonical.node_ids) {
                 edit.update<records::Node>(identity, [&](auto& node) {
@@ -142,96 +76,58 @@ Result<OperationPlan> prepare_translate_nodes(const operations::NodeTranslateBat
                     }
                 });
             }
-            return success(RecordPreparedOperation{edit.prepare(),
-                                                   "Translate nodes",
-                                                   canonical.node_ids.front(),
-                                                   signature,
-                                                   0,
-                                                   false});
-        } catch (const RecordError& error) {
-            return failed<RecordPreparedOperation>(error);
-        }
-    };
-    return success(OperationPlan{*signature.value, std::move(prepare)});
+            return ChangeSummary{"Translate nodes", canonical.node_ids.front(), 0, false};
+        });
 }
-Result<OperationPlan> prepare_create_tri3(const operations::MeshCreateTri3Input& input) {
+
+Result<OperationPlan> prepare_create_tri3(const MeshCreateTri3Input& input) {
     const auto nodes = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
-    const auto mesh = wire::entity_id(Value(input.mesh_id.value), "mesh_id");
     if (!nodes.ok())
-        return {nodes.status, std::nullopt, nodes.error};
+        return forward_failure<OperationPlan>(nodes);
+    const auto mesh = wire::entity_id(Value(input.mesh_id.value), "mesh_id");
     if (!mesh.ok())
-        return {mesh.status, std::nullopt, mesh.error};
+        return forward_failure<OperationPlan>(mesh);
     if (input.node_ids.size() != 3)
         return {
             Status::failed,
             std::nullopt,
             Diagnostic{ErrorCode::invalid_input, "Tri3 requires exactly three nodes", "node_ids"}};
     // Node order is topology: preserve its winding in both storage and retry signatures.
-    const auto signature = canonical_value(InputTraits<MeshCreateTri3Input>::to_value(input));
-    if (!signature.ok())
-        return {signature.status, std::nullopt, signature.error};
-    RecordPrepare prepare = [input, signature = *signature.value](
-                                const DocumentView& view, const RecordIdentityAllocator& allocate) {
-        try {
-            const auto id = allocate();
-            EditSession edit(view);
-            edit.put(records::Tri3{id,
-                                   {input.node_ids[0], input.node_ids[1], input.node_ids[2]},
-                                   records::MeshId(input.mesh_id.value)});
-            return success(RecordPreparedOperation{
-                edit.prepare(), "Create Tri3 topology", id, signature, 0, true});
-        } catch (const RecordError& error) {
-            return failed<RecordPreparedOperation>(error);
-        }
-    };
-    return success(OperationPlan{*signature.value, std::move(prepare)});
+    return record_plan(canonical_copy(input),
+                       [](const MeshCreateTri3Input& canonical, PlanEdit& edit) {
+                           const auto id = edit.allocate();
+                           const auto& nodes = canonical.node_ids;
+                           edit.put(records::Tri3{id,
+                                                  {nodes[0], nodes[1], nodes[2]},
+                                                  records::MeshId(canonical.mesh_id.value)});
+                           return ChangeSummary{"Create Tri3 topology", id, 0, true};
+                       });
 }
 
-Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
-    const auto registered = registry.register_typed<NodeMoveInput>(
-        InputTraits<NodeMoveInput>::definition(),
-        [&app](const OperationContext& context, const NodeMoveInput& input) {
-            return execute(app, context, input, prepare_move_node);
-        });
-    if (!registered.ok())
-        return registered;
-    const auto section = registry.register_typed<BeamAssignSectionInput>(
-        InputTraits<BeamAssignSectionInput>::definition(),
-        [&app](const OperationContext& context, const BeamAssignSectionInput& input) {
-            return execute(app, context, input, prepare_assign_section);
-        });
-    if (!section.ok())
-        return section;
-    const auto translate = registry.register_typed<NodeTranslateBatchInput>(
-        InputTraits<NodeTranslateBatchInput>::definition(),
-        [&app](const OperationContext& context, const NodeTranslateBatchInput& input) {
-            return execute(app, context, input, prepare_translate_nodes);
-        });
-    if (!translate.ok())
-        return translate;
-    const auto batch_preview = registry.register_typed<NodeTranslateBatchPreviewInput>(
-        InputTraits<NodeTranslateBatchPreviewInput>::definition(),
-        [&app](const OperationContext& context,
-               const NodeTranslateBatchPreviewInput& input) -> Result<Value> {
-            const auto plan = prepare_translate_nodes({input.node_ids, input.x, input.y, input.z});
-            if (!plan.ok())
-                return {plan.status, std::nullopt, plan.error};
-            const auto preview = app.preview(context.caller,
-                                             {*context.document, *context.expected_revision},
-                                             plan.value->prepare);
-            if (!preview.ok())
-                return {preview.status, std::nullopt, preview.error};
-            return success(Value(Value::Object{
-                {"preview_id", Value(preview.value->id.value)},
-                {"affected_entity_id", Value(preview.value->affected_entity.value)},
-                {"revision", Value(std::to_string(preview.value->context.expected_revision))}}));
-        });
-    if (!batch_preview.ok())
-        return batch_preview;
-    return registry.register_typed<MeshCreateTri3Input>(
-        InputTraits<MeshCreateTri3Input>::definition(),
-        [&app](const OperationContext& context, const MeshCreateTri3Input& input) {
-            return execute(app, context, input, prepare_create_tri3);
-        });
+Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& app) {
+    auto registered = register_plan(registry, app, prepare_move_node);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_assign_section);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_translate_nodes);
+    if (registered.ok())
+        registered = registry.register_typed<NodeTranslateBatchPreviewInput>(
+            InputTraits<NodeTranslateBatchPreviewInput>::definition(),
+            [&app](const OperationContext& context,
+                   const NodeTranslateBatchPreviewInput& input) -> Result<Value> {
+                const auto plan =
+                    prepare_translate_nodes({input.node_ids, input.x, input.y, input.z});
+                const auto preview = preview_plan(app, context, plan);
+                if (!preview.ok())
+                    return forward_failure<Value>(preview);
+                const auto revision = std::to_string(preview.value->context.expected_revision);
+                return success(Value(Value::Object{
+                    {"preview_id", Value(preview.value->id.value)},
+                    {"affected_entity_id", Value(preview.value->affected_entity.value)},
+                    {"revision", Value(revision)}}));
+            });
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_create_tri3);
+    return registered;
 }
 } // namespace qcae::features::mesh_editing

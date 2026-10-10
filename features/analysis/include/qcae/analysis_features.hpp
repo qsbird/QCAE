@@ -1,13 +1,8 @@
 #pragma once
+#include "qcae/feature_operation.hpp"
 #include "qcae/operation_inputs.hpp"
-#include "qcae/record_application.hpp"
-#include "qcae/records.hpp"
 
 namespace qcae::features::analysis {
-struct OperationPlan {
-    std::string signature;
-    RecordPrepare prepare;
-};
 [[nodiscard]] Result<OperationPlan> prepare_create_force(const operations::ForceCreateInput&);
 [[nodiscard]] Result<OperationPlan>
 prepare_set_force_vector(const operations::ForceSetVectorInput&);

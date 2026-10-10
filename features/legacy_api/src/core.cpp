@@ -9,9 +9,6 @@
 
 namespace qcae {
 namespace {
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), {}};
-}
 template <class T>
 Result<T> failure(Status status, ErrorCode code, const char* message, const char* field = "") {
     return {status, {}, Diagnostic{code, message, field}};

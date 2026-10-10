@@ -1,12 +1,8 @@
 #pragma once
+#include "qcae/feature_operation.hpp"
 #include "qcae/operation_inputs.hpp"
-#include "qcae/record_application.hpp"
 
 namespace qcae::features::mesh_editing {
-struct OperationPlan {
-    std::string signature;
-    RecordPrepare prepare;
-};
 [[nodiscard]] Result<OperationPlan> prepare_move_node(const operations::NodeMoveInput&);
 [[nodiscard]] Result<OperationPlan>
 prepare_translate_nodes(const operations::NodeTranslateBatchInput&);

@@ -25,9 +25,6 @@ std::string read_text(const fs::path& path) {
     require(input.good(), "Test input file is missing");
     return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
 }
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), std::nullopt};
-}
 template <class T> Result<T> failed() {
     return {Status::failed,
             std::nullopt,

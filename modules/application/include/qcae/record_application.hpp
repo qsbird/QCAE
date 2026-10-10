@@ -35,6 +35,8 @@ struct RecordPreparedOperation {
     std::string label;
     EntityId affected_entity;
     std::string signature;
+    // Legacy changes.preview field: canonical Young's modulus in MPa for material edits,
+    // 0 otherwise.
     double normalized_value{};
     bool creates_entity{};
 };

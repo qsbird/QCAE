@@ -43,7 +43,7 @@
 | P1 仓库降噪 | 工作树只含产品源码、测试、生成输入和现行文档 | 跟踪文件≤500、`docs/`≤1MiB；无证据或旧代码副本进入代码索引；`check_design.py`通过；核心构建/测试不回退；备份可校验 | 完成（2026-10-10） |
 | P2 未知实体默认拒绝 | 分析输入/检查、Nastran导出、导出预览等消费者声明支持的记录类型，未声明类型自动 `unsupported_capability` | 新增测试实体不改任何消费者即被正确拒绝；Tri3的4处特例分支删除；“实体类型×消费者”矩阵测试 | 完成（2026-10-10）；IPC导出预览一处改动待Qt 6.10环境编译 |
 | P3 测量与业务分离 | 复制账本由共享 `qcae_feature_support` 与按schema生成的输入计量承担 | `features/` 中ledger引用为0；材料操作计量与改造前逐项一致；移除无生成脚本的 `QCAE_C3_*` 测试选项；核心/IPC回归不变 | 核心完成（2026-10-10）；`QCAE_C3_*` 选项涉及Qt/桌面配置，待Qt 6.10环境再清理 |
-| P4 共享类型收敛 | 单一 `OperationPlan`、`Result` 工厂与错误传播辅助；`RecordPreparedOperation` 去掉 `normalized_value` | `OperationPlan` 定义1处；本地 `success<T>` 副本0；通用应用层无 `modulus` | 待开始 |
+| P4 共享类型收敛 | 材料、网格编辑、分析三个功能统一使用 `qcae_feature_support`；`success`/`forward_failure` 移入foundation的 `Result` | `OperationPlan` 定义1处；本地 `success<T>` 副本0；功能内无自写execute/prepared辅助；材料计量不变 | 完成（2026-10-10）；`normalized_value` 是 `changes.preview` 旧wire字段及已持久提交签名的一部分，保留并在声明处注明；`resource_store.cpp` 的删除待Qt环境编译 |
 | P5 单一调度路径 | 8个兼容接口迁入typed registry，删除手写分支；拆分超长注册函数 | `ipc_api.cpp` 无 `op == "` 分支；产品代码单函数≤150行 | 待开始 |
 | P6 脚手架与配方 | `tools/new_operation.py`/`new_entity.py`；一页新增操作/字段/实体配方，以 `features/mesh_editing` 为范例；测试由功能目录注册 | 新增操作只改功能目录和schema，根 `CMakeLists.txt` 0改动 | 待开始 |
 | P7 工具链与文档 | clang-format 21在Linux/macOS可固定获取；Python格式检查；文档只保留现行说明 | Linux上 `cpp_format`、`generated_entities` 实跑通过 | 待开始 |

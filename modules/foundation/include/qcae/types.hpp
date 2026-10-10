@@ -72,6 +72,13 @@ template <class T> struct Result {
         return status == Status::success && value.has_value();
     }
 };
+template <class T> Result<T> success(T value) {
+    return {Status::success, std::move(value), std::nullopt};
+}
+// Returns the status and diagnostic of an unsuccessful result as another result type.
+template <class T, class U> Result<T> forward_failure(const Result<U>& result) {
+    return {result.status, std::nullopt, result.error};
+}
 
 // Supplied by a trusted host, never decoded from request parameters.
 struct Caller {

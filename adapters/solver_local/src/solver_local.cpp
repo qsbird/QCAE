@@ -46,9 +46,6 @@ class FileDescriptor {
   private:
     int value_;
 };
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), std::nullopt};
-}
 template <class T>
 Result<T> failure(ErrorCode code, std::string message, Status status = Status::failed) {
     return {status, std::nullopt, Diagnostic{code, std::move(message), "solver_run"}};

@@ -18,19 +18,15 @@ struct OperationPlan {
 struct ChangeSummary {
     std::string label;
     EntityId affected_entity;
+    // Legacy changes.preview field: canonical Young's modulus in MPa for material edits,
+    // 0 otherwise.
+    // It is part of the wire response and of persisted commit signatures; keep it.
     double normalized_value{};
     bool creates_entity{false};
 };
 
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), std::nullopt};
-}
 template <class T> Result<T> failed(const RecordError& error) {
     return {Status::failed, std::nullopt, Diagnostic{error.code(), error.what(), error.field()}};
-}
-// Returns the status and diagnostic of an unsuccessful result as another result type.
-template <class T, class U> Result<T> forward_failure(const Result<U>& result) {
-    return {result.status, std::nullopt, result.error};
 }
 
 // The copy a feature canonicalizes before computing the operation signature.
@@ -113,11 +109,12 @@ void observe_write(const WriteContext& write, const std::string& operation) noex
 } // namespace detail
 
 // Plans a document write. `change(canonical, edit)` runs inside the single-writer section of
-// RecordApplication and returns the ChangeSummary of the edits it made.
+// RecordApplication and returns the ChangeSummary of the edits it made. The retry signature
+// covers `signature_source`; use the overload below when it is the canonical input alone.
 template <class Input, class Change>
-Result<OperationPlan> record_plan(Input canonical, Change change) {
-    auto signature =
-        operations::canonical_value(operations::InputTraits<Input>::to_value(canonical));
+Result<OperationPlan>
+record_plan(Input canonical, const operations::Value& signature_source, Change change) {
+    auto signature = operations::canonical_value(signature_source);
     if (!signature.ok())
         return forward_failure<OperationPlan>(signature);
     detail::observe_capture(2 * operations::InputTraits<Input>::moved_bytes(canonical),
@@ -137,6 +134,11 @@ Result<OperationPlan> record_plan(Input canonical, Change change) {
     };
     detail::observe_signature_move(*signature.value);
     return success(OperationPlan{std::move(*signature.value), std::move(prepare)});
+}
+template <class Input, class Change>
+Result<OperationPlan> record_plan(Input canonical, Change change) {
+    const auto signature_source = operations::InputTraits<Input>::to_value(canonical);
+    return record_plan(std::move(canonical), signature_source, std::move(change));
 }
 
 // Commits a plan through RecordApplication and returns the change receipt.
@@ -160,6 +162,16 @@ Result<operations::Value> execute_plan(RecordApplication& app,
     if (!receipt.ok())
         return forward_failure<operations::Value>(receipt);
     return success(operations::change_receipt_value(*receipt.value));
+}
+
+// Prepares a plan against the current revision without committing it.
+inline Result<ChangePreview> preview_plan(RecordApplication& app,
+                                          const operations::OperationContext& context,
+                                          const Result<OperationPlan>& plan) {
+    if (!plan.ok())
+        return forward_failure<ChangePreview>(plan);
+    return app.preview(
+        context.caller, {*context.document, *context.expected_revision}, plan.value->prepare);
 }
 
 // Registers a typed document-write operation whose plan comes from `prepare`.

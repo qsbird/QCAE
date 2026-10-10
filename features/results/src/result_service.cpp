@@ -5,9 +5,6 @@
 namespace qcae::features::results {
 namespace {
 constexpr const char* owner = "qcae.results.fixture";
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), {}};
-}
 template <class T> Result<T> failed(ErrorCode code, std::string message, std::string field = {}) {
     return {code == ErrorCode::missing_input ? Status::needs_input
             : code == ErrorCode::revision_conflict || code == ErrorCode::idempotency_key_conflict

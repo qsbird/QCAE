@@ -31,10 +31,6 @@ failure(ErrorCode code, std::string message, std::string field, Status status = 
     return {status, std::nullopt, Diagnostic{code, std::move(message), std::move(field)}};
 }
 
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), std::nullopt};
-}
-
 const UnitDescriptor* find_unit(std::string_view symbol) {
     const auto found = std::find_if(
         units.begin(), units.end(), [symbol](const auto& unit) { return unit.symbol == symbol; });

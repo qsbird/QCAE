@@ -8,6 +8,8 @@ struct Prepared {
     bool create{};
     EntityId entity;
     std::string name;
+    // Legacy changes.preview field: canonical Young's modulus in MPa for material edits,
+    // 0 otherwise.
     double modulus{};
     std::shared_ptr<const PreparedRecordChange> after;
     std::string label;

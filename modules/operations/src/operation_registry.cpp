@@ -65,10 +65,6 @@ failure(ErrorCode code, std::string message, std::string field, Status status = 
     return {status, std::nullopt, Diagnostic{code, std::move(message), std::move(field)}};
 }
 
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), std::nullopt};
-}
-
 std::string child_field(std::string_view parent, std::string_view name) {
     std::string result;
     const auto append = [&](std::string_view part) {

@@ -14,9 +14,6 @@
 
 namespace qcae {
 namespace {
-template <class T> Result<T> success(T value) {
-    return {Status::success, std::move(value), {}};
-}
 template <class T> Result<T> failure(ErrorCode code, const std::string& message) {
     const auto status = code == ErrorCode::revision_conflict ||
                                 code == ErrorCode::idempotency_key_conflict ||
