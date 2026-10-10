@@ -170,7 +170,8 @@
       "sources": [
         "profiles/nastran/src/nastran_codec.cpp",
         "profiles/nastran/src/nastran_package.cpp",
-        "profiles/nastran/src/nastran_static_result.cpp"
+        "profiles/nastran/src/nastran_static_result.cpp",
+        "profiles/nastran/src/mystran_static_result.cpp"
       ],
       "public_dependencies": [
         "qcae_document",
@@ -279,7 +280,8 @@
         "adapters/engine_api/src/solver_run_record.cpp",
         "adapters/engine_api/src/solver_version_probe.cpp",
         "adapters/engine_api/src/solver_result_store.cpp",
-        "adapters/engine_api/src/solver_validation_store.cpp"
+        "adapters/engine_api/src/solver_validation_store.cpp",
+        "adapters/engine_api/src/mystran_input.cpp"
       ],
       "public_dependencies": [
         "qcae_legacy_api",
@@ -308,7 +310,9 @@
         "adapters/engine_api/src/solver_version_probe.hpp",
         "adapters/engine_api/src/solver_result_store.hpp",
         "adapters/engine_api/src/solver_validation_store.hpp",
-        "adapters/engine_api/src/typed_json.hpp"
+        "adapters/engine_api/src/typed_json.hpp",
+        "adapters/engine_api/src/solver_backend.hpp",
+        "adapters/engine_api/src/mystran_input.hpp"
       ],
       "conditional_public_dependencies": {
         "QCAE_BUILD_SOLVER_LOCAL": [
