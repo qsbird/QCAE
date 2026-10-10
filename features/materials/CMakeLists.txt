@@ -1,7 +1,7 @@
 add_library(qcae_material_features STATIC src/material_operations.cpp include/qcae/material_operations.hpp)
 target_include_directories(qcae_material_features PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(qcae_material_features PUBLIC cxx_std_20)
-target_link_libraries(qcae_material_features PUBLIC qcae_application qcae_operations qcae_parameters)
+target_link_libraries(qcae_material_features PUBLIC qcae_feature_support)
 qcae_warnings(qcae_material_features)
 if(BUILD_TESTING AND QCAE_BUILD_IPC AND QCAE_BUILD_STORAGE AND UNIX)
   add_test(NAME material_description_ipc COMMAND Python3::Interpreter

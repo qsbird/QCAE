@@ -6,9 +6,11 @@
 #include <concepts>
 #include <functional>
 #include <map>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -128,6 +130,48 @@ template <class T> std::size_t dynamic_bytes(const T&) noexcept {
 }
 template <class T> std::size_t dynamic_bytes(const std::optional<T>& value) noexcept {
     return value ? dynamic_bytes(*value) : 0;
+}
+// Bytes copied when an input field is moved into a plan. A moved std::string transfers long
+// storage and copies only its short representation; libstdc++ does not expose that boundary,
+// so the cost is reported as unknown there. Vectors transfer their buffer; an optional copies
+// its inline storage plus its value's moved payload.
+inline std::size_t moved_bytes(const std::string& value) noexcept {
+#if defined(_LIBCPP_VERSION)
+    return value.capacity() <= std::string{}.capacity() ? value.size() : 0;
+#else
+    (void)value;
+    ledger::unknown(ledger::Stage::application, ledger::Metric::model_copy_bytes);
+    return 0;
+#endif
+}
+inline std::size_t moved_payload_bytes(const std::string& value) noexcept {
+    return moved_bytes(value);
+}
+inline std::size_t moved_payload_bytes(const EntityId& value) noexcept {
+    return moved_bytes(value.value);
+}
+inline std::size_t moved_payload_bytes(const Quantity& value) noexcept {
+    return moved_bytes(value.unit);
+}
+template <class T> std::size_t moved_payload_bytes(const T&) noexcept {
+    return 0;
+}
+inline std::size_t moved_bytes(const EntityId& value) noexcept {
+    return moved_payload_bytes(value);
+}
+inline std::size_t moved_bytes(const Quantity& value) noexcept {
+    return sizeof(value.value) + moved_payload_bytes(value);
+}
+inline std::size_t moved_bytes(const std::vector<EntityId>&) noexcept {
+    return 0;
+}
+template <class T> std::size_t moved_bytes(const std::optional<T>& value) noexcept {
+    return sizeof(value) + (value ? moved_payload_bytes(*value) : 0);
+}
+template <class T>
+    requires std::is_trivially_copyable_v<T>
+std::size_t moved_bytes(const T&) noexcept {
+    return sizeof(T);
 }
 // Generated aggregate copies include their inline fields once, plus owned dynamic payload.
 template <class Input, class... Fields>

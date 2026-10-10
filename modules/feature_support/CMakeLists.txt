@@ -1,0 +1,5 @@
+add_library(qcae_feature_support STATIC src/feature_operation.cpp include/qcae/feature_operation.hpp)
+target_include_directories(qcae_feature_support PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_features(qcae_feature_support PUBLIC cxx_std_20)
+target_link_libraries(qcae_feature_support PUBLIC qcae_application qcae_operations qcae_parameters)
+qcae_warnings(qcae_feature_support)

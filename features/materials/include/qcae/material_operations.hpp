@@ -1,12 +1,8 @@
 #pragma once
+#include "qcae/feature_operation.hpp"
 #include "qcae/operation_inputs.hpp"
-#include "qcae/record_application.hpp"
 
 namespace qcae::features::materials {
-struct OperationPlan {
-    std::string signature;
-    RecordPrepare prepare;
-};
 [[nodiscard]] Result<OperationPlan> prepare_create_material(const operations::MaterialCreateInput&);
 [[nodiscard]] Result<OperationPlan>
 prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput&);

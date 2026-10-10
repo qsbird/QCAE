@@ -40,15 +40,21 @@
 
 [打开源码](../../../modules/parameters/src/quantities.cpp)。实现受控单位表、有限值与维度检查、坐标变换和归一化表的线性插值，表求值明确选择 reject 或 clamp。材料和网格编辑同时调用这些纯工具以统一单位语义；此文件不持有文档、历史、数据库或界面状态。
 
+## feature_support：功能操作的共享步骤
+
+### modules/feature_support/include/qcae/feature_operation.hpp
+
+[打开源码](../../../modules/feature_support/include/qcae/feature_operation.hpp)。新增写操作按固定步骤编写：`canonical_copy` 复制输入，`normalize` 换算单位，`check_record_fields` 复用生成的字段规则，`record_plan` 计算签名并在 `PlanEdit` 中描述记录修改、返回 `ChangeSummary`，`register_plan` 把plan接到唯一的 `RecordApplication.execute`。复制计量全部在这些步骤和按schema生成的 `InputTraits::observe_copy/moved_bytes` 中完成，功能代码不写ledger；向记录字段复制字符串等堆数据时用 `copy_into`，标量直接赋值。
+
 ## materials：材料与截面
 
 ### features/materials/include/qcae/material_operations.hpp
 
-[打开源码](../../../features/materials/include/qcae/material_operations.hpp)。公开创建材料、修改 E、创建梁截面的 plan 工厂与处理器注册函数，输入来自生成的 typed 契约。`OperationPlan` 包含归一化签名和 `RecordPrepare`，把业务准备与通用提交分开；使用者不能通过 plan 绕过文档版本检查。
+[打开源码](../../../features/materials/include/qcae/material_operations.hpp)。公开创建材料、修改 E、创建梁截面的 plan 工厂与处理器注册函数，输入来自生成的 typed 契约。共享的 `OperationPlan` 包含归一化签名和 `RecordPrepare`，把业务准备与通用提交分开；使用者不能通过 plan 绕过文档版本检查。
 
 ### features/materials/src/material_operations.cpp
 
-[打开源码](../../../features/materials/src/material_operations.cpp)。首先转换压力、面积和惯性矩单位，再构造强类型 Material/BeamSection 候选并调用 `EditSession::prepare()`；截面引用材料的合法性由记录规则核验。注册函数将三项操作接到同一个 `RecordApplication.execute`，得到共享回执；材料取值检查不由 GUI 或 JSON 层各做一遍。
+[打开源码](../../../features/materials/src/material_operations.cpp)。完全由上述共享步骤组成，是新增写操作的范例：先转换压力、面积和惯性矩单位，再在 `PlanEdit` 中构造强类型 Material/BeamSection 候选；截面引用材料的合法性由记录规则核验。注册函数将三项操作接到同一个 `RecordApplication.execute`，得到共享回执；材料取值检查不由 GUI 或 JSON 层各做一遍。
 
 ## mesh_editing：已有实体的局部编辑
 

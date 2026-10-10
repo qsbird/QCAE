@@ -198,7 +198,14 @@ def render(operations: list[dict]) -> str:
             else:
                 lines.extend([f'        object.emplace({literal(key)}, {expression});',
                               f'        wire::observe_key({literal(key)});'])
-        lines.extend(['        return Value(std::move(object));', '    }', '};', ''])
+        lines.extend(['        return Value(std::move(object));', '    }', ''])
+        # Copy accounting for the shared feature plan helpers; covers every schema field.
+        members = ''.join(', input.' + field['name'] for field in fields)
+        moved = ' + '.join(f"wire::moved_bytes(input.{field['name']})" for field in fields) or '0'
+        lines.extend([f'    static void observe_copy(const {name}& input) noexcept {{',
+                      f'        wire::observe_input_copy(input{members});', '    }', '',
+                      f'    static std::size_t moved_bytes(const {name}&' + (' input' if fields else '') + ') noexcept {',
+                      f'        return {moved};', '    }', '};', ''])
     lines.extend(['} // namespace qcae::operations', ''])
     return '\n'.join(lines)
 

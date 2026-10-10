@@ -677,6 +677,30 @@
       "external_dependencies": []
     },
     {
+      "target": "qcae_feature_support",
+      "path": "modules/feature_support",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/feature_support/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/feature_support/include/qcae/feature_operation.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "modules/feature_support/src/feature_operation.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_application",
+        "qcae_operations",
+        "qcae_parameters"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
+    },
+    {
       "target": "qcae_material_features",
       "path": "features/materials",
       "kind": "STATIC",
@@ -693,9 +717,7 @@
         "features/materials/src/material_operations.cpp"
       ],
       "public_dependencies": [
-        "qcae_application",
-        "qcae_operations",
-        "qcae_parameters"
+        "qcae_feature_support"
       ],
       "private_dependencies": [],
       "external_dependencies": []
