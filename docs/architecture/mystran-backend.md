@@ -1,7 +1,7 @@
 # ADR-09：MYSTRAN 本地后端
 
 日期：2026-10-03。状态：按用户接续指令实施受控本机运行适配；验收范围以
-[实际验证记录](../engineering/mystran-local-validation-2026-10-03.md)为准。
+[开发计划](../baseline/development-plan.md#当前状态)为准。
 本决定补充 [ADR-08](decisions-and-verification.md#adr-08公共物理语义受控专有扩展与版本化能力包)
 和 [能力包边界](solver-profiles.md)，不把完整 M4、SK 或 P0 标为完成。
 

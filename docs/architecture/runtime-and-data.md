@@ -1,6 +1,6 @@
 # 运行时、事务与持久化设计
 
-本文件属于[设计基线1.1](README.md)，定义P0应实现和验证的行为。当前记录事务、SQLite迁移及持久线网格任务见[C2交接](../implementation/c2-handoff.md)和[记录合同](../engineering/r2-record-contract.md)。[M2/M3说明](../implementation/m2-m3.md)及其[ADR](m2-m3-decisions.md)保留该阶段历史取舍；以下完整P0合同中的事件、批量传输和外部求解任务尚未验收。
+本文件属于[设计基线1.1](README.md)，定义P0应实现和验证的行为。当前实现状态见[开发计划](../baseline/development-plan.md#当前状态)。[M2/M3说明](../implementation/m2-m3.md)及其[ADR](m2-m3-decisions.md)保留该阶段历史取舍；以下完整P0合同中的事件、批量传输和外部求解任务尚未验收。
 
 ## 1. 引擎发现、所有权与生命周期
 

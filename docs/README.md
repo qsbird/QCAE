@@ -1,68 +1,38 @@
 # 文档索引
 
-## 当前开发依据：设计基线 1.1
+冲突时以最新用户明确指令及下列基线文档为准。
+
+## 设计基线 1.1
 
 | 文档 | 用途 |
 |---|---|
-| [基线入口](baseline/README.md) | 确定决策、范围、文档优先级 |
+| [基线入口](baseline/README.md) | 确定决策、范围与环境门禁 |
 | [需求](baseline/requirements.md) | P0功能、约束和非目标 |
+| [开发计划](baseline/development-plan.md) | 当前状态、已确认决策、当前工作轨道与里程碑 |
+| [验收](baseline/acceptance.md) | 需求追溯、测试身份与代码可读性门禁 |
+| [骨架检查点](baseline/skeleton-acceptance.md) | SK-01—14量化合同及[机器可读目标](baseline/skeleton-acceptance-targets.json) |
+| [组件与环境](baseline/components-and-environment.md) | 固定组件角色、开发环境门禁与已验证版本 |
 | [模块架构](architecture/README.md) | 模块、调用、依赖与运行部署 |
-| [求解器能力包](architecture/solver-profiles.md) | 多求解器差异的职责与数据边界；P0只实现Nastran |
 | [运行时与数据](architecture/runtime-and-data.md) | 文档身份、事务、保存、恢复、任务 |
+| [求解器能力包](architecture/solver-profiles.md) | 多求解器差异的职责与数据边界；P0只实现Nastran |
+| [架构决策](architecture/decisions-and-verification.md) | ADR与架构验收 |
 | [接口契约](contracts/README.md) | OperationDescriptor、请求/响应、语义报告 |
-| [组件与环境](baseline/components-and-environment.md) | 固定组件角色及开发环境门禁 |
-| [开发计划](baseline/development-plan.md) | M0—M6、C1/C2当前状态及入口补强的接续任务 |
-| [验收](baseline/acceptance.md) | 需求追溯与完成证据 |
-| [设计验证记录](baseline/validation-record.md) | 已执行的文档检查与尚未执行的产品验证 |
 
-冲突时以最新用户明确指令及这些基线文档为准。历史方案不能重新扩大P0。
+## 实现说明
 
-## 工程化重构提案
+| 文档 | 内容 |
+|---|---|
+| [M0](implementation/m0.md) | 纯核心与本地engine/CLI的构建和测试命令 |
+| [M1](implementation/m1.md) | 实体/组织/引用、受控Nastran导入与导出预览 |
+| [M2/M3](implementation/m2-m3.md) | SQLite持久化、查询/选择、Qt/VTK工作区的构建与运行 |
+| [Nastran子集](implementation/nastran-subset.md) | 受控卡片支持矩阵（Profile生成输入） |
+| [M4本地进程适配器](implementation/m4-local-runner.md) | 求解进程、版本探测、F06解析与结果发布 |
+| [MYSTRAN本地接入](implementation/mystran-local.md) | MYSTRAN 19.0.0配置合同与运行链 |
+| [M5 MCP桥](implementation/m5-mcp-bridge.md) | stdio MCP桥 |
+| [M6本机包](implementation/m6-local-package.md)、[本机包运行](implementation/core-local-handoff.md) | macOS打包与运行步骤 |
+| [源码导读](engineering/code-walkthrough/README.md) | 按构建/入口、数据/提交、业务功能、查询/存储/桌面阅读生产源码 |
+| [C4扩展任务包](engineering/c4-executor-task.md) | 独立扩展实验的初始上下文与规则（[保护路径](engineering/c4-protected-paths.json)） |
 
-[以简单场景验收平台骨架](architecture/engineering-skeleton-proposal.md)：重构前问题、目标模块、实体/操作扩展机制、核心链路、R0—R5顺序和EXT-01—05验收。已实现C1/C2范围，完整目标尚未完成。
+## 归档
 
-[Archer架构对照与对齐目标](architecture/archer-architecture-parity.md)：20个参考功能域的最低覆盖清单、原提案缺口、指定改进目标及可验收标准；参考库存及C1/C2已有证据，完整架构对齐尚未验收。
-
-[骨架检查点与完成预期](baseline/skeleton-acceptance.md)：SK-01—14及97项数值/布尔指标、固定夹具、采样公式、扩展触碰上限与机器可读目标。
-
-## 当前实现
-
-[实体读取生成契约](engineering/entity-read-contracts-2026-10-03.md)：`a8f5573` 初轮257/261加修正后4目标通过，两个实际MCP/CLI及SQLite状态/历史保护验证；原图形与完整验收范围保留。
-
-[原结果查询条件契约](engineering/operation-lookup-contract-2026-10-03.md)：`cf2f4c4` 五配置261/261通过，真实SQLite状态/恢复及两个MCP/CLI一致，原图形失败及完整验收范围保留。
-
-[七个读取与历史入口契约](engineering/host-controls-contracts-2026-10-03.md)：`8924149` 五配置261/261通过，真实SQLite完整状态保护、原结果重放和恢复，以及双MCP/CLI元数据/调用。原图形失败、旧包及完整SK/P0范围保留。
-
-[预览提交契约与实际恢复验证](engineering/changes-commit-contract-2026-10-03.md)：`88942c0` 的生成输入/发现/版本、真实SQLite拒绝与重放；原259项257通过/2测试假设失败及修正后的四次专项通过分别记录。旧二进制图形隔离诊断保留全部69数据行，原累计压力失败仍未关闭。
-
-[六类能力包贡献验证](engineering/package-contributions-2026-10-03.md)：实际注册/调用和关闭包观察已补齐，269项通过/1桌面选择超时，原上限复验失败，图形门禁保持未关闭。
-
-[核心框架本机交接](implementation/core-local-handoff.md)与[本轮验证](engineering/core-local-delivery-2026-10-03.md)：五个工程生命周期输入合同、实际codec/显示贡献装配、265项适用回归及重定位包的SQLite/双MCP/真实桌面验证；完整SK/P0及真实环境、性能仍待接续。
-
-[核心框架统一验证](engineering/core-framework-validation-2026-10-02.md)：2026-10-02—03 同源码完整回归、公共接口、故障恢复、三入口一致性及独立 GUI 交互证据；区分核心机制已验证范围与真实环境、性能及完整产品验收的剩余工作。
-
-[NEXT-01—03 入口一致性](engineering/next-validation.md)：C2 后统一查询、操作契约和生产装配的实现、测试与边界。
-
-[C2 交接](implementation/c2-handoff.md)：该阶段的记录核心、后台线网格、CLI/薄客户端与保存/恢复链路及运行方式。
-
-[C2 扩展审查](engineering/extensibility-audit-c2.md)：生产查询、操作契约、装配及拓扑/显示的剩余缺口；接续任务纳入[开发计划](baseline/development-plan.md#c2之后的接续计划)。
-
-[平台框架逐文件导读](engineering/code-walkthrough/README.md)：按四条阅读链说明生产源码与配置文件，区分记录主链、旧兼容边界和尚未贯通的入口。
-
-[M0运行与验证](implementation/m0.md)：纯C++内存核心、Qt本地engine/CLI。
-
-[M1文档与格式](implementation/m1.md)：实体/组织/引用、受控Nastran导入与导出预览、统一事务及限制。
-
-[M2/M3持久化与桌面](implementation/m2-m3.md)：SQLite工程/恢复、查询/选择、真实Qt/VTK工作区及运行说明。
-
-## 界面参考
-
-[主工作区概念图](design/qcae-p0-main-v2.png)及[功能说明](P0预期功能与界面说明-v0.4.md)用于说明信息布局，不代表产品已经实现，也不是像素级开发合同。
-
-## 研究与历史
-
-- [Gmsh、CalculiX、FreeCAD FEM 架构参考](research/Gmsh-CalculiX-FreeCAD架构参考-v0.8.md)：架构启发，非依赖引入决定。部分本地源码链接仅适用于研究时的文件位置。
-- 根目录中的 `*-v0.*.md` 保留讨论过程、预算推导与来源；相冲突的旧服务器方案等已被当前基线取代。
-- `contracts/p0-ai-examples.json` 是早期示意；当前请求示例为 [current-examples.json](contracts/current-examples.json)。
-
-本次基线不移动或删除历史资料，避免破坏已有引用。后续改动依据请落在基线/架构/契约及ADR中。
+阶段验证报告、原始证据、早期方案（`*-v0.*.md`、骨架提案、Archer对照）、研究资料和界面概念图已移出工作树，保存在标签 `archive/pre-cleanup-2026-10-10`，查看方法见[开发计划](baseline/development-plan.md#归档)。归档内容不作为与当前基线冲突时的依据。

@@ -1,6 +1,6 @@
 # QCAE P0 模块与架构设计 1.1
 
-状态：已确定的开发设计基线；实现已交付至[C1/C2](../implementation/c2-handoff.md)，完整架构与P0仍待完成。依据已确认的本地中小模型、底层优先、Nastran 悬臂梁闭环、GUI 与外部 AI 共用能力的范围。本文作为当前架构依据，需求和验收以 ../baseline/ 下的基线文档配套；不恢复远程亿级路线。
+状态：已确定的开发设计基线；当前实现状态见[开发计划](../baseline/development-plan.md#当前状态)，完整架构与P0仍待完成。依据已确认的本地中小模型、底层优先、Nastran 悬臂梁闭环、GUI 与外部 AI 共用能力的范围。本文作为当前架构依据，需求和验收以 ../baseline/ 下的基线文档配套；不恢复远程亿级路线。
 
 ## 文档入口
 
@@ -9,18 +9,18 @@
 - [运行时、事务与持久化](runtime-and-data.md)
 - [关键决策、实施顺序与架构验收](decisions-and-verification.md)
 - [机器可检查的模块依赖清单](module-dependencies.json)
-- [既有 AI 场景验收](../P0-AI验收用例-v0.6.md)
+- [AI 场景验收](../baseline/acceptance.md#4-ai-场景验收与旧-id-映射)
 
 ## 1. 需求与决策依据
 
 | 已确认约束 | 架构对应 |
 |---|---|
-| [本地中小模型 P0](../P0本地平台可行性分析-v0.2.md) | 本机按需启动，不部署远程服务或分布式存储 |
-| [GUI 与无界面能力分离](../P0本地平台可行性分析-v0.2.md) | 统一应用服务，核心不依赖窗口和渲染环境 |
-| [多种组织关系](../P0本地平台可行性分析-v0.2.md) | 装配、部件、集合、INCLUDE、物理引用分开建模 |
-| [Undo 与持久化](../P0本地平台可行性分析-v0.2.md) | 单写者、事务差量、工作恢复库、明确保存点 |
-| [外部 AI 入口](../P0-AI接口与悬臂梁交付方案-v0.6.md) | MCP 桥与 GUI 接入同一本地核心进程 |
-| [接口与结果证据](../P0-AI接口与悬臂梁交付方案-v0.6.md) | 显式版本、单位、幂等、任务状态与分析输入摘要 |
+| 本地中小模型 P0 | 本机按需启动，不部署远程服务或分布式存储 |
+| GUI 与无界面能力分离 | 统一应用服务，核心不依赖窗口和渲染环境 |
+| 多种组织关系 | 装配、部件、集合、INCLUDE、物理引用分开建模 |
+| Undo 与持久化 | 单写者、事务差量、工作恢复库、明确保存点 |
+| 外部 AI 入口 | MCP 桥与 GUI 接入同一本地核心进程 |
+| 接口与结果证据 | 显式版本、单位、幂等、任务状态与分析输入摘要 |
 
 设计主线：**模块化的单个应用核心，配独立本地宿主进程；外部能力通过少量明确的适配接口接入。** 模块不等于微服务，也不要求每个模块成为独立动态库。
 
@@ -39,7 +39,7 @@ flowchart LR
     Engine -.按需.-> Render[离屏图像辅助进程]
 ```
 
-以下为组件分工。qcae-engine、qcae-cli及Qt/VTK桌面已有实现；C2新增几何/网格从CLI/IPC调用，C3补上相同操作的GUI入口。[stdio MCP薄桥](../implementation/m5-mcp-bridge.md)和[本地求解进程适配器](../implementation/m4-local-runner.md)也已实现，当前同源码证据见[核心框架验证](../engineering/core-framework-validation-2026-10-02.md)。真实Nastran配置、数值闭环及完整外部AI场景尚未验收；独立离屏图像辅助进程仍为后续目标。
+以下为组件分工。qcae-engine、qcae-cli及Qt/VTK桌面已有实现；C2新增几何/网格从CLI/IPC调用，C3补上相同操作的GUI入口。[stdio MCP薄桥](../implementation/m5-mcp-bridge.md)和[本地求解进程适配器](../implementation/m4-local-runner.md)也已实现，当前状态见[开发计划](../baseline/development-plan.md#当前状态)。真实Nastran配置、数值闭环及完整外部AI场景尚未验收；独立离屏图像辅助进程仍为后续目标。
 
 - **qcae-engine**：文档、事务、查询、分析、任务与恢复的唯一持有者。
 - **qcae-desktop**：GUI、交互、视图状态和 VTK 显示缓存；不直接写工程库。
@@ -117,7 +117,7 @@ P0 不自建全功能依赖注入框架、事件溯源框架或插件市场。�
 
 ## 6. 组件选择与预算影响
 
-技术基线固定为 C++20、Qt 6 Widgets/Core/Network、VTK 和 SQLite 3；角色边界固定，当前已验证版本见[C2环境记录](../engineering/c2-validation.md)。独立本地 engine 引入 QtCore/QtNetwork 的宿主/IPC用途，仍是 Qt 组件，不把 Qt 引入领域层。MCP SDK 的语言选择延后到接入原型；如官方 SDK 使用辅助语言，桥接进程必须单独打包，不渗透核心接口。
+技术基线固定为 C++20、Qt 6 Widgets/Core/Network、VTK 和 SQLite 3；角色边界固定，当前已验证版本见[组件与环境](../baseline/components-and-environment.md)。独立本地 engine 引入 QtCore/QtNetwork 的宿主/IPC用途，仍是 Qt 组件，不把 Qt 引入领域层。MCP SDK 的语言选择延后到接入原型；如官方 SDK 使用辅助语言，桥接进程必须单独打包，不渗透核心接口。
 
 OCCT、Netgen/Gmsh、HDF5 等不因架构预留就立即接入，保持按实际用例引入。图形只在 GUI/图像进程加载；P0 的基本线性梁流程无需 CAD 内核。
 
@@ -127,12 +127,12 @@ OCCT、Netgen/Gmsh、HDF5 等不因架构预留就立即接入，保持按实际
 
 当前macOS工具链、SQLite恢复及有界历史/任务已有C2记录；待完成门禁包括目标硬件性能分档、跨平台验证、实际外部AI客户端及Nastran方言/真实求解器。重复实例装配、复杂CAD/网格、远程亿级、内置聊天仍不进入本轮。
 
-架构文档中的职责与链路是目标合同；当前实现范围与同源码回归以[核心框架验证](../engineering/core-framework-validation-2026-10-02.md)为准，旧C2/NEXT/C3切片记录保留其各自范围。已实现入口补强及后续C3/C4顺序见[开发计划](../baseline/development-plan.md#c2之后的接续计划)；回归通过不替代完整SK或P0验收。
+架构文档中的职责与链路是目标合同；当前实现范围、已确认决策及接续顺序见[开发计划](../baseline/development-plan.md#当前状态)；回归通过不替代完整SK或P0验收。
 
 
 ## 后续参考研究
 
-[Gmsh、CalculiX与FreeCAD FEM参考](../research/Gmsh-CalculiX-FreeCAD架构参考-v0.8.md)提供API定义、格式能力报告及变化影响分类建议。其中OperationDescriptor、格式转换报告、按引用传播的ChangeImpact已在设计基线1.1吸收；其余建议仍不自动引入依赖。
+早期的Gmsh、CalculiX与FreeCAD FEM参考研究（已归档）提供API定义、格式能力报告及变化影响分类建议。其中OperationDescriptor、格式转换报告、按引用传播的ChangeImpact已在设计基线1.1吸收；其余建议仍不自动引入依赖。
 
 
 ## 设计基线1.1补充

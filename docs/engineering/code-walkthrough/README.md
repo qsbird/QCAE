@@ -1,6 +1,6 @@
 # 当前平台框架：逐文件阅读入口
 
-这是对当前源码的导读，已同步 C2 之后的 NEXT-01—03 入口补强。运行证据见[入口补强验证](../next-validation.md)；C3/C4 和完整 P0 仍不属于已交付能力。
+这是对当前源码的导读，已同步 C2 之后的 NEXT-01—03 入口补强。当前状态见[开发计划](../../baseline/development-plan.md#当前状态)；C3/C4 和完整 P0 仍不属于已交付能力。
 
 四章按根 CMake 和 `apps/`、`modules/`、`features/`、`profiles/`、`adapters/`、`ui/`、`schemas/` 的职责组织源码入口，说明关键类型、函数与调用者，并列出模块构建关系。生产文件归属以[目标清单](../../../modules/targets.json)为准；测试夹具、构建产物、IDE 配置和历史研究文档不作为生产文件导读。
 
@@ -97,8 +97,8 @@ flowchart TB
 | 实际编译依赖与公开头文件 | [check_architecture.py](../../../tools/check_architecture.py)、[public_api_consumers/CMakeLists.txt](../../../tests/public_api_consumers/CMakeLists.txt) |
 | 格式、设计与量化验收口径 | [check_cpp_format.py](../../../tools/check_cpp_format.py)、[check_design.py](../../../tools/check_design.py)、[check_skeleton_acceptance.py](../../../tools/check_skeleton_acceptance.py) |
 
-运行步骤见[C2 交接](../../implementation/c2-handoff.md)，入口补强的检查及范围见[NEXT-01—03 验证记录](../next-validation.md)，历史证据见[C2 验证记录](../c2-validation.md)。[C2 扩展审查](../extensibility-audit-c2.md)记录当时的缺口与孤立实验；本导读不替代完整 SK/P0 验收。
+当前状态与未完成项见[开发计划](../../baseline/development-plan.md#当前状态)；本导读不替代完整 SK/P0 验收。
 
 ## 文件归属与证据
 
-源码归属、公开/私有头文件和依赖以[目标清单](../../../modules/targets.json)及实际 CMake 为准；可执行检查记录集中在[入口补强验证](../next-validation.md)。这里仅说明怎样定位当前实现，不沿用 C2 时期的固定文件总数或把导读同步当作运行验证。
+源码归属、公开/私有头文件和依赖以[目标清单](../../../modules/targets.json)及实际 CMake 为准；可执行检查以 CTest 注册为准。这里仅说明怎样定位当前实现，不沿用 C2 时期的固定文件总数或把导读同步当作运行验证。

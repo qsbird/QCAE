@@ -2,9 +2,7 @@
 
 面向本地中小规模模型的 CAE 前处理平台。P0 聚焦受控 Nastran 悬臂梁流程，提供桌面 GUI 与外部 AI 共用的无界面业务接口；服务器和亿级实现后置。
 
-**当前状态：核心框架已有可运行的本机交付包，源码继续收敛接口。** 统一事务/历史、SQLite保存恢复、CLI/GUI/MCP共享engine已贯通。本机包对应 `f2d2e7f`，265项回归及包内SQLite、双MCP、真实桌面验证见[本机交接](docs/implementation/core-local-handoff.md)。
-
-最新源码 `a8f5573` 已补齐两个实体读取入口生成输入、发现及版本，初轮257/261加修正后4目标通过，见[本轮证据](docs/engineering/entity-read-contracts-2026-10-03.md)。原ID/分页/查询参数省略和引用返回兼容保持，SQLite与两个MCP/CLI读取/拒绝不写模型或历史。本机包仍为 `f2d2e7f`，未刷新；原累计图形失败与完整图形门禁未关闭。剩余8个兼容列表接口继续补齐合同，真实求解/完整AI、性能、原已测约束与完整SK/P0保持未验收范围。
+**当前状态：** 统一事务/历史、SQLite保存恢复、CLI/GUI/MCP共享engine已贯通；显式MYSTRAN 19.0.0本机后端完成真实悬臂梁数值核验。完整SK/P0、真实AI会话、性能与发布尚未验收。逐项状态、已确认决策和当前工作轨道见[开发计划](docs/baseline/development-plan.md#当前状态)。
 
 ## 从这里开始
 
@@ -47,9 +45,8 @@ ctest --test-dir build-core --output-on-failure
 | `docs/baseline/` | 当前需求、决策、组件、开发顺序与验收 |
 | `docs/architecture/` | 当前模块、依赖、运行时与数据一致性 |
 | `docs/contracts/` | 业务契约、操作描述和交互样例 |
-| `docs/design/` | 界面概念图及生成提示词 |
-| `docs/research/` | 架构参考研究，非依赖源码 |
-| `docs/*-v0.*.md` | 历史讨论，不作为与当前基线冲突时的依据 |
+| `docs/implementation/` | 各子系统的构建、运行与实现说明 |
+| `docs/engineering/` | 源码逐文件导读与C4扩展实验任务包 |
 | `modules/`、`features/`、`schemas/` | 通用核心、具体业务与生成契约 |
 | `apps/`、`adapters/`、`profiles/`、`ui/` | 进程入口、外部适配、格式能力包及桌面 |
 | `tests/` | 核心、契约、分配失败和真实IPC回归 |

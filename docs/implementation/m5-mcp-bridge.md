@@ -44,14 +44,12 @@ tools/call。`tools/call.arguments` 使用 `parameters` 对象及同级上下文
   MCP stdio 客户端与 CLI 测试：capability/schema、缺单位不提交、版本/epoch 冲突、
   同键异参、原事务重试、撤销后不重建、redo、EOF、Unicode/非有限/无效 id。
   相关 9 个数据/MCP/widget 回归 9/9，既有 IPC 加两个 MCP 回归 13/13。
-  原始日志位于 `docs/engineering/c3-closure-evidence/package/` 的 build32 文件。
+  原始日志已归档。
 - 实际 Codex CLI 0.159.2、gpt-6.1-sol/xhigh、ChatGPT 缓存登录完成一次合成会话：
   11 次完成 MCP 调用、0 次失败，无 shell 或文件动作。CLI 独立复核 revision=3、
-  一个 Steel、E=210000 MPa。JSONL、提示、事实与二进制/桥摘要在
-  `docs/engineering/c3-closure-evidence/real-ai-mcp-smoke2-build31/`。引擎为 build31，
+  一个 Steel、E=210000 MPa。JSONL、提示、事实与二进制/桥摘要已归档。引擎为 build31，
   源码树可变，不能冒充同源码最终发布或完整 M5 通过。
-- 第一次实际会话的工具调用被单次 CLI 默认审批设置阻止，未创建文档；原日志在
-  `real-ai-mcp-smoke-build31/` 保留。后续仅对八个已授权合成测试工具设置运行时
+- 第一次实际会话的工具调用被单次 CLI 默认审批设置阻止，未创建文档；原日志已归档。后续仅对八个已授权合成测试工具设置运行时
   `default_tools_approval_mode="approve"`，不修改全局配置。配置字段依据
   [OpenAI Docs MCP](https://learn.chatgpt.com/docs/extend/mcp)。
 

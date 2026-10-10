@@ -9,9 +9,9 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
 
 ## Source of truth
 
-Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Root-level versioned `docs/*-v0.*.md` are historical research. `.omx/` is local runtime context, not canonical project documentation and not committed.
+Read `docs/baseline/README.md`, the task's requirements and acceptance IDs, and `docs/architecture/` before implementation. Stage reports, raw evidence and early designs were moved to the git tag `archive/pre-cleanup-2026-10-10`; they are history, not canonical documentation. `.omx/` is local runtime context, not canonical project documentation and not committed.
 
-The platform skeleton is delivered through C1/C2 on top of the M0/M1 and M2/M3 slices; see docs/implementation/c2-handoff.md and docs/engineering/c2-validation.md for archived evidence. NEXT-01/02/03 entry consistency and C3 geometry/mesh tools are implemented. Current C3 closure work, including analysis checks, real file publication and fixture result provenance, is described in docs/implementation/c3-closure.md; its integration acceptance is still in progress. Follow-up priorities are recorded in docs/baseline/development-plan.md; planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
+Current status, confirmed user decisions and the active work track (weak-model extensibility, phases P1–P8 with checkpoints) are in `docs/baseline/development-plan.md`; update its status table instead of adding dated reports. Planning does not mark C3/C4 or full SK/P0 acceptance complete. Current user instructions override earlier research assumptions.
 
 ## Binding architecture
 
@@ -34,8 +34,8 @@ For cleanup/refactoring, write a short plan and protect existing behavior before
 
 ## Checks and commits
 
-Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. The engine is durable only with an explicit SQLite workspace. Nastran file publication uses frozen provenance, semantic readback and a final manifest; results currently use explicit fixtures. Do not claim solver execution, real AI integration, headless graphical selection, large-model performance or complete P0 acceptance.
+Checks: `python3 tools/check_design.py`, `python3 tools/check_cpp_format.py`, `git diff --check`, and the core/local CMake+CTest commands in docs/implementation/m0.md. Apply the readability review gate in docs/baseline/acceptance.md before marking a development slice complete. The engine is durable only with an explicit SQLite workspace. Nastran file publication uses frozen provenance, semantic readback and a final manifest; results use explicit fixtures or the explicitly configured MYSTRAN backend. Do not claim full M4 solver acceptance, real AI integration, headless graphical selection, large-model performance or complete P0 acceptance.
 
 New branches default to `codex/`. Every commit uses the Lore protocol: intent-first subject, context, and useful Git trailers such as `Constraint`, `Rejected`, `Confidence`, `Scope-risk`, `Directive`, `Tested`, and `Not-tested`. Never fabricate validation evidence.
 
-Do not commit credentials, `.omx/`, generated build directories, runtime databases or solver runs. Keep actual integration environment configuration local. Preserve unknown user changes.
+Do not commit credentials, `.omx/`, generated build directories, runtime databases or solver runs. Do not commit raw logs, evidence directories, screenshots, copies of old source or dated validation reports; keep evidence outside the repository and reference it from the status table. Keep actual integration environment configuration local. Preserve unknown user changes.

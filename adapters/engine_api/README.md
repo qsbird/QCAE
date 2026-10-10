@@ -145,8 +145,7 @@ Successful calls retain the original caller/key namespaces, outcomes, lookup and
 history. Omitted and empty save paths retain their existing normalization and replay behavior;
 explicit saved paths retain their existing signatures. Normal open and recovery remain distinct.
 These contracts adapt existing routes; they do not register duplicate business handlers or
-complete every legacy contract. Actual tests and packaged execution are described in the
-[local delivery evidence](../../docs/engineering/core-local-delivery-2026-10-03.md).
+complete every legacy contract.
 
 ### Versioned preview commit input
 
@@ -158,9 +157,7 @@ versions and input shapes are refused before the existing application commit; `e
 is not accepted. The original document/epoch/revision/key context, caller namespace, receipt,
 undo and persistent outcome lookup remain authoritative. No TypedHost registration is added
 for this reserved compatibility route. Stable identity and fields survive explicit recovery;
-storage iteration order is not an identity contract. Actual SQLite refusal/replay/recovery tests,
-the corrected test-only ordering assumption and retained graphical limits are in
-[the commit-contract evidence](../../docs/engineering/changes-commit-contract-2026-10-03.md).
+storage iteration order is not an identity contract.
 
 ### Versioned host reads and history
 
@@ -173,7 +170,6 @@ service call. Reads preserve authoritative state; history writes use the origina
 commit coordinator and retain replay facts after later undo/redo. Symbolic catalog labels
 and serializers are unchanged; wire result labels describe existing results rather than
 new generated output schemas. `operations.get` retains its conditional compatibility.
-See [actual tests and scope](../../docs/engineering/host-controls-contracts-2026-10-03.md).
 
 ### Versioned outcome lookup
 
@@ -195,7 +191,7 @@ and ChangeReceipt serializers, not a new generated output union.
 
 All calls read existing caller-scoped facts from the same application. Handler removal does
 not prevent action lookup. Host/action direct-return envelopes and mapped-history outer
-revision remain distinct. [Actual scope](../../docs/engineering/operation-lookup-contract-2026-10-03.md).
+revision remain distinct.
 
 ### Versioned entity reads
 
@@ -216,7 +212,6 @@ References keep the complete existing result across bounded internal pages.
 Version refusal precedes snapshot, after existing envelope/parameters/profile admission;
 omitted/v1 retain snapshot/context before raw parameter validation. Existing result labels
 and inner/outer revision remain. Neither call writes model/history or retains a write key.
-[Actual scope](../../docs/engineering/entity-read-contracts-2026-10-03.md).
 
 ### C3 versioned display resources and events
 
@@ -298,6 +293,3 @@ successful TypedHost construction. This is trusted static startup metadata, not 
 plugin ABI or a generic callback invocation operation. Host intrinsic routes remain in the
 global operation catalog. Default OFF and ON platform-only assemblies omit the Nastran owner;
 generic rendering fallback is not attributed to that absent package.
-
-Actual scope, full SQLite row observations and the unclosed desktop selection timeout are in
-[the contribution validation](../../docs/engineering/package-contributions-2026-10-03.md).

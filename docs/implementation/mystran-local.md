@@ -1,7 +1,7 @@
 # MYSTRAN 19.0.0 本地运行接入
 
-状态：本轮已实现受控生产运行接入；实际构建、进程运行和数值验证结果见
-[本轮验证记录](../engineering/mystran-local-validation-2026-10-03.md)。本文描述代码
+状态：已实现受控生产运行接入；真实预登记悬臂梁三次运行共396/396分量通过（2026-10-03），
+范围见[开发计划](../baseline/development-plan.md#当前状态)。本文描述代码
 及配置合同，不凭测试脚本中的预期值声明验收通过。对应 REQ-11/13/15/19/20、
 TST-F07、TST-A08/09/11、TST-P06/07 和 QG-02 的有关范围。
 
@@ -144,8 +144,7 @@ python3 tests/mystran_real_integration.py \
 执行导入、原子提交、实际导出、运行、结果发布与数值核验。它还检查幂等重试、
 旧物理输入/undo、产物损坏拒绝、终态结果的引擎重启恢复和 CLI 同源读取。
 日志、完整工具往返、真实产物、配置及报告保留在指定 evidence 目录，不提交
-本机配置、数据库、生成构建目录或 solver runs。通过数量及失败证据仅在
-[本轮验证记录](../engineering/mystran-local-validation-2026-10-03.md)登记。
+本机配置、数据库、生成构建目录或 solver runs。原验证记录已归档（见[开发计划](../baseline/development-plan.md#归档)）。
 
 ## 本机包和仍未覆盖的验收
 

@@ -93,4 +93,4 @@ typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—10
 | [features/geometry/CMakeLists.txt](../../../features/geometry/CMakeLists.txt) | 构建纯几何候选处理器，只公开依赖 application；typed 注册目前由宿主完成。 |
 | [features/mesh_generation/CMakeLists.txt](../../../features/mesh_generation/CMakeLists.txt) | 构建线网格任务，依赖独立 task/application 桥，并登记 geometry_mesh 测试；不让通用应用反向依赖网格生成。 |
 
-可以沿 `geometry.create_line → mesh.generate_line → beam.assign_section → node.move` 阅读一次完整功能链。新增已有类型上的操作复用候选/提交模式，并从静态贡献注册；新增面/体单元仍须补拓扑、查询/显示和格式语义。入口补强的范围及证据见[当前验证](../next-validation.md)，历史缺口见[C2 扩展审查](../extensibility-audit-c2.md)。
+可以沿 `geometry.create_line → mesh.generate_line → beam.assign_section → node.move` 阅读一次完整功能链。新增已有类型上的操作复用候选/提交模式，并从静态贡献注册；新增面/体单元仍须补拓扑、查询/显示和格式语义。

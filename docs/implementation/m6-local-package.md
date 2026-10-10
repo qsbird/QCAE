@@ -20,8 +20,7 @@ site-packages/认证；可通过启动器 `--python` 明确已有解释器。该
 包内 IPC 回归、M2 保存/另存/正常打开/强杀恢复、双 MCP 客户端与 CLI 共用
 SQLite 全部通过。原生 Qt/VTK GUI 导入两节点一梁，取得真实显示包和截图，
 退出 GUI 后 engine 保持存活，CLI 状态仍为两节点一梁。日志、GUI 二进制摘要和
-截图保存在 `docs/engineering/c3-closure-evidence/package/mac-gui-smoke-build33e/`
-及同目录 `mac-staging-*-build33e*.log`。GUI `--smoke` 不写用户布局。
+截图（build33e）已归档。GUI `--smoke` 不写用户布局。
 
 原始失败均保留：macdeployqt 成功后缺 framework、重复库身份判定、自身 dylib
 ID 误认为外部依赖，以及 Python 文件置于 MacOS 目录导致签名失败。现桥文件

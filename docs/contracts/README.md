@@ -23,7 +23,7 @@
 
 响应状态至少区分success、needs_input、conflict、accepted、failed，并返回结构化诊断及相关版本。修改成功有transaction_id，后台工作有job_id，资源使用受控资源ID。错误不只写日志或依赖GUI弹窗。
 
-[current-examples.json](current-examples.json)演示缺单位、预览、提交、同意图重试、冲突、任务、陈旧结果、旧会话及另存。它们是契约示意，不是运行数据；早期[p0-ai-examples.json](p0-ai-examples.json)保留为历史。
+[current-examples.json](current-examples.json)演示缺单位、预览、提交、同意图重试、冲突、任务、陈旧结果、旧会话及另存。它们是契约示意，不是运行数据。
 
 ## 变更与格式报告
 
@@ -82,7 +82,7 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 
 已实现的 typed 操作使用数值型正整数 `requested_version`（uint32），省略时选择已安装版本；它与字符串 `api_version`、修订号是不同字段。需要目标上下文的 typed 操作通过 `expected_profile={profile_id, profile_version, definition_digest}` 传递严格对象，能力字段为 `requires_expected_profile`。具体 handler 在应用准备阶段校验适用性，先前成功操作优先按保留事实重放。五个宿主工程生命周期入口、`changes.commit`、七个读取/历史入口、`operations.get` 及两个实体读取入口同样接受操作版本，见下节；其他旧非 typed 路径保持拒绝新增字段的规则。完整 P0 目标契约中的 `expected_profile_ref` 不代表已为所有规划操作提供运行实现。
 
-`operations.get` 的 document 作用域可以在贡献停用后查询原调用者的已保存回执，无需重新启用 handler；未知或未保留事实返回 `ENTITY_NOT_FOUND`。来源、测试及未完成范围见[NEXT验证](../engineering/next-validation.md)与[实际 wire 说明](../../adapters/engine_api/README.md)。
+`operations.get` 的 document 作用域可以在贡献停用后查询原调用者的已保存回执，无需重新启用 handler；未知或未保留事实返回 `ENTITY_NOT_FOUND`。实际 wire 行为见[实际 wire 说明](../../adapters/engine_api/README.md)。
 
 ## 当前宿主工程生命周期输入契约
 
@@ -96,24 +96,24 @@ picker_candidates表示图形客户端给出的明确候选，核心不把它冒
 | `project.save_as` | `ProjectSaveAsInput` | 可选字符串path，允许空字符串，保留原成功/拒绝语义 |
 | `project.close` | `ProjectCloseInput` | 必需policy，发现枚举 `discard` / `keep_recovery` |
 
-可省略 `requested_version` 选择安装版本；正uint32的不同版本返回 `SCHEMA_UNSUPPORTED`，非法版本或参数返回 `INVALID_INPUT` 及字段。拒绝发生在原应用生命周期和宿主幂等登记之前。上述入口不接受 `expected_profile`；成功、重试及结果查询继续走原服务/host操作事实，不增加写入链或重复handler。MCP保持有界schema及open的两个封闭 `oneOf` 分支，Profile字段只为显式声明 `requires_expected_profile` 的描述符公布。当前实际回归/打包范围见[本轮验证](../engineering/core-local-delivery-2026-10-03.md)；先前open专项保留[原来源记录](../engineering/project-open-contract-2026-10-03.md)。其余legacy合同及完整SK-04仍待完成。
+可省略 `requested_version` 选择安装版本；正uint32的不同版本返回 `SCHEMA_UNSUPPORTED`，非法版本或参数返回 `INVALID_INPUT` 及字段。拒绝发生在原应用生命周期和宿主幂等登记之前。上述入口不接受 `expected_profile`；成功、重试及结果查询继续走原服务/host操作事实，不增加写入链或重复handler。MCP保持有界schema及open的两个封闭 `oneOf` 分支，Profile字段只为显式声明 `requires_expected_profile` 的描述符公布。其余legacy合同及完整SK-04仍待完成。
 
 ## 当前预览提交输入契约
 
-`changes.commit` 使用生成 `ChangesCommitInput`，schema为 `qcae.operation.changes.commit.v1`，唯一参数是必需非空字符串 `preview_id`；额外字段不被接受。发现保留设计符号类型并用 `wire_input_type:ChangesCommitInput` / `wire_output_type:ChangeReceipt` 公布实际DTO。省略/版本1规则与上述生命周期入口相同；无效形状和版本先于原应用提交，拒绝不消费预览或幂等键。写入仍需原文档/epoch/expected_revision/key上下文，`expected_profile`不被接受。合法调用、撤销后相同键重放和持久结果查询沿用同一RecordApplication；恢复更新epoch，旧epoch不能据旧回执绕过检查。实际范围和失败/复验记录见[本轮证据](../engineering/changes-commit-contract-2026-10-03.md)。
+`changes.commit` 使用生成 `ChangesCommitInput`，schema为 `qcae.operation.changes.commit.v1`，唯一参数是必需非空字符串 `preview_id`；额外字段不被接受。发现保留设计符号类型并用 `wire_input_type:ChangesCommitInput` / `wire_output_type:ChangeReceipt` 公布实际DTO。省略/版本1规则与上述生命周期入口相同；无效形状和版本先于原应用提交，拒绝不消费预览或幂等键。写入仍需原文档/epoch/expected_revision/key上下文，`expected_profile`不被接受。合法调用、撤销后相同键重放和持久结果查询沿用同一RecordApplication；恢复更新epoch，旧epoch不能据旧回执绕过检查。
 
 ## 当前静态贡献发现
 
-生产 `capabilities.list` 的 `package_contributions_version:1` / `package_contributions` 来自实际装配和注册变更。每个contribution_id含core、operations、codecs、validation、ui、render六数组；字段及拥有式绑定见[实际wire说明](../../adapters/engine_api/README.md#actual-static-contribution-discovery)。全局操作目录仍包含宿主固有入口，六类目录只归属贡献新增的注册；没有新增通用回调操作或业务提交链。Nastran关闭后其owner缺席，公共平台能力继续运行。实际调用与当前图形回归未关闭范围见[本轮证据](../engineering/package-contributions-2026-10-03.md)；完整SK-11、SK-04及P0继续未验收。
+生产 `capabilities.list` 的 `package_contributions_version:1` / `package_contributions` 来自实际装配和注册变更。每个contribution_id含core、operations、codecs、validation、ui、render六数组；字段及拥有式绑定见[实际wire说明](../../adapters/engine_api/README.md#actual-static-contribution-discovery)。全局操作目录仍包含宿主固有入口，六类目录只归属贡献新增的注册；没有新增通用回调操作或业务提交链。Nastran关闭后其owner缺席，公共平台能力继续运行。完整SK-11、SK-04及P0继续未验收。
 
 ## 已有读取与历史输入
 
-`capabilities.list/project.current/project.status/model.summary/history.list/history.undo/history.redo` 使用生成版本1的空参数输入及闭合schema，省略版本选择安装版本，额外字段与非法/未安装版本在原应用调用前拒绝。前两项无文档上下文，中间三个读取只需document/epoch，undo/redo保持原document/epoch/revision/key。发现保留符号类型/效果并公布实际wire输入和既有结果标签；没有生成新的输出schema。`operations.get` 条件兼容仍单独保留。实际范围见[七入口验证](../engineering/host-controls-contracts-2026-10-03.md)，不据此声明完整目录/SK/P0通过。
+`capabilities.list/project.current/project.status/model.summary/history.list/history.undo/history.redo` 使用生成版本1的空参数输入及闭合schema，省略版本选择安装版本，额外字段与非法/未安装版本在原应用调用前拒绝。前两项无文档上下文，中间三个读取只需document/epoch，undo/redo保持原document/epoch/revision/key。发现保留符号类型/效果并公布实际wire输入和既有结果标签；没有生成新的输出schema。`operations.get` 条件兼容仍单独保留。不据此声明完整目录/SK/P0通过。
 
 ## 原结果查询条件输入
 
-`operations.get` 使用生成版本1语义输入与闭合原始三分支参数schema，模式仅用于host/project.open的normal/recover，其他查询继续忽略任意JSON模式。完整arguments_schema以宿主/文档两个分支描述最小上下文；宿主无文档要求，文档要求ID/epoch，原参数中的key是被查询操作的键。MCP有界验证后原样公布，版本/参数与caller事实仍由engine/应用校验；停用handler仍能查回原事实。现有结果wire标签与原返回包保留，实际范围见[验证](../engineering/operation-lookup-contract-2026-10-03.md)，其他legacy及完整SK/P0未验收。
+`operations.get` 使用生成版本1语义输入与闭合原始三分支参数schema，模式仅用于host/project.open的normal/recover，其他查询继续忽略任意JSON模式。完整arguments_schema以宿主/文档两个分支描述最小上下文；宿主无文档要求，文档要求ID/epoch，原参数中的key是被查询操作的键。MCP有界验证后原样公布，版本/参数与caller事实仍由engine/应用校验；停用handler仍能查回原事实。现有结果wire标签与原返回包保留，其他legacy及完整SK/P0未验收。
 
 ## 实体读取生成输入
 
-entity.query/entity.references 使用生成版本1语义DTO与真实闭合参数/完整上下文schema，仍仅要求文档ID/epoch。重复/空ID过滤、零分页、动态registry kind、MCP查询参数省略及全部引用返回保持原兼容；旧校验先于语义投影，版本拒绝先于snapshot。现有查询服务、输出标签与单一应用状态保留，读取及拒绝不写模型或历史。实际范围见[验证](../engineering/entity-read-contracts-2026-10-03.md)，完整目录/REQ-16/SK/P0仍未验收。
+entity.query/entity.references 使用生成版本1语义DTO与真实闭合参数/完整上下文schema，仍仅要求文档ID/epoch。重复/空ID过滤、零分页、动态registry kind、MCP查询参数省略及全部引用返回保持原兼容；旧校验先于语义投影，版本拒绝先于snapshot。现有查询服务、输出标签与单一应用状态保留，读取及拒绝不写模型或历史。完整目录/REQ-16/SK/P0仍未验收。

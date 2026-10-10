@@ -1,6 +1,6 @@
 # 工程化骨架量化验收合同
 
-状态：完整量化合同尚未验收通过；[C1/C2](../engineering/c2-validation.md)已提供限定阶段证据，不替代本合同的全部指标。用户已同意[骨架方案](../architecture/engineering-skeleton-proposal.md)及[Archer对齐目标](../architecture/archer-architecture-parity.md)。本合同将完成条件固定为14个检查点、97个数值/布尔指标及下列具名测试断言；本次状态同步不修改阈值。
+状态：完整量化合同尚未验收通过；阶段证据见[开发计划](development-plan.md#当前状态)，不替代本合同的全部指标。用户已同意的骨架方案及Archer对齐目标原文已归档（见[开发计划](development-plan.md#归档)）。本合同将完成条件固定为14个检查点、97个数值/布尔指标及下列具名测试断言；本次状态同步不修改阈值。
 
 数值唯一来源：[skeleton-acceptance-targets.json](skeleton-acceptance-targets.json)。修改目标须提升该文件版本并保留变更记录；不能在运行后降低阈值。本文给出测量口径和固定输入。
 

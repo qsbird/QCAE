@@ -1,8 +1,8 @@
 # C4 扩展执行任务包
 
-本任务包只有在共同基线 manifest 登记实际 commit、保护文件及生成器 SHA256、环境和输入后才生效；缺少该 manifest 时保持草案，不可开始正式实验。共同 manifest 位于 `docs/engineering/c3-closure-evidence/package/c4-common40-baseline-manifest.json`，其实际 baseline commit 必须与执行者 checkout 一致。三个扩展均独立从该 commit 开始；不要把另一项扩展作为前置补丁。执行者自行实现、测试和修复。骨架作者不得代写执行中的产品补丁。
+本任务包只有在共同基线 manifest 登记实际 commit、保护文件及生成器 SHA256、环境和输入后才生效；缺少该 manifest 时保持草案，不可开始正式实验。共同 manifest 由 `tools/freeze_c4_baseline.py` 生成并保存在仓库外（原 common40 manifest 已归档），其实际 baseline commit 必须与执行者 checkout 一致。三个扩展均独立从该 commit 开始；不要把另一项扩展作为前置补丁。执行者自行实现、测试和修复。骨架作者不得代写执行中的产品补丁。
 
-2026-10-01阶段决策：用户明确将完整SDK内部复制量覆盖暂时移出C4启动前置条件，保留为后续性能验收项。共同基线与独立实施约束不变；应用、存储、传输和显示安装的已测预算及三档模型测试继续执行，并采集实际编辑响应时间和峰值内存，详见[C3统计合同](c3-closure-plan.md#统计合同)。未知SDK项保持unknown/null，不据此判完整SK-12、C3/C4或P0通过。本段为当前阶段说明，既有独立实验仍按原冻结commit的八文件及哈希追溯，不回写原manifest；后续新实验须另行冻结实际输入。
+2026-10-01阶段决策：用户明确将完整SDK内部复制量覆盖暂时移出C4启动前置条件，保留为后续性能验收项。共同基线与独立实施约束不变；应用、存储、传输和显示安装的已测预算及三档模型测试继续执行，并采集实际编辑响应时间和峰值内存，统计口径见[SK-12](../baseline/skeleton-acceptance.md#6-性能与数据量测量口径)。未知SDK项保持unknown/null，不据此判完整SK-12、C3/C4或P0通过。本段为当前阶段说明，既有独立实验仍按原冻结commit的八文件及哈希追溯，不回写原manifest；后续新实验须另行冻结实际输入。
 
 ## 初始上下文及读取记录
 
