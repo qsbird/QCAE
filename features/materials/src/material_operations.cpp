@@ -15,16 +15,13 @@ Result<OperationPlan> prepare_create_material(const MaterialCreateInput& input) 
                                                                  canonical.young_modulus.value,
                                                                  canonical.poisson_ratio}))
         return failed<OperationPlan>(*error);
-    return record_plan(std::move(canonical),
-                       [](const MaterialCreateInput& canonical, PlanEdit& edit) {
-                           const auto identity = edit.allocate();
-                           edit.put(records::Material{identity,
-                                                      canonical.name,
-                                                      canonical.young_modulus.value,
-                                                      canonical.poisson_ratio});
-                           return ChangeSummary{
-                               "Create material", identity, canonical.young_modulus.value, true};
-                       });
+    return record_plan(
+        std::move(canonical), [](const MaterialCreateInput& canonical, PlanEdit& edit) {
+            const auto identity = edit.allocate();
+            edit.put(records::Material{
+                identity, canonical.name, canonical.young_modulus.value, canonical.poisson_ratio});
+            return ChangeSummary{"Create material", identity, canonical.young_modulus.value, true};
+        });
 }
 
 Result<OperationPlan> prepare_set_young_modulus(const MaterialSetYoungModulusInput& input) {
@@ -33,27 +30,24 @@ Result<OperationPlan> prepare_set_young_modulus(const MaterialSetYoungModulusInp
             normalize(canonical.young_modulus, parameters::Dimension::pressure, "young_modulus");
         !normalized.ok())
         return forward_failure<OperationPlan>(normalized);
-    return record_plan(std::move(canonical),
-                       [](const MaterialSetYoungModulusInput& canonical, PlanEdit& edit) {
-                           edit.update<records::Material>(canonical.entity_id, [&](auto& material) {
-                               material.young_modulus_mpa = canonical.young_modulus.value;
-                           });
-                           return ChangeSummary{"Set Young modulus",
-                                                canonical.entity_id,
-                                                canonical.young_modulus.value,
-                                                false};
-                       });
+    return record_plan(
+        std::move(canonical), [](const MaterialSetYoungModulusInput& canonical, PlanEdit& edit) {
+            edit.update<records::Material>(canonical.entity_id, [&](auto& material) {
+                material.young_modulus_mpa = canonical.young_modulus.value;
+            });
+            return ChangeSummary{
+                "Set Young modulus", canonical.entity_id, canonical.young_modulus.value, false};
+        });
 }
 
 Result<OperationPlan> prepare_set_description(const MaterialSetDescriptionInput& input) {
-    return record_plan(canonical_copy(input),
-                       [](const MaterialSetDescriptionInput& canonical, PlanEdit& edit) {
-                           edit.update<records::Material>(canonical.entity_id, [&](auto& material) {
-                               copy_into(material.description, canonical.description);
-                           });
-                           return ChangeSummary{
-                               "Set material description", canonical.entity_id, 0, false};
-                       });
+    return record_plan(
+        canonical_copy(input), [](const MaterialSetDescriptionInput& canonical, PlanEdit& edit) {
+            edit.update<records::Material>(canonical.entity_id, [&](auto& material) {
+                copy_into(material.description, canonical.description);
+            });
+            return ChangeSummary{"Set material description", canonical.entity_id, 0, false};
+        });
 }
 
 Result<OperationPlan> prepare_create_section(const SectionCreateInput& input) {

@@ -36,8 +36,7 @@ void check(bool value, const std::string& message) {
         throw std::runtime_error(message);
 }
 template <class T> void refused(const Result<T>& result, const std::string& consumer) {
-    check(!result.ok() && result.error &&
-              result.error->code == ErrorCode::unsupported_capability &&
+    check(!result.ok() && result.error && result.error->code == ErrorCode::unsupported_capability &&
               result.error->message.find("Probe") != std::string::npos,
           consumer + " did not refuse an unlisted record type");
 }
@@ -107,8 +106,8 @@ void production_types_are_classified() {
             const bool refused = consumer.refused.contains(type);
             check(listed != refused,
                   registry->find(type)->name + " is " +
-                      (listed ? "both listed and refused" : "neither listed nor refused") +
-                      " by " + consumer.name +
+                      (listed ? "both listed and refused" : "neither listed nor refused") + " by " +
+                      consumer.name +
                       "; list it in the consumer if it is handled, otherwise add it to the "
                       "consumer's refused set in tests/record_consumer_tests.cpp");
         }

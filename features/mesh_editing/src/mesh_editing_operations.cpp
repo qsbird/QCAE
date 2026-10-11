@@ -31,15 +31,13 @@ Result<OperationPlan> prepare_assign_section(const BeamAssignSectionInput& input
         return forward_failure<OperationPlan>(section);
     auto canonical = canonical_copy(input);
     std::sort(canonical.beam_ids.begin(), canonical.beam_ids.end());
-    return record_plan(std::move(canonical),
-                       [](const BeamAssignSectionInput& canonical, PlanEdit& edit) {
-                           for (const auto& beam : canonical.beam_ids)
-                               edit.update<records::Beam>(beam, [&](auto& record) {
-                                   record.section = canonical.section_id;
-                               });
-                           return ChangeSummary{
-                               "Assign beam section", canonical.beam_ids.front(), 0, false};
-                       });
+    return record_plan(
+        std::move(canonical), [](const BeamAssignSectionInput& canonical, PlanEdit& edit) {
+            for (const auto& beam : canonical.beam_ids)
+                edit.update<records::Beam>(
+                    beam, [&](auto& record) { record.section = canonical.section_id; });
+            return ChangeSummary{"Assign beam section", canonical.beam_ids.front(), 0, false};
+        });
 }
 
 Result<OperationPlan> prepare_translate_nodes(const NodeTranslateBatchInput& input) {
@@ -93,15 +91,14 @@ Result<OperationPlan> prepare_create_tri3(const MeshCreateTri3Input& input) {
             std::nullopt,
             Diagnostic{ErrorCode::invalid_input, "Tri3 requires exactly three nodes", "node_ids"}};
     // Node order is topology: preserve its winding in both storage and retry signatures.
-    return record_plan(canonical_copy(input),
-                       [](const MeshCreateTri3Input& canonical, PlanEdit& edit) {
-                           const auto id = edit.allocate();
-                           const auto& nodes = canonical.node_ids;
-                           edit.put(records::Tri3{id,
-                                                  {nodes[0], nodes[1], nodes[2]},
-                                                  records::MeshId(canonical.mesh_id.value)});
-                           return ChangeSummary{"Create Tri3 topology", id, 0, true};
-                       });
+    return record_plan(
+        canonical_copy(input), [](const MeshCreateTri3Input& canonical, PlanEdit& edit) {
+            const auto id = edit.allocate();
+            const auto& nodes = canonical.node_ids;
+            edit.put(records::Tri3{
+                id, {nodes[0], nodes[1], nodes[2]}, records::MeshId(canonical.mesh_id.value)});
+            return ChangeSummary{"Create Tri3 topology", id, 0, true};
+        });
 }
 
 Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& app) {

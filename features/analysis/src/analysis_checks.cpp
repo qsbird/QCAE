@@ -81,8 +81,7 @@ std::span<const RuleDefinition> RuleCatalog::definitions() const noexcept {
 Result<CheckReport> RuleCatalog::check(const DocumentView& view, const EntityId& identity) const {
     if (const auto unsupported =
             unsupported_record_type(view, analysis_record_types(), "Cantilever analysis checks"))
-        return failed<CheckReport>(
-            unsupported->code(), unsupported->what(), unsupported->field());
+        return failed<CheckReport>(unsupported->code(), unsupported->what(), unsupported->field());
     const auto record = view.find<records::AnalysisDefinition>(identity);
     if (!record)
         return failed<CheckReport>(

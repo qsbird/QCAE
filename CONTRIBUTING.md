@@ -44,7 +44,7 @@ Not-tested: External solver integration
 ## 代码可读性门禁
 
 - 所有手写C++源码和头文件（`include/`、`src/`、`apps/`、`tests/`）遵守仓库根目录的`.clang-format`。运行`python3 tools/check_cpp_format.py`；脚本要求clang-format 21，缺少工具或存在格式差异均为失败。CTest也运行同一检查；构建目录生成文件不属于手写源码。
-- 修改代码时先保持相关回归测试通过，再做机械格式化；格式化和语义改动分开审查。可用`QCAE_CLANG_FORMAT=/path/to/clang-format-21`选择本机程序，然后对改动文件执行`clang-format -i`。
+- 修改代码时先保持相关回归测试通过，再做机械格式化；格式化和语义改动分开审查。可用`QCAE_CLANG_FORMAT=/path/to/clang-format-21`选择本机程序，然后对改动文件执行`clang-format -i`。Debian 13可从trixie-backports安装`clang-format-21`（`apt-get install clang-format-21`）；未安装时CTest将`cpp_format`和`generated_entities`报告为跳过，手动门禁仍失败。
 - 格式检查只能证明排版一致。审查者还须能沿入口、应用服务、领域和适配器追踪修改路径，说明状态所有者、错误处理和测试依据；命名含糊、职责混杂、重复业务规则或需要逐行猜测的压缩表达应阻止阶段通过。例外必须在审查记录中指明具体文件、理由和后续处理，不以测试通过替代可读性审查。
 - 每个开发切片完成时记录格式检查、编译/测试与人工可读性审查结果；任一项未完成，该切片的工程质量门禁不通过。对应验收口径见[质量门禁](docs/baseline/acceptance.md#8-代码可读性门禁)。
 

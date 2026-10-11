@@ -119,11 +119,12 @@ record_plan(Input canonical, const operations::Value& signature_source, Change c
         return forward_failure<OperationPlan>(signature);
     detail::observe_capture(2 * operations::InputTraits<Input>::moved_bytes(canonical),
                             *signature.value);
-    RecordPrepare prepare = [canonical = std::move(canonical),
-                             signature = *signature.value,
-                             change = std::move(change)](const DocumentView& view,
-                                                         const RecordIdentityAllocator& allocate)
-        -> Result<RecordPreparedOperation> {
+    RecordPrepare prepare =
+        [canonical = std::move(canonical),
+         signature = *signature.value,
+         change = std::move(change)](
+            const DocumentView& view,
+            const RecordIdentityAllocator& allocate) -> Result<RecordPreparedOperation> {
         try {
             PlanEdit edit(view, allocate);
             auto summary = change(canonical, edit);
@@ -188,8 +189,8 @@ Result<bool> register_plan(operations::OperationRegistry& registry,
 
 // Lists a scaffolded operation as unavailable, so discovery never offers it before its plan exists.
 template <class Input> Result<bool> declare_unimplemented(operations::OperationRegistry& registry) {
-    return registry.declare_unavailable(
-        operations::InputTraits<Input>::definition(),
-        std::string(operations::InputTraits<Input>::operation_id) + " is not implemented");
+    return registry.declare_unavailable(operations::InputTraits<Input>::definition(),
+                                        std::string(operations::InputTraits<Input>::operation_id) +
+                                            " is not implemented");
 }
 } // namespace qcae::features

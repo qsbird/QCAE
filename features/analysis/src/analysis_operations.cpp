@@ -25,8 +25,8 @@ Result<OperationPlan> prepare_create_force(const ForceCreateInput& input) {
         return forward_failure<OperationPlan>(normalized);
     return record_plan(std::move(canonical), [](const ForceCreateInput& value, PlanEdit& edit) {
         const auto id = edit.allocate();
-        edit.put(records::NodalForce{
-            id, value.node_id, {value.x.value, value.y.value, value.z.value}});
+        edit.put(
+            records::NodalForce{id, value.node_id, {value.x.value, value.y.value, value.z.value}});
         return ChangeSummary{"Create nodal force", id, 0, true};
     });
 }
@@ -57,15 +57,14 @@ Result<OperationPlan> prepare_create_load_case(const LoadCaseCreateInput& input)
     });
 }
 Result<OperationPlan> prepare_set_references(const LoadCaseSetReferencesInput& input) {
-    return record_plan(canonical_copy(input),
-                       [](const LoadCaseSetReferencesInput& value, PlanEdit& edit) {
-                           edit.update<records::LoadCase>(value.load_case_id, [&](auto& load_case) {
-                               load_case.forces = value.force_ids;
-                               load_case.constraints = value.constraint_ids;
-                           });
-                           return ChangeSummary{
-                               "Set load case references", value.load_case_id, 0, false};
-                       });
+    return record_plan(
+        canonical_copy(input), [](const LoadCaseSetReferencesInput& value, PlanEdit& edit) {
+            edit.update<records::LoadCase>(value.load_case_id, [&](auto& load_case) {
+                load_case.forces = value.force_ids;
+                load_case.constraints = value.constraint_ids;
+            });
+            return ChangeSummary{"Set load case references", value.load_case_id, 0, false};
+        });
 }
 Result<OperationPlan> prepare_create_analysis(const AnalysisCreateInput& input,
                                               const ProfileRef& profile) {
@@ -73,18 +72,15 @@ Result<OperationPlan> prepare_create_analysis(const AnalysisCreateInput& input,
     auto signature =
         std::get<Value::Object>(InputTraits<AnalysisCreateInput>::to_value(input).data);
     signature.emplace("profile", profile_value(profile));
-    return record_plan(canonical_copy(input),
-                       Value(std::move(signature)),
-                       [profile](const AnalysisCreateInput& value, PlanEdit& edit) {
-                           const auto id = edit.allocate();
-                           edit.put(records::AnalysisDefinition{id,
-                                                                value.name,
-                                                                {profile, "linear_static"},
-                                                                {},
-                                                                {},
-                                                                value.load_case_ids});
-                           return ChangeSummary{"Create linear static analysis", id, 0, true};
-                       });
+    return record_plan(
+        canonical_copy(input),
+        Value(std::move(signature)),
+        [profile](const AnalysisCreateInput& value, PlanEdit& edit) {
+            const auto id = edit.allocate();
+            edit.put(records::AnalysisDefinition{
+                id, value.name, {profile, "linear_static"}, {}, {}, value.load_case_ids});
+            return ChangeSummary{"Create linear static analysis", id, 0, true};
+        });
 }
 
 Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& app) {
