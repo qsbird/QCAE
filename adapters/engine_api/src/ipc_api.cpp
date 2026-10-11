@@ -9,6 +9,7 @@
 
 #include <QJsonArray>
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <cmath>
 #include <limits>
@@ -509,6 +510,498 @@ failure(const QString& id, const QString& code, const QString& message, const QS
             {"error", QJsonObject{{"code", code}, {"message", message}}}};
 }
 
+namespace {
+// Compatibility operations that are still decoded by hand; new operations use the typed
+// registry. A handler either completes the response (complete) or leaves it to dispatch's shared
+// post-processing: session reconcile after lifecycle writes and the top-level revision echo.
+struct LegacyCall {
+    MemoryApplication& app;
+    const QJsonObject& request;
+    const QJsonObject& params;
+    const Caller& caller;
+    const IModelCodec* codec;
+    const ProfileDefinition* profile;
+    TypedHost* typed;
+    bool display_services;
+    const QString& id;
+    const std::string& op;
+};
+struct LegacyReply {
+    QJsonObject response;
+    bool complete{};
+};
+using LegacyHandler = LegacyReply (*)(const LegacyCall&);
+
+// Hand-decoded operations whose parameters are checked by a generated input type; only these
+// accept requested_version.
+constexpr std::array<std::string_view, 16> generated_input_operations{"project.open",
+                                                                      "project.create",
+                                                                      "project.save",
+                                                                      "project.save_as",
+                                                                      "project.close",
+                                                                      "changes.commit",
+                                                                      "capabilities.list",
+                                                                      "project.current",
+                                                                      "project.status",
+                                                                      "model.summary",
+                                                                      "history.list",
+                                                                      "history.undo",
+                                                                      "history.redo",
+                                                                      "operations.get",
+                                                                      "entity.query",
+                                                                      "entity.references"};
+bool has_generated_input(std::string_view operation) {
+    return std::ranges::find(generated_input_operations, operation) !=
+           generated_input_operations.end();
+}
+
+// Catalog contracts that are exactly the generated input definition; project.open, project.close,
+// operations.get and the entity reads add operation-specific detail and are described separately.
+struct InputContract {
+    std::string_view operation;
+    operations::OperationDefinition (*definition)();
+    std::string_view input_type;
+    std::string_view output_type;
+};
+template <class Input> constexpr auto definition_of = &operations::InputTraits<Input>::definition;
+constexpr std::array<InputContract, 11> input_contracts{{
+    {"project.create",
+     definition_of<operations::ProjectCreateInput>,
+     "ProjectCreateInput",
+     "DocumentInfo"},
+    {"project.save",
+     definition_of<operations::ProjectSaveInput>,
+     "ProjectSaveInput",
+     "DocumentInfo"},
+    {"project.save_as",
+     definition_of<operations::ProjectSaveAsInput>,
+     "ProjectSaveAsInput",
+     "DocumentInfo"},
+    {"changes.commit",
+     definition_of<operations::ChangesCommitInput>,
+     "ChangesCommitInput",
+     "ChangeReceipt"},
+    {"capabilities.list",
+     definition_of<operations::CapabilitiesListInput>,
+     "CapabilitiesListInput",
+     "CapabilityCatalog"},
+    {"project.current",
+     definition_of<operations::ProjectCurrentInput>,
+     "ProjectCurrentInput",
+     "DocumentInfo"},
+    {"project.status",
+     definition_of<operations::ProjectStatusInput>,
+     "ProjectStatusInput",
+     "ProjectStatus"},
+    {"model.summary",
+     definition_of<operations::ModelSummaryInput>,
+     "ModelSummaryInput",
+     "ModelSummary"},
+    {"history.list",
+     definition_of<operations::HistoryListInput>,
+     "HistoryListInput",
+     "HistorySnapshot"},
+    {"history.undo",
+     definition_of<operations::HistoryUndoInput>,
+     "HistoryUndoInput",
+     "ChangeReceipt"},
+    {"history.redo",
+     definition_of<operations::HistoryRedoInput>,
+     "HistoryRedoInput",
+     "ChangeReceipt"},
+}};
+void describe_input_contract(QJsonObject& entry, std::string_view operation) {
+    if (operation == "project.open")
+        return describe_project_open(entry);
+    if (operation == "project.close")
+        return describe_project_close(entry);
+    if (operation == "operations.get")
+        return describe_operation_lookup(entry);
+    const auto contract = std::ranges::find(input_contracts, operation, &InputContract::operation);
+    if (contract != input_contracts.end())
+        describe_string_input(
+            entry, contract->definition(), contract->input_type, contract->output_type);
+}
+
+LegacyReply legacy_capabilities_list(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition =
+        operations::InputTraits<operations::CapabilitiesListInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    (void)string_input<operations::CapabilitiesListInput>(params);
+    QJsonArray catalog;
+    for (const auto& descriptor : operation_catalog) {
+        if (typed && typed->supports(descriptor.name))
+            continue;
+        bool available = supported(descriptor.name) &&
+                         (descriptor.name != "model.export_preview" || (codec && profile));
+        QJsonObject entry{{"name", qs(descriptor.name)},
+                          {"description", qs(descriptor.description)},
+                          {"effect", qs(descriptor.effect)},
+                          {"input_type", qs(descriptor.input_type)},
+                          {"output_type", qs(descriptor.output_type)},
+                          {"target_context", qs(descriptor.target_context)},
+                          {"requires_document", descriptor.requires_document},
+                          {"requires_epoch", descriptor.requires_epoch},
+                          {"requires_revision", descriptor.requires_revision},
+                          {"requires_idempotency_key", descriptor.requires_idempotency_key},
+                          {"requires_profile_match", descriptor.requires_profile_match},
+                          {"implementation_status", available ? "partial" : "planned"}};
+        if (display_services &&
+            (descriptor.name == "view.render_resource" ||
+             descriptor.name.starts_with("resources.") || descriptor.name.starts_with("events."))) {
+            entry.insert("implementation_status", "implemented");
+            entry.insert("requested_version", 1);
+            available = true;
+        }
+        describe_input_contract(entry, descriptor.name);
+        entry.insert("available", available);
+        if (const auto schema = read_parameters_schema(descriptor.name)) {
+            entry.insert("parameters_schema", *schema);
+            if (descriptor.name == "entity.query")
+                describe_entity_read(
+                    entry,
+                    operations::InputTraits<operations::EntityQueryInput>::definition(),
+                    "EntityQueryInput",
+                    *schema);
+            else if (descriptor.name == "entity.references")
+                describe_entity_read(
+                    entry,
+                    operations::InputTraits<operations::EntityReferencesInput>::definition(),
+                    "EntityReferencesInput",
+                    *schema);
+        }
+        if (descriptor.name == "changes.preview") {
+            QJsonArray commands{"material.create",
+                                "material.set_young_modulus",
+                                "part.upsert",
+                                "assembly.upsert",
+                                "set.upsert",
+                                "node.move",
+                                "entity.delete"};
+            if (codec && profile)
+                commands.append("model.import");
+            entry.insert("supported_commands", commands);
+        }
+        if (descriptor.name == "operations.get")
+            entry.insert("supported_scope", "host_lifecycle_and_document_change_outcomes");
+        if (descriptor.name == "capabilities.list")
+            entry.insert("supported_scope", "global_catalog_only");
+        catalog.append(entry);
+    }
+    if (typed) {
+        for (const auto& descriptor : typed->capabilities())
+            catalog.append(descriptor);
+    }
+    const QJsonObject data{
+        {"operations", catalog},
+        {"storage_mode", app.durable() ? "sqlite" : "memory"},
+        {"durable", app.durable()},
+        {"recovery_available", app.recovery_available()},
+        {"implementation_scope",
+         "Shared record services, analysis checks, resource deltas; optional Nastran "
+         "artifact publication and fixture results; no solver execution or "
+         "AI bridge"},
+        {"max_name_bytes", 1024},
+        {"configured_solver_profiles", QJsonArray{}},
+        {"declared_solver_profiles", profile ? QJsonArray{profile_json(*profile)} : QJsonArray{}},
+        {"supported_pressure_units", QJsonArray{"Pa", "kPa", "MPa", "GPa"}}};
+    return {QJsonObject{{"request_id", id}, {"status", "success"}, {"data", data}}, false};
+}
+
+LegacyReply legacy_project_current(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition = operations::InputTraits<operations::ProjectCurrentInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    (void)string_input<operations::ProjectCurrentInput>(params);
+    return {result_json(id, app.current_document(), info_json), false};
+}
+
+LegacyReply legacy_project_open(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition = operations::InputTraits<operations::ProjectOpenInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    const auto input = string_input<operations::ProjectOpenInput>(params);
+    const auto key = string_field(request, "idempotency_key").toStdString();
+    if (input.mode == "normal") {
+        if (!input.path)
+            throw InvalidRequest("Use mode normal with path, or recover without path",
+                                 "input.path");
+        return {result_json(id, app.open_document(caller, *input.path, key), info_json), false};
+    } else if (input.mode == "recover") {
+        if (input.path)
+            throw InvalidRequest("Use mode normal with path, or recover without path",
+                                 "input.path");
+        return {result_json(id, app.recover_document(caller, key), info_json), false};
+    } else
+        throw InvalidRequest("Use mode normal with path, or recover without path", "input.mode");
+}
+
+LegacyReply legacy_project_save(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const bool save_as = op == "project.save_as";
+    const auto definition =
+        save_as ? operations::InputTraits<operations::ProjectSaveAsInput>::definition()
+                : operations::InputTraits<operations::ProjectSaveInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    const auto path = (save_as ? string_input<operations::ProjectSaveAsInput>(params).path
+                               : string_input<operations::ProjectSaveInput>(params).path)
+                          .value_or(std::string{});
+    return {result_json(id,
+                        app.save_document(caller,
+                                          context(request),
+                                          path,
+                                          save_as,
+                                          string_field(request, "idempotency_key").toStdString()),
+                        info_json),
+            false};
+}
+
+LegacyReply legacy_project_close(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition = operations::InputTraits<operations::ProjectCloseInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    const auto input = string_input<operations::ProjectCloseInput>(params);
+    const auto& policy = input.policy;
+    if (policy != "discard" && policy != "keep_recovery")
+        throw InvalidRequest("Unknown close policy", "input.policy");
+    return {result_json(id,
+                        app.close_document(caller,
+                                           context(request),
+                                           policy == "discard" ? ClosePolicy::discard
+                                                               : ClosePolicy::keep_recovery,
+                                           string_field(request, "idempotency_key").toStdString()),
+                        info_json),
+            false};
+}
+
+LegacyReply legacy_project_create(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition = operations::InputTraits<operations::ProjectCreateInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    const auto input = string_input<operations::ProjectCreateInput>(params);
+    return {result_json(id,
+                        app.create_document(caller,
+                                            input.name,
+                                            string_field(request, "idempotency_key").toStdString()),
+                        info_json),
+            false};
+}
+
+LegacyReply legacy_model_summary(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition =
+        op == "model.summary"
+            ? operations::InputTraits<operations::ModelSummaryInput>::definition()
+            : operations::InputTraits<operations::ProjectStatusInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    if (op == "model.summary")
+        (void)string_input<operations::ModelSummaryInput>(params);
+    else
+        (void)string_input<operations::ProjectStatusInput>(params);
+    return {
+        result_json(
+            id,
+            app.snapshot(document_ref(request)),
+            [&](const ModelSnapshot& snapshot) {
+                QJsonObject data = info_json(snapshot.info);
+                if (op == "model.summary") {
+                    QJsonArray materials;
+                    for (const auto& material : snapshot.materials)
+                        materials.append(
+                            QJsonObject{{"entity_id", qs(material.id.value)},
+                                        {"name", qs(material.name)},
+                                        {"young_modulus_mpa", material.young_modulus_mpa}});
+                    data.insert("materials", materials);
+                    data.insert("node_count", static_cast<qint64>(snapshot.nodes.size()));
+                    data.insert("beam_count", static_cast<qint64>(snapshot.beams.size()));
+                    data.insert("section_count", static_cast<qint64>(snapshot.sections.size()));
+                    data.insert("part_count", static_cast<qint64>(snapshot.parts.size()));
+                    data.insert("assembly_count", static_cast<qint64>(snapshot.assemblies.size()));
+                    data.insert("set_count", static_cast<qint64>(snapshot.sets.size()));
+                    data.insert("include_count", static_cast<qint64>(snapshot.includes.size()));
+                    data.insert("analysis_count", static_cast<qint64>(snapshot.analyses.size()));
+                }
+                const auto records = app.record_application().snapshot(document_ref(request));
+                if (records.ok()) {
+                    data.insert("geometry_count",
+                                static_cast<qint64>(records.value->records.count(
+                                    RecordTraits<records::GeometryLine>::type_id)));
+                    data.insert("mesh_count",
+                                static_cast<qint64>(records.value->records.count(
+                                    RecordTraits<records::Mesh>::type_id)));
+                }
+                return data;
+            }),
+        false};
+}
+
+LegacyReply legacy_changes_preview(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto command = string_field(params, "command");
+    MaterialCommand material_command;
+    if (command == "material.create") {
+        fields(params, {"command", "name", "young_modulus"});
+        material_command =
+            CreateMaterial{string_field(params, "name").toStdString(), quantity(params)};
+    } else if (command == "material.set_young_modulus") {
+        fields(params, {"command", "entity_id", "young_modulus"});
+        material_command = SetYoungModulus{
+            EntityId{string_field(params, "entity_id").toStdString()}, quantity(params)};
+    } else
+        return {failure(id, "UNSUPPORTED_CAPABILITY", "Unsupported material command"), true};
+    return {result_json(id,
+                        app.preview(caller, context(request), material_command),
+                        [](const ChangePreview& preview) {
+                            return QJsonObject{
+                                {"preview_id", qs(preview.id.value)},
+                                {"affected_entity_id", qs(preview.affected_entity.value)},
+                                {"normalized_young_modulus_mpa", preview.normalized_modulus_mpa},
+                                {"creates_entity", preview.creates_entity},
+                                {"revision", number(preview.context.expected_revision)}};
+                        }),
+            false};
+}
+
+LegacyReply legacy_changes_commit(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition = operations::InputTraits<operations::ChangesCommitInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    const auto input = string_input<operations::ChangesCommitInput>(params);
+    return {result_json(id,
+                        app.commit(caller,
+                                   context(request),
+                                   PreviewId{input.preview_id},
+                                   string_field(request, "idempotency_key").toStdString()),
+                        receipt_json),
+            false};
+}
+
+LegacyReply legacy_history_undo(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition =
+        op == "history.undo" ? operations::InputTraits<operations::HistoryUndoInput>::definition()
+                             : operations::InputTraits<operations::HistoryRedoInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    if (op == "history.undo")
+        (void)string_input<operations::HistoryUndoInput>(params);
+    else
+        (void)string_input<operations::HistoryRedoInput>(params);
+    const auto ctx = context(request);
+    const auto key = string_field(request, "idempotency_key").toStdString();
+    return {
+        result_json(id,
+                    op == "history.undo" ? app.undo(caller, ctx, key) : app.redo(caller, ctx, key),
+                    receipt_json),
+        false};
+}
+
+LegacyReply legacy_history_list(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition = operations::InputTraits<operations::HistoryListInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    (void)string_input<operations::HistoryListInput>(params);
+    return {result_json(id,
+                        app.history(document_ref(request)),
+                        [](const HistorySnapshot& history) {
+                            QJsonArray items;
+                            for (const auto& item : history.items)
+                                items.append(
+                                    QJsonObject{{"transaction_id", qs(item.transaction.value)},
+                                                {"label", qs(item.label)},
+                                                {"applied", item.applied}});
+                            return QJsonObject{{"items", items},
+                                               {"cursor", static_cast<qint64>(history.cursor)},
+                                               {"revision", number(history.revision)}};
+                        }),
+            false};
+}
+
+LegacyReply legacy_operations_get(const LegacyCall& call) {
+    const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
+        call;
+    const auto definition = operations::InputTraits<operations::OperationsGetInput>::definition();
+    if (const auto rejected = version_rejection(request, id, definition.version))
+        return {*rejected, true};
+    const auto input = operation_lookup_input(params);
+    if (input.lookup_scope == "host") {
+        auto original = input.original_operation;
+        if (original == "project.create")
+            original = "create_document";
+        else if (original == "project.open") {
+            const auto mode = input.original_mode.value_or("normal");
+            original = mode == "recover" ? "recover_document" : "open_document";
+        } else if (original == "project.save" || original == "project.save_as")
+            original = "save_document";
+        else if (original == "project.close")
+            original = "close_document";
+        return {
+            result_json(id, app.host_operation(caller, original, input.idempotency_key), info_json),
+            true};
+    }
+    auto original = input.original_operation;
+    if (original == "changes.commit")
+        original = "commit";
+    else if (original == "history.undo")
+        original = "undo";
+    else if (original == "history.redo")
+        original = "redo";
+    else
+        return {result_json(id,
+                            app.record_application().action_outcome(
+                                caller, document_ref(request), original, input.idempotency_key),
+                            receipt_json),
+                true};
+    return {
+        result_json(id,
+                    app.operation(caller, document_ref(request), original, input.idempotency_key),
+                    receipt_json),
+        false};
+}
+
+LegacyHandler legacy_handler(std::string_view operation) {
+    using Route = std::pair<std::string_view, LegacyHandler>;
+    static constexpr std::array<Route, 15> routes{{{"capabilities.list", legacy_capabilities_list},
+                                                   {"project.current", legacy_project_current},
+                                                   {"project.open", legacy_project_open},
+                                                   {"project.save", legacy_project_save},
+                                                   {"project.save_as", legacy_project_save},
+                                                   {"project.close", legacy_project_close},
+                                                   {"project.create", legacy_project_create},
+                                                   {"model.summary", legacy_model_summary},
+                                                   {"project.status", legacy_model_summary},
+                                                   {"changes.preview", legacy_changes_preview},
+                                                   {"changes.commit", legacy_changes_commit},
+                                                   {"history.undo", legacy_history_undo},
+                                                   {"history.redo", legacy_history_undo},
+                                                   {"history.list", legacy_history_list},
+                                                   {"operations.get", legacy_operations_get}}};
+    const auto found = std::ranges::find(routes, operation, &Route::first);
+    return found == routes.end() ? nullptr : found->second;
+}
+} // namespace
+
 QJsonObject dispatch(MemoryApplication& app,
                      const QJsonObject& request,
                      const Caller& caller,
@@ -550,14 +1043,7 @@ QJsonObject dispatch(MemoryApplication& app,
         const auto params = request.value("parameters").toObject();
         if (typed && typed->supports(op))
             return typed->dispatch(request, caller);
-        const bool generated_input =
-            op == "project.open" || op == "project.create" || op == "project.save" ||
-            op == "project.save_as" || op == "project.close" || op == "changes.commit" ||
-            op == "capabilities.list" || op == "project.current" || op == "project.status" ||
-            op == "model.summary" || op == "history.list" || op == "history.undo" ||
-            op == "history.redo" || op == "operations.get" || op == "entity.query" ||
-            op == "entity.references";
-        if ((request.contains("requested_version") && !generated_input) ||
+        if ((request.contains("requested_version") && !has_generated_input(op)) ||
             request.contains("expected_profile"))
             throw InvalidRequest("requested_version/expected_profile require a typed operation");
         if (op == "entity.query" || op == "entity.references") {
@@ -576,383 +1062,12 @@ QJsonObject dispatch(MemoryApplication& app,
         if (const auto model_response = dispatch_model(app, request, caller, codec, profile))
             return *model_response;
         QJsonObject response;
-        if (op == "capabilities.list") {
-            const auto definition =
-                operations::InputTraits<operations::CapabilitiesListInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            (void)string_input<operations::CapabilitiesListInput>(params);
-            QJsonArray catalog;
-            for (const auto& descriptor : operation_catalog) {
-                if (typed && typed->supports(descriptor.name))
-                    continue;
-                bool available = supported(descriptor.name) &&
-                                 (descriptor.name != "model.export_preview" || (codec && profile));
-                QJsonObject entry{{"name", qs(descriptor.name)},
-                                  {"description", qs(descriptor.description)},
-                                  {"effect", qs(descriptor.effect)},
-                                  {"input_type", qs(descriptor.input_type)},
-                                  {"output_type", qs(descriptor.output_type)},
-                                  {"target_context", qs(descriptor.target_context)},
-                                  {"requires_document", descriptor.requires_document},
-                                  {"requires_epoch", descriptor.requires_epoch},
-                                  {"requires_revision", descriptor.requires_revision},
-                                  {"requires_idempotency_key", descriptor.requires_idempotency_key},
-                                  {"requires_profile_match", descriptor.requires_profile_match},
-                                  {"implementation_status", available ? "partial" : "planned"}};
-                if (display_services && (descriptor.name == "view.render_resource" ||
-                                         descriptor.name.starts_with("resources.") ||
-                                         descriptor.name.starts_with("events."))) {
-                    entry.insert("implementation_status", "implemented");
-                    entry.insert("requested_version", 1);
-                    available = true;
-                }
-                if (descriptor.name == "project.open")
-                    describe_project_open(entry);
-                else if (descriptor.name == "project.create")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::ProjectCreateInput>::definition(),
-                        "ProjectCreateInput");
-                else if (descriptor.name == "project.save")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::ProjectSaveInput>::definition(),
-                        "ProjectSaveInput");
-                else if (descriptor.name == "project.save_as")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::ProjectSaveAsInput>::definition(),
-                        "ProjectSaveAsInput");
-                else if (descriptor.name == "project.close")
-                    describe_project_close(entry);
-                else if (descriptor.name == "changes.commit")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::ChangesCommitInput>::definition(),
-                        "ChangesCommitInput",
-                        "ChangeReceipt");
-                else if (descriptor.name == "capabilities.list")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::CapabilitiesListInput>::definition(),
-                        "CapabilitiesListInput",
-                        "CapabilityCatalog");
-                else if (descriptor.name == "project.current")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::ProjectCurrentInput>::definition(),
-                        "ProjectCurrentInput");
-                else if (descriptor.name == "project.status")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::ProjectStatusInput>::definition(),
-                        "ProjectStatusInput",
-                        "ProjectStatus");
-                else if (descriptor.name == "model.summary")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::ModelSummaryInput>::definition(),
-                        "ModelSummaryInput",
-                        "ModelSummary");
-                else if (descriptor.name == "history.list")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::HistoryListInput>::definition(),
-                        "HistoryListInput",
-                        "HistorySnapshot");
-                else if (descriptor.name == "history.undo")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::HistoryUndoInput>::definition(),
-                        "HistoryUndoInput",
-                        "ChangeReceipt");
-                else if (descriptor.name == "history.redo")
-                    describe_string_input(
-                        entry,
-                        operations::InputTraits<operations::HistoryRedoInput>::definition(),
-                        "HistoryRedoInput",
-                        "ChangeReceipt");
-                else if (descriptor.name == "operations.get")
-                    describe_operation_lookup(entry);
-                entry.insert("available", available);
-                if (const auto schema = read_parameters_schema(descriptor.name)) {
-                    entry.insert("parameters_schema", *schema);
-                    if (descriptor.name == "entity.query")
-                        describe_entity_read(
-                            entry,
-                            operations::InputTraits<operations::EntityQueryInput>::definition(),
-                            "EntityQueryInput",
-                            *schema);
-                    else if (descriptor.name == "entity.references")
-                        describe_entity_read(entry,
-                                             operations::InputTraits<
-                                                 operations::EntityReferencesInput>::definition(),
-                                             "EntityReferencesInput",
-                                             *schema);
-                }
-                if (descriptor.name == "changes.preview") {
-                    QJsonArray commands{"material.create",
-                                        "material.set_young_modulus",
-                                        "part.upsert",
-                                        "assembly.upsert",
-                                        "set.upsert",
-                                        "node.move",
-                                        "entity.delete"};
-                    if (codec && profile)
-                        commands.append("model.import");
-                    entry.insert("supported_commands", commands);
-                }
-                if (descriptor.name == "operations.get")
-                    entry.insert("supported_scope", "host_lifecycle_and_document_change_outcomes");
-                if (descriptor.name == "capabilities.list")
-                    entry.insert("supported_scope", "global_catalog_only");
-                catalog.append(entry);
-            }
-            if (typed) {
-                for (const auto& descriptor : typed->capabilities())
-                    catalog.append(descriptor);
-            }
-            const QJsonObject data{
-                {"operations", catalog},
-                {"storage_mode", app.durable() ? "sqlite" : "memory"},
-                {"durable", app.durable()},
-                {"recovery_available", app.recovery_available()},
-                {"implementation_scope",
-                 "Shared record services, analysis checks, resource deltas; optional Nastran "
-                 "artifact publication and fixture results; no solver execution or "
-                 "AI bridge"},
-                {"max_name_bytes", 1024},
-                {"configured_solver_profiles", QJsonArray{}},
-                {"declared_solver_profiles",
-                 profile ? QJsonArray{profile_json(*profile)} : QJsonArray{}},
-                {"supported_pressure_units", QJsonArray{"Pa", "kPa", "MPa", "GPa"}}};
-            response = {{"request_id", id}, {"status", "success"}, {"data", data}};
-        } else if (op == "project.current") {
-            const auto definition =
-                operations::InputTraits<operations::ProjectCurrentInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            (void)string_input<operations::ProjectCurrentInput>(params);
-            response = result_json(id, app.current_document(), info_json);
-        } else if (op == "project.open") {
-            const auto definition =
-                operations::InputTraits<operations::ProjectOpenInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            const auto input = string_input<operations::ProjectOpenInput>(params);
-            const auto key = string_field(request, "idempotency_key").toStdString();
-            if (input.mode == "normal") {
-                if (!input.path)
-                    throw InvalidRequest("Use mode normal with path, or recover without path",
-                                         "input.path");
-                response = result_json(id, app.open_document(caller, *input.path, key), info_json);
-            } else if (input.mode == "recover") {
-                if (input.path)
-                    throw InvalidRequest("Use mode normal with path, or recover without path",
-                                         "input.path");
-                response = result_json(id, app.recover_document(caller, key), info_json);
-            } else
-                throw InvalidRequest("Use mode normal with path, or recover without path",
-                                     "input.mode");
-        } else if (op == "project.save" || op == "project.save_as") {
-            const bool save_as = op == "project.save_as";
-            const auto definition =
-                save_as ? operations::InputTraits<operations::ProjectSaveAsInput>::definition()
-                        : operations::InputTraits<operations::ProjectSaveInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            const auto path = (save_as ? string_input<operations::ProjectSaveAsInput>(params).path
-                                       : string_input<operations::ProjectSaveInput>(params).path)
-                                  .value_or(std::string{});
-            response = result_json(
-                id,
-                app.save_document(caller,
-                                  context(request),
-                                  path,
-                                  save_as,
-                                  string_field(request, "idempotency_key").toStdString()),
-                info_json);
-        } else if (op == "project.close") {
-            const auto definition =
-                operations::InputTraits<operations::ProjectCloseInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            const auto input = string_input<operations::ProjectCloseInput>(params);
-            const auto& policy = input.policy;
-            if (policy != "discard" && policy != "keep_recovery")
-                throw InvalidRequest("Unknown close policy", "input.policy");
-            response = result_json(
-                id,
-                app.close_document(caller,
-                                   context(request),
-                                   policy == "discard" ? ClosePolicy::discard
-                                                       : ClosePolicy::keep_recovery,
-                                   string_field(request, "idempotency_key").toStdString()),
-                info_json);
-        } else if (op == "project.create") {
-            const auto definition =
-                operations::InputTraits<operations::ProjectCreateInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            const auto input = string_input<operations::ProjectCreateInput>(params);
-            response = result_json(
-                id,
-                app.create_document(
-                    caller, input.name, string_field(request, "idempotency_key").toStdString()),
-                info_json);
-        } else if (op == "model.summary" || op == "project.status") {
-            const auto definition =
-                op == "model.summary"
-                    ? operations::InputTraits<operations::ModelSummaryInput>::definition()
-                    : operations::InputTraits<operations::ProjectStatusInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            if (op == "model.summary")
-                (void)string_input<operations::ModelSummaryInput>(params);
-            else
-                (void)string_input<operations::ProjectStatusInput>(params);
-            response = result_json(
-                id, app.snapshot(document_ref(request)), [&](const ModelSnapshot& snapshot) {
-                    QJsonObject data = info_json(snapshot.info);
-                    if (op == "model.summary") {
-                        QJsonArray materials;
-                        for (const auto& material : snapshot.materials)
-                            materials.append(
-                                QJsonObject{{"entity_id", qs(material.id.value)},
-                                            {"name", qs(material.name)},
-                                            {"young_modulus_mpa", material.young_modulus_mpa}});
-                        data.insert("materials", materials);
-                        data.insert("node_count", static_cast<qint64>(snapshot.nodes.size()));
-                        data.insert("beam_count", static_cast<qint64>(snapshot.beams.size()));
-                        data.insert("section_count", static_cast<qint64>(snapshot.sections.size()));
-                        data.insert("part_count", static_cast<qint64>(snapshot.parts.size()));
-                        data.insert("assembly_count",
-                                    static_cast<qint64>(snapshot.assemblies.size()));
-                        data.insert("set_count", static_cast<qint64>(snapshot.sets.size()));
-                        data.insert("include_count", static_cast<qint64>(snapshot.includes.size()));
-                        data.insert("analysis_count",
-                                    static_cast<qint64>(snapshot.analyses.size()));
-                    }
-                    const auto records = app.record_application().snapshot(document_ref(request));
-                    if (records.ok()) {
-                        data.insert("geometry_count",
-                                    static_cast<qint64>(records.value->records.count(
-                                        RecordTraits<records::GeometryLine>::type_id)));
-                        data.insert("mesh_count",
-                                    static_cast<qint64>(records.value->records.count(
-                                        RecordTraits<records::Mesh>::type_id)));
-                    }
-                    return data;
-                });
-        } else if (op == "changes.preview") {
-            const auto command = string_field(params, "command");
-            MaterialCommand material_command;
-            if (command == "material.create") {
-                fields(params, {"command", "name", "young_modulus"});
-                material_command =
-                    CreateMaterial{string_field(params, "name").toStdString(), quantity(params)};
-            } else if (command == "material.set_young_modulus") {
-                fields(params, {"command", "entity_id", "young_modulus"});
-                material_command = SetYoungModulus{
-                    EntityId{string_field(params, "entity_id").toStdString()}, quantity(params)};
-            } else
-                return failure(id, "UNSUPPORTED_CAPABILITY", "Unsupported material command");
-            response = result_json(
-                id,
-                app.preview(caller, context(request), material_command),
-                [](const ChangePreview& preview) {
-                    return QJsonObject{
-                        {"preview_id", qs(preview.id.value)},
-                        {"affected_entity_id", qs(preview.affected_entity.value)},
-                        {"normalized_young_modulus_mpa", preview.normalized_modulus_mpa},
-                        {"creates_entity", preview.creates_entity},
-                        {"revision", number(preview.context.expected_revision)}};
-                });
-        } else if (op == "changes.commit") {
-            const auto definition =
-                operations::InputTraits<operations::ChangesCommitInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            const auto input = string_input<operations::ChangesCommitInput>(params);
-            response =
-                result_json(id,
-                            app.commit(caller,
-                                       context(request),
-                                       PreviewId{input.preview_id},
-                                       string_field(request, "idempotency_key").toStdString()),
-                            receipt_json);
-        } else if (op == "history.undo" || op == "history.redo") {
-            const auto definition =
-                op == "history.undo"
-                    ? operations::InputTraits<operations::HistoryUndoInput>::definition()
-                    : operations::InputTraits<operations::HistoryRedoInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            if (op == "history.undo")
-                (void)string_input<operations::HistoryUndoInput>(params);
-            else
-                (void)string_input<operations::HistoryRedoInput>(params);
-            const auto ctx = context(request);
-            const auto key = string_field(request, "idempotency_key").toStdString();
-            response = result_json(id,
-                                   op == "history.undo" ? app.undo(caller, ctx, key)
-                                                        : app.redo(caller, ctx, key),
-                                   receipt_json);
-        } else if (op == "history.list") {
-            const auto definition =
-                operations::InputTraits<operations::HistoryListInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            (void)string_input<operations::HistoryListInput>(params);
-            response = result_json(
-                id, app.history(document_ref(request)), [](const HistorySnapshot& history) {
-                    QJsonArray items;
-                    for (const auto& item : history.items)
-                        items.append(QJsonObject{{"transaction_id", qs(item.transaction.value)},
-                                                 {"label", qs(item.label)},
-                                                 {"applied", item.applied}});
-                    return QJsonObject{{"items", items},
-                                       {"cursor", static_cast<qint64>(history.cursor)},
-                                       {"revision", number(history.revision)}};
-                });
-        } else if (op == "operations.get") {
-            const auto definition =
-                operations::InputTraits<operations::OperationsGetInput>::definition();
-            if (const auto rejected = version_rejection(request, id, definition.version))
-                return *rejected;
-            const auto input = operation_lookup_input(params);
-            if (input.lookup_scope == "host") {
-                auto original = input.original_operation;
-                if (original == "project.create")
-                    original = "create_document";
-                else if (original == "project.open") {
-                    const auto mode = input.original_mode.value_or("normal");
-                    original = mode == "recover" ? "recover_document" : "open_document";
-                } else if (original == "project.save" || original == "project.save_as")
-                    original = "save_document";
-                else if (original == "project.close")
-                    original = "close_document";
-                return result_json(
-                    id, app.host_operation(caller, original, input.idempotency_key), info_json);
-            }
-            auto original = input.original_operation;
-            if (original == "changes.commit")
-                original = "commit";
-            else if (original == "history.undo")
-                original = "undo";
-            else if (original == "history.redo")
-                original = "redo";
-            else
-                return result_json(
-                    id,
-                    app.record_application().action_outcome(
-                        caller, document_ref(request), original, input.idempotency_key),
-                    receipt_json);
-            response = result_json(
-                id,
-                app.operation(caller, document_ref(request), original, input.idempotency_key),
-                receipt_json);
+        if (const auto handler = legacy_handler(op)) {
+            auto reply = handler(
+                {app, request, params, caller, codec, profile, typed, display_services, id, op});
+            if (reply.complete)
+                return reply.response;
+            response = std::move(reply.response);
         }
         if (typed && response.value("status").toString() == "success" &&
             (op == "project.create" || op == "project.open" || op == "project.close")) {
