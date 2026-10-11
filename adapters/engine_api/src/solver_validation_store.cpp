@@ -246,13 +246,16 @@ Result<SolverValidationFact> prepare_solver_validation(const StoredSolverResult&
     }
 }
 std::shared_ptr<const OwnedRowImage> solver_validation_row(const SolverValidationFact& fact) {
-    return std::make_shared<const OwnedRowImage>(OwnedRowImage{
-        {StoreSpace::artifact_record,
-         solver_validation_identity(fact.run_id, {fact.principal}, fact.idempotency_key)},
-        std::string(solver_validation_owner),
-        1,
-        std::make_shared<const std::string>(encode(fact)),
-        {}});
+    // Build the parts that can throw before the aggregate: GCC 14 destroys an already
+    // constructed member twice when a later braced initializer throws.
+    auto identity = solver_validation_identity(fact.run_id, {fact.principal}, fact.idempotency_key);
+    auto payload = std::make_shared<const std::string>(encode(fact));
+    return std::make_shared<const OwnedRowImage>(
+        OwnedRowImage{{StoreSpace::artifact_record, std::move(identity)},
+                      std::string(solver_validation_owner),
+                      1,
+                      std::move(payload),
+                      {}});
 }
 SolverValidationFact decode_solver_validation_row(const OwnedRowImage& image) {
     require(image.owner == solver_validation_owner && image.schema_version == 1 &&

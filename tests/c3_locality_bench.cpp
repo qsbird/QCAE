@@ -44,7 +44,7 @@ template <class T> T good(Result<T> value, const char* what) {
 }
 
 std::string entity_id(const char* kind, std::size_t index) {
-    char digits[13]{};
+    char digits[21]{}; // a size_t has at most 20 decimal digits
     std::snprintf(digits, sizeof(digits), "%012zu", index);
     return std::string(kind) + "-" + digits;
 }

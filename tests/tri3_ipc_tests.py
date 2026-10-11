@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import subprocess
+import os
 import tempfile
 import time
 
@@ -13,7 +14,8 @@ from result_fixture_ipc_tests import create_m
 
 def run(args):
     args.evidence_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="qcae-tri3-ipc-", dir="/private/tmp") as folder:
+    short_tmp = "/private/tmp" if os.path.isdir("/private/tmp") else tempfile.gettempdir()
+    with tempfile.TemporaryDirectory(prefix="qcae-tri3-ipc-", dir=short_tmp) as folder:
         root = Path(folder)
         client = Client(args.engine, args.cli, str(root / "engine.sock"), "cli")
         process = None

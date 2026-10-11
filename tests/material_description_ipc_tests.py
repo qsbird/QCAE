@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import subprocess
+import os
 import tempfile
 import time
 
@@ -12,7 +13,8 @@ from c2_workflow_tests import Client
 
 def run(engine, cli, evidence):
     evidence.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="qe1-", dir="/private/tmp") as folder:
+    short_tmp = "/private/tmp" if os.path.isdir("/private/tmp") else tempfile.gettempdir()
+    with tempfile.TemporaryDirectory(prefix="qe1-", dir=short_tmp) as folder:
         root = Path(folder)
         endpoint = str(root / "engine.sock")
         workspace = str(root / "workspace.sqlite")
