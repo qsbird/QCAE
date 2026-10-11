@@ -219,6 +219,38 @@ OwnedRowHandler reconcile_row_handler() {
         {},
         {}};
 }
+// A reconciled publication completes its task: succeeded, with a receipt for the result.
+void mark_task_succeeded(TaskRecord& task,
+                         const std::string& result_id,
+                         Revision input_revision,
+                         const std::string& manifest_hash) {
+    task.state = TaskState::succeeded;
+    task.progress = 1;
+    task.diagnostic.reset();
+    task.artifact_receipt = TaskArtifactReceipt{result_id, input_revision, manifest_hash};
+    check(!task.events.empty() && task.events.back().sequence != UINT64_MAX &&
+              task.events.size() < 128,
+          "Result reconcile task event quota exceeded");
+    task.events.push_back({task.events.back().sequence + 1, task.state, task.progress});
+}
+// Idempotency receipt of analysis.reconcile_result. Fields: principal, idempotency key, request
+// signature, run ID, result ID, result manifest SHA-256.
+std::shared_ptr<const OwnedRowImage> reconcile_receipt(const std::string& fact_id,
+                                                       const std::array<std::string, 6>& fields) {
+    return std::make_shared<const OwnedRowImage>(
+        OwnedRowImage{{StoreSpace::artifact_record, fact_id},
+                      std::string(reconcile_owner),
+                      1,
+                      std::make_shared<const std::string>(
+                          record_wire::strings(std::array<std::string, 7>{"QCAE-SOLVER-RECONCILE-1",
+                                                                          fields[0],
+                                                                          fields[1],
+                                                                          fields[2],
+                                                                          fields[3],
+                                                                          fields[4],
+                                                                          fields[5]})),
+                      {}});
+}
 std::shared_ptr<const TaskPayload>
 completion(TaskState state, ErrorCode code, std::string message) {
     return std::make_shared<const SolverPayload>(
@@ -674,6 +706,11 @@ struct SolverCoordinator::State {
                                  RecordApplication& app,
                                  const OperationContext& context,
                                  const AnalysisGetRunInput& input);
+    // Task body for analysis.start: admit the process, observe it until it is terminal, then
+    // parse the result when a reader is configured.
+    static std::shared_ptr<const TaskPayload> run_task(const std::shared_ptr<State>& state,
+                                                       const std::shared_ptr<FrozenRun>& work,
+                                                       const TaskControl& control);
     static Result<Value> start(const std::shared_ptr<State>& state,
                                RecordApplication& app,
                                const std::function<TaskService&()>& tasks,
@@ -1147,34 +1184,22 @@ SolverCoordinator::State::reconcile_result(const std::shared_ptr<State>& state,
             updates.push_back({next_result->key, stored.value->second->payload, next_result});
         }
         if (complete.state != TaskState::succeeded) {
-            complete.state = TaskState::succeeded;
-            complete.progress = 1;
-            complete.diagnostic.reset();
-            complete.artifact_receipt = TaskArtifactReceipt{
-                published.artifact.artifact_id, fact.run.request.input.revision, manifest_hash};
-            check(!complete.events.empty() && complete.events.back().sequence != UINT64_MAX &&
-                      complete.events.size() < 128,
-                  "Result reconcile task event quota exceeded");
-            complete.events.push_back(
-                {complete.events.back().sequence + 1, complete.state, complete.progress});
+            mark_task_succeeded(complete,
+                                published.artifact.artifact_id,
+                                fact.run.request.input.revision,
+                                manifest_hash);
             const auto next_task = task_row(complete);
             updates.push_back({next_task->key, task.value->second->payload, next_task});
         }
         validate_solver_task(fact, complete);
         detail::validate_solver_result_link(published.parsed, fact);
-        const auto receipt = std::make_shared<const OwnedRowImage>(
-            OwnedRowImage{{StoreSpace::artifact_record, fact_id},
-                          std::string(reconcile_owner),
-                          1,
-                          std::make_shared<const std::string>(record_wire::strings(
-                              std::array<std::string, 7>{"QCAE-SOLVER-RECONCILE-1",
-                                                         context.caller.principal,
-                                                         context.idempotency_key,
-                                                         signature,
-                                                         input.run_id,
-                                                         published.artifact.artifact_id,
-                                                         manifest_hash})),
-                          {}});
+        const auto receipt = reconcile_receipt(fact_id,
+                                               {context.caller.principal,
+                                                context.idempotency_key,
+                                                signature,
+                                                input.run_id,
+                                                published.artifact.artifact_id,
+                                                manifest_hash});
         updates.push_back({receipt->key, {}, receipt});
         const auto committed = app.update_owned_rows(context.caller, *context.document, updates);
         if (!committed.ok())
@@ -1368,6 +1393,69 @@ Result<Value> SolverCoordinator::State::get_run(const std::shared_ptr<State>& st
     }
 }
 
+std::shared_ptr<const TaskPayload>
+SolverCoordinator::State::run_task(const std::shared_ptr<State>& state,
+                                   const std::shared_ptr<FrozenRun>& work,
+                                   const TaskControl& control) {
+    control.checkpoint();
+    const auto started = state->runner->start(work->fact.run.request);
+    if (!started.ok())
+        return completion(started.error && started.error->code == ErrorCode::storage_uncertain
+                              ? TaskState::outcome_unknown
+                              : TaskState::failed,
+                          started.error ? started.error->code : ErrorCode::storage_uncertain,
+                          started.error ? started.error->message
+                                        : "Local process admission failed");
+    const auto id = work->fact.run.request.run_id;
+    unsigned observation_errors{}, cancellation_errors{};
+    for (;;) {
+        if (control.cancellation_requested()) {
+            const auto cancelled = state->runner->cancel(id);
+            if (!cancelled.ok()) {
+                if (++cancellation_errors >= 20)
+                    return completion(TaskState::outcome_unknown,
+                                      ErrorCode::storage_uncertain,
+                                      "External cancellation could not be "
+                                      "verified or persisted");
+            } else {
+                cancellation_errors = 0;
+            }
+        }
+        const auto observed = state->runner->query(id);
+        if (!observed.ok()) {
+            if (++observation_errors >= 20)
+                return completion(TaskState::outcome_unknown,
+                                  ErrorCode::storage_uncertain,
+                                  "External execution observation could not be persisted");
+        } else if (terminal(observed.value->execution)) {
+            const auto& run = *observed.value;
+            if (run.execution == SolverExecutionState::outcome_unknown)
+                return completion(TaskState::outcome_unknown,
+                                  ErrorCode::storage_uncertain,
+                                  "External process outcome requires reconciliation");
+            if (run.execution == SolverExecutionState::cancelled)
+                return completion(TaskState::cancelled,
+                                  ErrorCode::invalid_input,
+                                  "Verified owned process group cancellation completed");
+            if (work->fact.result_reader) {
+                if (run.execution != SolverExecutionState::exited || run.exit_code != 0 ||
+                    run.output_state != SolverOutputState::collected)
+                    return completion(TaskState::failed,
+                                      ErrorCode::invalid_input,
+                                      "A complete normal exit is required before parsing");
+                return state->prepare_result(id, control);
+            }
+            return completion(TaskState::failed,
+                              ErrorCode::unsupported_capability,
+                              "Execution observed; real result parsing and "
+                              "numerical validation are not configured");
+        } else {
+            observation_errors = 0;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
 Result<Value> SolverCoordinator::State::start(const std::shared_ptr<State>& state,
                                               RecordApplication& app,
                                               const std::function<TaskService&()>& tasks,
@@ -1470,69 +1558,7 @@ Result<Value> SolverCoordinator::State::start(const std::shared_ptr<State>& stat
             "analysis.start",
             signature,
             task_input,
-            [state, work](const TaskControl& control) -> std::shared_ptr<const TaskPayload> {
-                control.checkpoint();
-                const auto started = state->runner->start(work->fact.run.request);
-                if (!started.ok())
-                    return completion(
-                        started.error && started.error->code == ErrorCode::storage_uncertain
-                            ? TaskState::outcome_unknown
-                            : TaskState::failed,
-                        started.error ? started.error->code : ErrorCode::storage_uncertain,
-                        started.error ? started.error->message : "Local process admission failed");
-                const auto id = work->fact.run.request.run_id;
-                unsigned observation_errors{}, cancellation_errors{};
-                for (;;) {
-                    if (control.cancellation_requested()) {
-                        const auto cancelled = state->runner->cancel(id);
-                        if (!cancelled.ok()) {
-                            if (++cancellation_errors >= 20)
-                                return completion(TaskState::outcome_unknown,
-                                                  ErrorCode::storage_uncertain,
-                                                  "External cancellation could not be "
-                                                  "verified or persisted");
-                        } else {
-                            cancellation_errors = 0;
-                        }
-                    }
-                    const auto observed = state->runner->query(id);
-                    if (!observed.ok()) {
-                        if (++observation_errors >= 20)
-                            return completion(
-                                TaskState::outcome_unknown,
-                                ErrorCode::storage_uncertain,
-                                "External execution observation could not be persisted");
-                    } else if (terminal(observed.value->execution)) {
-                        const auto& run = *observed.value;
-                        if (run.execution == SolverExecutionState::outcome_unknown)
-                            return completion(TaskState::outcome_unknown,
-                                              ErrorCode::storage_uncertain,
-                                              "External process outcome requires reconciliation");
-                        if (run.execution == SolverExecutionState::cancelled)
-                            return completion(
-                                TaskState::cancelled,
-                                ErrorCode::invalid_input,
-                                "Verified owned process group cancellation completed");
-                        if (work->fact.result_reader) {
-                            if (run.execution != SolverExecutionState::exited ||
-                                run.exit_code != 0 ||
-                                run.output_state != SolverOutputState::collected)
-                                return completion(
-                                    TaskState::failed,
-                                    ErrorCode::invalid_input,
-                                    "A complete normal exit is required before parsing");
-                            return state->prepare_result(id, control);
-                        }
-                        return completion(TaskState::failed,
-                                          ErrorCode::unsupported_capability,
-                                          "Execution observed; real result parsing and "
-                                          "numerical validation are not configured");
-                    } else {
-                        observation_errors = 0;
-                    }
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                }
-            }};
+            [state, work](const TaskControl& control) { return run_task(state, work, control); }};
         const auto accepted = tasks().start(std::move(request));
         {
             std::lock_guard lock(state->mutex);
