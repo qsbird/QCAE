@@ -653,6 +653,32 @@ struct SolverCoordinator::State {
         control.checkpoint();
         return std::make_shared<const SolverResultPayload>(std::move(result));
     }
+    // Operation handlers; register_operations only binds them to the registry.
+    static Result<Value> configuration(const std::shared_ptr<State>& state,
+                                       const OperationContext&,
+                                       const SolverConfigurationInput&);
+    static Result<Value> validate_result(const std::shared_ptr<State>& state,
+                                         RecordApplication& app,
+                                         const OperationContext& context,
+                                         const AnalysisValidateResultInput& input);
+    static Result<Value> reconcile_result(const std::shared_ptr<State>& state,
+                                          RecordApplication& app,
+                                          const std::function<TaskService&()>& tasks,
+                                          const OperationContext& context,
+                                          const AnalysisReconcileResultInput& input);
+    static Result<Value> get_result(const std::shared_ptr<State>& state,
+                                    RecordApplication& app,
+                                    const OperationContext& context,
+                                    const AnalysisGetResultInput& input);
+    static Result<Value> get_run(const std::shared_ptr<State>& state,
+                                 RecordApplication& app,
+                                 const OperationContext& context,
+                                 const AnalysisGetRunInput& input);
+    static Result<Value> start(const std::shared_ptr<State>& state,
+                               RecordApplication& app,
+                               const std::function<TaskService&()>& tasks,
+                               const OperationContext& context,
+                               const AnalysisStartInput& input);
 };
 SolverCoordinator::SolverCoordinator(std::optional<LocalSolverConfiguration> config,
                                      SolverArtifactResolver resolver)
@@ -853,6 +879,671 @@ TaskPublisher SolverCoordinator::wrap_publisher(RecordApplication& app, TaskPubl
     return publisher;
 }
 
+Result<Value> SolverCoordinator::State::configuration(const std::shared_ptr<State>& state,
+                                                      const OperationContext&,
+                                                      const SolverConfigurationInput&) {
+    const bool executable_current = state->executable_matches_probe();
+    return good(Value(Value::Object{
+        {"configured", Value(state->config.has_value())},
+        {"validated", Value(state->ready() && executable_current && !state->config->test_only)},
+        {"test_only", Value(state->config && state->config->test_only)},
+        {"process_adapter_ready", Value(state->ready() && executable_current)},
+        {"run_config_id", Value(state->config ? state->config->run.id : "")},
+        {"configuration_digest",
+         Value(state->config ? state->config->run.configuration_digest : "")},
+        {"version_probe",
+         version_value(state->config ? state->config->version_probe : std::nullopt)},
+        {"version_probe_available",
+         Value(state->config && state->config->version_probe.has_value())},
+        {"version_probe_failure", Value(state->config ? state->config->version_probe_failure : "")},
+        {"executable_identity_current", Value(executable_current)},
+        {"result_reader_available",
+         Value(state->config && state->config->result_reader.has_value())},
+        {"numerical_comparison_available", Value(true)},
+        {"numerical_validation_available",
+         Value(state->ready() && executable_current && !state->config->test_only &&
+               state->config->result_reader.has_value())}}));
+}
+
+Result<Value> SolverCoordinator::State::validate_result(const std::shared_ptr<State>& state,
+                                                        RecordApplication& app,
+                                                        const OperationContext& context,
+                                                        const AnalysisValidateResultInput& input) {
+    try {
+        const auto& profile = state->codec.definition().reference;
+        if (*context.expected_profile != profile)
+            return bad<Value>(ErrorCode::invalid_input,
+                              "Numerical reference requires the registered Nastran profile");
+        const auto run = state->find(*context.document, input.run_id);
+        if (!run.ok())
+            return {run.status, {}, run.error};
+        const auto& fact = run.value->first;
+        check(fact.principal == context.caller.principal,
+              "Numerical result belongs to another principal");
+        const auto linked = state->validate_link(fact, *context.document);
+        if (!linked.ok())
+            return {linked.status, {}, linked.error};
+        if (!fact.result_published || !fact.result_artifact)
+            return bad<Value>(ErrorCode::missing_input,
+                              "Numerical checks require a complete published parsed result");
+        const auto stored =
+            state->find_result(*context.document, fact.result_artifact->artifact_id);
+        if (!stored.ok())
+            return {stored.status, {}, stored.error};
+        const auto source =
+            state->resolve(context.caller, *context.document, fact.run.request.input.artifact_id);
+        if (!source.ok())
+            return {source.status, {}, source.error};
+        check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
+                      features::analysis::encode_frozen_analysis_input(fact.source_input) &&
+                  artifact_sha256(source.value->second.manifest) ==
+                      fact.run.request.input.manifest_sha256,
+              "Numerical source artifact differs from the original frozen input");
+        const auto history =
+            validation_history(app, *context.document, stored.value->first, profile);
+        if (!history.ok())
+            return {history.status, {}, history.error};
+        if (history.value->overflow)
+            return bad<Value>(ErrorCode::resource_limit,
+                              "Numerical validation history exceeds its bounded index");
+        const auto signature = record_wire::strings(
+            std::array<std::string, 8>{context.document->id.value,
+                                       context.document->epoch.value,
+                                       std::to_string(*context.expected_revision),
+                                       input.run_id,
+                                       context.caller.principal,
+                                       profile.profile_id,
+                                       profile.profile_version,
+                                       profile.definition_digest});
+        const auto identity = detail::solver_validation_identity(
+            input.run_id, context.caller, context.idempotency_key);
+        const detail::SolverValidationFact* replay{};
+        for (const auto& entry : history.value->reports)
+            if (entry.second->key.identity == identity) {
+                if (entry.first.signature != signature)
+                    return bad<Value>(ErrorCode::idempotency_key_conflict,
+                                      "Numerical validation key belongs to another request");
+                replay = &entry.first;
+                break;
+            }
+        bool files_verified{};
+        try {
+            verify_result_artifact(stored.value->first);
+            files_verified = true;
+        } catch (const std::exception&) {
+            if (!replay)
+                return bad<Value>(ErrorCode::invalid_input,
+                                  "Numerical admission requires verified original result files");
+        }
+        detail::SolverValidationFact checked;
+        if (replay) {
+            checked = *replay;
+        } else {
+            const auto snapshot = app.snapshot(*context.document);
+            if (!snapshot.ok())
+                return {snapshot.status, {}, snapshot.error};
+            if (snapshot.value->info.revision != *context.expected_revision)
+                return bad<Value>(ErrorCode::revision_conflict,
+                                  "Numerical validation revision is stale");
+            if (history.value->reports.size() >= detail::solver_validation_history_limit)
+                return bad<Value>(ErrorCode::resource_limit,
+                                  "Numerical validation history has reached 16 reports");
+            const auto prepared = detail::prepare_solver_validation(stored.value->first, profile);
+            if (!prepared.ok())
+                return {prepared.status, {}, prepared.error};
+            checked = *prepared.value;
+            checked.idempotency_key = context.idempotency_key;
+            checked.signature = signature;
+            checked.ordinal = history.value->reports.size() + 1;
+            const auto next_report = detail::solver_validation_row(checked);
+            detail::SolverValidationIndex index{input.run_id, context.caller.principal, {}};
+            if (history.value->index)
+                index = detail::decode_solver_validation_index(*history.value->index);
+            index.report_rows.push_back(identity);
+            const auto next_index = detail::solver_validation_index_row(index);
+            const std::array<OwnedRowUpdate, 2> updates{
+                {{next_report->key, {}, next_report},
+                 {next_index->key,
+                  history.value->index ? history.value->index->payload : nullptr,
+                  next_index}}};
+            const auto committed =
+                app.update_owned_rows(context.caller,
+                                      WriteContext{*context.document, *context.expected_revision},
+                                      updates);
+            // This CAS has no filesystem side effect. Definite rollback retains
+            // its original storage failure; only Core can report unknown storage.
+            if (!committed.ok())
+                return {committed.status, {}, committed.error};
+        }
+        return good(Value(Value::Object{
+            {"summary", validation_summary(checked, identity)},
+            {"components", validation_components(checked)},
+            {"original_run_validation_stage", Value("not_run")},
+            {"original_source_state",
+             Value(original_input_current(app, *context.document, fact) ? "current" : "stale")},
+            {"current_files_verified", Value(files_verified)},
+            {"replayed", Value(replay != nullptr)}}));
+    } catch (const RecordError& error) {
+        return bad<Value>(error.code(), error.what());
+    } catch (const std::exception& error) {
+        return bad<Value>(ErrorCode::schema_unsupported, error.what());
+    }
+}
+
+Result<Value>
+SolverCoordinator::State::reconcile_result(const std::shared_ptr<State>& state,
+                                           RecordApplication& app,
+                                           const std::function<TaskService&()>& tasks,
+                                           const OperationContext& context,
+                                           const AnalysisReconcileResultInput& input) {
+    try {
+        const auto signature = record_wire::strings(
+            std::array<std::string, 5>{context.document->id.value,
+                                       context.document->epoch.value,
+                                       std::to_string(*context.expected_revision),
+                                       input.run_id,
+                                       context.caller.principal});
+        const auto fact_id = reconcile_identity(context.caller, context.idempotency_key);
+        const auto prior =
+            app.owned_rows(*context.document, StoreSpace::artifact_record, reconcile_owner);
+        if (!prior.ok())
+            return {prior.status, {}, prior.error};
+        std::optional<std::vector<std::string>> replay;
+        for (const auto& image : *prior.value)
+            if (image->key.identity == fact_id) {
+                const auto saved = record_wire::read_strings(*image->payload);
+                if (saved[3] != signature)
+                    return bad<Value>(ErrorCode::idempotency_key_conflict,
+                                      "Result reconcile key belongs to another request");
+                replay = saved;
+                break;
+            }
+        if (!replay) {
+            const auto snapshot = app.snapshot(*context.document);
+            if (!snapshot.ok())
+                return {snapshot.status, {}, snapshot.error};
+            if (snapshot.value->info.revision != *context.expected_revision)
+                return bad<Value>(ErrorCode::revision_conflict,
+                                  "Result reconcile revision is stale");
+            if (tasks().active_workers() || tasks().queued_tasks())
+                return bad<Value>(ErrorCode::invalid_input,
+                                  "Result reconcile requires quiescent tasks");
+        }
+        const auto found = state->find(*context.document, input.run_id);
+        if (!found.ok())
+            return {found.status, {}, found.error};
+        auto fact = found.value->first;
+        check(fact.principal == context.caller.principal,
+              "Result reconcile belongs to another principal");
+        const auto linked = state->validate_link(fact, *context.document);
+        if (!linked.ok())
+            return {linked.status, {}, linked.error};
+        if (!fact.result_artifact)
+            return bad<Value>(ErrorCode::missing_input,
+                              "Result reconcile requires a durable parsed intent");
+        const auto stored =
+            state->find_result(*context.document, fact.result_artifact->artifact_id);
+        if (!stored.ok())
+            return {stored.status, {}, stored.error};
+        auto published = stored.value->first;
+        const auto source =
+            state->resolve(context.caller, *context.document, fact.run.request.input.artifact_id);
+        if (!source.ok())
+            return {source.status, {}, source.error};
+        check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
+                      features::analysis::encode_frozen_analysis_input(fact.source_input) &&
+                  artifact_sha256(source.value->second.manifest) ==
+                      fact.run.request.input.manifest_sha256,
+              "Result reconcile source differs from the original frozen input");
+        const auto manifest_hash = artifact_sha256(published.artifact.manifest);
+        const auto response = [&](bool replayed, bool currently_verified) {
+            return good(Value(Value::Object{
+                {"run_id", Value(input.run_id)},
+                {"result_id", Value(published.artifact.artifact_id)},
+                {"task_id", Value(fact.run.request.task_id)},
+                {"task_state", Value("succeeded")},
+                {"source_kind", Value(fact.test_only ? "test_process" : "external_solver")},
+                {"test_only", Value(fact.test_only)},
+                {"parsing", Value("parsed")},
+                {"numerical_validation", Value("not_run")},
+                {"input_revision", Value(std::to_string(fact.run.request.input.revision))},
+                {"result_manifest_sha256", Value(manifest_hash)},
+                {"replayed", Value(replayed)},
+                {"verified_at_reconcile", Value(true)},
+                {"current_files_verified", Value(currently_verified)}}));
+        };
+        if (replay) {
+            check(fact.result_published && published.published && (*replay)[4] == input.run_id &&
+                      (*replay)[5] == published.artifact.artifact_id &&
+                      (*replay)[6] == manifest_hash,
+                  "Result reconcile fact differs from completed publication");
+            bool verified{};
+            try {
+                verify_result_artifact(published);
+                verified = true;
+            } catch (const std::exception&) {
+            }
+            return response(true, verified);
+        }
+        const auto task = state->find_task(fact, *context.document);
+        if (!task.ok())
+            return {task.status, {}, task.error};
+        auto complete = task.value->first;
+        if (complete.state != TaskState::succeeded && complete.state != TaskState::interrupted &&
+            complete.state != TaskState::outcome_unknown)
+            return bad<Value>(ErrorCode::invalid_input,
+                              "Only completed or unknown/interrupted result publication "
+                              "can be reconciled; failed/cancelled tasks cannot succeed");
+        verify_result_artifact(published);
+        std::vector<OwnedRowUpdate> updates;
+        if (!fact.result_published) {
+            check(fact.run.sequence != UINT64_MAX, "Result reconcile sequence exceeds quota");
+            ++fact.run.sequence;
+            fact.result_published = true;
+            published.published = true;
+            const auto next_run = solver_owned_row(fact),
+                       next_result = detail::solver_result_row(published);
+            updates.push_back({next_run->key, found.value->second->payload, next_run});
+            updates.push_back({next_result->key, stored.value->second->payload, next_result});
+        }
+        if (complete.state != TaskState::succeeded) {
+            complete.state = TaskState::succeeded;
+            complete.progress = 1;
+            complete.diagnostic.reset();
+            complete.artifact_receipt = TaskArtifactReceipt{
+                published.artifact.artifact_id, fact.run.request.input.revision, manifest_hash};
+            check(!complete.events.empty() && complete.events.back().sequence != UINT64_MAX &&
+                      complete.events.size() < 128,
+                  "Result reconcile task event quota exceeded");
+            complete.events.push_back(
+                {complete.events.back().sequence + 1, complete.state, complete.progress});
+            const auto next_task = task_row(complete);
+            updates.push_back({next_task->key, task.value->second->payload, next_task});
+        }
+        validate_solver_task(fact, complete);
+        detail::validate_solver_result_link(published.parsed, fact);
+        const auto receipt = std::make_shared<const OwnedRowImage>(
+            OwnedRowImage{{StoreSpace::artifact_record, fact_id},
+                          std::string(reconcile_owner),
+                          1,
+                          std::make_shared<const std::string>(record_wire::strings(
+                              std::array<std::string, 7>{"QCAE-SOLVER-RECONCILE-1",
+                                                         context.caller.principal,
+                                                         context.idempotency_key,
+                                                         signature,
+                                                         input.run_id,
+                                                         published.artifact.artifact_id,
+                                                         manifest_hash})),
+                          {}});
+        updates.push_back({receipt->key, {}, receipt});
+        const auto committed = app.update_owned_rows(context.caller, *context.document, updates);
+        if (!committed.ok())
+            return publication_uncertain<Value>(committed);
+        const auto reloaded = tasks().reconcile();
+        if (!reloaded.ok())
+            return {reloaded.status, {}, reloaded.error};
+        return response(false, true);
+    } catch (const std::exception& error) {
+        return bad<Value>(ErrorCode::storage_failure, error.what());
+    }
+}
+
+Result<Value> SolverCoordinator::State::get_result(const std::shared_ptr<State>& state,
+                                                   RecordApplication& app,
+                                                   const OperationContext& context,
+                                                   const AnalysisGetResultInput& input) {
+    try {
+        const auto run = state->find(*context.document, input.run_id);
+        if (!run.ok())
+            return {run.status, {}, run.error};
+        const auto& fact = run.value->first;
+        check(fact.principal == context.caller.principal,
+              "Solver result belongs to another principal");
+        const auto linked = state->validate_link(fact, *context.document);
+        if (!linked.ok())
+            return {linked.status, {}, linked.error};
+        if (!fact.result_published || !fact.result_artifact)
+            return bad<Value>(ErrorCode::missing_input,
+                              "A complete published parsed result is not available");
+        const auto stored =
+            state->find_result(*context.document, fact.result_artifact->artifact_id);
+        if (!stored.ok())
+            return {stored.status, {}, stored.error};
+        const auto& parsed = stored.value->first.parsed;
+        const auto source =
+            state->resolve(context.caller, *context.document, fact.run.request.input.artifact_id);
+        if (!source.ok())
+            return {source.status, {}, source.error};
+        check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
+                      features::analysis::encode_frozen_analysis_input(fact.source_input) &&
+                  artifact_sha256(source.value->second.manifest) ==
+                      fact.run.request.input.manifest_sha256,
+              "Parsed result source artifact differs from its frozen input");
+        bool current{};
+        const auto snapshot = app.snapshot(*context.document);
+        if (snapshot.ok()) {
+            const auto now =
+                features::analysis::freeze_analysis_input(snapshot.value->records,
+                                                          fact.run.request.input.analysis,
+                                                          fact.run.request.input.profile,
+                                                          fact.source_input.identities);
+            current = now.ok() && artifact_sha256(now.value->input_signature) ==
+                                      fact.run.request.input.input_fingerprint;
+        }
+        bool raw_verified{};
+        try {
+            verify_result_artifact(stored.value->first);
+            raw_verified = true;
+        } catch (const std::exception&) {
+            // The database retains parsed fields/provenance. Missing or damaged
+            // external bytes are explicitly unavailable and never declared verified.
+        }
+        const auto history = validation_history(
+            app, *context.document, stored.value->first, state->codec.definition().reference);
+        if (!history.ok())
+            return {history.status, {}, history.error};
+        auto field_value = [](std::string quantity,
+                              const std::array<std::string, 6>& units,
+                              const std::vector<NastranStaticGridValues>& rows) {
+            Value::Array component_names, unit_values, values;
+            for (const auto* name : {"T1", "T2", "T3", "R1", "R2", "R3"})
+                component_names.emplace_back(name);
+            for (const auto& unit : units)
+                unit_values.emplace_back(unit);
+            for (const auto& row : rows) {
+                Value::Array components;
+                for (const auto component : row.components)
+                    components.emplace_back(component);
+                values.emplace_back(
+                    Value::Object{{"entity_id", Value(row.entity.value)},
+                                  {"solver_number", Value(std::to_string(row.solver_number))},
+                                  {"components", Value(std::move(components))}});
+            }
+            return Value(Value::Object{{"quantity_id", Value(std::move(quantity))},
+                                       {"location", Value("node")},
+                                       {"component_names", Value(std::move(component_names))},
+                                       {"component_units", Value(std::move(unit_values))},
+                                       {"values", Value(std::move(values))}});
+        };
+        Value::Array fields;
+        fields.push_back(field_value(
+            "displacement", parsed.fields.displacement_units, parsed.fields.displacements));
+        fields.push_back(
+            field_value("spc_reaction", parsed.fields.reaction_units, parsed.fields.spc_reactions));
+        return good(Value(Value::Object{
+            {"run_id", Value(input.run_id)},
+            {"result_id", Value(stored.value->first.artifact.artifact_id)},
+            {"task_id", Value(fact.run.request.task_id)},
+            {"test_only", Value(fact.test_only)},
+            {"source_kind", Value(fact.test_only ? "test_process" : "external_solver")},
+            {"parsing", Value("parsed")},
+            {"numerical_validation", Value("not_run")},
+            {"numerical_checks", numerical_checks(*history.value, current, raw_verified)},
+            {"input_current", Value(current)},
+            {"input_revision", Value(std::to_string(fact.run.request.input.revision))},
+            {"reader_version", Value(parsed.reader.reader_version)},
+            {"subcase", Value(std::to_string(parsed.reader.subcase))},
+            {"unit_system", Value(parsed.reader.unit_system)},
+            {"coordinate_basis", Value(parsed.reader.coordinate_basis)},
+            {"raw_resources_verified", Value(raw_verified)},
+            {"result_manifest_sha256",
+             Value(artifact_sha256(stored.value->first.artifact.manifest))},
+            {"version_probe", version_value(fact.version_probe)},
+            {"fields", Value(std::move(fields))}}));
+    } catch (const std::exception& error) {
+        return bad<Value>(ErrorCode::schema_unsupported, error.what());
+    }
+}
+
+Result<Value> SolverCoordinator::State::get_run(const std::shared_ptr<State>& state,
+                                                RecordApplication& app,
+                                                const OperationContext& context,
+                                                const AnalysisGetRunInput& input) {
+    try {
+        const auto found = state->find(*context.document, input.run_id);
+        if (!found.ok())
+            return {found.status, {}, found.error};
+        const auto& fact = found.value->first;
+        check(fact.principal == context.caller.principal,
+              "Analysis run belongs to another principal");
+        const auto& record = fact.run;
+        // Cross-row facts are checked in their original context; carried facts retain it.
+        const auto linked = state->validate_link(fact, *context.document);
+        if (!linked.ok())
+            return {linked.status, {}, linked.error};
+        const auto source =
+            state->resolve(context.caller, *context.document, record.request.input.artifact_id);
+        if (!source.ok())
+            return {source.status, {}, source.error};
+        check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
+                      features::analysis::encode_frozen_analysis_input(fact.source_input) &&
+                  artifact_sha256(source.value->second.manifest) ==
+                      record.request.input.manifest_sha256,
+              "Analysis run source artifact provenance differs");
+        bool current{};
+        const auto snapshot = app.snapshot(*context.document);
+        if (snapshot.ok()) {
+            const auto input_now =
+                features::analysis::freeze_analysis_input(snapshot.value->records,
+                                                          record.request.input.analysis,
+                                                          record.request.input.profile,
+                                                          fact.source_input.identities);
+            current = input_now.ok() && artifact_sha256(input_now.value->input_signature) ==
+                                            record.request.input.input_fingerprint;
+        }
+        Value::Array outputs;
+        for (const auto& file : record.outputs)
+            outputs.emplace_back(
+                Value::Object{{"path", Value(file.path)},
+                              {"byte_length", Value(std::to_string(file.byte_length))},
+                              {"sha256", Value(file.sha256)}});
+        return good(Value(Value::Object{
+            {"run_id", Value(input.run_id)},
+            {"task_id", Value(record.request.task_id)},
+            {"execution",
+             Value(fact.startup_intent_persisted ? execution_name(record.execution) : "queued")},
+            {"parsing",
+             Value(record.parsing == SolverParsingState::parsed   ? "parsed"
+                   : record.parsing == SolverParsingState::failed ? "failed"
+                                                                  : "not_run")},
+            {"numerical_validation", Value("not_run")},
+            {"results_available", Value(fact.result_published)},
+            {"result_id", Value(fact.result_artifact ? fact.result_artifact->artifact_id : "")},
+            {"test_only", Value(fact.test_only)},
+            {"source_kind",
+             Value(fact.test_only ? "test_process" : "external_process_observation")},
+            {"input_current", Value(current)},
+            {"input_revision", Value(std::to_string(record.request.input.revision))},
+            {"artifact_id", Value(record.request.input.artifact_id)},
+            {"version_probe", version_value(fact.version_probe)},
+            {"version_probe_available", Value(fact.version_probe.has_value())},
+            {"outputs", Value(std::move(outputs))},
+            {"exit_code", Value(record.exit_code ? std::to_string(*record.exit_code) : "")},
+            {"termination_signal",
+             Value(record.termination_signal ? std::to_string(*record.termination_signal) : "")},
+            {"cancellation_requested", Value(record.cancellation_requested)},
+            {"detail", Value(record.detail)}}));
+    } catch (const std::exception& error) {
+        return bad<Value>(ErrorCode::schema_unsupported, error.what());
+    }
+}
+
+Result<Value> SolverCoordinator::State::start(const std::shared_ptr<State>& state,
+                                              RecordApplication& app,
+                                              const std::function<TaskService&()>& tasks,
+                                              const OperationContext& context,
+                                              const AnalysisStartInput& input) {
+    try {
+        check(input.run_config_id == state->config->run.id,
+              "Requested local solver configuration is not installed");
+        const auto signature = solver_run_signature(input.analysis_id,
+                                                    input.artifact_id,
+                                                    input.run_config_id,
+                                                    state->config->run.configuration_digest);
+        const TaskInputContext task_input{
+            *context.document, *context.expected_revision, *context.expected_profile};
+        const auto prior = app.owned_rows(*context.document, StoreSpace::task_record, task_owner);
+        if (!prior.ok())
+            return {prior.status, {}, prior.error};
+        for (const auto& image : *prior.value) {
+            const auto task = decode_task_record(*image->payload);
+            if (task.caller.principal == context.caller.principal &&
+                task.idempotency_key == context.idempotency_key) {
+                if (task.operation != "analysis.start" || task.signature != signature ||
+                    task.input.document.id != task_input.document.id ||
+                    task.input.document.epoch != task_input.document.epoch ||
+                    task.input.revision != task_input.revision ||
+                    task.input.profile != task_input.profile)
+                    return bad<Value>(ErrorCode::idempotency_key_conflict,
+                                      "Analysis key belongs to a different input");
+                const auto run = state->find(*context.document, "run-" + task.id);
+                if (!run.ok())
+                    return {run.status, {}, run.error};
+                validate_solver_task(run.value->first, task);
+                return detail::converted(tasks().query(context.caller, task.id),
+                                         detail::task_value);
+            }
+        }
+        const auto snapshot = app.snapshot(*context.document);
+        if (!snapshot.ok())
+            return {snapshot.status, {}, snapshot.error};
+        if (snapshot.value->info.revision != *context.expected_revision)
+            return bad<Value>(ErrorCode::revision_conflict, "Analysis start revision is stale");
+        check(state->executable_matches_probe(),
+              "Executable identity differs from the actual version probe");
+        const auto source = state->resolve(context.caller, *context.document, input.artifact_id);
+        if (!source.ok())
+            return {source.status, {}, source.error};
+        const auto frozen =
+            features::analysis::freeze_analysis_input(snapshot.value->records,
+                                                      input.analysis_id,
+                                                      *context.expected_profile,
+                                                      source.value->first.identities);
+        if (!frozen.ok())
+            return {frozen.status, {}, frozen.error};
+        check(frozen.value->input_signature == source.value->first.input_signature &&
+                  frozen.value->analysis == source.value->first.analysis &&
+                  frozen.value->target == source.value->first.target,
+              "Export artifact does not describe the requested current analysis input");
+        const auto plan =
+            validate_nastran_export(snapshot.value->records, input.analysis_id, state->codec);
+        if (!plan.ok())
+            return {plan.status, {}, plan.error};
+        const auto resources = LocalArtifactStore{}.verify(source.value->second);
+        verify_nastran_readback(*plan.value, resources, state->codec);
+        if (detail::mystran_backend(state->config->run))
+            detail::validate_mystran_input(source.value->second.root_resource, resources);
+        const auto work = std::make_shared<FrozenRun>();
+        work->artifact = source.value->second;
+        auto& fact = work->fact;
+        fact.principal = context.caller.principal;
+        fact.idempotency_key = context.idempotency_key;
+        fact.signature = signature;
+        fact.source_input = source.value->first;
+        fact.test_only = state->config->test_only;
+        fact.result_reader = state->config->result_reader;
+        if (!fact.test_only) {
+            fact.version_probe = state->config->version_probe;
+            fact.declaration_digest = state->config->declaration_digest;
+        }
+        fact.run.request.configuration = state->config->run;
+        fact.run.request.input = {context.document->id,
+                                  context.document->epoch,
+                                  *context.expected_revision,
+                                  input.analysis_id,
+                                  *context.expected_profile,
+                                  input.artifact_id,
+                                  artifact_sha256(work->artifact.manifest),
+                                  artifact_sha256(frozen.value->input_signature),
+                                  solver_export_identity_digest(*frozen.value),
+                                  state->codec.definition().implementation_fingerprint,
+                                  fact.result_reader ? fact.result_reader->reader_version
+                                                     : "unconfigured",
+                                  features::analysis::encode_frozen_analysis_input(*frozen.value)};
+        {
+            std::lock_guard lock(state->mutex);
+            state->pending[pending_key(context.caller, context.idempotency_key)] = work;
+        }
+        TaskRequest request{
+            context.caller,
+            context.idempotency_key,
+            "analysis.start",
+            signature,
+            task_input,
+            [state, work](const TaskControl& control) -> std::shared_ptr<const TaskPayload> {
+                control.checkpoint();
+                const auto started = state->runner->start(work->fact.run.request);
+                if (!started.ok())
+                    return completion(
+                        started.error && started.error->code == ErrorCode::storage_uncertain
+                            ? TaskState::outcome_unknown
+                            : TaskState::failed,
+                        started.error ? started.error->code : ErrorCode::storage_uncertain,
+                        started.error ? started.error->message : "Local process admission failed");
+                const auto id = work->fact.run.request.run_id;
+                unsigned observation_errors{}, cancellation_errors{};
+                for (;;) {
+                    if (control.cancellation_requested()) {
+                        const auto cancelled = state->runner->cancel(id);
+                        if (!cancelled.ok()) {
+                            if (++cancellation_errors >= 20)
+                                return completion(TaskState::outcome_unknown,
+                                                  ErrorCode::storage_uncertain,
+                                                  "External cancellation could not be "
+                                                  "verified or persisted");
+                        } else {
+                            cancellation_errors = 0;
+                        }
+                    }
+                    const auto observed = state->runner->query(id);
+                    if (!observed.ok()) {
+                        if (++observation_errors >= 20)
+                            return completion(
+                                TaskState::outcome_unknown,
+                                ErrorCode::storage_uncertain,
+                                "External execution observation could not be persisted");
+                    } else if (terminal(observed.value->execution)) {
+                        const auto& run = *observed.value;
+                        if (run.execution == SolverExecutionState::outcome_unknown)
+                            return completion(TaskState::outcome_unknown,
+                                              ErrorCode::storage_uncertain,
+                                              "External process outcome requires reconciliation");
+                        if (run.execution == SolverExecutionState::cancelled)
+                            return completion(
+                                TaskState::cancelled,
+                                ErrorCode::invalid_input,
+                                "Verified owned process group cancellation completed");
+                        if (work->fact.result_reader) {
+                            if (run.execution != SolverExecutionState::exited ||
+                                run.exit_code != 0 ||
+                                run.output_state != SolverOutputState::collected)
+                                return completion(
+                                    TaskState::failed,
+                                    ErrorCode::invalid_input,
+                                    "A complete normal exit is required before parsing");
+                            return state->prepare_result(id, control);
+                        }
+                        return completion(TaskState::failed,
+                                          ErrorCode::unsupported_capability,
+                                          "Execution observed; real result parsing and "
+                                          "numerical validation are not configured");
+                    } else {
+                        observation_errors = 0;
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
+            }};
+        const auto accepted = tasks().start(std::move(request));
+        {
+            std::lock_guard lock(state->mutex);
+            state->pending.erase(pending_key(context.caller, context.idempotency_key));
+        }
+        return detail::converted(accepted, detail::task_value);
+    } catch (const std::exception& error) {
+        return bad<Value>(ErrorCode::invalid_input, error.what());
+    }
+}
+
 Result<bool> SolverCoordinator::register_operations(OperationRegistry& registry,
                                                     RecordApplication& app,
                                                     std::function<TaskService&()> tasks) {
@@ -860,514 +1551,37 @@ Result<bool> SolverCoordinator::register_operations(OperationRegistry& registry,
     const auto state = state_;
     auto result = registry.register_typed<SolverConfigurationInput>(
         InputTraits<SolverConfigurationInput>::definition(),
-        [state](const OperationContext&, const SolverConfigurationInput&) {
-            const bool executable_current = state->executable_matches_probe();
-            return good(Value(Value::Object{
-                {"configured", Value(state->config.has_value())},
-                {"validated",
-                 Value(state->ready() && executable_current && !state->config->test_only)},
-                {"test_only", Value(state->config && state->config->test_only)},
-                {"process_adapter_ready", Value(state->ready() && executable_current)},
-                {"run_config_id", Value(state->config ? state->config->run.id : "")},
-                {"configuration_digest",
-                 Value(state->config ? state->config->run.configuration_digest : "")},
-                {"version_probe",
-                 version_value(state->config ? state->config->version_probe : std::nullopt)},
-                {"version_probe_available",
-                 Value(state->config && state->config->version_probe.has_value())},
-                {"version_probe_failure",
-                 Value(state->config ? state->config->version_probe_failure : "")},
-                {"executable_identity_current", Value(executable_current)},
-                {"result_reader_available",
-                 Value(state->config && state->config->result_reader.has_value())},
-                {"numerical_comparison_available", Value(true)},
-                {"numerical_validation_available",
-                 Value(state->ready() && executable_current && !state->config->test_only &&
-                       state->config->result_reader.has_value())}}));
+        [state](const OperationContext& context, const SolverConfigurationInput& input) {
+            return State::configuration(state, context, input);
         });
     if (!result.ok())
         return result;
     result = registry.register_typed<AnalysisValidateResultInput>(
         InputTraits<AnalysisValidateResultInput>::definition(),
-        [state, &app](const OperationContext& context,
-                      const AnalysisValidateResultInput& input) -> Result<Value> {
-            try {
-                const auto& profile = state->codec.definition().reference;
-                if (*context.expected_profile != profile)
-                    return bad<Value>(
-                        ErrorCode::invalid_input,
-                        "Numerical reference requires the registered Nastran profile");
-                const auto run = state->find(*context.document, input.run_id);
-                if (!run.ok())
-                    return {run.status, {}, run.error};
-                const auto& fact = run.value->first;
-                check(fact.principal == context.caller.principal,
-                      "Numerical result belongs to another principal");
-                const auto linked = state->validate_link(fact, *context.document);
-                if (!linked.ok())
-                    return {linked.status, {}, linked.error};
-                if (!fact.result_published || !fact.result_artifact)
-                    return bad<Value>(
-                        ErrorCode::missing_input,
-                        "Numerical checks require a complete published parsed result");
-                const auto stored =
-                    state->find_result(*context.document, fact.result_artifact->artifact_id);
-                if (!stored.ok())
-                    return {stored.status, {}, stored.error};
-                const auto source = state->resolve(
-                    context.caller, *context.document, fact.run.request.input.artifact_id);
-                if (!source.ok())
-                    return {source.status, {}, source.error};
-                check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
-                              features::analysis::encode_frozen_analysis_input(fact.source_input) &&
-                          artifact_sha256(source.value->second.manifest) ==
-                              fact.run.request.input.manifest_sha256,
-                      "Numerical source artifact differs from the original frozen input");
-                const auto history =
-                    validation_history(app, *context.document, stored.value->first, profile);
-                if (!history.ok())
-                    return {history.status, {}, history.error};
-                if (history.value->overflow)
-                    return bad<Value>(ErrorCode::resource_limit,
-                                      "Numerical validation history exceeds its bounded index");
-                const auto signature = record_wire::strings(
-                    std::array<std::string, 8>{context.document->id.value,
-                                               context.document->epoch.value,
-                                               std::to_string(*context.expected_revision),
-                                               input.run_id,
-                                               context.caller.principal,
-                                               profile.profile_id,
-                                               profile.profile_version,
-                                               profile.definition_digest});
-                const auto identity = detail::solver_validation_identity(
-                    input.run_id, context.caller, context.idempotency_key);
-                const detail::SolverValidationFact* replay{};
-                for (const auto& entry : history.value->reports)
-                    if (entry.second->key.identity == identity) {
-                        if (entry.first.signature != signature)
-                            return bad<Value>(
-                                ErrorCode::idempotency_key_conflict,
-                                "Numerical validation key belongs to another request");
-                        replay = &entry.first;
-                        break;
-                    }
-                bool files_verified{};
-                try {
-                    verify_result_artifact(stored.value->first);
-                    files_verified = true;
-                } catch (const std::exception&) {
-                    if (!replay)
-                        return bad<Value>(
-                            ErrorCode::invalid_input,
-                            "Numerical admission requires verified original result files");
-                }
-                detail::SolverValidationFact checked;
-                if (replay) {
-                    checked = *replay;
-                } else {
-                    const auto snapshot = app.snapshot(*context.document);
-                    if (!snapshot.ok())
-                        return {snapshot.status, {}, snapshot.error};
-                    if (snapshot.value->info.revision != *context.expected_revision)
-                        return bad<Value>(ErrorCode::revision_conflict,
-                                          "Numerical validation revision is stale");
-                    if (history.value->reports.size() >= detail::solver_validation_history_limit)
-                        return bad<Value>(ErrorCode::resource_limit,
-                                          "Numerical validation history has reached 16 reports");
-                    const auto prepared =
-                        detail::prepare_solver_validation(stored.value->first, profile);
-                    if (!prepared.ok())
-                        return {prepared.status, {}, prepared.error};
-                    checked = *prepared.value;
-                    checked.idempotency_key = context.idempotency_key;
-                    checked.signature = signature;
-                    checked.ordinal = history.value->reports.size() + 1;
-                    const auto next_report = detail::solver_validation_row(checked);
-                    detail::SolverValidationIndex index{input.run_id, context.caller.principal, {}};
-                    if (history.value->index)
-                        index = detail::decode_solver_validation_index(*history.value->index);
-                    index.report_rows.push_back(identity);
-                    const auto next_index = detail::solver_validation_index_row(index);
-                    const std::array<OwnedRowUpdate, 2> updates{
-                        {{next_report->key, {}, next_report},
-                         {next_index->key,
-                          history.value->index ? history.value->index->payload : nullptr,
-                          next_index}}};
-                    const auto committed = app.update_owned_rows(
-                        context.caller,
-                        WriteContext{*context.document, *context.expected_revision},
-                        updates);
-                    // This CAS has no filesystem side effect. Definite rollback retains
-                    // its original storage failure; only Core can report unknown storage.
-                    if (!committed.ok())
-                        return {committed.status, {}, committed.error};
-                }
-                return good(Value(Value::Object{
-                    {"summary", validation_summary(checked, identity)},
-                    {"components", validation_components(checked)},
-                    {"original_run_validation_stage", Value("not_run")},
-                    {"original_source_state",
-                     Value(original_input_current(app, *context.document, fact) ? "current"
-                                                                                : "stale")},
-                    {"current_files_verified", Value(files_verified)},
-                    {"replayed", Value(replay != nullptr)}}));
-            } catch (const RecordError& error) {
-                return bad<Value>(error.code(), error.what());
-            } catch (const std::exception& error) {
-                return bad<Value>(ErrorCode::schema_unsupported, error.what());
-            }
+        [state, &app](const OperationContext& context, const AnalysisValidateResultInput& input) {
+            return State::validate_result(state, app, context, input);
         });
     if (!result.ok())
         return result;
     result = registry.register_typed<AnalysisReconcileResultInput>(
         InputTraits<AnalysisReconcileResultInput>::definition(),
         [state, &app, tasks](const OperationContext& context,
-                             const AnalysisReconcileResultInput& input) -> Result<Value> {
-            try {
-                const auto signature = record_wire::strings(
-                    std::array<std::string, 5>{context.document->id.value,
-                                               context.document->epoch.value,
-                                               std::to_string(*context.expected_revision),
-                                               input.run_id,
-                                               context.caller.principal});
-                const auto fact_id = reconcile_identity(context.caller, context.idempotency_key);
-                const auto prior =
-                    app.owned_rows(*context.document, StoreSpace::artifact_record, reconcile_owner);
-                if (!prior.ok())
-                    return {prior.status, {}, prior.error};
-                std::optional<std::vector<std::string>> replay;
-                for (const auto& image : *prior.value)
-                    if (image->key.identity == fact_id) {
-                        const auto saved = record_wire::read_strings(*image->payload);
-                        if (saved[3] != signature)
-                            return bad<Value>(ErrorCode::idempotency_key_conflict,
-                                              "Result reconcile key belongs to another request");
-                        replay = saved;
-                        break;
-                    }
-                if (!replay) {
-                    const auto snapshot = app.snapshot(*context.document);
-                    if (!snapshot.ok())
-                        return {snapshot.status, {}, snapshot.error};
-                    if (snapshot.value->info.revision != *context.expected_revision)
-                        return bad<Value>(ErrorCode::revision_conflict,
-                                          "Result reconcile revision is stale");
-                    if (tasks().active_workers() || tasks().queued_tasks())
-                        return bad<Value>(ErrorCode::invalid_input,
-                                          "Result reconcile requires quiescent tasks");
-                }
-                const auto found = state->find(*context.document, input.run_id);
-                if (!found.ok())
-                    return {found.status, {}, found.error};
-                auto fact = found.value->first;
-                check(fact.principal == context.caller.principal,
-                      "Result reconcile belongs to another principal");
-                const auto linked = state->validate_link(fact, *context.document);
-                if (!linked.ok())
-                    return {linked.status, {}, linked.error};
-                if (!fact.result_artifact)
-                    return bad<Value>(ErrorCode::missing_input,
-                                      "Result reconcile requires a durable parsed intent");
-                const auto stored =
-                    state->find_result(*context.document, fact.result_artifact->artifact_id);
-                if (!stored.ok())
-                    return {stored.status, {}, stored.error};
-                auto published = stored.value->first;
-                const auto source = state->resolve(
-                    context.caller, *context.document, fact.run.request.input.artifact_id);
-                if (!source.ok())
-                    return {source.status, {}, source.error};
-                check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
-                              features::analysis::encode_frozen_analysis_input(fact.source_input) &&
-                          artifact_sha256(source.value->second.manifest) ==
-                              fact.run.request.input.manifest_sha256,
-                      "Result reconcile source differs from the original frozen input");
-                const auto manifest_hash = artifact_sha256(published.artifact.manifest);
-                const auto response = [&](bool replayed, bool currently_verified) {
-                    return good(Value(Value::Object{
-                        {"run_id", Value(input.run_id)},
-                        {"result_id", Value(published.artifact.artifact_id)},
-                        {"task_id", Value(fact.run.request.task_id)},
-                        {"task_state", Value("succeeded")},
-                        {"source_kind", Value(fact.test_only ? "test_process" : "external_solver")},
-                        {"test_only", Value(fact.test_only)},
-                        {"parsing", Value("parsed")},
-                        {"numerical_validation", Value("not_run")},
-                        {"input_revision", Value(std::to_string(fact.run.request.input.revision))},
-                        {"result_manifest_sha256", Value(manifest_hash)},
-                        {"replayed", Value(replayed)},
-                        {"verified_at_reconcile", Value(true)},
-                        {"current_files_verified", Value(currently_verified)}}));
-                };
-                if (replay) {
-                    check(fact.result_published && published.published &&
-                              (*replay)[4] == input.run_id &&
-                              (*replay)[5] == published.artifact.artifact_id &&
-                              (*replay)[6] == manifest_hash,
-                          "Result reconcile fact differs from completed publication");
-                    bool verified{};
-                    try {
-                        verify_result_artifact(published);
-                        verified = true;
-                    } catch (const std::exception&) {
-                    }
-                    return response(true, verified);
-                }
-                const auto task = state->find_task(fact, *context.document);
-                if (!task.ok())
-                    return {task.status, {}, task.error};
-                auto complete = task.value->first;
-                if (complete.state != TaskState::succeeded &&
-                    complete.state != TaskState::interrupted &&
-                    complete.state != TaskState::outcome_unknown)
-                    return bad<Value>(ErrorCode::invalid_input,
-                                      "Only completed or unknown/interrupted result publication "
-                                      "can be reconciled; failed/cancelled tasks cannot succeed");
-                verify_result_artifact(published);
-                std::vector<OwnedRowUpdate> updates;
-                if (!fact.result_published) {
-                    check(fact.run.sequence != UINT64_MAX,
-                          "Result reconcile sequence exceeds quota");
-                    ++fact.run.sequence;
-                    fact.result_published = true;
-                    published.published = true;
-                    const auto next_run = solver_owned_row(fact),
-                               next_result = detail::solver_result_row(published);
-                    updates.push_back({next_run->key, found.value->second->payload, next_run});
-                    updates.push_back(
-                        {next_result->key, stored.value->second->payload, next_result});
-                }
-                if (complete.state != TaskState::succeeded) {
-                    complete.state = TaskState::succeeded;
-                    complete.progress = 1;
-                    complete.diagnostic.reset();
-                    complete.artifact_receipt = TaskArtifactReceipt{published.artifact.artifact_id,
-                                                                    fact.run.request.input.revision,
-                                                                    manifest_hash};
-                    check(!complete.events.empty() &&
-                              complete.events.back().sequence != UINT64_MAX &&
-                              complete.events.size() < 128,
-                          "Result reconcile task event quota exceeded");
-                    complete.events.push_back(
-                        {complete.events.back().sequence + 1, complete.state, complete.progress});
-                    const auto next_task = task_row(complete);
-                    updates.push_back({next_task->key, task.value->second->payload, next_task});
-                }
-                validate_solver_task(fact, complete);
-                detail::validate_solver_result_link(published.parsed, fact);
-                const auto receipt = std::make_shared<const OwnedRowImage>(
-                    OwnedRowImage{{StoreSpace::artifact_record, fact_id},
-                                  std::string(reconcile_owner),
-                                  1,
-                                  std::make_shared<const std::string>(record_wire::strings(
-                                      std::array<std::string, 7>{"QCAE-SOLVER-RECONCILE-1",
-                                                                 context.caller.principal,
-                                                                 context.idempotency_key,
-                                                                 signature,
-                                                                 input.run_id,
-                                                                 published.artifact.artifact_id,
-                                                                 manifest_hash})),
-                                  {}});
-                updates.push_back({receipt->key, {}, receipt});
-                const auto committed =
-                    app.update_owned_rows(context.caller, *context.document, updates);
-                if (!committed.ok())
-                    return publication_uncertain<Value>(committed);
-                const auto reloaded = tasks().reconcile();
-                if (!reloaded.ok())
-                    return {reloaded.status, {}, reloaded.error};
-                return response(false, true);
-            } catch (const std::exception& error) {
-                return bad<Value>(ErrorCode::storage_failure, error.what());
-            }
+                             const AnalysisReconcileResultInput& input) {
+            return State::reconcile_result(state, app, tasks, context, input);
         });
     if (!result.ok())
         return result;
     result = registry.register_typed<AnalysisGetResultInput>(
         InputTraits<AnalysisGetResultInput>::definition(),
-        [state, &app](const OperationContext& context,
-                      const AnalysisGetResultInput& input) -> Result<Value> {
-            try {
-                const auto run = state->find(*context.document, input.run_id);
-                if (!run.ok())
-                    return {run.status, {}, run.error};
-                const auto& fact = run.value->first;
-                check(fact.principal == context.caller.principal,
-                      "Solver result belongs to another principal");
-                const auto linked = state->validate_link(fact, *context.document);
-                if (!linked.ok())
-                    return {linked.status, {}, linked.error};
-                if (!fact.result_published || !fact.result_artifact)
-                    return bad<Value>(ErrorCode::missing_input,
-                                      "A complete published parsed result is not available");
-                const auto stored =
-                    state->find_result(*context.document, fact.result_artifact->artifact_id);
-                if (!stored.ok())
-                    return {stored.status, {}, stored.error};
-                const auto& parsed = stored.value->first.parsed;
-                const auto source = state->resolve(
-                    context.caller, *context.document, fact.run.request.input.artifact_id);
-                if (!source.ok())
-                    return {source.status, {}, source.error};
-                check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
-                              features::analysis::encode_frozen_analysis_input(fact.source_input) &&
-                          artifact_sha256(source.value->second.manifest) ==
-                              fact.run.request.input.manifest_sha256,
-                      "Parsed result source artifact differs from its frozen input");
-                bool current{};
-                const auto snapshot = app.snapshot(*context.document);
-                if (snapshot.ok()) {
-                    const auto now =
-                        features::analysis::freeze_analysis_input(snapshot.value->records,
-                                                                  fact.run.request.input.analysis,
-                                                                  fact.run.request.input.profile,
-                                                                  fact.source_input.identities);
-                    current = now.ok() && artifact_sha256(now.value->input_signature) ==
-                                              fact.run.request.input.input_fingerprint;
-                }
-                bool raw_verified{};
-                try {
-                    verify_result_artifact(stored.value->first);
-                    raw_verified = true;
-                } catch (const std::exception&) {
-                    // The database retains parsed fields/provenance. Missing or damaged
-                    // external bytes are explicitly unavailable and never declared verified.
-                }
-                const auto history = validation_history(app,
-                                                        *context.document,
-                                                        stored.value->first,
-                                                        state->codec.definition().reference);
-                if (!history.ok())
-                    return {history.status, {}, history.error};
-                auto field_value = [](std::string quantity,
-                                      const std::array<std::string, 6>& units,
-                                      const std::vector<NastranStaticGridValues>& rows) {
-                    Value::Array component_names, unit_values, values;
-                    for (const auto* name : {"T1", "T2", "T3", "R1", "R2", "R3"})
-                        component_names.emplace_back(name);
-                    for (const auto& unit : units)
-                        unit_values.emplace_back(unit);
-                    for (const auto& row : rows) {
-                        Value::Array components;
-                        for (const auto component : row.components)
-                            components.emplace_back(component);
-                        values.emplace_back(Value::Object{
-                            {"entity_id", Value(row.entity.value)},
-                            {"solver_number", Value(std::to_string(row.solver_number))},
-                            {"components", Value(std::move(components))}});
-                    }
-                    return Value(
-                        Value::Object{{"quantity_id", Value(std::move(quantity))},
-                                      {"location", Value("node")},
-                                      {"component_names", Value(std::move(component_names))},
-                                      {"component_units", Value(std::move(unit_values))},
-                                      {"values", Value(std::move(values))}});
-                };
-                Value::Array fields;
-                fields.push_back(field_value(
-                    "displacement", parsed.fields.displacement_units, parsed.fields.displacements));
-                fields.push_back(field_value(
-                    "spc_reaction", parsed.fields.reaction_units, parsed.fields.spc_reactions));
-                return good(Value(Value::Object{
-                    {"run_id", Value(input.run_id)},
-                    {"result_id", Value(stored.value->first.artifact.artifact_id)},
-                    {"task_id", Value(fact.run.request.task_id)},
-                    {"test_only", Value(fact.test_only)},
-                    {"source_kind", Value(fact.test_only ? "test_process" : "external_solver")},
-                    {"parsing", Value("parsed")},
-                    {"numerical_validation", Value("not_run")},
-                    {"numerical_checks", numerical_checks(*history.value, current, raw_verified)},
-                    {"input_current", Value(current)},
-                    {"input_revision", Value(std::to_string(fact.run.request.input.revision))},
-                    {"reader_version", Value(parsed.reader.reader_version)},
-                    {"subcase", Value(std::to_string(parsed.reader.subcase))},
-                    {"unit_system", Value(parsed.reader.unit_system)},
-                    {"coordinate_basis", Value(parsed.reader.coordinate_basis)},
-                    {"raw_resources_verified", Value(raw_verified)},
-                    {"result_manifest_sha256",
-                     Value(artifact_sha256(stored.value->first.artifact.manifest))},
-                    {"version_probe", version_value(fact.version_probe)},
-                    {"fields", Value(std::move(fields))}}));
-            } catch (const std::exception& error) {
-                return bad<Value>(ErrorCode::schema_unsupported, error.what());
-            }
+        [state, &app](const OperationContext& context, const AnalysisGetResultInput& input) {
+            return State::get_result(state, app, context, input);
         });
     if (!result.ok())
         return result;
     result = registry.register_typed<AnalysisGetRunInput>(
         InputTraits<AnalysisGetRunInput>::definition(),
-        [state, &app](const OperationContext& context,
-                      const AnalysisGetRunInput& input) -> Result<Value> {
-            try {
-                const auto found = state->find(*context.document, input.run_id);
-                if (!found.ok())
-                    return {found.status, {}, found.error};
-                const auto& fact = found.value->first;
-                check(fact.principal == context.caller.principal,
-                      "Analysis run belongs to another principal");
-                const auto& record = fact.run;
-                // Cross-row facts are checked in their original context; carried facts retain it.
-                const auto linked = state->validate_link(fact, *context.document);
-                if (!linked.ok())
-                    return {linked.status, {}, linked.error};
-                const auto source = state->resolve(
-                    context.caller, *context.document, record.request.input.artifact_id);
-                if (!source.ok())
-                    return {source.status, {}, source.error};
-                check(features::analysis::encode_frozen_analysis_input(source.value->first) ==
-                              features::analysis::encode_frozen_analysis_input(fact.source_input) &&
-                          artifact_sha256(source.value->second.manifest) ==
-                              record.request.input.manifest_sha256,
-                      "Analysis run source artifact provenance differs");
-                bool current{};
-                const auto snapshot = app.snapshot(*context.document);
-                if (snapshot.ok()) {
-                    const auto input_now =
-                        features::analysis::freeze_analysis_input(snapshot.value->records,
-                                                                  record.request.input.analysis,
-                                                                  record.request.input.profile,
-                                                                  fact.source_input.identities);
-                    current = input_now.ok() && artifact_sha256(input_now.value->input_signature) ==
-                                                    record.request.input.input_fingerprint;
-                }
-                Value::Array outputs;
-                for (const auto& file : record.outputs)
-                    outputs.emplace_back(
-                        Value::Object{{"path", Value(file.path)},
-                                      {"byte_length", Value(std::to_string(file.byte_length))},
-                                      {"sha256", Value(file.sha256)}});
-                return good(Value(Value::Object{
-                    {"run_id", Value(input.run_id)},
-                    {"task_id", Value(record.request.task_id)},
-                    {"execution",
-                     Value(fact.startup_intent_persisted ? execution_name(record.execution)
-                                                         : "queued")},
-                    {"parsing",
-                     Value(record.parsing == SolverParsingState::parsed   ? "parsed"
-                           : record.parsing == SolverParsingState::failed ? "failed"
-                                                                          : "not_run")},
-                    {"numerical_validation", Value("not_run")},
-                    {"results_available", Value(fact.result_published)},
-                    {"result_id",
-                     Value(fact.result_artifact ? fact.result_artifact->artifact_id : "")},
-                    {"test_only", Value(fact.test_only)},
-                    {"source_kind",
-                     Value(fact.test_only ? "test_process" : "external_process_observation")},
-                    {"input_current", Value(current)},
-                    {"input_revision", Value(std::to_string(record.request.input.revision))},
-                    {"artifact_id", Value(record.request.input.artifact_id)},
-                    {"version_probe", version_value(fact.version_probe)},
-                    {"version_probe_available", Value(fact.version_probe.has_value())},
-                    {"outputs", Value(std::move(outputs))},
-                    {"exit_code", Value(record.exit_code ? std::to_string(*record.exit_code) : "")},
-                    {"termination_signal",
-                     Value(record.termination_signal ? std::to_string(*record.termination_signal)
-                                                     : "")},
-                    {"cancellation_requested", Value(record.cancellation_requested)},
-                    {"detail", Value(record.detail)}}));
-            } catch (const std::exception& error) {
-                return bad<Value>(ErrorCode::schema_unsupported, error.what());
-            }
+        [state, &app](const OperationContext& context, const AnalysisGetRunInput& input) {
+            return State::get_run(state, app, context, input);
         });
     if (!result.ok())
         return result;
@@ -1377,184 +1591,8 @@ Result<bool> SolverCoordinator::register_operations(OperationRegistry& registry,
             "A trusted local solver configuration and actual version verification are required");
     return registry.register_typed<AnalysisStartInput>(
         InputTraits<AnalysisStartInput>::definition(),
-        [state, &app, tasks](const OperationContext& context,
-                             const AnalysisStartInput& input) -> Result<Value> {
-            try {
-                check(input.run_config_id == state->config->run.id,
-                      "Requested local solver configuration is not installed");
-                const auto signature =
-                    solver_run_signature(input.analysis_id,
-                                         input.artifact_id,
-                                         input.run_config_id,
-                                         state->config->run.configuration_digest);
-                const TaskInputContext task_input{
-                    *context.document, *context.expected_revision, *context.expected_profile};
-                const auto prior =
-                    app.owned_rows(*context.document, StoreSpace::task_record, task_owner);
-                if (!prior.ok())
-                    return {prior.status, {}, prior.error};
-                for (const auto& image : *prior.value) {
-                    const auto task = decode_task_record(*image->payload);
-                    if (task.caller.principal == context.caller.principal &&
-                        task.idempotency_key == context.idempotency_key) {
-                        if (task.operation != "analysis.start" || task.signature != signature ||
-                            task.input.document.id != task_input.document.id ||
-                            task.input.document.epoch != task_input.document.epoch ||
-                            task.input.revision != task_input.revision ||
-                            task.input.profile != task_input.profile)
-                            return bad<Value>(ErrorCode::idempotency_key_conflict,
-                                              "Analysis key belongs to a different input");
-                        const auto run = state->find(*context.document, "run-" + task.id);
-                        if (!run.ok())
-                            return {run.status, {}, run.error};
-                        validate_solver_task(run.value->first, task);
-                        return detail::converted(tasks().query(context.caller, task.id),
-                                                 detail::task_value);
-                    }
-                }
-                const auto snapshot = app.snapshot(*context.document);
-                if (!snapshot.ok())
-                    return {snapshot.status, {}, snapshot.error};
-                if (snapshot.value->info.revision != *context.expected_revision)
-                    return bad<Value>(ErrorCode::revision_conflict,
-                                      "Analysis start revision is stale");
-                check(state->executable_matches_probe(),
-                      "Executable identity differs from the actual version probe");
-                const auto source =
-                    state->resolve(context.caller, *context.document, input.artifact_id);
-                if (!source.ok())
-                    return {source.status, {}, source.error};
-                const auto frozen =
-                    features::analysis::freeze_analysis_input(snapshot.value->records,
-                                                              input.analysis_id,
-                                                              *context.expected_profile,
-                                                              source.value->first.identities);
-                if (!frozen.ok())
-                    return {frozen.status, {}, frozen.error};
-                check(frozen.value->input_signature == source.value->first.input_signature &&
-                          frozen.value->analysis == source.value->first.analysis &&
-                          frozen.value->target == source.value->first.target,
-                      "Export artifact does not describe the requested current analysis input");
-                const auto plan = validate_nastran_export(
-                    snapshot.value->records, input.analysis_id, state->codec);
-                if (!plan.ok())
-                    return {plan.status, {}, plan.error};
-                const auto resources = LocalArtifactStore{}.verify(source.value->second);
-                verify_nastran_readback(*plan.value, resources, state->codec);
-                if (detail::mystran_backend(state->config->run))
-                    detail::validate_mystran_input(source.value->second.root_resource, resources);
-                const auto work = std::make_shared<FrozenRun>();
-                work->artifact = source.value->second;
-                auto& fact = work->fact;
-                fact.principal = context.caller.principal;
-                fact.idempotency_key = context.idempotency_key;
-                fact.signature = signature;
-                fact.source_input = source.value->first;
-                fact.test_only = state->config->test_only;
-                fact.result_reader = state->config->result_reader;
-                if (!fact.test_only) {
-                    fact.version_probe = state->config->version_probe;
-                    fact.declaration_digest = state->config->declaration_digest;
-                }
-                fact.run.request.configuration = state->config->run;
-                fact.run.request.input = {
-                    context.document->id,
-                    context.document->epoch,
-                    *context.expected_revision,
-                    input.analysis_id,
-                    *context.expected_profile,
-                    input.artifact_id,
-                    artifact_sha256(work->artifact.manifest),
-                    artifact_sha256(frozen.value->input_signature),
-                    solver_export_identity_digest(*frozen.value),
-                    state->codec.definition().implementation_fingerprint,
-                    fact.result_reader ? fact.result_reader->reader_version : "unconfigured",
-                    features::analysis::encode_frozen_analysis_input(*frozen.value)};
-                {
-                    std::lock_guard lock(state->mutex);
-                    state->pending[pending_key(context.caller, context.idempotency_key)] = work;
-                }
-                TaskRequest request{
-                    context.caller,
-                    context.idempotency_key,
-                    "analysis.start",
-                    signature,
-                    task_input,
-                    [state,
-                     work](const TaskControl& control) -> std::shared_ptr<const TaskPayload> {
-                        control.checkpoint();
-                        const auto started = state->runner->start(work->fact.run.request);
-                        if (!started.ok())
-                            return completion(
-                                started.error && started.error->code == ErrorCode::storage_uncertain
-                                    ? TaskState::outcome_unknown
-                                    : TaskState::failed,
-                                started.error ? started.error->code : ErrorCode::storage_uncertain,
-                                started.error ? started.error->message
-                                              : "Local process admission failed");
-                        const auto id = work->fact.run.request.run_id;
-                        unsigned observation_errors{}, cancellation_errors{};
-                        for (;;) {
-                            if (control.cancellation_requested()) {
-                                const auto cancelled = state->runner->cancel(id);
-                                if (!cancelled.ok()) {
-                                    if (++cancellation_errors >= 20)
-                                        return completion(TaskState::outcome_unknown,
-                                                          ErrorCode::storage_uncertain,
-                                                          "External cancellation could not be "
-                                                          "verified or persisted");
-                                } else {
-                                    cancellation_errors = 0;
-                                }
-                            }
-                            const auto observed = state->runner->query(id);
-                            if (!observed.ok()) {
-                                if (++observation_errors >= 20)
-                                    return completion(
-                                        TaskState::outcome_unknown,
-                                        ErrorCode::storage_uncertain,
-                                        "External execution observation could not be persisted");
-                            } else if (terminal(observed.value->execution)) {
-                                const auto& run = *observed.value;
-                                if (run.execution == SolverExecutionState::outcome_unknown)
-                                    return completion(
-                                        TaskState::outcome_unknown,
-                                        ErrorCode::storage_uncertain,
-                                        "External process outcome requires reconciliation");
-                                if (run.execution == SolverExecutionState::cancelled)
-                                    return completion(
-                                        TaskState::cancelled,
-                                        ErrorCode::invalid_input,
-                                        "Verified owned process group cancellation completed");
-                                if (work->fact.result_reader) {
-                                    if (run.execution != SolverExecutionState::exited ||
-                                        run.exit_code != 0 ||
-                                        run.output_state != SolverOutputState::collected)
-                                        return completion(
-                                            TaskState::failed,
-                                            ErrorCode::invalid_input,
-                                            "A complete normal exit is required before parsing");
-                                    return state->prepare_result(id, control);
-                                }
-                                return completion(TaskState::failed,
-                                                  ErrorCode::unsupported_capability,
-                                                  "Execution observed; real result parsing and "
-                                                  "numerical validation are not configured");
-                            } else {
-                                observation_errors = 0;
-                            }
-                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                        }
-                    }};
-                const auto accepted = tasks().start(std::move(request));
-                {
-                    std::lock_guard lock(state->mutex);
-                    state->pending.erase(pending_key(context.caller, context.idempotency_key));
-                }
-                return detail::converted(accepted, detail::task_value);
-            } catch (const std::exception& error) {
-                return bad<Value>(ErrorCode::invalid_input, error.what());
-            }
+        [state, &app, tasks](const OperationContext& context, const AnalysisStartInput& input) {
+            return State::start(state, app, tasks, context, input);
         });
 }
 EngineContribution
