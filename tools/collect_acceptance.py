@@ -35,6 +35,12 @@ import xml.etree.ElementTree as ElementTree
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = ROOT / 'docs/baseline/skeleton-acceptance-targets.json'
 PROTECTED = ROOT / 'docs/engineering/c4-protected-paths.json'
+# R0 reference inventory and AP-01..20 module contracts, frozen before the cleanup and kept only in this tag.
+R0_TAG = 'archive/pre-cleanup-2026-10-10'
+R0_FILES = ['docs/engineering/reference-inventory.json',
+            *[f'docs/engineering/module-contracts/AP-{i:02}.json' for i in range(1, 21)]]
+CONTRACT_FIELDS = ('reference_evidence', 'owner_module', 'authoritative_data', 'public_contracts',
+                   'allowed_dependencies', 'extension_points', 'state_failure_version_rules', 'acceptance_case_ids')
 QT_PREFIX = os.environ.get('QCAE_QT_PREFIX', '/opt/qt/6.11.1/gcc_64')
 
 # Matrix name -> CMake cache arguments. The contract's minimum set is core (all frameworks
@@ -221,6 +227,19 @@ class Collection:
                                              '--bindings-dir', '/usr/lib/python3/dist-packages',
                                              '--protected-manifest', str(self.source / PROTECTED.relative_to(ROOT)),
                                              '--report', str(out / 'protected-ast.json')], self.root)
+
+    def r0(self) -> None:
+        """Copy the frozen R0 inventory and module contracts from the archive tag into the evidence."""
+        out = self.evidence / 'r0'
+        out.mkdir(parents=True, exist_ok=True)
+        tag = subprocess.check_output(['git', 'rev-parse', f'{R0_TAG}^{{commit}}'], cwd=ROOT, text=True).strip()
+        for path in R0_FILES:
+            data = subprocess.run(['git', 'show', f'{R0_TAG}:{path}'], cwd=ROOT, capture_output=True, check=True).stdout
+            (out / Path(path).name).write_bytes(data)
+        (out / 'source.json').write_text(json.dumps({'tag': R0_TAG, 'commit': tag, 'files': R0_FILES,
+                                                     'note': 'Frozen R0 artifacts; not re-verified against the '
+                                                             'reference source tree, which is not on this machine.'},
+                                                    indent=2) + '\n')
 
     def gates(self) -> None:
         self.run('architecture-mutations', [sys.executable, str(self.source / 'tests/test_architecture_gate.py'), '-v'],
@@ -712,8 +731,69 @@ def metric_rules(c: Collection) -> dict:
         (c.evidence / 'raw' / 'delivery-categories.json').write_text(json.dumps(present, indent=2) + '\n')
         return sum(present.values()), [c.evidence / 'raw' / 'delivery-categories.json']
 
+    r0_dir = c.evidence / 'r0'
+
+    def contracts():
+        paths = [r0_dir / f'AP-{i:02}.json' for i in range(1, 21)]
+        if not all(p.is_file() for p in paths):
+            raise Missing('R0 module contracts were not extracted')
+        return {p.stem: json.loads(p.read_text()) for p in paths}, paths
+
+    def contract_count():
+        loaded, paths = contracts()
+        return len(loaded), paths
+
+    def required_fields():
+        loaded, paths = contracts()
+        return min(sum(field in contract for field in CONTRACT_FIELDS) for contract in loaded.values()), paths
+
+    def missing_fields():
+        loaded, paths = contracts()
+        def empty(value) -> bool:
+            text = json.dumps(value)
+            return value in (None, '', [], {}) or 'TODO' in text or 'placeholder' in text.lower()
+        return sum(field not in contract or empty(contract[field])
+                   for contract in loaded.values() for field in CONTRACT_FIELDS), paths
+
+    def inventory():
+        path = r0_dir / 'reference-inventory.json'
+        if not path.is_file():
+            raise Missing('R0 reference inventory was not extracted')
+        return json.loads(path.read_text()), path
+
+    def mapping_ratio():
+        frozen, path = inventory()
+        items = frozen['items'] + frozen['sdk_public_boundaries']
+        if not items:
+            raise Missing('R0 inventory is empty')
+        mapped = sum(bool(item.get('ap_domains')) and bool(item.get('qcae_owner')) for item in items)
+        return mapped / len(items), [path]
+
+    def unclassified():
+        frozen, path = inventory()
+        items = frozen['items'] + frozen['sdk_public_boundaries']
+        return sum(not item.get('ap_domains') or not item.get('qcae_owner') for item in items), [path]
+
+    def level2():
+        # An AP counts once its representative BP case passed in this run; public headers are built by the
+        # consumer projects.
+        loaded, paths = contracts()
+        cases = representative_records(c)
+        passed = {case for case, items in cases.items() if items and all(r.get('passed') is True for r in items)}
+        if c.results.get('consumers-core-build') != 0:
+            raise Missing('public API consumers did not build')
+        count = sum(any(bp in passed for bp in contract['acceptance_case_ids'] if str(bp).startswith('BP-'))
+                    for contract in loaded.values())
+        return count, [*paths, c.evidence / 'raw' / 'representatives.json']
+
     rules = {name: architecture_count(name) for name in ARCHITECTURE_CODES}
     rules.update({
+        'ap01_20_contract_count': contract_count,
+        'ap_contract_required_fields': required_fields,
+        'ap_contract_missing_fields': missing_fields,
+        'inventory_mapping_ratio': mapping_ratio,
+        'inventory_unclassified_count': unclassified,
+        'ap_level2_count': level2,
         'main_workflow_runs_passed': workflow_runs,
         'delivery_artifact_categories': delivery_categories,
         'registered_operation_contract_ratio': contract_ratio,
@@ -820,6 +900,13 @@ def finish(c: Collection, tree: str) -> int:
                 provenance[name] = [str(Path(p).relative_to(c.root)) for p in paths]
             except Missing as reason:
                 gaps[name] = {'gate': gate['id'], 'reason': str(reason)}
+    # SK-14's prerequisite count: SK-01..13 gates with every metric measured and meeting its target.
+    by_name = {m['id']: m for g in spec['gates'] for m in g['metrics']}
+    complete = [g['id'] for g in spec['gates'][:13]
+                if all(m['id'] in metrics and _passes(by_name[m['id']], metrics[m['id']]) for m in g['metrics'])]
+    metrics['prerequisite_gates_passed'] = len(complete)
+    provenance['prerequisite_gates_passed'] = complete
+    gaps.pop('prerequisite_gates_passed', None)
     manifests = c.evidence / 'manifests'
     manifests.mkdir(parents=True, exist_ok=True)
     (manifests / 'environment.json').write_text(json.dumps(environment(c), indent=2) + '\n')
@@ -912,6 +999,7 @@ def main() -> int:
             c.test_matrix(matrix)
             c.architecture(matrix)
     c.gates()
+    c.r0()
     if built.get('ipc'):
         c.probes(tree)
     if built.get('ipc') and built.get('asan'):
