@@ -51,6 +51,27 @@
 | A7 Release候选与SK-14 | 冻结一个release commit，全矩阵、BP 20/20、主工作流9/9 | 校验器对报告判定SK-01—14全部通过 | 未开始 |
 | A8 P0产品验收 | TST-F/A/I/P逐项取证 | 全部适用用例通过，REQ全部有证据 | 未开始 |
 
+A1差距表（2026-10-12初评；“候选测试”指意图相符的现有测试，A2取证映射时逐项确认，不等于已覆盖）：
+
+| 门禁 | 指标 | 本机可测 | 候选测试/工具 | 主要缺口 |
+|---|---|---|---|---|
+| SK-01 | 6 | 6 | 归档的 `reference-inventory.json`、`module-contracts/AP-*.json`、`inventory_reference.py` | 恢复并重新评估（A4） |
+| SK-02 | 7 | 6 | `check_architecture.py`（核心构建0错误）、`architecture_gate_unit`（8个变异）、`tests/public_api_consumers` | 桌面配置的公开API消费者需VTK |
+| SK-03 | 5 | 5 | `check_protected_entity_ast.py`、`entity_generation`、`schema_rejection_sqlite`、`legacy_migration` | 注册顺序10种子与8项schema反例需逐项对上 |
+| SK-04 | 5 | 3 | 注册表与生成契约测试、`skeleton_workflow_cli` | 绕过提交协调器的写入口需静态审计；GUI入口需桌面 |
+| SK-05 | 5 | 5 | `skeleton_representatives`（BP-03/04/05）、`geometry_mesh`、`line_mesh_regeneration` | 映射到5项计数 |
+| SK-06 | 10 | 10 | `skeleton_fault_*`+`skeleton_fault_report.py`（220条与F17消毒）、BP-12、6份旧格式夹具 | F17需ASan/UBSan构建；报告尚未在冻结commit生成 |
+| SK-07 | 6 | 6 | `runtime`、`typed_host`、BP-20 | 10成功/10提交前取消/10过期的30次运行器 |
+| SK-08 | 5 | 5 | `parameters`、`analysis_checks`、BP-09/14 | 映射到计数 |
+| SK-09 | 5 | 5 | `result_fixture`、`static_validation`、BP-19、F22 | 映射到计数 |
+| SK-10 | 6 | 0 | `c3_tool_lifecycle`、`desktop_selection`（均需桌面） | VTK桌面与实际图形后端 |
+| SK-11 | 5 | 5 | `engine_assembly`、`package_contributions_ipc`、`platform_only_engine_ipc`、`generated_profile`、`profile_identity` | 增加关闭Nastran包的构建矩阵 |
+| SK-12 | 11 | 7 | `resources`（4MiB/256KiB）、`c3_locality_bench`（3档×20）、`c3_sync_ipc` | 4项帧时间/延迟需锁定GPU环境 |
+| SK-13 | 11 | 11 | 归档的C4 common40 manifest与EXT-01—03记录 | EXT-04/05与按C4流程的独立扩展（A5） |
+| SK-14 | 10 | 7 | 上述全部、ASan/UBSan、警告、格式 | BP-16/17/18与主工作流GUI模式需桌面；依赖SK-01—13 |
+
+合计97项：本机可测81项，依赖VTK桌面/图形后端或锁定GPU环境16项（A6）。
+
 ## 已完成工作轨道：弱模型可低成本横向扩展（2026-10-10—12）
 
 目标：新增操作、字段或实体类型时，较弱的模型只需少量固定上下文、遵循一个范例即可正确完成；遗漏必须在构建或测试中暴露，而不是静默产生错误行为。每个阶段独立提交，先保护既有行为，再按AGENTS.md的检查项验证。
