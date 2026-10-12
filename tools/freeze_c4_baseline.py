@@ -25,7 +25,7 @@ INITIAL = (
     "AGENTS.md",
     "docs/engineering/c4-executor-task.md",
     "schemas/entities/entities.json",
-    "schemas/operations/basic.json",
+    "schemas/operations/mesh_editing.json",
     "features/mesh_editing/src/mesh_editing_operations.cpp",
     "modules/document/include/qcae/edit_session.hpp",
     "modules/contracts/include/qcae/render_packet.hpp",

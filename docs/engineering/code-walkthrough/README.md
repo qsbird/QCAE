@@ -75,7 +75,7 @@ flowchart TB
 | 源文件与生成器 | 生成结果 | 修改位置 |
 |---|---|---|
 | [实体 schema](../../../schemas/entities/entities.json) + [generate_entities.py](../../../tools/generate_entities.py) | [records.hpp](../../../modules/document/include/qcae/records.hpp)（已纳入版本管理） | 修改 schema/生成器，再生成并核验；不直接手改产物 |
-| [typed 操作 schema](../../../schemas/operations/basic.json) + [generate_operation_contracts.py](../../../tools/generate_operation_contracts.py) | 构建目录 `generated/qcae/operation_inputs.hpp` | 修改输入契约，业务逻辑仍在 feature；CMake 跟踪目录内 JSON 的新增、修改和删除 |
+| [typed 操作 schema](../../../schemas/operations/)（按功能分文件） + [generate_operation_contracts.py](../../../tools/generate_operation_contracts.py) | 构建目录 `generated/qcae/operation_inputs.hpp` | 修改输入契约，业务逻辑仍在 feature；CMake 跟踪目录内 JSON 的新增、修改和删除 |
 | [旧能力目录](../../contracts/operations.json) + [generate_operations.py](../../../tools/generate_operations.py) | 构建目录 `generated/qcae/operations.hpp` | 兼容能力目录；与 typed 目录尚未完全统一 |
 | [generate_profile.py](../../../tools/generate_profile.py) | 构建目录 `profiles/nastran/generated/qcae/nastran_digest.hpp` | 根据能力定义及源码输入更新摘要；不是求解验证结果 |
 

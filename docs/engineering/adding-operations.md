@@ -7,12 +7,12 @@
 1. 生成骨架：
 
    ```sh
-   python3 tools/new_operation.py --feature materials --schema schemas/operations/basic.json \
+   python3 tools/new_operation.py --feature materials \
      --operation material.set_name --type MaterialSetNameInput \
      --field entity_id:entity_id --field name:string --label "Rename material"
    ```
 
-   字段写法为 `名称:类型[:optional][:units=a,b]`，类型可用 `string`、`entity_id`、`entity_id_array`、`quantity`（必须给units）、`finite_number`、`vector3_mm`（units=mm）、`positive_uint32`。工具追加schema条目，在功能头文件声明 `prepare_<操作>`，写入拒绝执行的桩函数，并以 `declare_unimplemented` 登记为不可用：实现前客户端和MCP都看不到它。
+   字段写法为 `名称:类型[:optional][:units=a,b]`，类型可用 `string`、`entity_id`、`entity_id_array`、`quantity`（必须给units）、`finite_number`、`vector3_mm`（units=mm）、`positive_uint32`。每个功能的操作写在与功能目录同名的 `schemas/operations/<功能>.json`（如 `materials.json`、`mesh_editing.json`），工具默认追加到该文件；工具追加schema条目，在功能头文件声明 `prepare_<操作>`，写入拒绝执行的桩函数，并以 `declare_unimplemented` 登记为不可用：实现前客户端和MCP都看不到它。
 2. 实现桩函数，范例是 [material_operations.cpp](../../features/materials/src/material_operations.cpp)：
    - `auto canonical = canonical_copy(input);`
    - 换算单位：`normalize(canonical.young_modulus, parameters::Dimension::pressure, "young_modulus")`，失败时 `return forward_failure<OperationPlan>(normalized);`

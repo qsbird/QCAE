@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "status": "implemented_typed_adapter_contracts_not_engine_handlers",
+  "operations": [
+    {
+      "operation_id": "mesh.generate_line",
+      "version": 1,
+      "schema_id": "qcae.operation.mesh.generate_line.v1",
+      "type_name": "MeshGenerateLineInput",
+      "effect": "background_task",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "segments",
+          "type": "positive_uint32"
+        }
+      ]
+    },
+    {
+      "operation_id": "mesh.regenerate_line",
+      "version": 1,
+      "schema_id": "qcae.operation.mesh.regenerate_line.v1",
+      "type_name": "MeshRegenerateLineInput",
+      "effect": "background_task",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "mesh_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "segments",
+          "type": "positive_uint32"
+        },
+        {
+          "field_id": 3,
+          "name": "replacement_policy",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}

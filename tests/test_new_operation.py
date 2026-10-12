@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 FEATURES = ("materials", "mesh_editing", "analysis")
-MATERIAL = ["--feature", "materials", "--schema", "schemas/operations/basic.json",
+MATERIAL = ["--feature", "materials",
             "--operation", "material.set_name", "--type", "MaterialSetNameInput",
             "--field", "entity_id:entity_id", "--field", "name:string",
             "--label", "Rename material"]
@@ -41,7 +41,7 @@ class NewOperation(unittest.TestCase):
     def test_material_operation_is_scaffolded_and_listed_unavailable(self):
         result = self.run_tool(*MATERIAL)
         self.assertEqual(result.returncode, 0, result.stderr)
-        schema = json.loads((self.root / "schemas/operations/basic.json").read_text())
+        schema = json.loads((self.root / "schemas/operations/materials.json").read_text())
         operation = schema["operations"][-1]
         self.assertEqual(operation["operation_id"], "material.set_name")
         self.assertEqual(operation["schema_id"], "qcae.operation.material.set_name.v1")
@@ -61,13 +61,26 @@ class NewOperation(unittest.TestCase):
         self.assertTrue(all(len(line) <= 100 for line in source.splitlines() + header.splitlines()))
 
     def test_every_standard_feature_accepts_a_scaffold(self):
-        for feature, schema, operation, type_name in (
-                ("mesh_editing", "mesh_editing.json", "node.scale_position", "NodeScalePositionInput"),
-                ("analysis", "analysis.json", "force.scale", "ForceScaleInput")):
-            result = self.run_tool("--feature", feature, "--schema", f"schemas/operations/{schema}",
-                                   "--operation", operation, "--type", type_name,
+        for feature, operation, type_name in (
+                ("mesh_editing", "node.scale_position", "NodeScalePositionInput"),
+                ("analysis", "force.scale", "ForceScaleInput")):
+            result = self.run_tool("--feature", feature, "--operation", operation, "--type", type_name,
                                    "--field", "factor:finite_number:optional", "--label", "Scale")
             self.assertEqual(result.returncode, 0, f"{feature}: {result.stderr}")
+            schema = json.loads((self.root / f"schemas/operations/{feature}.json").read_text())
+            self.assertEqual(schema["operations"][-1]["operation_id"], operation, feature)
+
+    def test_explicit_schema_and_missing_feature_schema(self):
+        result = self.run_tool(*MATERIAL, "--schema", "schemas/operations/mesh_editing.json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        schema = json.loads((self.root / "schemas/operations/mesh_editing.json").read_text())
+        self.assertEqual(schema["operations"][-1]["operation_id"], "material.set_name")
+        (self.root / "schemas/operations/materials.json").unlink()
+        before = self.snapshot()
+        result = self.run_tool(*MATERIAL)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("schemas/operations/<feature>.json", result.stderr)
+        self.assertEqual(self.snapshot(), before)
 
     def test_dry_run_and_rejections_leave_files_unchanged(self):
         before = self.snapshot()

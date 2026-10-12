@@ -3,10 +3,12 @@
 
 Adds the schema entry, a plan stub and its registration in one step. Until the TODOs are done the
 operation is listed as unavailable and its stub refuses, so a half-finished operation is never
-offered to clients and never commits. The recipe is docs/engineering/adding-operations.md.
+offered to clients and never commits. Each feature keeps its operations in
+schemas/operations/<feature>.json, which is where the schema entry goes unless --schema says otherwise.
+The recipe is docs/engineering/adding-operations.md.
 
 Example:
-  python3 tools/new_operation.py --feature materials --schema schemas/operations/basic.json \\
+  python3 tools/new_operation.py --feature materials \\
       --operation material.set_name --type MaterialSetNameInput \\
       --field entity_id:entity_id --field name:string --label "Rename material"
 """
@@ -110,7 +112,10 @@ def scaffold(arguments, root: Path) -> list[Path]:
         raise ScaffoldError('--label must be 1-60 characters without quotes or backslashes')
     fields = [parse_field(text, index, contracts.TYPES) for index, text in enumerate(arguments.field, 1)]
 
-    schema_path = root / arguments.schema
+    schema_path = root / (arguments.schema or f'schemas/operations/{arguments.feature}.json')
+    if not schema_path.is_file():
+        raise ScaffoldError(f'{schema_path}: no schema file; each feature keeps its operations in '
+                            f'schemas/operations/<feature>.json')
     schema_text = schema_path.read_text(encoding='utf-8')
     schema = json.loads(schema_text)
     if json.dumps(schema, indent=2, ensure_ascii=False) + '\n' != schema_text:
@@ -164,7 +169,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--root', type=Path, default=ROOT)
     parser.add_argument('--feature', required=True, help='directory under features/, e.g. materials')
-    parser.add_argument('--schema', required=True, help='schema file, e.g. schemas/operations/basic.json')
+    parser.add_argument('--schema', help='schema file (default schemas/operations/<feature>.json)')
     parser.add_argument('--operation', required=True, help='wire ID, e.g. material.set_name')
     parser.add_argument('--type', required=True, help='generated input type, e.g. MaterialSetNameInput')
     parser.add_argument('--field', action='append', default=[], help='NAME:TYPE[:optional][:units=a,b]')

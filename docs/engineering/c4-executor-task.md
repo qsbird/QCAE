@@ -11,7 +11,7 @@
 1. `AGENTS.md`。
 2. 本文件。
 3. `schemas/entities/entities.json`。
-4. `schemas/operations/basic.json`。
+4. `schemas/operations/mesh_editing.json`（2026-10-12起操作schema按功能拆分，原 `basic.json` 的网格编辑操作在此；此前冻结的实验仍按其manifest中的原文件追溯）。
 5. `features/mesh_editing/src/mesh_editing_operations.cpp`。
 6. `modules/document/include/qcae/edit_session.hpp`。
 7. `modules/contracts/include/qcae/render_packet.hpp`。

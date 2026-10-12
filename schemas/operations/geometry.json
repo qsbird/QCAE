@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "status": "implemented_typed_adapter_contracts_not_engine_handlers",
+  "operations": [
+    {
+      "operation_id": "geometry.create_line",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.create_line.v1",
+      "type_name": "GeometryCreateLineInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "start_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        },
+        {
+          "field_id": 2,
+          "name": "end_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "geometry.move_endpoint",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.move_endpoint.v1",
+      "type_name": "GeometryMoveEndpointInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "end_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "geometry.evaluate_line",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.evaluate_line.v1",
+      "type_name": "GeometryEvaluateLineInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "u",
+          "type": "finite_number",
+          "units": [
+            "1"
+          ]
+        }
+      ]
+    }
+  ]
+}

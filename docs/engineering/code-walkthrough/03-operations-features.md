@@ -8,9 +8,9 @@
 
 [打开配置](../../../schemas/entities/entities.json)。定义当前 14 类强类型记录的稳定 type ID、field ID、版本、字段形式、单位、引用允许目标和局部规则，生成 `modules/document/include/qcae/records.hpp`。它定义持久化实体结构，不能任意重用既有 ID；跨记录规则仍在 `records_rules.cpp`。新增类型能复用记录提交/历史/存储，但复杂拓扑、查询、显示和 profile 的语义不会凭 schema 自动生成。
 
-### schemas/operations/basic.json
+### schemas/operations/*.json
 
-[打开配置](../../../schemas/operations/basic.json)。定义七项生产操作的 ID/版本、输入字段、单位与上下文要求，生成构建目录中的 `qcae/operation_inputs.hpp`。操作输入与持久化实体是不同结构，例如移动节点用实体 ID 与位置，不能让客户端提交任意未验证的记录字节。生成器支持现有受控字段形式及 `fields: []` 的无参数输入，后者仍只接受空对象；所有 API 操作尚未统一迁到这个目录。
+[打开目录](../../../schemas/operations/)。按功能分文件定义操作的 ID/版本、输入字段、单位与上下文要求：功能操作在与功能目录同名的文件中（如 [materials.json](../../../schemas/operations/materials.json)、[mesh_editing.json](../../../schemas/operations/mesh_editing.json)），宿主与适配器操作在 `host_*.json`、`solver.json` 等文件中；全部文件合并生成构建目录中的 `qcae/operation_inputs.hpp`，文件划分不影响生成结果。操作输入与持久化实体是不同结构，例如移动节点用实体 ID 与位置，不能让客户端提交任意未验证的记录字节。生成器支持现有受控字段形式及 `fields: []` 的无参数输入，后者仍只接受空对象；所有 API 操作尚未统一迁到这个目录。
 
 ## operations：描述、解码与调度机制
 
