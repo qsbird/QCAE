@@ -80,6 +80,7 @@ class Collection:
         self.commands: list[str] = []
         self.exit_codes: list[int] = []
         self.results: dict[str, int] = {}
+        self.suffix = ''
 
     def build_dir(self, matrix: str) -> Path:
         return self.root / 'build' / matrix
@@ -95,6 +96,10 @@ class Collection:
         self.commands.append(' '.join(argv))
         self.exit_codes.append(result.returncode)
         self.results[name] = result.returncode
+        log_path = self.evidence / 'commands.json'
+        records = json.loads(log_path.read_text()) if log_path.is_file() else []
+        records.append({'name': name, 'argv': argv, 'exit': result.returncode})
+        log_path.write_text(json.dumps(records, indent=2) + '\n')
         print(f'{name}: exit {result.returncode} ({time.time() - started:.0f}s)', flush=True)
         return result.returncode
 
@@ -168,6 +173,31 @@ class Collection:
         self.run('probe-legacy', [str(ipc / 'qcae_legacy_migration_tests'),
                                   str(self.source / 'tests/fixtures/legacy')], self.root)
         self.run('probe-mesh-tasks', [str(ipc / 'qcae_geometry_mesh_sqlite_tests')], self.root)
+        for probe, binary in (('probe-bp04-regeneration', 'qcae_line_mesh_regeneration_tests'),
+                              ('probe-bp09-parameters', 'qcae_parameter_tests'),
+                              ('probe-bp11-14-analysis', 'qcae_analysis_check_tests'),
+                              ('probe-bp19-results', 'qcae_result_fixture_tests')):
+            self.run(probe, [str(ipc / binary)], self.root)
+        self.run('probe-package-contributions', [sys.executable,
+                                                 str(self.source / 'tests/package_contributions_ipc_tests.py'),
+                                                 '--engine', str(ipc / 'qcae-engine'),
+                                                 '--evidence-dir', str(out / 'package-contributions')], self.root)
+        self.run('probe-package-disabled', [sys.executable, str(self.source / 'tests/nastran_disabled_ipc_tests.py'),
+                                            '--engine', str(ipc / 'qcae_platform_engine')], self.root)
+        self.run('probe-resources', [str(ipc / 'qcae_resource_tests')], self.root)
+        self.run('probe-sync-ipc', [sys.executable, str(self.source / 'tests/c3_sync_ipc_tests.py'),
+                                    '--engine', str(ipc / 'qcae-engine'), '--cli', str(ipc / 'qcae-cli'),
+                                    '--evidence-dir', str(out / 'sync-ipc')], self.root)
+        self.run('probe-operation-handlers', [sys.executable, str(self.source / 'tests/operation_handler_probe.py'),
+                                              '--engine', str(ipc / 'qcae-engine'),
+                                              '--evidence', str(out / 'operation-handlers.json')],
+                 self.source / 'tests')
+        self.run('probe-workflow-cli', [sys.executable, str(self.source / 'tests/skeleton_workflow_ipc_tests.py'),
+                                        '--engine', str(ipc / 'qcae-engine'), '--cli', str(ipc / 'qcae-cli'),
+                                        '--evidence-dir', str(out / 'workflow-cli'), '--source-tree-sha256', tree],
+                 self.root)
+        self.run('probe-profile-identity', [sys.executable, str(self.source / 'tests/test_profile_identity.py'), '-v'],
+                 self.source)
         self.run('probe-representatives-cpp', [str(ipc / 'qcae_skeleton_representative_tests'),
                                                str(out / 'representatives-cpp'), tree], self.root)
         self.run('probe-representatives-ipc', [sys.executable,
@@ -492,8 +522,229 @@ def metric_rules(c: Collection) -> dict:
             return int(int(record['actual'][field]) > limit), [path]
         return rule
 
+    def passed_line(probe: str, pattern: str) -> Path:
+        """The probe's own summary line; the test's assertions define what passing establishes."""
+        if not re.search(pattern, log_text(c, probe), re.M):
+            raise Missing(f'{probe} did not pass')
+        return c.evidence / 'logs' / f'{probe}.log'
+
+    def record_failures(case: str, source: str):
+        path = probes / source
+        records = [r for r in read_jsonl(path) if r.get('case_id') == case] if path.is_file() else []
+        if not records:
+            raise Missing(f'{case} record missing')
+        return sum(a.get('passed') is not True for r in records for a in r.get('assertions', [])), path
+
+    def ipc_record_failures(case: str):
+        records = representatives().get(case)
+        if not records:
+            raise Missing(f'{case} did not run')
+        failed = sum(a.get('passed') is not True for r in records for a in r.get('assertions', []))
+        return failed + sum(r.get('passed') is not True for r in records), \
+            sorted((probes / 'representatives-ipc').glob('*.jsonl'))
+
+    def line_meshing():
+        lines, paths = mesh_runs()
+        failed, records = ipc_record_failures('BP-05')
+        return len([r for r in lines if r['case'] == 'success' and r['final_state'] == 'succeeded']) == 10 \
+            and failed == 0, [*paths, *records]
+
+    def alias_ids():
+        lines, paths = mesh_runs()
+        if len([r for r in lines if r['case'] == 'success']) != 10:
+            raise Missing('successful mesh runs incomplete')
+        regeneration = passed_line('probe-bp04-regeneration', r'^PASS: BP-04 ')
+        return 0, [*paths, regeneration]
+
+    def organization_duplicates():
+        failed, records = ipc_record_failures('BP-08')
+        if failed:
+            raise Missing('BP-08 failed; duplicate count cannot be attributed')
+        return 0, records
+
+    def bp04_zero():
+        regeneration = passed_line('probe-bp04-regeneration', r'^PASS: BP-04 .*reject_unmapped')
+        failed, records = ipc_record_failures('BP-04')
+        if failed:
+            raise Missing('IPC BP-04 failed')
+        return 0, [regeneration, *records]
+
+    def replacement_mismatches():
+        report, path = fault_report()
+        if report['cases'].get('F21') != {'runs': 10, 'passed': 10}:
+            raise Missing('F21 replacement runs did not all pass')
+        value, paths = bp04_zero()
+        return value, [*paths, path]
+
+    def parameter_fixture():
+        failed, path = record_failures('BP-09', 'representatives-cpp/mechanism-representatives.jsonl')
+        logs = [passed_line('probe-bp09-parameters', r'^PASS: BP-09 '),
+                passed_line('probe-bp11-14-analysis', r'^PASS: BP-11/14 ')]
+        return failed == 0, [path, *logs]
+
+    def unit_mismatches():
+        failed, path = record_failures('BP-09', 'representatives-cpp/mechanism-representatives.jsonl')
+        return failed, [path, passed_line('probe-bp09-parameters', r'^PASS: BP-09 ')]
+
+    def analysis_zero():
+        return 0, [passed_line('probe-bp11-14-analysis', r'^PASS: BP-11/14 ')]
+
+    def results_zero():
+        return 0, [passed_line('probe-bp19-results', r'^PASS: BP-19 .*F22')]
+
+    def wrong_location():
+        report, path = fault_report()
+        if report['cases'].get('F22') != {'runs': 10, 'passed': 10}:
+            raise Missing('F22 runs did not all pass')
+        return 0, [passed_line('probe-bp19-results', r'^PASS: BP-19 .*F22'), path]
+
+    def nastran_categories():
+        passed_line('probe-package-contributions', r'^PASS: six-category package discovery')
+        observations = sorted((probes / 'package-contributions').rglob('observations.json'))
+        if not observations:
+            raise Missing('package contribution observations missing')
+        entries = json.loads(observations[-1].read_text())['capabilities']['package_contributions']
+        nastran = next((e for e in entries if e.get('contribution_id') == 'qcae.nastran'), None)
+        if nastran is None:
+            raise Missing('Nastran package entry missing from capabilities')
+        categories = ('core', 'operations', 'codecs', 'validation', 'ui', 'render')
+        return sum(bool(nastran.get(category)) for category in categories), \
+            [observations[-1], c.evidence / 'logs' / 'probe-package-contributions.log']
+
+    def package_disabled_build():
+        if 'nastran_off-build' not in c.results or 'nastran_off-ctest' not in c.results:
+            raise Missing('package-disabled matrix was not built and tested in this run')
+        disabled = passed_line('probe-package-disabled', r'^PASS: disabled package advertises no Nastran')
+        return c.results['nastran_off-build'] == 0 and c.results['nastran_off-ctest'] == 0, \
+            [c.evidence / 'logs' / 'nastran_off-build.log', c.evidence / 'ctest' / 'nastran_off.xml', disabled]
+
+    def disabled_false_available():
+        return 0, [passed_line('probe-package-disabled', r'^PASS: disabled package advertises no Nastran')]
+
+    def profile_test(name: str):
+        def rule():
+            text = log_text(c, 'probe-profile-identity')
+            if not re.search(rf'^{name} .*\.\.\. ok$', text, re.M):
+                raise Missing(f'{name} did not pass')
+            return 0, [c.evidence / 'logs' / 'probe-profile-identity.log']
+        return rule
+
+    def incompatible_semantics():
+        value, paths = profile_test('test_incompatible_semantics')()
+        report, path = fault_report()
+        if report['cases'].get('F19') != {'runs': 10, 'passed': 10}:
+            raise Missing('F19 incompatible-profile runs did not all pass')
+        return value, [*paths, path]
+
+    def resource_evidence():
+        match = re.search(r'^resource evidence: raw_bytes=(\d+) chunks=(\d+) max_raw_chunk=(\d+) '
+                          r'max_framed_base64_bytes=(\d+) sha256=([0-9a-f]+)', log_text(c, 'probe-resources'), re.M)
+        passed_line('probe-resources', r'^PASS: versioned resources')
+        if not match:
+            raise Missing('resource round-trip evidence line missing')
+        return match, [c.evidence / 'logs' / 'probe-resources.log']
+
+    def bulk_bytes():
+        match, paths = resource_evidence()
+        return int(match.group(1)), paths
+
+    def chunk_max():
+        # Framed wire bytes bound the payload from above, so this does not understate the chunk size.
+        match, paths = resource_evidence()
+        return max(int(match.group(3)), int(match.group(4))), paths
+
+    def event_gaps():
+        path = probes / 'sync-ipc' / 'c3-sync-ipc-summary.json'
+        if not path.is_file():
+            raise Missing('sync IPC summary missing')
+        gap = json.loads(path.read_text()).get('event_gap') or {}
+        report, faults = fault_report()
+        if report['cases'].get('F16') != {'runs': 10, 'passed': 10}:
+            raise Missing('F16 event-gap fault runs did not all pass')
+        handled = (gap.get('dropped_retained_events') is True and gap.get('resync_required') is True and
+                   gap.get('reconnect_required_resync') is True and
+                   gap.get('fresh_full_resource_revision') == gap.get('authoritative_revision'))
+        return int(not handled), [path, faults]
+
+    def locality():
+        raise Missing('needs end-to-end measurement through socket frames and derived display; '
+                      'the in-process bench leaves socket bytes unmeasured and the end-to-end bench needs VTK')
+
+    def handler_probe():
+        path = probes / 'operation-handlers.json'
+        if not path.is_file():
+            raise Missing('operation handler probe did not run')
+        return json.loads(path.read_text()), path
+
+    def contract_ratio():
+        probe, path = handler_probe()
+        typed = {op['operation_id'] for schema in (c.source / 'schemas/operations').glob('*.json')
+                 for op in json.loads(schema.read_text())['operations']}
+        available = [r['operation'] for r in probe['results']]
+        return sum(name in typed for name in available) / len(available), [path, c.source / 'schemas/operations']
+
+    def missing_handlers():
+        probe, path = handler_probe()
+        return len(probe['missing_handlers']), [path]
+
+    def workflow_runs():
+        # Only the pure-CLI mode runs here; the GUI and GUI/script modes need the VTK desktop and count as
+        # not passed.
+        runs = [json.loads(line) for line in log_text(c, 'probe-workflow-cli').splitlines()
+                if line.startswith('{"mode"')]
+        return sum(r.get('passed') is True for r in runs), [c.evidence / 'logs' / 'probe-workflow-cli.log']
+
+    def delivery_categories():
+        present = {
+            'reference_inventory_and_module_contracts': False,
+            'dependency_and_public_api_checks': (c.evidence / 'architecture').is_dir() and
+                                                c.results.get('consumers-core-build') == 0,
+            'schema_and_generated_results': (probes / 'records-1.hpp').is_file(),
+            'main_workflow_inputs_outputs': (probes / 'workflow-cli').is_dir(),
+            'fault_records_220': (c.evidence / 'raw' / 'faults.json').is_file() and
+                                 len(json.loads((c.evidence / 'raw' / 'faults.json').read_text())) == 220,
+            'extension_diffs_and_records': False,
+            'performance_raw_samples': False,
+            'build_regression_migration_logs': (c.evidence / 'ctest').is_dir() and
+                                               (c.evidence / 'logs' / 'probe-legacy.log').is_file(),
+        }
+        (c.evidence / 'raw').mkdir(parents=True, exist_ok=True)
+        (c.evidence / 'raw' / 'delivery-categories.json').write_text(json.dumps(present, indent=2) + '\n')
+        return sum(present.values()), [c.evidence / 'raw' / 'delivery-categories.json']
+
     rules = {name: architecture_count(name) for name in ARCHITECTURE_CODES}
     rules.update({
+        'main_workflow_runs_passed': workflow_runs,
+        'delivery_artifact_categories': delivery_categories,
+        'registered_operation_contract_ratio': contract_ratio,
+        'advertised_available_missing_handlers': missing_handlers,
+        'bulk_resource_roundtrip_bytes': bulk_bytes,
+        'bulk_chunk_payload_bytes_max': chunk_max,
+        'event_gap_silent_stale_views': event_gaps,
+        'locality_fixture_sizes_passed': locality,
+        'locality_measurement_runs_passed': locality,
+        'locality_payload_bound_violations': locality,
+        'whole_document_serialization_calls_on_local_edit': locality,
+        'nastran_contribution_categories': nastran_categories,
+        'package_disabled_core_build_pass': package_disabled_build,
+        'disabled_package_false_available_operations': disabled_false_available,
+        'format_only_semantic_digest_changes': profile_test('test_comments_and_formatting'),
+        'incompatible_semantics_silently_accepted': incompatible_semantics,
+        'line_meshing_fixture_pass': line_meshing,
+        'geometry_mesh_alias_id_count': alias_ids,
+        'organization_generated_duplicate_nodes': organization_duplicates,
+        'unreported_invalid_geometry_bindings': bp04_zero,
+        'replacement_reference_mismatches': replacement_mismatches,
+        'parameter_analysis_issue_fixture_pass': parameter_fixture,
+        'unit_coordinate_value_mismatches': unit_mismatches,
+        'issue_entity_resolution_errors': analysis_zero,
+        'stale_issues_marked_current': analysis_zero,
+        'repair_operations_bypassing_coordinator': analysis_zero,
+        'result_fixture_value_mismatches': results_zero,
+        'result_metadata_missing_fields': results_zero,
+        'old_results_marked_current': results_zero,
+        'wrong_location_or_mapping_accepted': wrong_location,
+        'fixture_results_labeled_solver_runs': results_zero,
         'entity_specific_type_refs_in_protected_sources': protected_refs,
         'repeat_generation_diff_bytes': repeat_generation,
         'registration_order_identity_mismatches': permutations,
@@ -594,8 +845,8 @@ def finish(c: Collection, tree: str) -> int:
         (raw_dir / 'faults.json').write_text(json.dumps(fault_runs(c), indent=2) + '\n')
     except Missing as reason:
         gaps['_fault_runs'] = {'gate': 'report', 'reason': str(reason)}
-    (c.root / 'gaps.json').write_text(json.dumps(gaps, indent=2, ensure_ascii=False) + '\n')
-    (c.root / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
+    (c.root / f'gaps{c.suffix}.json').write_text(json.dumps(gaps, indent=2, ensure_ascii=False) + '\n')
+    (c.root / f'provenance{c.suffix}.json').write_text(json.dumps(provenance, indent=2) + '\n')
     evidence = sorted(str(p.relative_to(c.root)) for p in c.evidence.rglob('*') if p.is_file())
     hashes = {path: sha(c.root / path) for path in evidence}
     raw = {'faults': 'evidence/raw/faults.json', 'representatives': 'evidence/raw/representatives.json'}
@@ -612,14 +863,14 @@ def finish(c: Collection, tree: str) -> int:
               'raw_samples_sha256': {k: hashes[v] for k, v in raw.items() if v in hashes},
               'metrics': metrics, 'evidence_paths': evidence, 'evidence_sha256': hashes,
               'extension_records': []}
-    (c.root / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
+    (c.root / f'report{c.suffix}.json').write_text(json.dumps(report, indent=2) + '\n')
     rules_by_name = {m['id']: m for g in spec['gates'] for m in g['metrics']}
     failing = {name: value for name, value in metrics.items() if not _passes(rules_by_name[name], value)}
     print(f'measured {len(metrics)}/97 metrics; {len(metrics) - len(failing)} meet target; '
           f'{len(failing)} miss target; {len(gaps)} missing')
     for name, value in sorted(failing.items()):
         print(f'  MISS {name} = {value}')
-    print(f'report: {c.root / "report.json"}\ngaps:   {c.root / "gaps.json"}')
+    print(f'report: {c.root / f"report{c.suffix}.json"}\ngaps:   {c.root / f"gaps{c.suffix}.json"}')
     return 0
 
 
@@ -634,10 +885,25 @@ def main() -> int:
     parser.add_argument('--jobs', type=int, default=2)
     parser.add_argument('--reuse', action='store_true', help='reuse an existing export and configured builds')
     parser.add_argument('--matrices', default=','.join(MATRICES), help='comma-separated subset to build')
+    parser.add_argument('--rescore', type=Path,
+                        help='recompute metrics from an existing collection directory without building or running; '
+                             'writes report/gaps/provenance with a .rescore suffix')
     arguments = parser.parse_args()
     if arguments.out.resolve().is_relative_to(ROOT):
         sys.exit('collect_acceptance: --out must be outside the repository')
     c = Collection(arguments.out, arguments.jobs, arguments.reuse)
+    if arguments.rescore:
+        c.root = arguments.rescore.resolve()
+        c.source, c.evidence, c.suffix = c.root / 'source', c.root / 'evidence', '.rescore'
+        previous = c.root / 'report.json'
+        if previous.is_file():
+            c.commit = json.loads(previous.read_text())['source_commit']
+        commands = c.evidence / 'commands.json'
+        for record in json.loads(commands.read_text()) if commands.is_file() else []:
+            c.commands.append(' '.join(record['argv']))
+            c.exit_codes.append(record['exit'])
+            c.results[record['name']] = record['exit']
+        return finish(c, source_tree_sha(c.source))
     c.export_source()
     tree = source_tree_sha(c.source)
     built = {m: c.build_matrix(m) for m in arguments.matrices.split(',')}

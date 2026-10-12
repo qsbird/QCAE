@@ -58,7 +58,7 @@ A1差距表（2026-10-12初评；“候选测试”指意图相符的现有测�
 | SK-01 | 6 | 6 | 归档的 `reference-inventory.json`、`module-contracts/AP-*.json`、`inventory_reference.py` | 恢复并重新评估（A4） |
 | SK-02 | 7 | 6 | `check_architecture.py`（核心构建0错误）、`architecture_gate_unit`（8个变异）、`tests/public_api_consumers` | 桌面配置的公开API消费者需VTK |
 | SK-03 | 5 | 5 | `check_protected_entity_ast.py`、`entity_generation`、`schema_rejection_sqlite`、`legacy_migration` | 注册顺序10种子与8项schema反例需逐项对上 |
-| SK-04 | 5 | 3 | 注册表与生成契约测试、`skeleton_workflow_cli` | 绕过提交协调器的写入口需静态审计；GUI入口需桌面 |
+| SK-04 | 5 | 3 | `operation_handler_probe.py`（69个可用操作均到达handler）、生成契约 | 实测类型契约比例0.739：18个可用操作（`changes.preview`、`selection.*`、`view.*`、`resources.*`、`events.*`、`task.*`、`model.export_preview`、`entity.fields`）无生成契约，需用户决定；绕过协调器写入口需静态审计；GUI入口需桌面 |
 | SK-05 | 5 | 5 | `skeleton_representatives`（BP-03/04/05）、`geometry_mesh`、`line_mesh_regeneration` | 映射到5项计数 |
 | SK-06 | 10 | 10 | `skeleton_fault_*`+`skeleton_fault_report.py`（220条与F17消毒）、BP-12、6份旧格式夹具 | F17需ASan/UBSan构建；报告尚未在冻结commit生成 |
 | SK-07 | 6 | 6 | `runtime`、`typed_host`、BP-20 | 10成功/10提交前取消/10过期的30次运行器 |
@@ -66,11 +66,11 @@ A1差距表（2026-10-12初评；“候选测试”指意图相符的现有测�
 | SK-09 | 5 | 5 | `result_fixture`、`static_validation`、BP-19、F22 | 映射到计数 |
 | SK-10 | 6 | 0 | `c3_tool_lifecycle`、`desktop_selection`（均需桌面） | VTK桌面与实际图形后端 |
 | SK-11 | 5 | 5 | `engine_assembly`、`package_contributions_ipc`、`platform_only_engine_ipc`、`generated_profile`、`profile_identity` | 增加关闭Nastran包的构建矩阵 |
-| SK-12 | 11 | 7 | `resources`（4MiB/256KiB）、`c3_locality_bench`（3档×20）、`c3_sync_ipc` | 4项帧时间/延迟需锁定GPU环境 |
+| SK-12 | 11 | 3 | `resources`（4MiB/256KiB）、`c3_sync_ipc`+F16（事件缺口） | 4项局部负载需含socket与派生显示的端到端测量（进程内bench未测socket，端到端bench需VTK）；4项帧时间/延迟需锁定GPU环境 |
 | SK-13 | 11 | 11 | 归档的C4 common40 manifest与EXT-01—03记录 | EXT-04/05与按C4流程的独立扩展（A5） |
 | SK-14 | 10 | 7 | 上述全部、ASan/UBSan、警告、格式 | BP-16/17/18与主工作流GUI模式需桌面；依赖SK-01—13 |
 
-合计97项：本机可测81项，依赖VTK桌面/图形后端或锁定GPU环境16项（A6）。
+合计97项：本机可测77项，依赖VTK桌面/图形后端或锁定GPU环境20项（A6）。
 
 ## 已完成工作轨道：弱模型可低成本横向扩展（2026-10-10—12）
 
