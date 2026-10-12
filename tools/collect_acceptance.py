@@ -39,6 +39,11 @@ PROTECTED = ROOT / 'docs/engineering/c4-protected-paths.json'
 R0_TAG = 'archive/pre-cleanup-2026-10-10'
 R0_FILES = ['docs/engineering/reference-inventory.json',
             *[f'docs/engineering/module-contracts/AP-{i:02}.json' for i in range(1, 21)]]
+C4_ARCHIVE = 'docs/engineering/c3-closure-evidence/package'
+C4_DIFFS = {'EXT-01': 'c4-independent41/EXT01/extension-baseline.diff',
+            'EXT-02': 'c4-independent41/EXT02/extension.diff',
+            'EXT-03': 'c4-independent41/EXT03/extension-baseline.diff'}
+GENERATED_COMMITTED = {'modules/document/include/qcae/records.hpp'}
 CONTRACT_FIELDS = ('reference_evidence', 'owner_module', 'authoritative_data', 'public_contracts',
                    'allowed_dependencies', 'extension_points', 'state_failure_version_rules', 'acceptance_case_ids')
 QT_PREFIX = os.environ.get('QCAE_QT_PREFIX', '/opt/qt/6.11.1/gcc_64')
@@ -241,6 +246,19 @@ class Collection:
                                                              'reference source tree, which is not on this machine.'},
                                                     indent=2) + '\n')
 
+    def extensions(self) -> None:
+        """Archived independent C4 runs (EXT-01..03) and a fresh EXT-04 memory/SQLite contract parity run."""
+        out = self.evidence / 'extensions'
+        out.mkdir(parents=True, exist_ok=True)
+        for name in ('c4-independent41/archive-index.json', 'c4-common40-baseline-manifest.json', *C4_DIFFS.values()):
+            data = subprocess.run(['git', 'show', f'{R0_TAG}:{C4_ARCHIVE}/{name}'], cwd=ROOT,
+                                  capture_output=True, check=True).stdout
+            target = out / name.replace('/', '_')
+            target.write_bytes(data)
+        ipc = self.build_dir('ipc')
+        self.run('ext04-memory', [str(ipc / 'qcae_geometry_mesh_tests')], self.root)
+        self.run('ext04-sqlite', [str(ipc / 'qcae_geometry_mesh_sqlite_tests')], self.root)
+
     def gates(self) -> None:
         self.run('architecture-mutations', [sys.executable, str(self.source / 'tests/test_architecture_gate.py'), '-v'],
                  self.source)
@@ -333,6 +351,29 @@ def fault_runs(c: Collection) -> list[dict]:
             runs.append({'case_id': case, 'run_id': seen[case], 'source_run_id': record.get('run_id'),
                          'passed': record.get('passed') is True, 'source_commit': c.commit})
     return runs
+
+
+def test_only_cmake(path: str, diff: str) -> bool:
+    """A CMake change whose every changed line belongs to a test-registration statement is test
+    infrastructure, not a product file. Continuation lines belong to the statement above them."""
+    if Path(path).name != 'CMakeLists.txt':
+        return False
+    section = re.search(rf'^diff --git a/{re.escape(path)} b/.*?(?=^diff --git |\Z)', diff, re.M | re.S)
+    statement_test, changed = False, False
+    for line in (section.group(0) if section else '').splitlines()[1:]:
+        if line.startswith(('+++', '---', '@@', 'index ', 'new file', 'deleted file')):
+            continue
+        body = line[1:] if line[:1] in '+- ' else line
+        start = re.match(r'\s*(\w+)\s*\(\s*([^\s)]*)', body)
+        if start:
+            command, target = start.group(1).lower(), start.group(2)
+            statement_test = command in ('add_test', 'set_tests_properties') or target.endswith('_tests') \
+                or (command == 'add_executable' and 'tests/' in body)
+        if line[:1] in '+-' and body.strip():
+            changed = True
+            if not statement_test:
+                return False
+    return changed
 
 
 def metric_rules(c: Collection) -> dict:
@@ -786,8 +827,92 @@ def metric_rules(c: Collection) -> dict:
                     for contract in loaded.values())
         return count, [*paths, c.evidence / 'raw' / 'representatives.json']
 
+    ext_dir = c.evidence / 'extensions'
+
+    def archive_index():
+        path = ext_dir / 'c4-independent41_archive-index.json'
+        if not path.is_file():
+            raise Missing('archived C4 extension index was not extracted')
+        return json.loads(path.read_text()), path
+
+    def extension_diff(ext: str):
+        index, index_path = archive_index()
+        path = ext_dir / C4_DIFFS[ext].replace('/', '_')
+        key = ext.replace('-', '')
+        if sha(path) != index['independent_full_diff_sha256'][key]:
+            raise Missing(f'{ext} archived diff hash differs from the archive index')
+        text = path.read_text(errors='replace')
+        files = re.findall(r'^diff --git a/(\S+) b/', text, re.M)
+        return files, [path, index_path], text
+
+    def protected_paths():
+        manifest = json.loads((ext_dir / 'c4-common40-baseline-manifest.json').read_text())
+        return {item['path'] for item in manifest['protected_files']}
+
+    def ext_protected(ext: str):
+        def rule():
+            files, paths, _ = extension_diff(ext)
+            return len(set(files) & protected_paths()), [*paths, ext_dir / 'c4-common40-baseline-manifest.json']
+        return rule
+
+    def ext_handwritten(ext: str):
+        def rule():
+            files, paths, text = extension_diff(ext)
+            index, _ = archive_index()
+            if index.get('generator_change_count') != 0:
+                raise Missing('generators changed; generated files are not exempt')
+            handwritten = [f for f in files if not f.startswith(('tests/', 'docs/')) and not f.endswith('.md')
+                           and f not in GENERATED_COMMITTED and not test_only_cmake(f, text)]
+            return len(handwritten), paths
+        return rule
+
+    def ext04_parity() -> bool:
+        def runs(name: str) -> list[tuple]:
+            return [(r['case'], r['final_state'], r['task_model_commits']) for r in
+                    (json.loads(line) for line in log_text(c, name).splitlines() if line.startswith('{"case"'))]
+        memory, sqlite = runs('ext04-memory'), runs('ext04-sqlite')
+        return len(memory) == 30 and memory == sqlite and c.results.get('ext04-memory') == 0 \
+            and c.results.get('ext04-sqlite') == 0
+
+    def exercises():
+        index, path = archive_index()
+        archived = sum(1 for ext in C4_DIFFS if index['independent_commits'].get(ext.replace('-', '')))
+        ext04 = ext04_parity()
+        # EXT-05 reruns the end-to-end locality measurement, which needs the VTK desktop; it counts as not passed.
+        return archived + int(ext04), [path, c.evidence / 'logs' / 'ext04-memory.log',
+                                       c.evidence / 'logs' / 'ext04-sqlite.log']
+
+    def independent_runs():
+        index, path = archive_index()
+        return sum(1 for ext in C4_DIFFS if index['independent_commits'].get(ext.replace('-', ''))), [path]
+
+    def initial_context_bytes():
+        index, path = archive_index()
+        return index['initial_eight_file_content_bytes'], [path]
+
+    def initial_context_files():
+        index, path = archive_index()
+        if 'initial_eight_file_content_bytes' not in index:
+            raise Missing('archived initial context record missing')
+        return 8, [path]
+
+    def author_patches():
+        index, path = archive_index()
+        return index['skeleton_author_product_patches_during_experiments'], [path]
+
     rules = {name: architecture_count(name) for name in ARCHITECTURE_CODES}
     rules.update({
+        'extension_exercises_passed': exercises,
+        'ext01_protected_files_changed': ext_protected('EXT-01'),
+        'ext02_protected_files_changed': ext_protected('EXT-02'),
+        'ext03_protected_files_changed': ext_protected('EXT-03'),
+        'ext01_handwritten_product_files_changed': ext_handwritten('EXT-01'),
+        'ext02_handwritten_product_files_changed': ext_handwritten('EXT-02'),
+        'ext03_handwritten_product_files_changed': ext_handwritten('EXT-03'),
+        'independent_extension_runs_passed': independent_runs,
+        'independent_initial_context_bytes': initial_context_bytes,
+        'independent_initial_context_files': initial_context_files,
+        'skeleton_author_product_patches_during_extension': author_patches,
         'ap01_20_contract_count': contract_count,
         'ap_contract_required_fields': required_fields,
         'ap_contract_missing_fields': missing_fields,
@@ -949,7 +1074,7 @@ def finish(c: Collection, tree: str) -> int:
               'raw_samples_paths': {k: v for k, v in raw.items() if v in hashes},
               'raw_samples_sha256': {k: hashes[v] for k, v in raw.items() if v in hashes},
               'metrics': metrics, 'evidence_paths': evidence, 'evidence_sha256': hashes,
-              'extension_records': []}
+              'extension_records': extension_records(c, hashes)}
     (c.root / f'report{c.suffix}.json').write_text(json.dumps(report, indent=2) + '\n')
     rules_by_name = {m['id']: m for g in spec['gates'] for m in g['metrics']}
     failing = {name: value for name, value in metrics.items() if not _passes(rules_by_name[name], value)}
@@ -959,6 +1084,23 @@ def finish(c: Collection, tree: str) -> int:
         print(f'  MISS {name} = {value}')
     print(f'report: {c.root / f"report{c.suffix}.json"}\ngaps:   {c.root / f"gaps{c.suffix}.json"}')
     return 0
+
+
+def extension_records(c: Collection, hashes: dict) -> list[dict]:
+    """EXT-01..03 from the archived independent C4 runs. EXT-04 has no extension commit and EXT-05 has
+    not run, so the checker correctly rejects the incomplete set."""
+    index_path = c.evidence / 'extensions' / 'c4-independent41_archive-index.json'
+    if not index_path.is_file():
+        return []
+    index = json.loads(index_path.read_text())
+    records = []
+    for ext, diff in C4_DIFFS.items():
+        relative = f"evidence/extensions/{diff.replace('/', '_')}"
+        records.append({'id': ext, 'baseline_commit': index['frozen_baseline_commit'],
+                        'extension_commit': index['independent_commits'][ext.replace('-', '')],
+                        'diff_path': relative, 'diff_sha256': hashes.get(relative),
+                        'source': 'archived independent C4 run (archive/pre-cleanup-2026-10-10)'})
+    return records
 
 
 def _passes(metric: dict, value) -> bool:
@@ -1002,6 +1144,7 @@ def main() -> int:
     c.r0()
     if built.get('ipc'):
         c.probes(tree)
+        c.extensions()
     if built.get('ipc') and built.get('asan'):
         c.faults(tree)
     return finish(c, tree)
