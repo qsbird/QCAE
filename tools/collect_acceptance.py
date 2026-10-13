@@ -220,6 +220,8 @@ class Collection:
                                                '--schema', str(self.source / 'schemas/entities/entities.json'),
                                                '--output', str(self.source / 'modules/document/include/qcae/records.hpp'),
                                                '--check', '--permutation-check'], self.source)
+        # clang-format looks for the style file beside the output, so give the probe outputs the repository's.
+        shutil.copy2(self.source / '.clang-format', out / '.clang-format')
         for index in (1, 2):
             self.run(f'probe-entity-generation-{index}', [
                 sys.executable, str(self.source / 'tools/generate_entities.py'),
@@ -469,9 +471,12 @@ def metric_rules(c: Collection) -> dict:
         report = json.loads(path.read_text())
         manifest = json.loads((c.source / PROTECTED.relative_to(ROOT)).read_text())
         protected_units = sum(p.endswith('.cpp') for p in manifest['paths'])
-        if report.get('errors') or report.get('translation_units', 0) < protected_units:
-            raise Missing(f"AST audit covered {report.get('translation_units')} of {protected_units} protected units")
-        return report['direct_entity_type_references'], [path]
+        def count(value) -> int:
+            return len(value) if isinstance(value, list) else int(value or 0)
+        units = count(report.get('translation_units'))
+        if count(report.get('errors')) or units < protected_units:
+            raise Missing(f'AST audit covered {units} of {protected_units} protected units')
+        return count(report['direct_entity_type_references']), [path]
 
     def permutations():
         text = log_text(c, 'probe-entity-permutations')

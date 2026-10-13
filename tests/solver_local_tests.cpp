@@ -322,7 +322,10 @@ int child(int argc, char** argv) {
         return 0;
     if (mode == "symlink") {
         fs::create_symlink("input/model.bdf", argv[3]);
-        return 0;
+        // Leave at once: the runner may terminate this child as soon as the symlink appears, and a
+        // sanitizer's at-exit leak check interrupted that way can leave a helper task in the
+        // process group, which the runner rightly reports as an unknown outcome.
+        std::_Exit(0);
     }
     if (mode == "tamper-input")
         std::ofstream("input/model.bdf") << "damaged frozen copy";
@@ -504,7 +507,17 @@ int main(int argc, char** argv) {
             auto value = request(mode, mode);
             check(runner.start(value).ok(), "Output fault test did not execute");
             const auto observed = wait(runner, value.run_id);
-            check(observed.execution == SolverExecutionState::exited && observed.exit_code == 0 &&
+            // The runner re-checks the output budget while the child runs and terminates it as soon
+            // as a symlink appears; whether that happens before the child exits depends on
+            // scheduling (a sanitizer build exits slowly), so both outcomes are valid for the
+            // symlink child.
+            const bool stopped_for_symlink = mode == std::string("symlink") &&
+                                             !observed.exit_code &&
+                                             (observed.termination_signal == SIGTERM ||
+                                              observed.termination_signal == SIGKILL) &&
+                                             observed.detail.find("symlink") != std::string::npos;
+            check(observed.execution == SolverExecutionState::exited &&
+                      (observed.exit_code == 0 || stopped_for_symlink) &&
                       observed.parsing == SolverParsingState::not_run &&
                       observed.numerical_validation == SolverNumericalState::not_run &&
                       (mode == std::string("corrupt")
