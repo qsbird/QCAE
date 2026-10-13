@@ -196,6 +196,13 @@ class Collection:
         self.run('probe-package-disabled', [sys.executable, str(self.source / 'tests/nastran_disabled_ipc_tests.py'),
                                             '--engine', str(ipc / 'qcae_platform_engine')], self.root)
         self.run('probe-resources', [str(ipc / 'qcae_resource_tests')], self.root)
+        self.run('probe-bp02-material', [sys.executable, str(self.source / 'tests/material_description_ipc_tests.py'),
+                                         '--engine', str(ipc / 'qcae-engine'), '--cli', str(ipc / 'qcae-cli'),
+                                         '--evidence-dir', str(out / 'bp02-material')], self.root)
+        self.run('probe-bp07-batch', [sys.executable, str(self.source / 'tests/batch_translation_ipc_tests.py'),
+                                      '--engine', str(ipc / 'qcae-engine'), '--cli', str(ipc / 'qcae-cli'),
+                                      '--evidence-dir', str(out / 'bp07-batch')], self.root)
+        self.run('probe-record-document', [str(ipc / 'qcae_record_document_tests')], self.root)
         self.run('probe-sync-ipc', [sys.executable, str(self.source / 'tests/c3_sync_ipc_tests.py'),
                                     '--engine', str(ipc / 'qcae-engine'), '--cli', str(ipc / 'qcae-cli'),
                                     '--evidence-dir', str(out / 'sync-ipc')], self.root)
@@ -329,6 +336,35 @@ def legacy_fixtures(c: Collection) -> tuple[list[dict], list[str], str]:
     return fixtures, declared, text
 
 
+# BP cases asserted by labelled tests that print a PASS summary instead of BP records. Each case lists the
+# probes whose PASS line it rests on; the tests' own assertions are the fixed BP assertions.
+DERIVED_BP = {
+    'BP-02': [('probe-bp02-material', r'^PASS: EXT-01 production IPC'),
+              ('probe-record-document', r'^PASS: typed records, schema negatives')],
+    'BP-07': [('probe-bp07-batch', r'^PASS: EXT-02 production registry/CLI/IPC batch translation')],
+    'BP-10': [('probe-package-contributions', r'^PASS: six-category package discovery'),
+              ('probe-package-disabled', r'^PASS: disabled package advertises no Nastran')],
+    'BP-11': [('probe-bp11-14-analysis', r'^PASS: BP-11/14 ')],
+    'BP-14': [('probe-bp11-14-analysis', r'^PASS: BP-11/14 ')],
+    'BP-19': [('probe-bp19-results', r'^PASS: BP-19 ')],
+}
+
+
+def derived_representatives(c: Collection) -> dict[str, list[dict]]:
+    records = {}
+    for case, sources in DERIVED_BP.items():
+        assertions = []
+        for probe, pattern in sources:
+            path = c.evidence / 'logs' / f'{probe}.log'
+            found = path.is_file() and bool(re.search(pattern, path.read_text(errors='replace'), re.M))
+            assertions.append({'expected': f'{probe} prints {pattern}', 'actual': found, 'passed': found,
+                               'log': str(path.relative_to(c.root))})
+        if any((c.evidence / 'logs' / f'{probe}.log').is_file() for probe, _ in sources):
+            records[case] = [{'case_id': case, 'run_id': f'derived-{case}', 'passed': all(a['passed'] for a in assertions),
+                              'assertions': assertions, 'derived_from_labelled_tests': True}]
+    return records
+
+
 def representative_records(c: Collection) -> dict[str, list[dict]]:
     """BP-xx records written by the representative probes, grouped by case."""
     probes = c.evidence / 'probes'
@@ -339,6 +375,8 @@ def representative_records(c: Collection) -> dict[str, list[dict]]:
             for record in read_jsonl(path):
                 if re.fullmatch(r'BP-\d\d', record.get('case_id', '')):
                     records.setdefault(record['case_id'], []).append(record)
+    for case, items in derived_representatives(c).items():
+        records.setdefault(case, []).extend(items)
     return records
 
 
@@ -905,8 +943,47 @@ def metric_rules(c: Collection) -> dict:
         index, path = archive_index()
         return index['skeleton_author_product_patches_during_experiments'], [path]
 
+    def coordinator_bypass():
+        # IRecordStore::commit_rows is the only row-write API; only the coordinator in modules/application may call
+        # it. Every other product call site writes document rows without RecordApplication.
+        product = ('adapters', 'apps', 'features', 'modules', 'profiles', 'ui')
+        sites = []
+        for path in sorted(p for root in product for p in (c.source / root).rglob('*') if p.suffix in ('.cpp', '.hpp')):
+            relative = path.relative_to(c.source).as_posix()
+            if relative.startswith('modules/application/'):
+                continue
+            for number, line in enumerate(path.read_text(errors='replace').splitlines(), 1):
+                if re.search(r'(->|\.)commit_rows\(', line):
+                    sites.append({'path': relative, 'line': number, 'text': line.strip()})
+        out = c.evidence / 'raw' / 'coordinator-bypass.json'
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(sites, indent=2) + '\n')
+        return len(sites), [out]
+
+    def needs(reason: str):
+        def rule():
+            raise Missing(reason)
+        return rule
+
+    desktop = needs('needs the Qt/VTK desktop with a real graphics backend (VTK not installed on this machine)')
+    gpu = needs('needs a locked environment with a GPU and a 1280x720 framebuffer (headless VM without GPU)')
+    gui_entry = needs('the GUI entry needs the Qt/VTK desktop; CLI and thin-script entries alone do not cover 3x3')
+
     rules = {name: architecture_count(name) for name in ARCHITECTURE_CODES}
     rules.update({
+        'document_writes_bypassing_coordinator': coordinator_bypass,
+        'cross_entry_runs_passed': gui_entry,
+        'cross_entry_semantic_mismatches': gui_entry,
+        'tool_lifecycle_runs_passed': desktop,
+        'cancelled_preview_revision_increments': desktop,
+        'picking_cases_passed': desktop,
+        'stale_selection_accepted': desktop,
+        'layout_roundtrip_mismatches': desktop,
+        'layout_changes_model_revision_increments': desktop,
+        'rotation_frame_p95_ms': gpu,
+        'zoom_frame_p95_ms': gpu,
+        'input_feedback_p95_ms': gpu,
+        'task_ack_p95_ms': gpu,
         'extension_exercises_passed': exercises,
         'ext01_protected_files_changed': ext_protected('EXT-01'),
         'ext02_protected_files_changed': ext_protected('EXT-02'),
@@ -1120,14 +1197,21 @@ def main() -> int:
     parser.add_argument('--reuse', action='store_true', help='reuse an existing export and configured builds')
     parser.add_argument('--matrices', default=','.join(MATRICES), help='comma-separated subset to build')
     parser.add_argument('--rescore', type=Path,
-                        help='recompute metrics from an existing collection directory without building or running; '
-                             'writes report/gaps/provenance with a .rescore suffix')
+                        help='recompute metrics from a copy of an existing collection directory (DIR-rescore) without '
+                             'building or running; the original evidence is never modified')
     arguments = parser.parse_args()
     if arguments.out.resolve().is_relative_to(ROOT):
         sys.exit('collect_acceptance: --out must be outside the repository')
     c = Collection(arguments.out, arguments.jobs, arguments.reuse)
     if arguments.rescore:
-        c.root = arguments.rescore.resolve()
+        # Work on a copy so the original run's evidence and its report hashes stay untouched.
+        original = arguments.rescore.resolve()
+        c.root = original.with_name(original.name + '-rescore')
+        shutil.rmtree(c.root, ignore_errors=True)
+        for part in ('source', 'evidence'):
+            shutil.copytree(original / part, c.root / part, symlinks=True)
+        if (original / 'report.json').is_file():
+            shutil.copy2(original / 'report.json', c.root / 'report.json')
         c.source, c.evidence, c.suffix = c.root / 'source', c.root / 'evidence', '.rescore'
         previous = c.root / 'report.json'
         if previous.is_file():
