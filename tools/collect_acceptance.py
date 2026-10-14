@@ -47,6 +47,8 @@ GENERATED_COMMITTED = {'modules/document/include/qcae/records.hpp'}
 CONTRACT_FIELDS = ('reference_evidence', 'owner_module', 'authoritative_data', 'public_contracts',
                    'allowed_dependencies', 'extension_points', 'state_failure_version_rules', 'acceptance_case_ids')
 QT_PREFIX = os.environ.get('QCAE_QT_PREFIX', '/opt/qt/6.11.1/gcc_64')
+# Opt-in real solver for the M4 integration test; enabled only when the explicit binary exists.
+MYSTRAN = Path(os.environ.get('QCAE_MYSTRAN_EXECUTABLE', '/opt/mystran/19.0.0/bin/mystran'))
 
 # Matrix name -> CMake cache arguments. The contract's minimum set is core (all frameworks
 # off), SQLite/headless, desktop and core/SQLite under ASan+UBSan; ipc and nastran_off add
@@ -133,7 +135,8 @@ class Collection:
         else:
             configured = self.run(f'{matrix}-configure', [
                 'cmake', '-S', str(self.source), '-B', str(build), '-G', 'Ninja',
-                '-DCMAKE_BUILD_TYPE=Release', f'-DCMAKE_PREFIX_PATH={QT_PREFIX}', *MATRICES[matrix]],
+                '-DCMAKE_BUILD_TYPE=Release', f'-DCMAKE_PREFIX_PATH={QT_PREFIX}', *MATRICES[matrix],
+                *([f'-DQCAE_MYSTRAN_EXECUTABLE={MYSTRAN}'] if matrix == 'ipc' and MYSTRAN.is_file() else [])],
                 self.root)
         if configured:
             return False
@@ -1095,6 +1098,10 @@ def environment(c: Collection) -> dict:
             'compiler': first(['c++', '--version']), 'qt': qt.group(1) if qt else None, 'vtk': None,
             'sqlite': sqlite, 'build_type': 'Release', 'threads': os.cpu_count(),
             'device_pixel_ratio': None, 'framebuffer_pixels': None,
+            'mystran': {'executable': str(MYSTRAN), 'sha256': sha(MYSTRAN),
+                        'provenance': json.loads((MYSTRAN.parent.parent / 'PROVENANCE.json').read_text())
+                        if (MYSTRAN.parent.parent / 'PROVENANCE.json').is_file() else None}
+            if MYSTRAN.is_file() else None,
             'notes': 'Headless VM without GPU or VTK; null fields are absent here, not unknown.'}
 
 
