@@ -631,7 +631,8 @@ def run(args):
                 assert document_state(second, context) == before_host_lookup
                 first.call("entity.query", {"entity_type": "Node"}, context, status="failed")
                 first.call("entity.query", {"limit": 1001}, context, status="failed")
-                first.call("entity.fields", context=context, status="failed")
+                missing_identity = first.call("entity.fields", context=context, status="needs_input")
+                assert missing_identity["error"]["code"] == "MISSING_INPUT", missing_identity
                 first.call("model.summary", {"analysis_id": "not-a-summary-filter"}, context, status="failed")
                 assert first.current() == context
                 if args.durable:

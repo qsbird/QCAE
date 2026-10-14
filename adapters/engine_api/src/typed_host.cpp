@@ -3,6 +3,7 @@
 #include "typed_values.hpp"
 #include "typed_json.hpp"
 #include "qcae/ipc_api.hpp"
+#include "qcae/operation_inputs.hpp"
 #include "qcae/operations.hpp"
 #include <algorithm>
 #include <QJsonDocument>
@@ -227,6 +228,66 @@ std::size_t detail::typed_json_array_bytes(const operations::Value::Array& value
     return static_cast<std::size_t>(bytes.size());
 }
 
+namespace {
+// Host-owned reads and task controls. They decode generated inputs like contributed operations;
+// contributions cannot claim these names.
+Result<Value> entity_fields(RecordApplication& app,
+                            const OperationContext& context,
+                            const operations::EntityFieldsInput& input) {
+    const auto snapshot = app.snapshot(*context.document);
+    if (!snapshot.ok())
+        return {snapshot.status, {}, snapshot.error};
+    const auto fields = query_fields(snapshot.value->records, input.entity_id);
+    if (!fields.ok())
+        return {fields.status, {}, fields.error};
+    const auto record = snapshot.value->records.find_identity(input.entity_id.value);
+    Value::Object output;
+    for (const auto& field : fields.value->fields)
+        for (const auto& descriptor : record->descriptor().fields)
+            if (descriptor.id == field.id)
+                output.emplace(descriptor.name, field_value(field));
+    return {Status::success,
+            Value(Value::Object{{"entity_id", Value(input.entity_id.value)},
+                                {"kind", Value(record->descriptor().query_kind)},
+                                {"revision", Value(std::to_string(snapshot.value->info.revision))},
+                                {"fields", Value(std::move(output))}}),
+            {}};
+}
+Result<Value> task_control(RecordApplication& app,
+                           TaskService& tasks,
+                           const OperationContext& context,
+                           const std::string& task_id,
+                           bool cancel) {
+    const auto snapshot = app.snapshot(*context.document);
+    if (!snapshot.ok())
+        return {snapshot.status, {}, snapshot.error};
+    const auto current = tasks.query(context.caller, task_id);
+    if (!current.ok())
+        return converted(current, task_value);
+    if (current.value->input.document.id != context.document->id)
+        return {
+            Status::failed,
+            {},
+            Diagnostic{ErrorCode::entity_not_found, "Task belongs to another document", "task_id"}};
+    if (!cancel)
+        return converted(current, task_value);
+    return converted(tasks.cancel(context.caller, task_id), [](const TaskCancelResult& value) {
+        auto output = std::get<Value::Object>(task_value(value.task).data);
+        output.emplace("accepted", Value(value.accepted));
+        return Value(std::move(output));
+    });
+}
+Result<Value>
+task_reconcile(RecordApplication& app, TaskService& tasks, const OperationContext& context) {
+    const auto snapshot = app.snapshot(*context.document);
+    if (!snapshot.ok())
+        return {snapshot.status, {}, snapshot.error};
+    return converted(tasks.reconcile(), [](bool reconciled) {
+        return Value(Value::Object{{"reconciled", Value(reconciled)}});
+    });
+}
+} // namespace
+
 TypedHost::TypedHost(RecordApplication& app, std::function<bool(const ProfileRef&)> supported)
     : TypedHost(app, std::move(supported), default_operations()) {}
 TypedHost::TypedHost(RecordApplication& app,
@@ -248,6 +309,27 @@ TypedHost::TypedHost(RecordApplication& app,
             throw std::invalid_argument("Operation contribution conflicts with host operation: " +
                                         id);
     }
+    auto& registry = state_->registry;
+    checked(registry.register_typed<operations::EntityFieldsInput>(
+        operations::InputTraits<operations::EntityFieldsInput>::definition(),
+        [this](const OperationContext& context, const operations::EntityFieldsInput& input) {
+            return entity_fields(app_, context, input);
+        }));
+    checked(registry.register_typed<operations::TaskStatusInput>(
+        operations::InputTraits<operations::TaskStatusInput>::definition(),
+        [this](const OperationContext& context, const operations::TaskStatusInput& input) {
+            return task_control(app_, tasks(), context, input.task_id, false);
+        }));
+    checked(registry.register_typed<operations::TaskCancelInput>(
+        operations::InputTraits<operations::TaskCancelInput>::definition(),
+        [this](const OperationContext& context, const operations::TaskCancelInput& input) {
+            return task_control(app_, tasks(), context, input.task_id, true);
+        }));
+    checked(registry.register_typed<operations::TaskReconcileInput>(
+        operations::InputTraits<operations::TaskReconcileInput>::definition(),
+        [this](const OperationContext& context, const operations::TaskReconcileInput&) {
+            return task_reconcile(app_, tasks(), context);
+        }));
 }
 TypedHost::~TypedHost() = default;
 TaskService& TypedHost::tasks() {
@@ -265,8 +347,6 @@ Result<bool> TypedHost::reconcile() {
     return tasks_ ? tasks_->reconcile() : Result<bool>{Status::success, true, {}};
 }
 bool TypedHost::supports(std::string_view operation) const {
-    if (intrinsic(operation))
-        return true;
     for (const auto& descriptor : state_->registry.descriptors())
         if (descriptor.definition.operation_id == operation)
             return true;
@@ -309,32 +389,6 @@ QJsonArray TypedHost::capabilities() const {
             {"omitted_version_policy", "installed_version"},
             {"fields", fields}});
     }
-    for (const auto name : intrinsic_operations) {
-        const auto identity_field = name == "entity.fields" ? "entity_id" : "task_id";
-        QJsonArray fields;
-        if (name != "task.reconcile")
-            fields.append(QJsonObject{{"name", identity_field},
-                                      {"wire_type", "string"},
-                                      {"required", true},
-                                      {"allow_empty", false},
-                                      {"units", QJsonArray{}}});
-        QJsonObject entry{{"name", qs(name)},
-                          {"version", 1},
-                          {"requested_version_field", "requested_version"},
-                          {"omitted_version_policy", "installed_version"},
-                          {"available", true},
-                          {"implementation_status", "implemented"},
-                          {"requires_expected_profile", false},
-                          {"requires_document", true},
-                          {"requires_epoch", true},
-                          {"fields", fields}};
-        if (name == "task.reconcile")
-            entry.insert("parameters_schema",
-                         QJsonObject{{"type", "object"},
-                                     {"properties", QJsonObject{}},
-                                     {"additionalProperties", false}});
-        result.append(entry);
-    }
     return result;
 }
 QJsonObject TypedHost::dispatch(const QJsonObject& request, const Caller& caller) {
@@ -344,75 +398,6 @@ QJsonObject TypedHost::dispatch(const QJsonObject& request, const Caller& caller
         const auto ctx = context(request, caller);
         if (caller.principal.empty())
             throw std::invalid_argument("Trusted caller identity is required");
-        if (intrinsic(operation) && ctx.requested_version.value_or(1) != 1)
-            return response(id,
-                            {Status::failed,
-                             {},
-                             Diagnostic{ErrorCode::schema_unsupported,
-                                        "Requested operation contract version is not installed.",
-                                        "requested_version"}});
-        if (operation == "task.reconcile") {
-            if (!ctx.document || !request.value("parameters").toObject().isEmpty())
-                throw std::invalid_argument(
-                    "Task reconciliation requires document context and empty parameters");
-            const auto snapshot = app_.snapshot(*ctx.document);
-            if (!snapshot.ok())
-                return response(id, {snapshot.status, {}, snapshot.error});
-            return response(id, converted(tasks().reconcile(), [](bool reconciled) {
-                                return Value(Value::Object{{"reconciled", Value(reconciled)}});
-                            }));
-        }
-        if (operation == "entity.fields") {
-            const auto params = request.value("parameters").toObject();
-            if (params.size() != 1 || !params.contains("entity_id") || !ctx.document)
-                throw std::invalid_argument(
-                    "Entity fields requires document context and only entity_id");
-            const auto snapshot = app_.snapshot(*ctx.document);
-            if (!snapshot.ok())
-                return response(id, {snapshot.status, {}, snapshot.error});
-            const EntityId identity(string(params, "entity_id"));
-            const auto fields = query_fields(snapshot.value->records, identity);
-            if (!fields.ok())
-                return response(id, {fields.status, {}, fields.error});
-            const auto record = snapshot.value->records.find_identity(identity.value);
-            Value::Object output;
-            for (const auto& field : fields.value->fields) {
-                for (const auto& descriptor : record->descriptor().fields)
-                    if (descriptor.id == field.id)
-                        output.emplace(descriptor.name, field_value(field));
-            }
-            return response(id,
-                            {Status::success,
-                             Value(Value::Object{
-                                 {"entity_id", Value(identity.value)},
-                                 {"kind", Value(record->descriptor().query_kind)},
-                                 {"revision", Value(std::to_string(snapshot.value->info.revision))},
-                                 {"fields", Value(std::move(output))}}),
-                             {}});
-        }
-        if (operation == "task.status" || operation == "task.cancel") {
-            const auto params = request.value("parameters").toObject();
-            if (params.size() != 1 || !params.contains("task_id") || !ctx.document)
-                throw std::invalid_argument(
-                    "Task requests require document context and only task_id");
-            const auto snapshot = app_.snapshot(*ctx.document);
-            if (!snapshot.ok())
-                return response(id, {snapshot.status, {}, snapshot.error});
-            const auto task_id = string(params, "task_id");
-            const auto current = tasks().query(caller, task_id);
-            if (!current.ok())
-                return response(id, converted(current, task_value));
-            if (current.value->input.document.id != ctx.document->id)
-                return failure(id, "ENTITY_NOT_FOUND", "Task belongs to another document");
-            if (operation == "task.status")
-                return response(id, converted(current, task_value));
-            return response(
-                id, converted(tasks().cancel(caller, task_id), [](const TaskCancelResult& value) {
-                    auto output = std::get<Value::Object>(task_value(value.task).data);
-                    output.emplace("accepted", Value(value.accepted));
-                    return Value(std::move(output));
-                }));
-        }
         return response(
             id, state_->registry.invoke(operation, ctx, decode(request.value("parameters"))));
     } catch (const std::invalid_argument& error) {

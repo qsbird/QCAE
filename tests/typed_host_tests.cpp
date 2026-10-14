@@ -2721,7 +2721,12 @@ void version_and_profile_contract() {
         });
     require(host.supports("test.profile_write") && !host.supports("material.create"),
             "explicit contributor replaces default registrations");
-    const auto descriptor = host.capabilities().first().toObject();
+    // Host-owned operations (entity.fields, task.*) share the registry, so find the contribution by
+    // name.
+    QJsonObject descriptor;
+    for (const auto& entry : host.capabilities())
+        if (entry.toObject().value("name") == "test.profile_write")
+            descriptor = entry.toObject();
     require(descriptor.value("available") == true &&
                 descriptor.value("requires_expected_profile") == true &&
                 descriptor.value("version") == 1 && descriptor.value("fields").toArray().isEmpty(),

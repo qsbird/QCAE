@@ -94,6 +94,27 @@
           "optional": true
         }
       ]
+    },
+    {
+      "operation_id": "entity.fields",
+      "version": 1,
+      "schema_id": "qcae.operation.entity.fields.v1",
+      "type_name": "EntityFieldsInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "entity_id",
+          "type": "entity_id"
+        }
+      ]
     }
   ]
 }

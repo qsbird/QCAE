@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "status": "implemented_host_task_operations",
+  "operations": [
+    {
+      "operation_id": "task.status",
+      "version": 1,
+      "schema_id": "qcae.operation.task.status.v1",
+      "type_name": "TaskStatusInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "task_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "operation_id": "task.cancel",
+      "version": 1,
+      "schema_id": "qcae.operation.task.cancel.v1",
+      "type_name": "TaskCancelInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "task_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "operation_id": "task.reconcile",
+      "version": 1,
+      "schema_id": "qcae.operation.task.reconcile.v1",
+      "type_name": "TaskReconcileInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": []
+    }
+  ]
+}
