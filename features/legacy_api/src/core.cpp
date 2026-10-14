@@ -124,8 +124,10 @@ RecordApplicationOptions settings(Limits limits,
                                   std::shared_ptr<IWorkspaceStore> store,
                                   std::function<bool(const ProfileRef&)> supports,
                                   std::vector<OwnedRowHandler> owned_row_handlers,
-                                  std::shared_ptr<const RecordRegistry> registry) {
+                                  std::shared_ptr<const RecordRegistry> registry,
+                                  std::vector<StoredRow> adopted_workspace_rows) {
     RecordApplicationOptions options;
+    options.adopted_workspace_rows = std::move(adopted_workspace_rows);
     options.registry = registry ? std::move(registry) : make_record_registry();
     options.limits = limits;
     options.owned_row_handlers = std::move(owned_row_handlers);
@@ -164,12 +166,14 @@ struct MemoryApplication::State {
           std::shared_ptr<IWorkspaceStore> store,
           std::function<bool(const ProfileRef&)> supports,
           std::vector<OwnedRowHandler> owned_row_handlers,
-          std::shared_ptr<const RecordRegistry> registry)
+          std::shared_ptr<const RecordRegistry> registry,
+          std::vector<StoredRow> adopted_workspace_rows)
         : app(settings(limits,
                        std::move(store),
                        std::move(supports),
                        std::move(owned_row_handlers),
-                       std::move(registry))),
+                       std::move(registry),
+                       std::move(adopted_workspace_rows))),
           limits(limits) {}
     RecordApplication app;
     Limits limits;
@@ -178,13 +182,15 @@ MemoryApplication::MemoryApplication(Limits limits,
                                      std::shared_ptr<IWorkspaceStore> store,
                                      std::function<bool(const ProfileRef&)> supported,
                                      std::vector<OwnedRowHandler> owned_row_handlers,
-                                     std::shared_ptr<const RecordRegistry> registry) {
+                                     std::shared_ptr<const RecordRegistry> registry,
+                                     std::vector<StoredRow> adopted_workspace_rows) {
     try {
         state_ = std::make_unique<State>(limits,
                                          std::move(store),
                                          std::move(supported),
                                          std::move(owned_row_handlers),
-                                         std::move(registry));
+                                         std::move(registry),
+                                         std::move(adopted_workspace_rows));
     } catch (const RecordError& error) {
         throw state_codec::CodecError(error.what());
     }

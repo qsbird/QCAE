@@ -305,6 +305,10 @@ if(QCAE_BUILD_IPC)
           "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_check_ipc_tests.py"
           --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
         set_tests_properties(analysis_check_ipc PROPERTIES TIMEOUT 90)
+        add_test(NAME workspace_migration_ipc COMMAND Python3::Interpreter
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/workspace_migration_ipc_tests.py"
+          --engine $<TARGET_FILE:qcae-engine> --fixtures "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/legacy")
+        set_tests_properties(workspace_migration_ipc PROPERTIES TIMEOUT 60)
       endif()
       set(qcae_common_fixture_arguments)
       if(NOT QCAE_ENABLE_NASTRAN_PACKAGE)

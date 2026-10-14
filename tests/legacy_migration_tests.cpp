@@ -197,13 +197,44 @@ void compare_history(const HistorySnapshot& actual, const QJsonObject& snapshot)
               "History stable identity and label preserved");
     }
 }
-void commit_migration(SqliteWorkspaceStore& destination, const LoadedRows& image) {
-    check(destination.load_rows().generation == 0, "Migration only writes a fresh destination");
-    StoreBatch batch{0, "legacy-migration", {}};
-    for (const auto& row : image.rows)
-        batch.mutations.push_back({row.key, row.value});
-    check(destination.commit_rows(batch).generation == 1,
-          "Detached migration committed atomically");
+// The application validates the detached image and publishes it through its own commit path.
+void adopt_migration(const std::shared_ptr<SqliteWorkspaceStore>& destination,
+                     const LoadedRows& image,
+                     std::shared_ptr<const RecordRegistry> registry) {
+    check(destination->load_rows().generation == 0, "Migration only writes a fresh destination");
+    MemoryApplication adopting({}, destination, {}, {}, std::move(registry), image.rows);
+    check(destination->load_rows().generation == 1, "Detached migration committed atomically");
+}
+// A second migration into a used destination, and a corrupt image, are refused without writes.
+void migration_guards(const std::string& folder,
+                      const LoadedRows& image,
+                      const std::shared_ptr<const RecordRegistry>& registry) {
+    auto used = std::make_shared<SqliteWorkspaceStore>(folder + "-used.sqlite");
+    adopt_migration(used, image, registry);
+    const auto before = used->load_rows();
+    bool refused{};
+    try {
+        MemoryApplication again({}, used, {}, {}, registry, image.rows);
+    } catch (const std::exception&) {
+        refused = true;
+    }
+    const auto after = used->load_rows();
+    check(refused && after.generation == before.generation &&
+              after.rows.size() == before.rows.size(),
+          "Migration into a used destination is refused without writes");
+    auto corrupt_rows = image.rows;
+    check(!corrupt_rows.empty(), "Migration image has rows");
+    corrupt_rows.front().value = std::make_shared<const std::string>("not a record state row");
+    auto fresh = std::make_shared<SqliteWorkspaceStore>(folder + "-corrupt.sqlite");
+    refused = false;
+    try {
+        MemoryApplication corrupt({}, fresh, {}, {}, registry, corrupt_rows);
+    } catch (const std::exception&) {
+        refused = true;
+    }
+    const auto untouched = fresh->load_rows();
+    check(refused && untouched.generation == 0 && untouched.rows.empty(),
+          "A corrupt migration image is refused before anything is written");
 }
 std::vector<std::string> split_key(std::string_view key) {
     std::vector<std::string> result;
@@ -289,7 +320,8 @@ void test_fixture(const fs::path& directory, const QJsonObject& entry, const std
                   original.document->document.id.value == text(expected_info, "document_id") &&
                   original.document->document.epoch.value == text(expected_info, "document_epoch"),
               "Detached migration preserves document identity");
-        commit_migration(*destination, image);
+        adopt_migration(destination, image, registry);
+        migration_guards(working, image, registry);
         MemoryApplication application({}, destination);
         check(application.recovery_available() && !application.current_document().ok(),
               "Recovery remains explicit");
@@ -422,7 +454,7 @@ void test_save_intent(const fs::path& directory,
               state.save_intent->path == target &&
               state.save_intent->project_id == "pending-project" && state.save_intent->save_as,
           "Pending save verification retains exact old snapshot, token and facts");
-    commit_migration(*destination, migrated);
+    adopt_migration(destination, migrated, registry);
     const auto canonical_target = destination->acquire_project(target);
     destination->publish_project(
         canonical_target,

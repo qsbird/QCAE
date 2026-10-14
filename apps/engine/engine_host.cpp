@@ -198,6 +198,7 @@ int run_engine(int argc,
         return 4;
     }
     std::shared_ptr<qcae::IWorkspaceStore> store;
+    std::vector<qcae::StoredRow> adopted_workspace_rows;
     std::unique_ptr<qcae::MemoryApplication> application;
     std::unique_ptr<qcae::ipc::TypedHost> typed;
     qcae::ipc::EngineAssembly assembly;
@@ -238,24 +239,24 @@ int run_engine(int argc,
                                                        parser.value("migrate-from").toStdString()),
                                                    assembly.records);
             }
-            auto sqlite = std::make_shared<qcae::SqliteWorkspaceStore>(
+            // The source was decoded read-only; the application validates the migrated image and
+            // publishes it to this fresh destination through its own commit path.
+            if (migration)
+                adopted_workspace_rows = std::move(migration->rows);
+            store = std::make_shared<qcae::SqliteWorkspaceStore>(
                 parser.value("workspace").toStdString());
-            if (migration) {
-                // The source was decoded read-only; only this fresh destination is published.
-                qcae::StoreBatch batch{0, "legacy-migration", {}};
-                for (const auto& row : migration->rows)
-                    batch.mutations.push_back({row.key, row.value});
-                sqlite->commit_rows(batch);
-            }
-            store = std::move(sqlite);
 #else
             throw std::runtime_error("This build does not include SQLite persistence");
 #endif
         }
         auto owned_rows = std::move(assembly.owned_rows);
         owned_rows.push_back(qcae::task_row_handler());
-        application = std::make_unique<qcae::MemoryApplication>(
-            limits, store, supports_profile, std::move(owned_rows), assembly.records);
+        application = std::make_unique<qcae::MemoryApplication>(limits,
+                                                                store,
+                                                                supports_profile,
+                                                                std::move(owned_rows),
+                                                                assembly.records,
+                                                                std::move(adopted_workspace_rows));
         typed = std::make_unique<qcae::ipc::TypedHost>(application->record_application(),
                                                        supports_profile,
                                                        std::move(assembly.operations),

@@ -134,6 +134,9 @@ struct RecordApplicationOptions {
     std::size_t max_owned_rows{4096};
     std::size_t max_owned_row_bytes{65536};
     std::size_t max_change_journal_entries{128};
+    // Rows of a migrated legacy workspace image. Construction validates them as one complete
+    // application state and publishes them as the first batch of an empty destination store.
+    std::vector<StoredRow> adopted_workspace_rows;
 };
 std::vector<StoredRow> encode_record_state_image(const RecordStateImage&);
 RecordStateImage decode_record_state_image(std::span<const StoredRow>,

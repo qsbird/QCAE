@@ -25,7 +25,8 @@ class MemoryApplication {
                                std::shared_ptr<IWorkspaceStore> store = {},
                                std::function<bool(const ProfileRef&)> profile_supported = {},
                                std::vector<OwnedRowHandler> owned_row_handlers = {},
-                               std::shared_ptr<const RecordRegistry> registry = {});
+                               std::shared_ptr<const RecordRegistry> registry = {},
+                               std::vector<StoredRow> adopted_workspace_rows = {});
     ~MemoryApplication();
     MemoryApplication(const MemoryApplication&) = delete;
     MemoryApplication& operator=(const MemoryApplication&) = delete;

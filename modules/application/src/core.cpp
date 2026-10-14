@@ -237,8 +237,24 @@ RecordApplication::RecordApplication(RecordApplicationOptions options)
     : state_(std::make_unique<State>(
           std::make_shared<const RecordApplicationOptions>(std::move(options)))) {
     state_->data.application_nonce = nonce();
+    const auto& adopted = state_->data.options->adopted_workspace_rows;
+    if (!adopted.empty() && !state_->records)
+        throw RecordError(ErrorCode::invalid_input,
+                          "A migrated workspace needs a destination store");
     if (state_->records) {
         auto loaded = state_->records->load_rows();
+        if (!adopted.empty()) {
+            if (loaded.generation != 0 || !loaded.rows.empty() || loaded.legacy)
+                throw RecordError(ErrorCode::invalid_input,
+                                  "A migrated workspace is only published to an empty destination");
+            // Decoding validates the image as a whole before anything is written.
+            decode_data(LoadedRows{0, adopted, {}}, state_->data.options);
+            StoreBatch batch{0, "legacy-migration", {}};
+            for (const auto& row : adopted)
+                batch.mutations.push_back({row.key, row.value});
+            state_->records->commit_rows(batch);
+            loaded = state_->records->load_rows();
+        }
         state_->data = decode_data(loaded, state_->data.options);
         state_->generation = loaded.generation;
         state_->data.recoverable = state_->data.document.has_value();

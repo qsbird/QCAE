@@ -92,9 +92,10 @@ class Collection:
         self.exit_codes: list[int] = []
         self.results: dict[str, int] = {}
         self.suffix = ''
+        self.build_base = self.root / 'build'
 
     def build_dir(self, matrix: str) -> Path:
-        return self.root / 'build' / matrix
+        return self.build_base / matrix
 
     def run(self, name: str, argv: list[str], cwd: Path, env: dict | None = None) -> int:
         """Run one recorded command; its combined output is an evidence log."""
@@ -380,7 +381,7 @@ def representative_records(c: Collection) -> dict[str, list[dict]]:
     return records
 
 
-def fault_runs(c: Collection) -> list[dict]:
+def fault_run_records(c: Collection) -> list[dict]:
     """All fault run records, numbered 1..10 within each case in execution order."""
     out = c.evidence / 'faults'
     runs, seen = [], {}
@@ -798,14 +799,19 @@ def metric_rules(c: Collection) -> dict:
         return sum(r.get('passed') is True for r in runs), [c.evidence / 'logs' / 'probe-workflow-cli.log']
 
     def delivery_categories():
+        try:
+            fault_count = len(fault_run_records(c))
+        except Missing:
+            fault_count = 0
         present = {
-            'reference_inventory_and_module_contracts': False,
+            'reference_inventory_and_module_contracts': (c.evidence / 'r0' / 'reference-inventory.json').is_file()
+                                                        and len(list((c.evidence / 'r0').glob('AP-*.json'))) == 20,
             'dependency_and_public_api_checks': (c.evidence / 'architecture').is_dir() and
                                                 c.results.get('consumers-core-build') == 0,
             'schema_and_generated_results': (probes / 'records-1.hpp').is_file(),
             'main_workflow_inputs_outputs': (probes / 'workflow-cli').is_dir(),
-            'fault_records_220': (c.evidence / 'raw' / 'faults.json').is_file() and
-                                 len(json.loads((c.evidence / 'raw' / 'faults.json').read_text())) == 220,
+            'fault_records_220': fault_count == 220,
+            # Present only once all five extension records exist; EXT-04 has no commit and EXT-05 has not run.
             'extension_diffs_and_records': False,
             'performance_raw_samples': False,
             'build_regression_migration_logs': (c.evidence / 'ctest').is_dir() and
@@ -1136,7 +1142,7 @@ def finish(c: Collection, tree: str) -> int:
           'source_run_ids': [r.get('run_id') for r in items]} for case, items in sorted(cases.items())],
         indent=2) + '\n')
     try:
-        (raw_dir / 'faults.json').write_text(json.dumps(fault_runs(c), indent=2) + '\n')
+        (raw_dir / 'faults.json').write_text(json.dumps(fault_run_records(c), indent=2) + '\n')
     except Missing as reason:
         gaps['_fault_runs'] = {'gate': 'report', 'reason': str(reason)}
     (c.root / f'gaps{c.suffix}.json').write_text(json.dumps(gaps, indent=2, ensure_ascii=False) + '\n')
@@ -1213,6 +1219,7 @@ def main() -> int:
         if (original / 'report.json').is_file():
             shutil.copy2(original / 'report.json', c.root / 'report.json')
         c.source, c.evidence, c.suffix = c.root / 'source', c.root / 'evidence', '.rescore'
+        c.build_base = original / 'build'  # read only
         previous = c.root / 'report.json'
         if previous.is_file():
             c.commit = json.loads(previous.read_text())['source_commit']
