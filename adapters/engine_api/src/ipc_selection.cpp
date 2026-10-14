@@ -1,4 +1,6 @@
 #include "qcae/ipc_selection.hpp"
+#include "qcae/operation_inputs.hpp"
+#include "typed_json.hpp"
 #include <QJsonArray>
 #include <algorithm>
 #include <charconv>
@@ -173,15 +175,6 @@ QJsonObject encode(const QString& id, const Result<T>& result, Convert convert) 
             {"revision", data.value("revision")},
             {"data", data}};
 }
-std::size_t page_index(const QJsonObject& parameters, const char* name, std::size_t fallback) {
-    if (!parameters.contains(name))
-        return fallback;
-    const auto value = parameters.value(name);
-    const auto n = value.toDouble(-1);
-    if (!value.isDouble() || n < 0 || n > 1000000 || std::floor(n) != n)
-        throw BadSelectionRequest("Invalid page bounds");
-    return static_cast<std::size_t>(n);
-}
 } // namespace
 std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
                                               SelectionService& selections,
@@ -209,26 +202,31 @@ std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
             return failure(id, "REVISION_CONFLICT", "Model changed", "conflict");
         const auto p = request.value("parameters").toObject();
         if (op == "view.create") {
-            fields(p, {"hidden_ids", "camera_fingerprint"});
-            return encode(id,
-                          selections.create_view(snapshot,
-                                                 caller,
-                                                 p.contains("hidden_ids")
-                                                     ? entity_ids(p, "hidden_ids")
-                                                     : std::vector<EntityId>{},
-                                                 p.contains("camera_fingerprint")
-                                                     ? string(p, "camera_fingerprint", true)
-                                                     : std::string{}),
-                          view_json);
+            const auto input = detail::typed_input<operations::ViewCreateInput>(p);
+            if (!input.ok())
+                return detail::typed_input_failure(id, input.status, *input.error);
+            return encode(
+                id,
+                selections.create_view(snapshot,
+                                       caller,
+                                       input.value->hidden_ids.value_or(std::vector<EntityId>{}),
+                                       input.value->camera_fingerprint.value_or(std::string{})),
+                view_json);
         }
         if (op == "selection.get") {
-            fields(p, {"selection_handle", "offset", "limit"});
+            const auto input = detail::typed_input<operations::SelectionGetInput>(p);
+            if (!input.ok())
+                return detail::typed_input_failure(id, input.status, *input.error);
+            const auto offset = input.value->offset.value_or(0);
+            const auto limit = input.value->limit.value_or(1000);
+            if (offset > 1000000 || limit > 1000000)
+                throw BadSelectionRequest("Invalid page bounds");
             return encode(id,
                           selections.page(snapshot,
                                           caller,
-                                          string(p, "selection_handle"),
-                                          page_index(p, "offset", 0),
-                                          page_index(p, "limit", 1000)),
+                                          input.value->selection_handle,
+                                          static_cast<std::size_t>(offset),
+                                          static_cast<std::size_t>(limit)),
                           [](const SelectionPage& page) {
                               auto result = handle_json(page.handle);
                               result.insert("entity_ids", ids_json(page.ids));
@@ -236,31 +234,43 @@ std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
                               return result;
                           });
         }
-        const auto view_id = string(p, "view_session_id");
-        const auto view = op == "view.update" ? selections.inspect_view(snapshot, caller, view_id)
-                                              : selections.get_view(snapshot, caller, view_id);
-        if (!view.ok())
-            return encode(id, view, view_json);
-        if ((op != "view.render_data" || p.contains("expected_view_revision")) &&
-            integer(p, "expected_view_revision") != view.value->view_revision)
-            return failure(id, "REVISION_CONFLICT", "View changed", "conflict");
+        // The remaining operations address an existing view; a stated view revision must match it.
+        const auto checked_view = [&](const std::string& view_id,
+                                      std::optional<std::uint64_t> expected,
+                                      bool inspect) -> std::optional<QJsonObject> {
+            const auto view = inspect ? selections.inspect_view(snapshot, caller, view_id)
+                                      : selections.get_view(snapshot, caller, view_id);
+            if (!view.ok())
+                return encode(id, view, view_json);
+            if (expected && *expected != view.value->view_revision)
+                return failure(id, "REVISION_CONFLICT", "View changed", "conflict");
+            return std::nullopt;
+        };
         if (op == "view.update") {
-            fields(
-                p,
-                {"view_session_id", "expected_view_revision", "hidden_ids", "camera_fingerprint"});
+            const auto input = detail::typed_input<operations::ViewUpdateInput>(p);
+            if (!input.ok())
+                return detail::typed_input_failure(id, input.status, *input.error);
+            if (auto rejected = checked_view(
+                    input.value->view_session_id, input.value->expected_view_revision, true))
+                return *rejected;
             return encode(id,
                           selections.update_view(snapshot,
                                                  caller,
-                                                 view_id,
-                                                 entity_ids(p, "hidden_ids"),
-                                                 string(p, "camera_fingerprint", true)),
+                                                 input.value->view_session_id,
+                                                 input.value->hidden_ids,
+                                                 input.value->camera_fingerprint),
                           view_json);
         }
         if (op == "view.render_data") {
-            fields(p, {"view_session_id", "expected_view_revision"});
+            const auto input = detail::typed_input<operations::ViewRenderDataInput>(p);
+            if (!input.ok())
+                return detail::typed_input_failure(id, input.status, *input.error);
+            if (auto rejected = checked_view(
+                    input.value->view_session_id, input.value->expected_view_revision, false))
+                return *rejected;
             return encode(
                 id,
-                selections.render_packet(snapshot, caller, view_id),
+                selections.render_packet(snapshot, caller, input.value->view_session_id),
                 [](const RenderPacket& packet) {
                     QJsonArray points, beams, geometry_lines;
                     for (const auto& point : packet.points)
@@ -294,22 +304,29 @@ std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
                 });
         }
         if (op == "selection.combine") {
-            fields(p, {"view_session_id", "expected_view_revision", "left", "right", "operator"});
-            const auto operation = string(p, "operator");
-            if (operation != "union" && operation != "intersection" && operation != "difference")
-                throw BadSelectionRequest("Invalid set operator");
+            const auto input = detail::typed_input<operations::SelectionCombineInput>(p);
+            if (!input.ok())
+                return detail::typed_input_failure(id, input.status, *input.error);
+            if (auto rejected = checked_view(
+                    input.value->view_session_id, input.value->expected_view_revision, false))
+                return *rejected;
+            const auto& operation = input.value->operator_;
             return encode(id,
                           selections.combine(snapshot,
                                              caller,
-                                             view_id,
-                                             string(p, "left"),
-                                             string(p, "right"),
+                                             input.value->view_session_id,
+                                             input.value->left,
+                                             input.value->right,
                                              operation == "union" ? SetOperation::union_
                                              : operation == "intersection"
                                                  ? SetOperation::intersection
                                                  : SetOperation::difference),
                           handle_json);
         }
+        // selection.evaluate takes a nested predicate and scope, which it still decodes by hand.
+        const auto view_id = string(p, "view_session_id");
+        if (auto rejected = checked_view(view_id, integer(p, "expected_view_revision"), false))
+            return *rejected;
         fields(p, {"view_session_id", "expected_view_revision", "predicate", "scope"});
         if (!p.value("predicate").isObject() || !p.value("scope").isObject())
             throw BadSelectionRequest("Predicate and scope must be objects");

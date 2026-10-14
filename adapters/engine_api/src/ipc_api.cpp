@@ -566,22 +566,13 @@ using LegacyHandler = LegacyReply (*)(const LegacyCall&);
 
 // Hand-decoded operations whose parameters are checked by a generated input type; only these
 // accept requested_version.
-constexpr std::array<std::string_view, 16> generated_input_operations{"project.open",
-                                                                      "project.create",
-                                                                      "project.save",
-                                                                      "project.save_as",
-                                                                      "project.close",
-                                                                      "changes.commit",
-                                                                      "capabilities.list",
-                                                                      "project.current",
-                                                                      "project.status",
-                                                                      "model.summary",
-                                                                      "history.list",
-                                                                      "history.undo",
-                                                                      "history.redo",
-                                                                      "operations.get",
-                                                                      "entity.query",
-                                                                      "entity.references"};
+constexpr std::array<std::string_view, 21> generated_input_operations{
+    "project.open",     "project.create", "project.save",      "project.save_as",
+    "project.close",    "changes.commit", "capabilities.list", "project.current",
+    "project.status",   "model.summary",  "history.list",      "history.undo",
+    "history.redo",     "operations.get", "entity.query",      "entity.references",
+    "view.create",      "view.update",    "view.render_data",  "selection.get",
+    "selection.combine"};
 bool has_generated_input(std::string_view operation) {
     return std::ranges::find(generated_input_operations, operation) !=
            generated_input_operations.end();
@@ -596,7 +587,7 @@ struct InputContract {
     std::string_view output_type;
 };
 template <class Input> constexpr auto definition_of = &operations::InputTraits<Input>::definition;
-constexpr std::array<InputContract, 11> input_contracts{{
+constexpr std::array<InputContract, 16> input_contracts{{
     {"project.create",
      definition_of<operations::ProjectCreateInput>,
      "ProjectCreateInput",
@@ -641,6 +632,20 @@ constexpr std::array<InputContract, 11> input_contracts{{
      definition_of<operations::HistoryRedoInput>,
      "HistoryRedoInput",
      "ChangeReceipt"},
+    {"view.create", definition_of<operations::ViewCreateInput>, "ViewCreateInput", "ViewSession"},
+    {"view.update", definition_of<operations::ViewUpdateInput>, "ViewUpdateInput", "ViewSession"},
+    {"view.render_data",
+     definition_of<operations::ViewRenderDataInput>,
+     "ViewRenderDataInput",
+     "RenderPacket"},
+    {"selection.get",
+     definition_of<operations::SelectionGetInput>,
+     "SelectionGetInput",
+     "SelectionPage"},
+    {"selection.combine",
+     definition_of<operations::SelectionCombineInput>,
+     "SelectionCombineInput",
+     "SelectionHandle"},
 }};
 void describe_input_contract(QJsonObject& entry, std::string_view operation) {
     if (operation == "project.open")
@@ -1084,6 +1089,16 @@ QJsonObject dispatch(MemoryApplication& app,
                     ? operations::InputTraits<operations::EntityQueryInput>::definition()
                     : operations::InputTraits<operations::EntityReferencesInput>::definition();
             if (const auto rejected = version_rejection(request, id, definition.version))
+                return *rejected;
+        }
+        // Selection and view operations with generated contracts honour requested_version here,
+        // before the selection service decodes them.
+        if (const auto contract =
+                std::ranges::find(input_contracts, std::string_view(op), &InputContract::operation);
+            selections && contract != input_contracts.end() &&
+            (op.starts_with("view.") || op.starts_with("selection."))) {
+            if (const auto rejected =
+                    version_rejection(request, id, contract->definition().version))
                 return *rejected;
         }
         if (selections) {

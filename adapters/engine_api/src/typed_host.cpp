@@ -209,6 +209,17 @@ void checked(const Result<bool>& result) {
 }
 } // namespace
 
+operations::Value detail::typed_value(const QJsonValue& value) {
+    return decode(value);
+}
+QJsonObject detail::typed_input_failure(const QString& id, Status status, const Diagnostic& error) {
+    auto output =
+        failure(id, qs(error_name(error.code)), qs(error.message), qs(status_name(status)));
+    auto diagnostic = output.value("error").toObject();
+    diagnostic.insert("field", qs(error.field));
+    output.insert("error", diagnostic);
+    return output;
+}
 QJsonArray detail::typed_json_array(const operations::Value::Array& values) {
     QJsonArray array;
     transport::json_ledger::ObjectCopies copies;

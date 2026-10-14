@@ -168,7 +168,7 @@ qcae_warnings(empty_string)
             {"field_id": 1, "name": "visible", "type": "boolean"},
             {"field_id": 2, "name": "revision", "type": "uint64_string"},
             {"field_id": 3, "name": "offset", "type": "unsigned_integer", "optional": True},
-            {"field_id": 4, "name": "mode", "type": "enum", "values": ["through", "visible_only"]},
+            {"field_id": 4, "name": "operator", "type": "enum", "values": ["through", "visible_only"]},
         ]
         probe.write_text(json.dumps(schema))
         self.generate()
@@ -177,15 +177,15 @@ qcae_warnings(empty_string)
 #include <cstdint>
 using namespace qcae;
 using namespace qcae::operations;
-Value input(Value visible, Value revision, Value mode) {
+Value input(Value visible, Value revision, Value op) {
     return Value(Value::Object{{"visible", std::move(visible)}, {"revision", std::move(revision)},
-                               {"mode", std::move(mode)}});
+                               {"operator", std::move(op)}});
 }
 int main() {
     const auto good = InputTraits<TestEmptyInput>::from_value(
         input(Value(true), Value("18446744073709551615"), Value("visible_only")));
     const auto with_offset = InputTraits<TestEmptyInput>::from_value(Value(Value::Object{
-        {"visible", Value(false)}, {"revision", Value("0")}, {"mode", Value("through")},
+        {"visible", Value(false)}, {"revision", Value("0")}, {"operator", Value("through")},
         {"offset", Value(std::int64_t{7})}}));
     const bool rejects =
         !InputTraits<TestEmptyInput>::from_value(input(Value("yes"), Value("1"), Value("through"))).ok() &&
@@ -193,11 +193,11 @@ int main() {
         !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value("-1"), Value("through"))).ok() &&
         !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value("1"), Value("all"))).ok() &&
         !InputTraits<TestEmptyInput>::from_value(Value(Value::Object{
-            {"visible", Value(true)}, {"revision", Value("1")}, {"mode", Value("through")},
+            {"visible", Value(true)}, {"revision", Value("1")}, {"operator", Value("through")},
             {"offset", Value(std::int64_t{-1})}})).ok();
     const auto fields = InputTraits<TestEmptyInput>::definition().fields;
     return good.ok() && good.value->visible && good.value->revision == UINT64_MAX &&
-        good.value->mode == "visible_only" && !good.value->offset && with_offset.ok() &&
+        good.value->operator_ == "visible_only" && !good.value->offset && with_offset.ok() &&
         with_offset.value->offset == 7u && rejects &&
         fields[3].values == std::vector<std::string>{"through", "visible_only"} &&
         fields[0].values.empty() &&

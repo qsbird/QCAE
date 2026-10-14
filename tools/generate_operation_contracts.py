@@ -30,6 +30,16 @@ CONTEXT_REQUIRED = ('document', 'epoch', 'expected_revision', 'idempotency_key')
 CONTEXT = (*CONTEXT_REQUIRED, 'expected_profile')
 EFFECTS = {'read_only', 'document_write', 'preview', 'background_task', 'auxiliary_write'}
 IDENTIFIER = re.compile(r'[A-Za-z][A-Za-z0-9_]*\Z')
+# Wire names that are C++ keywords get a trailing underscore in generated code only.
+CPP_KEYWORDS = {'and', 'bool', 'case', 'class', 'default', 'delete', 'double', 'enum', 'explicit', 'export',
+                'false', 'float', 'for', 'friend', 'if', 'int', 'long', 'namespace', 'new', 'not', 'operator',
+                'or', 'private', 'protected', 'public', 'register', 'return', 'short', 'signed', 'sizeof',
+                'static', 'struct', 'switch', 'template', 'this', 'throw', 'true', 'try', 'typedef', 'typename',
+                'union', 'unsigned', 'using', 'virtual', 'void', 'volatile', 'while', 'xor'}
+
+
+def member(field: dict) -> str:
+    return field['name'] + '_' if field['name'] in CPP_KEYWORDS else field['name']
 WIRE_ID = re.compile(r'[a-z][a-z0-9_.]*\Z')
 
 
@@ -133,7 +143,7 @@ def render(operations: list[dict]) -> str:
         name = op['type_name']
         fields = op['fields']
         lines.append(f'struct {name} {{')
-        lines.extend(f"    {('std::optional<' + TYPES[field['type']] + '>') if field.get('optional', False) else TYPES[field['type']]} {field['name']}{{}};" for field in fields)
+        lines.extend(f"    {('std::optional<' + TYPES[field['type']] + '>') if field.get('optional', False) else TYPES[field['type']]} {member(field)}{{}};" for field in fields)
         lines.extend(['};', '', f'template <> struct InputTraits<{name}> {{',
                       f'    static constexpr std::string_view operation_id = {literal(op["operation_id"])};',
                       f'    static constexpr std::string_view schema_id = {literal(op["schema_id"])};',
@@ -159,24 +169,25 @@ def render(operations: list[dict]) -> str:
             lines.append('        const auto& fields = **object.value;')
         for field in fields:
             key = field['name']
+            local = member(field)
             optional = field.get('optional', False)
             indent = '            ' if optional else '        '
             if optional:
-                lines.append(f"        std::optional<{TYPES[field['type']]}> {key};")
+                lines.append(f"        std::optional<{TYPES[field['type']]}> {local};")
                 lines.append(f'        if (const auto found = fields.find({literal(key)}); found != fields.end()) {{')
                 arguments = 'found->second'
-                decoded = key + '_decoded'
+                decoded = local + '_decoded'
             else:
                 arguments = f'fields.at({literal(key)})'
-                decoded = key
+                decoded = local
             if field['type'] == 'quantity':
                 units = field['units']
-                lines.append(f'{indent}static constexpr std::array<std::string_view, {len(units)}> {key}_units{{' + ', '.join(literal(unit) for unit in units) + '};')
-                arguments += f', {key}_units'
+                lines.append(f'{indent}static constexpr std::array<std::string_view, {len(units)}> {local.rstrip('_')}_units{{' + ', '.join(literal(unit) for unit in units) + '};')
+                arguments += f', {local.rstrip('_')}_units'
             if field['type'] == 'enum':
                 values = field['values']
-                lines.append(f'{indent}static constexpr std::array<std::string_view, {len(values)}> {key}_values{{' + ', '.join(literal(v) for v in values) + '};')
-                arguments += f', {key}_values'
+                lines.append(f'{indent}static constexpr std::array<std::string_view, {len(values)}> {local.rstrip('_')}_values{{' + ', '.join(literal(v) for v in values) + '};')
+                arguments += f', {local.rstrip('_')}_values'
             decoder = {'string': 'string_value', 'vector3_mm': 'vector3', 'enum': 'enum_value'}.get(field['type'], field['type'])
             arguments += f', {literal("input." + key)}'
             if field['type'] in {'string', 'entity_id_array'} and field.get('allow_empty', False):
@@ -186,21 +197,22 @@ def render(operations: list[dict]) -> str:
                           f'{indent}    return {{{decoded}.status, std::nullopt, {decoded}.error}};',
                           indent + '}'])
             if optional:
-                lines.extend([f'{indent}{key} = *{decoded}.value;',
-                              f'{indent}wire::observe_input_copy(*{key}, *{key});', '        }'])
-        values = [field['name'] if field.get('optional', False) else '*' + field['name'] + '.value' for field in fields]
+                lines.extend([f'{indent}{local} = *{decoded}.value;',
+                              f'{indent}wire::observe_input_copy(*{local}, *{local});', '        }'])
+        values = [member(field) if field.get('optional', False) else '*' + member(field) + '.value' for field in fields]
         lines.extend([f'        {name} input{{' + ', '.join(values) + '};',
-                      '        wire::observe_input_copy(input' + ''.join(', input.' + field['name'] for field in fields) + ');',
+                      '        wire::observe_input_copy(input' + ''.join(', input.' + member(field) for field in fields) + ');',
                       '        return {Status::success, std::move(input), std::nullopt};',
                       '    }', '', f'    static Value to_value(const {name}&' + (' input' if fields else '') + ') {',
                       '        Value::Object object;'])
         for field in fields:
             key = field['name']
+            local = member(field)
             kind = field['type']
             optional = field.get('optional', False)
-            value = f'*input.{key}' if optional else f'input.{key}'
+            value = f'*input.{local}' if optional else f'input.{local}'
             if kind == 'entity_id':
-                expression = f'Value({value}.value)' if not optional else f'Value(input.{key}->value)'
+                expression = f'Value({value}.value)' if not optional else f'Value(input.{local}->value)'
             elif kind in {'positive_uint32', 'unsigned_integer'}:
                 expression = f'Value(static_cast<std::int64_t>({value}))'
             elif kind == 'uint64_string':
@@ -210,15 +222,15 @@ def render(operations: list[dict]) -> str:
             else:
                 expression = f'Value({value})'
             if optional:
-                lines.extend([f'        if (input.{key}) {{', f'            object.emplace({literal(key)}, {expression});',
+                lines.extend([f'        if (input.{local}) {{', f'            object.emplace({literal(key)}, {expression});',
                               f'            wire::observe_key({literal(key)});', '        }'])
             else:
                 lines.extend([f'        object.emplace({literal(key)}, {expression});',
                               f'        wire::observe_key({literal(key)});'])
         lines.extend(['        return Value(std::move(object));', '    }', ''])
         # Copy accounting for the shared feature plan helpers; covers every schema field.
-        members = ''.join(', input.' + field['name'] for field in fields)
-        moved = ' + '.join(f"wire::moved_bytes(input.{field['name']})" for field in fields) or '0'
+        members = ''.join(', input.' + member(field) for field in fields)
+        moved = ' + '.join(f"wire::moved_bytes(input.{member(field)})" for field in fields) or '0'
         lines.extend([f'    static void observe_copy(const {name}& input) noexcept {{',
                       f'        wire::observe_input_copy(input{members});', '    }', '',
                       f'    static std::size_t moved_bytes(const {name}&' + (' input' if fields else '') + ') noexcept {',
