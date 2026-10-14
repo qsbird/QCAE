@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "status": "implemented_host_event_feed_operations",
+  "operations": [
+    {
+      "operation_id": "events.subscribe",
+      "version": 1,
+      "schema_id": "qcae.operation.events.subscribe.v1",
+      "type_name": "EventsSubscribeInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "engine_instance_id",
+          "type": "string",
+          "optional": true,
+          "allow_empty": true
+        },
+        {
+          "field_id": 2,
+          "name": "after_sequence",
+          "type": "uint64_string",
+          "optional": true
+        },
+        {
+          "field_id": 3,
+          "name": "limit",
+          "type": "unsigned_integer",
+          "optional": true
+        },
+        {
+          "field_id": 4,
+          "name": "include_document_summary",
+          "type": "boolean",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "operation_id": "events.read",
+      "version": 1,
+      "schema_id": "qcae.operation.events.read.v1",
+      "type_name": "EventsReadInput",
+      "effect": "read_only",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "engine_instance_id",
+          "type": "string",
+          "optional": true,
+          "allow_empty": true
+        },
+        {
+          "field_id": 2,
+          "name": "after_sequence",
+          "type": "uint64_string",
+          "optional": true
+        },
+        {
+          "field_id": 3,
+          "name": "limit",
+          "type": "unsigned_integer",
+          "optional": true
+        },
+        {
+          "field_id": 4,
+          "name": "include_document_summary",
+          "type": "boolean",
+          "optional": true
+        }
+      ]
+    }
+  ]
+}

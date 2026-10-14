@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "status": "implemented_host_display_resource_operations",
+  "operations": [
+    {
+      "operation_id": "view.render_resource",
+      "version": 1,
+      "schema_id": "qcae.operation.view.render_resource.v1",
+      "type_name": "ViewRenderResourceInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "view_session_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "expected_view_revision",
+          "type": "uint64_string"
+        },
+        {
+          "field_id": 3,
+          "name": "base_revision",
+          "type": "uint64_string",
+          "optional": true
+        },
+        {
+          "field_id": 4,
+          "name": "base_view_revision",
+          "type": "uint64_string",
+          "optional": true
+        },
+        {
+          "field_id": 5,
+          "name": "allow_inline_empty",
+          "type": "boolean",
+          "optional": true
+        },
+        {
+          "field_id": 6,
+          "name": "allow_model_rebase",
+          "type": "boolean",
+          "optional": true
+        },
+        {
+          "field_id": 7,
+          "name": "include_changed_rows",
+          "type": "boolean",
+          "optional": true
+        },
+        {
+          "field_id": 8,
+          "name": "render_wire_version",
+          "type": "unsigned_integer",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "operation_id": "resources.describe",
+      "version": 1,
+      "schema_id": "qcae.operation.resources.describe.v1",
+      "type_name": "ResourcesDescribeInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "resource_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "view_session_id",
+          "type": "string"
+        },
+        {
+          "field_id": 3,
+          "name": "expected_view_revision",
+          "type": "uint64_string"
+        }
+      ]
+    },
+    {
+      "operation_id": "resources.read",
+      "version": 1,
+      "schema_id": "qcae.operation.resources.read.v1",
+      "type_name": "ResourcesReadInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "resource_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "view_session_id",
+          "type": "string"
+        },
+        {
+          "field_id": 3,
+          "name": "expected_view_revision",
+          "type": "uint64_string"
+        },
+        {
+          "field_id": 4,
+          "name": "offset",
+          "type": "uint64_string"
+        }
+      ]
+    },
+    {
+      "operation_id": "resources.release",
+      "version": 1,
+      "schema_id": "qcae.operation.resources.release.v1",
+      "type_name": "ResourcesReleaseInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": false,
+        "epoch": false,
+        "expected_revision": false,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "resource_id",
+          "type": "string"
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 #include "qcae/render_service.hpp"
 #include "qcae/ipc_api.hpp"
 #include "qcae/ipc_model.hpp"
+#include "qcae/operation_inputs.hpp"
 #include "qcae/operations.hpp"
 #include "qcae/render_wire.hpp"
 #include "qcae/json_ledger.hpp"
+#include "typed_json.hpp"
 #include <QJsonArray>
 #include <algorithm>
 #include <charconv>
@@ -38,6 +40,12 @@ void fields(const QJsonObject& value, std::initializer_list<const char*> allowed
             }))
             throw RecordError(ErrorCode::invalid_input, "Unexpected field: " + key.toStdString());
     }
+}
+// Display identifiers stay bounded beyond the generated nonempty-string contract.
+std::string bounded(std::string text, const char* key) {
+    if (text.size() > 1024)
+        throw RecordError(ErrorCode::invalid_input, std::string("Invalid string: ") + key);
+    return text;
 }
 template <class T> const T& checked(const Result<T>& value) {
     if (!value.ok())
@@ -142,10 +150,38 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
         const auto params = request.value("parameters").toObject();
         QJsonObject data;
         if (op == "resources.release") {
-            fields(params, {"resource_id"});
-            const auto released = resources_.release(caller, string(params, "resource_id"));
+            const auto input = detail::typed_input<operations::ResourcesReleaseInput>(params);
+            if (!input.ok())
+                return detail::typed_input_failure(id, input.status, *input.error);
+            const auto released =
+                resources_.release(caller, bounded(input.value->resource_id, "resource_id"));
             data.insert("released", checked(released));
         } else {
+            std::optional<operations::ViewRenderResourceInput> render;
+            std::optional<operations::ResourcesReadInput> resource;
+            if (op == "view.render_resource") {
+                auto input = detail::typed_input<operations::ViewRenderResourceInput>(params);
+                if (!input.ok())
+                    return detail::typed_input_failure(id, input.status, *input.error);
+                render = std::move(*input.value);
+            } else if (op == "resources.describe") {
+                auto input = detail::typed_input<operations::ResourcesDescribeInput>(params);
+                if (!input.ok())
+                    return detail::typed_input_failure(id, input.status, *input.error);
+                resource = operations::ResourcesReadInput{std::move(input.value->resource_id),
+                                                          std::move(input.value->view_session_id),
+                                                          input.value->expected_view_revision,
+                                                          0};
+            } else {
+                auto input = detail::typed_input<operations::ResourcesReadInput>(params);
+                if (!input.ok())
+                    return detail::typed_input_failure(id, input.status, *input.error);
+                resource = std::move(*input.value);
+            }
+            const auto view_id = bounded(
+                render ? render->view_session_id : resource->view_session_id, "view_session_id");
+            const auto expected_view =
+                render ? render->expected_view_revision : resource->expected_view_revision;
             const DocumentRef document{DocumentId(string(request, "document_id")),
                                        DocumentEpoch(string(request, "document_epoch"))};
             const auto revision = number(request, "expected_revision");
@@ -154,53 +190,32 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
             const auto& snapshot = record_snapshot.records;
             if (snapshot.version().revision != revision)
                 throw RecordError(ErrorCode::revision_conflict, "Resource model revision is stale");
-            const auto view_id = string(params, "view_session_id");
-            if (op == "view.render_resource") {
-                fields(params,
-                       {"view_session_id",
-                        "expected_view_revision",
-                        "base_revision",
-                        "base_view_revision",
-                        "allow_inline_empty",
-                        "allow_model_rebase",
-                        "include_changed_rows",
-                        "render_wire_version"});
-                for (const auto* field :
-                     {"allow_inline_empty", "allow_model_rebase", "include_changed_rows"})
-                    if (params.contains(field) && !params.value(field).isBool())
-                        throw RecordError(ErrorCode::invalid_input,
-                                          std::string(field) + " must be a boolean");
+            if (render) {
                 unsigned wire_version = 2;
-                if (params.contains("render_wire_version")) {
-                    const auto requested = params.value("render_wire_version");
-                    if (!requested.isDouble())
-                        throw RecordError(ErrorCode::invalid_input,
-                                          "render_wire_version must be an integer");
-                    const auto number = requested.toDouble();
-                    if (number != 1 && number != 2 && number != 3)
+                if (const auto requested = render->render_wire_version) {
+                    if (*requested != 1 && *requested != 2 && *requested != 3)
                         throw RecordError(ErrorCode::unsupported_capability,
                                           "Unsupported display wire version");
-                    wire_version = static_cast<unsigned>(number);
+                    wire_version = static_cast<unsigned>(*requested);
                 }
-                if (params.contains("base_revision") != params.contains("base_view_revision"))
+                if (render->base_revision.has_value() != render->base_view_revision.has_value())
                     throw RecordError(ErrorCode::invalid_input,
                                       "Both display base versions are required together");
-                const bool rebase = params.value("allow_model_rebase").toBool();
+                const bool rebase = render->allow_model_rebase.value_or(false);
                 auto view_result = rebase ? selections_.inspect_view(snapshot, caller, view_id)
                                           : selections_.get_view(snapshot, caller, view_id);
                 observe_view_result(view_result);
                 const auto& previous_view = checked(view_result);
-                const auto expected_view = number(params, "expected_view_revision");
                 if (previous_view.view_revision != expected_view)
                     throw RecordError(ErrorCode::revision_conflict,
                                       "Resource view revision is stale");
                 if (rebase) {
-                    if (!params.contains("base_revision"))
+                    if (!render->base_revision)
                         throw RecordError(ErrorCode::invalid_input,
                                           "Model rebase requires both installed base versions");
-                    const auto base = number(params, "base_revision");
+                    const auto base = *render->base_revision;
                     if (previous_view.model_revision != base || revision <= base ||
-                        number(params, "base_view_revision") != expected_view)
+                        *render->base_view_revision != expected_view)
                         throw RecordError(ErrorCode::revision_conflict,
                                           "Model rebase has an inconsistent installed baseline");
                     if (expected_view == std::numeric_limits<std::uint64_t>::max())
@@ -238,8 +253,8 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                     projectors_.erase(projectors_.begin());
                 auto& projector = projectors_.try_emplace(view_id, contributions_).first->second;
                 const auto previous = projector.version();
-                bool full = !previous || !params.contains("base_revision") ||
-                            previous->revision != number(params, "base_revision");
+                bool full = !previous || !render->base_revision ||
+                            previous->revision != *render->base_revision;
                 // View revision is checked against the actual projection below; never trust a
                 // client's claimed baseline after a lost response or another consumer update.
                 std::vector<DirectedRenderChange> changes;
@@ -256,8 +271,8 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                 }
                 auto result = projector.update(snapshot, view, changes, full);
                 checked(result);
-                if (!result.value->full && result.value->delta.base_view_revision !=
-                                               number(params, "base_view_revision")) {
+                if (!result.value->full &&
+                    result.value->delta.base_view_revision != *render->base_view_revision) {
                     result = projector.update(snapshot, view, {}, true);
                     checked(result);
                 }
@@ -292,7 +307,7 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                                           "Display visibility requires render wire version 2");
                 }
                 const auto& delta = result.value->delta;
-                const bool inline_empty = params.value("allow_inline_empty").toBool() && !reset &&
+                const bool inline_empty = render->allow_inline_empty.value_or(false) && !reset &&
                                           delta.points.empty() && delta.geometry_lines.empty() &&
                                           delta.visibility.empty();
                 QJsonArray changed_ids;
@@ -320,7 +335,7 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                     changed_ids_copies.append(value);
                 }
                 EntityRowsJson rows;
-                const bool rows_requested = params.value("include_changed_rows").toBool();
+                const bool rows_requested = render->include_changed_rows.value_or(false);
                 if (rows_requested && !refresh_tree) {
                     const std::vector<std::string> row_ids(identities.begin(), identities.end());
                     for (const auto& identity : row_ids)
@@ -410,23 +425,18 @@ QJsonObject RenderService::dispatch(const QJsonObject& request, const Caller& ca
                 const auto view_result = selections_.get_view(snapshot, caller, view_id);
                 observe_view_result(view_result);
                 const auto& view = checked(view_result);
-                if (view.view_revision != number(params, "expected_view_revision"))
+                if (view.view_revision != expected_view)
                     throw RecordError(ErrorCode::revision_conflict,
                                       "Resource view revision is stale");
                 const ResourceVersion version{document, revision, view_id, view.view_revision};
                 observe_resource_version_copy(version);
-                fields(params,
-                       {"resource_id", "view_session_id", "expected_view_revision", "offset"});
-                const auto resource_id = string(params, "resource_id");
+                const auto resource_id = bounded(resource->resource_id, "resource_id");
                 if (op == "resources.describe") {
-                    if (params.contains("offset"))
-                        throw RecordError(ErrorCode::invalid_input,
-                                          "describe does not accept offset");
                     const auto result = resources_.describe(caller, resource_id, version);
                     data = resource_manifest_json(checked(result));
                 } else {
                     const auto result =
-                        resources_.read(caller, resource_id, version, number(params, "offset"));
+                        resources_.read(caller, resource_id, version, resource->offset);
                     data = resource_chunk_json(checked(result));
                 }
             }

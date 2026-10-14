@@ -191,6 +191,8 @@ int main() {
         !InputTraits<TestEmptyInput>::from_value(input(Value("yes"), Value("1"), Value("through"))).ok() &&
         !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value(std::int64_t{1}), Value("through"))).ok() &&
         !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value("-1"), Value("through"))).ok() &&
+        !InputTraits<TestEmptyInput>::from_value(
+            input(Value(true), Value("18446744073709551616"), Value("through"))).ok() &&
         !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value("1"), Value("all"))).ok() &&
         !InputTraits<TestEmptyInput>::from_value(Value(Value::Object{
             {"visible", Value(true)}, {"revision", Value("1")}, {"operator", Value("through")},

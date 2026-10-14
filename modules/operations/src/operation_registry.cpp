@@ -419,9 +419,11 @@ Result<bool> boolean(const Value& value, std::string_view field) {
 Result<std::uint64_t> uint64_string(const Value& value, std::string_view field) {
     const auto* text = std::get_if<std::string>(&value.data);
     std::uint64_t result{};
-    if (!text || text->empty() ||
-        std::from_chars(text->data(), text->data() + text->size(), result).ptr !=
-            text->data() + text->size())
+    // Out-of-range digits consume the whole text but leave result unset, so check both.
+    const auto parsed = text ? std::from_chars(text->data(), text->data() + text->size(), result)
+                             : std::from_chars_result{};
+    if (!text || text->empty() || parsed.ec != std::errc{} ||
+        parsed.ptr != text->data() + text->size())
         return failure<std::uint64_t>(
             ErrorCode::invalid_input, "Expected an unsigned integer string.", std::string(field));
     return success(result);

@@ -540,10 +540,11 @@ def assert_resource_negative(client: IpcClient, manifest: dict, current: dict) -
               "expected_view_revision": manifest["view_revision"]}
     probes = []
 
-    def reject(label: str, parameters: dict, target_context: dict, code: str | None = None) -> None:
+    def reject(label: str, parameters: dict, target_context: dict, code: str | None = None,
+               statuses: frozenset[str] = frozenset({"failed", "conflict"})) -> None:
         result = client.call("resources.read", parameters, target_context,
                              extra={"requested_version": 1}, expected=None)
-        check(result.get("status") in {"failed", "conflict"},
+        check(result.get("status") in statuses,
               f"negative resource sample {label} was accepted: {result}")
         actual = result.get("error", {}).get("code")
         if code:
@@ -551,7 +552,8 @@ def assert_resource_negative(client: IpcClient, manifest: dict, current: dict) -
         probes.append({"sample": label, "status": result.get("status"), "code": actual,
                        "rejected": True})
 
-    reject("missing-offset", params, context)
+    # The generated contract names the missing field and asks for it.
+    reject("missing-offset", params, context, "MISSING_INPUT", frozenset({"needs_input"}))
     reject("unaligned-offset", {**params, "offset": "1"}, context)
     reject("out-of-range-offset", {**params, "offset": manifest["byte_length"]}, context)
     reject("wrong-document", {**params, "offset": "0"},

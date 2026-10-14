@@ -253,7 +253,8 @@ bytes only after complete verification. Superseded or destroyed clients release
 buffers and leases; late callbacks cannot install data in another scene.
 
 `events.subscribe`/`events.read` take an engine instance ID and unsigned decimal
-`after_sequence`; a page has at most 64 events. Notifications carry `frame_type`,
+`after_sequence`; a page has at most 64 events. Their generated contracts advertise `limit` as
+a JSON integer; the older decimal-string spelling is still accepted from existing clients. Notifications carry `frame_type`,
 engine instance, monotonic sequence, event kind, document/epoch/revision and data.
 Document, history, project metadata and persisted task changes are observed from
 the same application. The feed retains 256 events and at most 64 subscribers by

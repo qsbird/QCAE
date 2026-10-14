@@ -1,7 +1,9 @@
 #include "qcae/event_stream.hpp"
 #include "qcae/json_ledger.hpp"
 #include "qcae/ipc_api.hpp"
+#include "qcae/operation_inputs.hpp"
 #include "qcae/task_service.hpp"
+#include "typed_json.hpp"
 #include <QJsonDocument>
 #include <algorithm>
 #include <charconv>
@@ -18,6 +20,25 @@ QString qs(const std::string& text) {
 }
 QString number(std::uint64_t value) {
     return transport::json_ledger::number(value);
+}
+struct Cursor {
+    QString instance;
+    std::uint64_t after{};
+    std::uint64_t limit{64};
+    bool include_document_summary{};
+};
+// events.subscribe and events.read share one cursor shape under separate generated contracts.
+template <class Input>
+std::optional<QJsonObject>
+decodeCursor(const QString& id, const QJsonObject& parameters, Cursor& cursor) {
+    const auto input = detail::typed_input<Input>(parameters);
+    if (!input.ok())
+        return detail::typed_input_failure(id, input.status, *input.error);
+    cursor = {QString::fromStdString(input.value->engine_instance_id.value_or(std::string{})),
+              input.value->after_sequence.value_or(0),
+              input.value->limit.value_or(64),
+              input.value->include_document_summary.value_or(false)};
+    return std::nullopt;
 }
 bool sameDocument(const DocumentRef& a, const DocumentRef& b) {
     return a.id == b.id && a.epoch == b.epoch;
@@ -353,29 +374,21 @@ QJsonObject EventStream::dispatch(const QJsonObject& request, const QString& con
             return failure(id, "UNSUPPORTED_CAPABILITY", "Unknown event operation");
         if (!request.value("parameters").isObject())
             throw std::invalid_argument("parameters must be an object");
-        const auto parameters = request.value("parameters").toObject();
-        for (auto it = parameters.begin(); it != parameters.end(); ++it)
-            if (it.key() != "engine_instance_id" && it.key() != "after_sequence" &&
-                it.key() != "limit" && it.key() != "include_document_summary")
-                throw std::invalid_argument("Unexpected event parameter");
-        if (parameters.contains("engine_instance_id") &&
-            !parameters.value("engine_instance_id").isString())
-            throw std::invalid_argument("engine_instance_id must be a string");
-        const auto instance = parameters.value("engine_instance_id").toString();
-        const auto cursor = unsignedField(parameters, "after_sequence", 0);
-        if (parameters.contains("include_document_summary") &&
-            !parameters.value("include_document_summary").isBool())
-            throw std::invalid_argument("include_document_summary must be a boolean");
-        const auto include_document_summary = parameters.value("include_document_summary").toBool();
-        std::uint64_t limit = 64;
-        if (parameters.value("limit").isDouble()) {
-            const auto numeric = parameters.value("limit").toDouble();
-            if (!std::isfinite(numeric) || numeric < 1 || numeric > 64 ||
-                std::floor(numeric) != numeric)
-                throw std::invalid_argument("Event read limit must be an integer in 1..64");
-            limit = static_cast<std::uint64_t>(numeric);
-        } else
-            limit = unsignedField(parameters, "limit", 64);
+        auto parameters = request.value("parameters").toObject();
+        // The contract advertises an integer limit; the older unsigned decimal string spelling
+        // is still accepted from existing clients.
+        if (const auto spelled = parameters.value("limit"); spelled.isString()) {
+            std::uint64_t value{};
+            if (transport::json_ledger::unsigned_decimal(spelled.toStringView(), value))
+                parameters.insert("limit", static_cast<double>(value));
+        }
+        Cursor decoded;
+        if (const auto rejected =
+                operation == "events.subscribe"
+                    ? decodeCursor<operations::EventsSubscribeInput>(id, parameters, decoded)
+                    : decodeCursor<operations::EventsReadInput>(id, parameters, decoded))
+            return *rejected;
+        const auto& [instance, cursor, limit, include_document_summary] = decoded;
         if (!limit || limit > 64)
             throw std::invalid_argument("Event read limit must be 1..64");
         auto data = state_->read(instance, cursor, limit, include_document_summary);

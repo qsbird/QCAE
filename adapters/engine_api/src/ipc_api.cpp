@@ -587,7 +587,7 @@ struct InputContract {
     std::string_view output_type;
 };
 template <class Input> constexpr auto definition_of = &operations::InputTraits<Input>::definition;
-constexpr std::array<InputContract, 16> input_contracts{{
+constexpr std::array<InputContract, 22> input_contracts{{
     {"project.create",
      definition_of<operations::ProjectCreateInput>,
      "ProjectCreateInput",
@@ -646,6 +646,27 @@ constexpr std::array<InputContract, 16> input_contracts{{
      definition_of<operations::SelectionCombineInput>,
      "SelectionCombineInput",
      "SelectionHandle"},
+    {"view.render_resource",
+     definition_of<operations::ViewRenderResourceInput>,
+     "ViewRenderResourceInput",
+     "ResourceManifest"},
+    {"resources.describe",
+     definition_of<operations::ResourcesDescribeInput>,
+     "ResourcesDescribeInput",
+     "ResourceManifest"},
+    {"resources.read",
+     definition_of<operations::ResourcesReadInput>,
+     "ResourcesReadInput",
+     "ResourceChunk"},
+    {"resources.release",
+     definition_of<operations::ResourcesReleaseInput>,
+     "ResourcesReleaseInput",
+     "ResourceRelease"},
+    {"events.subscribe",
+     definition_of<operations::EventsSubscribeInput>,
+     "EventsSubscribeInput",
+     "EventSubscription"},
+    {"events.read", definition_of<operations::EventsReadInput>, "EventsReadInput", "EventBatch"},
 }};
 void describe_input_contract(QJsonObject& entry, std::string_view operation) {
     if (operation == "project.open")
@@ -694,6 +715,9 @@ LegacyReply legacy_capabilities_list(const LegacyCall& call) {
             available = true;
         }
         describe_input_contract(entry, descriptor.name);
+        // The render service refuses display resource requests that omit requested_version.
+        if (descriptor.name == "view.render_resource" || descriptor.name.starts_with("resources."))
+            entry.insert("omitted_version_policy", "required");
         entry.insert("available", available);
         if (const auto schema = read_parameters_schema(descriptor.name)) {
             entry.insert("parameters_schema", *schema);
