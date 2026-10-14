@@ -180,6 +180,34 @@ version_rejection(const QJsonObject& request, const QString& id, std::uint32_t i
     rejected.insert("error", error);
     return rejected;
 }
+// JSON schema for one generated input field; string-like fields keep the original description.
+QJsonObject field_property(const operations::InputFieldDescriptor& field) {
+    if (field.wire_type == "boolean")
+        return {{"type", "boolean"}};
+    if (field.wire_type == "unsigned_integer")
+        return {{"type", "integer"}, {"minimum", 0}};
+    if (field.wire_type == "positive_uint32")
+        return {{"type", "integer"}, {"minimum", 1}, {"maximum", 4294967295.0}};
+    if (field.wire_type == "finite_number")
+        return {{"type", "number"}};
+    if (field.wire_type == "entity_id_array") {
+        QJsonObject property{{"type", "array"},
+                             {"items", QJsonObject{{"type", "string"}, {"minLength", 1}}}};
+        if (!field.allow_empty)
+            property.insert("minItems", 1);
+        return property;
+    }
+    QJsonObject property{{"type", "string"}};
+    if (field.wire_type == "enum") {
+        QJsonArray values;
+        for (const auto& value : field.values)
+            values.append(qs(value));
+        property.insert("enum", values);
+    } else if (!field.allow_empty) {
+        property.insert("minLength", 1);
+    }
+    return property;
+}
 void describe_string_input(QJsonObject& entry,
                            const operations::OperationDefinition& definition,
                            std::string_view input_type,
@@ -187,15 +215,19 @@ void describe_string_input(QJsonObject& entry,
     QJsonArray fields, required;
     QJsonObject properties;
     for (const auto& field : definition.fields) {
-        fields.append(QJsonObject{{"name", qs(field.name)},
-                                  {"wire_type", qs(field.wire_type)},
-                                  {"required", field.required},
-                                  {"allow_empty", field.allow_empty},
-                                  {"units", QJsonArray{}}});
-        QJsonObject property{{"type", "string"}};
-        if (!field.allow_empty)
-            property.insert("minLength", 1);
-        properties.insert(qs(field.name), property);
+        QJsonObject metadata{{"name", qs(field.name)},
+                             {"wire_type", qs(field.wire_type)},
+                             {"required", field.required},
+                             {"allow_empty", field.allow_empty},
+                             {"units", QJsonArray{}}};
+        if (!field.values.empty()) {
+            QJsonArray values;
+            for (const auto& value : field.values)
+                values.append(qs(value));
+            metadata.insert("values", values);
+        }
+        fields.append(metadata);
+        properties.insert(qs(field.name), field_property(field));
         if (field.required)
             required.append(qs(field.name));
     }

@@ -125,6 +125,12 @@ def field_schema(field):
             schema["minItems"] = 1
     elif kind == "positive_uint32":
         schema = {"type": "integer", "minimum": 1, "maximum": 4294967295}
+    elif kind == "unsigned_integer":
+        schema = {"type": "integer", "minimum": 0}
+    elif kind == "uint64_string":
+        schema = {"type": "string", "minLength": 1}
+    elif kind == "enum" and isinstance(field.get("values"), list) and field["values"]:
+        schema = {"type": "string", "enum": field["values"]}
     else:
         # Unknown contracts remain discoverable without inventing a type restriction.
         schema = {}
@@ -254,7 +260,7 @@ class Bridge:
                 if key in entry and (type(entry[key]) is not int or not 1 <= entry[key] <= 4294967295):
                     raise TransportError("invalid engine capability version")
             for field in entry.get("fields", []):
-                if not isinstance(field.get("wire_type"), str) or not isinstance(field.get("units", []), list) or any(not isinstance(unit, str) for unit in field.get("units", [])) or any(key in field and not isinstance(field[key], bool) for key in ("required", "allow_empty")):
+                if not isinstance(field.get("wire_type"), str) or not isinstance(field.get("units", []), list) or any(not isinstance(unit, str) for unit in field.get("units", [])) or any(key in field and not isinstance(field[key], bool) for key in ("required", "allow_empty")) or ("values" in field and (not isinstance(field["values"], list) or any(not isinstance(value, str) for value in field["values"]))):
                     raise TransportError("invalid engine field contract metadata")
         candidate = {entry["name"]: entry for entry in operations
                      if entry.get("available") is True and entry["name"] not in CONNECTION_TOOLS

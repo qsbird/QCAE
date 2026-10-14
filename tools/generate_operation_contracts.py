@@ -21,6 +21,10 @@ TYPES = {
     'positive_uint32': 'std::uint32_t',
     'finite_number': 'double',
     'entity_id_array': 'std::vector<EntityId>',
+    'boolean': 'bool',
+    'uint64_string': 'std::uint64_t',
+    'unsigned_integer': 'std::uint64_t',
+    'enum': 'std::string',
 }
 CONTEXT_REQUIRED = ('document', 'epoch', 'expected_revision', 'idempotency_key')
 CONTEXT = (*CONTEXT_REQUIRED, 'expected_profile')
@@ -77,7 +81,7 @@ def load_schemas(directory: Path) -> list[dict]:
                 raise ValueError(f'{file}: fields must be a list (empty for no parameters)')
             field_ids, field_names = set(), set()
             for field in op['fields']:
-                if set(field) - {'field_id', 'name', 'type', 'units', 'optional', 'allow_empty'} or not {'field_id', 'name', 'type'} <= set(field):
+                if set(field) - {'field_id', 'name', 'type', 'units', 'optional', 'allow_empty', 'values'} or not {'field_id', 'name', 'type'} <= set(field):
                     raise ValueError(f'{file}: invalid input field keys')
                 if type(field['field_id']) is not int or not 1 <= field['field_id'] <= 0xFFFFFFFF:
                     raise ValueError(f'{file}: field IDs must be explicit positive uint32')
@@ -91,6 +95,12 @@ def load_schemas(directory: Path) -> list[dict]:
                     raise ValueError(f'{file}: allow_empty must be a boolean on a string or entity ID array')
                 if field['type'] not in TYPES:
                     raise ValueError(f'{file}: unknown input type')
+                values = field.get('values')
+                if (field['type'] == 'enum') != (values is not None):
+                    raise ValueError(f'{file}: values are required on enum fields and only there')
+                if values is not None and (not isinstance(values, list) or not values or len(values) != len(set(values))
+                                           or any(not isinstance(v, str) or not WIRE_ID.fullmatch(v) for v in values)):
+                    raise ValueError(f'{file}: enum values must be unique lowercase identifiers')
                 units = field.get('units', [])
                 if not isinstance(units, list) or any(not isinstance(unit, str) or not unit for unit in units) or len(units) != len(set(units)):
                     raise ValueError(f'{file}: unit choices must be unique nonempty strings')
@@ -135,7 +145,8 @@ def render(operations: list[dict]) -> str:
         for index, field in enumerate(fields):
             comma = ',' if index + 1 != len(fields) else ''
             units = ', '.join(literal(unit) for unit in field.get('units', []))
-            lines.append(f'                    {{{field["field_id"]}, {literal(field["name"])}, {literal(field["type"])}, {{{units}}}, {str(not field.get("optional", False)).lower()}, {str(field.get("allow_empty", False)).lower()}}}{comma}')
+            choices = ', '.join(literal(value) for value in field.get('values', []))
+            lines.append(f'                    {{{field["field_id"]}, {literal(field["name"])}, {literal(field["type"])}, {{{units}}}, {str(not field.get("optional", False)).lower()}, {str(field.get("allow_empty", False)).lower()}, {{{choices}}}}}{comma}')
         lines.extend(['                }};', '    }', '',
                       f'    static Result<{name}> from_value(const Value& value) {{',
                       f'        static constexpr std::array<std::string_view, {len(fields)}> allowed{{' + ', '.join(literal(f['name']) for f in fields) + '};',
@@ -162,7 +173,11 @@ def render(operations: list[dict]) -> str:
                 units = field['units']
                 lines.append(f'{indent}static constexpr std::array<std::string_view, {len(units)}> {key}_units{{' + ', '.join(literal(unit) for unit in units) + '};')
                 arguments += f', {key}_units'
-            decoder = {'string': 'string_value', 'vector3_mm': 'vector3'}.get(field['type'], field['type'])
+            if field['type'] == 'enum':
+                values = field['values']
+                lines.append(f'{indent}static constexpr std::array<std::string_view, {len(values)}> {key}_values{{' + ', '.join(literal(v) for v in values) + '};')
+                arguments += f', {key}_values'
+            decoder = {'string': 'string_value', 'vector3_mm': 'vector3', 'enum': 'enum_value'}.get(field['type'], field['type'])
             arguments += f', {literal("input." + key)}'
             if field['type'] in {'string', 'entity_id_array'} and field.get('allow_empty', False):
                 arguments += ', true'
@@ -186,8 +201,10 @@ def render(operations: list[dict]) -> str:
             value = f'*input.{key}' if optional else f'input.{key}'
             if kind == 'entity_id':
                 expression = f'Value({value}.value)' if not optional else f'Value(input.{key}->value)'
-            elif kind == 'positive_uint32':
+            elif kind in {'positive_uint32', 'unsigned_integer'}:
                 expression = f'Value(static_cast<std::int64_t>({value}))'
+            elif kind == 'uint64_string':
+                expression = f'Value(std::to_string({value}))'
             elif kind in {'quantity', 'vector3_mm', 'entity_id_array'}:
                 expression = f'wire::to_value({value})'
             else:

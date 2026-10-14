@@ -89,6 +89,7 @@ struct InputFieldDescriptor {
     std::vector<std::string> units;
     bool required{true};
     bool allow_empty{};
+    std::vector<std::string> values{}; // Allowed choices of an enum field; empty otherwise.
     bool operator==(const InputFieldDescriptor&) const = default;
 };
 struct OperationDefinition {
@@ -203,6 +204,12 @@ entity_id_array(const Value& value, std::string_view field, bool allow_empty = f
                                         std::string_view field);
 [[nodiscard]] Result<std::array<double, 3>> vector3(const Value& value, std::string_view field);
 [[nodiscard]] Result<std::uint32_t> positive_uint32(const Value& value, std::string_view field);
+[[nodiscard]] Result<bool> boolean(const Value& value, std::string_view field);
+// Revisions and cursors travel as unsigned decimal strings so that 64-bit values stay exact.
+[[nodiscard]] Result<std::uint64_t> uint64_string(const Value& value, std::string_view field);
+[[nodiscard]] Result<std::uint64_t> unsigned_integer(const Value& value, std::string_view field);
+[[nodiscard]] Result<std::string>
+enum_value(const Value& value, std::span<const std::string_view> values, std::string_view field);
 [[nodiscard]] Value to_value(const Quantity& quantity);
 [[nodiscard]] Value to_value(const std::vector<EntityId>& identities);
 [[nodiscard]] Value to_value(const std::array<double, 3>& vector);

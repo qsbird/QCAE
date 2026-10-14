@@ -361,11 +361,18 @@ QJsonArray TypedHost::capabilities() const {
             QJsonArray units;
             for (const auto& unit : field.units)
                 units.append(qs(unit));
-            fields.append(QJsonObject{{"name", qs(field.name)},
-                                      {"wire_type", qs(field.wire_type)},
-                                      {"required", field.required},
-                                      {"allow_empty", field.allow_empty},
-                                      {"units", units}});
+            QJsonObject metadata{{"name", qs(field.name)},
+                                 {"wire_type", qs(field.wire_type)},
+                                 {"required", field.required},
+                                 {"allow_empty", field.allow_empty},
+                                 {"units", units}};
+            if (!field.values.empty()) {
+                QJsonArray values;
+                for (const auto& value : field.values)
+                    values.append(qs(value));
+                metadata.insert("values", values);
+            }
+            fields.append(metadata);
         }
         const auto effect =
             definition.effect == OperationEffect::background_task   ? "background_task"

@@ -1,5 +1,6 @@
 #include "qcae/operation_registry.hpp"
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <limits>
 #include <set>
@@ -406,6 +407,43 @@ Result<std::uint32_t> positive_uint32(const Value& value, std::string_view field
             ErrorCode::invalid_input, "Expected a positive uint32 integer.", std::string(field));
     }
     return success(static_cast<std::uint32_t>(*integer));
+}
+
+Result<bool> boolean(const Value& value, std::string_view field) {
+    const auto* flag = std::get_if<bool>(&value.data);
+    if (!flag)
+        return failure<bool>(ErrorCode::invalid_input, "Expected a boolean.", std::string(field));
+    return success(*flag);
+}
+
+Result<std::uint64_t> uint64_string(const Value& value, std::string_view field) {
+    const auto* text = std::get_if<std::string>(&value.data);
+    std::uint64_t result{};
+    if (!text || text->empty() ||
+        std::from_chars(text->data(), text->data() + text->size(), result).ptr !=
+            text->data() + text->size())
+        return failure<std::uint64_t>(
+            ErrorCode::invalid_input, "Expected an unsigned integer string.", std::string(field));
+    return success(result);
+}
+
+Result<std::uint64_t> unsigned_integer(const Value& value, std::string_view field) {
+    const auto* integer = std::get_if<std::int64_t>(&value.data);
+    if (!integer || *integer < 0)
+        return failure<std::uint64_t>(
+            ErrorCode::invalid_input, "Expected a nonnegative integer.", std::string(field));
+    return success(static_cast<std::uint64_t>(*integer));
+}
+
+Result<std::string>
+enum_value(const Value& value, std::span<const std::string_view> values, std::string_view field) {
+    const auto* text = std::get_if<std::string>(&value.data);
+    if (!text || std::find(values.begin(), values.end(), *text) == values.end())
+        return failure<std::string>(
+            ErrorCode::invalid_input, "Expected one of the declared values.", std::string(field));
+    auto copy = *text;
+    observe_input_copy(copy, copy);
+    return success(std::move(copy));
 }
 
 Value to_value(const std::vector<EntityId>& identities) {

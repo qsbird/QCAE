@@ -161,6 +161,70 @@ qcae_warnings(empty_string)
             executable = self.build / "Debug" / "empty_string.exe"
         self.run_command(str(executable))
 
+    def test_boolean_uint64_string_unsigned_and_enum_fields(self):
+        probe = self.write_probe_schema()
+        schema = json.loads(probe.read_text())
+        schema["operations"][0]["fields"] = [
+            {"field_id": 1, "name": "visible", "type": "boolean"},
+            {"field_id": 2, "name": "revision", "type": "uint64_string"},
+            {"field_id": 3, "name": "offset", "type": "unsigned_integer", "optional": True},
+            {"field_id": 4, "name": "mode", "type": "enum", "values": ["through", "visible_only"]},
+        ]
+        probe.write_text(json.dumps(schema))
+        self.generate()
+        (self.source / "typed_fields.cpp").write_text('''\
+#include "qcae/operation_inputs.hpp"
+#include <cstdint>
+using namespace qcae;
+using namespace qcae::operations;
+Value input(Value visible, Value revision, Value mode) {
+    return Value(Value::Object{{"visible", std::move(visible)}, {"revision", std::move(revision)},
+                               {"mode", std::move(mode)}});
+}
+int main() {
+    const auto good = InputTraits<TestEmptyInput>::from_value(
+        input(Value(true), Value("18446744073709551615"), Value("visible_only")));
+    const auto with_offset = InputTraits<TestEmptyInput>::from_value(Value(Value::Object{
+        {"visible", Value(false)}, {"revision", Value("0")}, {"mode", Value("through")},
+        {"offset", Value(std::int64_t{7})}}));
+    const bool rejects =
+        !InputTraits<TestEmptyInput>::from_value(input(Value("yes"), Value("1"), Value("through"))).ok() &&
+        !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value(std::int64_t{1}), Value("through"))).ok() &&
+        !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value("-1"), Value("through"))).ok() &&
+        !InputTraits<TestEmptyInput>::from_value(input(Value(true), Value("1"), Value("all"))).ok() &&
+        !InputTraits<TestEmptyInput>::from_value(Value(Value::Object{
+            {"visible", Value(true)}, {"revision", Value("1")}, {"mode", Value("through")},
+            {"offset", Value(std::int64_t{-1})}})).ok();
+    const auto fields = InputTraits<TestEmptyInput>::definition().fields;
+    return good.ok() && good.value->visible && good.value->revision == UINT64_MAX &&
+        good.value->mode == "visible_only" && !good.value->offset && with_offset.ok() &&
+        with_offset.value->offset == 7u && rejects &&
+        fields[3].values == std::vector<std::string>{"through", "visible_only"} &&
+        fields[0].values.empty() &&
+        InputTraits<TestEmptyInput>::to_value(*good.value) ==
+            input(Value(true), Value("18446744073709551615"), Value("visible_only")) ? 0 : 1;
+}
+''', encoding="utf-8")
+        with (self.source / "CMakeLists.txt").open("a", encoding="utf-8") as file:
+            file.write('''\
+add_executable(typed_fields typed_fields.cpp)
+target_link_libraries(typed_fields PRIVATE qcae_operations)
+qcae_warnings(typed_fields)
+''')
+        self.run_command("cmake", "-S", str(self.source), "-B", str(self.build))
+        self.run_command("cmake", "--build", str(self.build), "--target", "typed_fields")
+        executable = self.build / ("typed_fields.exe" if shutil.which("cl") else "typed_fields")
+        if not executable.is_file():
+            executable = self.build / "Debug" / "typed_fields.exe"
+        self.run_command(str(executable))
+        for bad in ({"field_id": 1, "name": "mode", "type": "enum"},
+                    {"field_id": 1, "name": "flag", "type": "boolean", "values": ["on"]}):
+            schema["operations"][0]["fields"] = [bad]
+            probe.write_text(json.dumps(schema))
+            result = subprocess.run(["cmake", "--build", str(self.build), "--target",
+                                     "qcae_generated_operation_inputs"], capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0, bad)
+
     def test_parameterless_input_compiles_and_checks_object_shape(self):
         self.write_probe_schema()
         self.generate()
