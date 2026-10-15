@@ -170,6 +170,14 @@ def resolve_types(types: dict[str, dict], operations: list[dict]) -> list[str]:
                 raise ValueError(f'unknown or mismatched structured type reference: {field["ref"]}')
     order, state = [], {}
 
+    def reaches_active(name: str, seen: set[str]) -> bool:
+        if state.get(name) == 'active':
+            return True
+        if name in seen or state.get(name) == 'done':
+            return False
+        seen.add(name)
+        return any(reaches_active(dependency, seen) for dependency in by_value_dependencies(named[name]))
+
     def visit(name: str) -> None:
         if state.get(name) == 'done':
             return
@@ -178,6 +186,11 @@ def resolve_types(types: dict[str, dict], operations: list[dict]) -> list[str]:
         state[name] = 'active'
         for dependency in by_value_dependencies(named[name]):
             visit(dependency)
+        # Array elements may stay incomplete, but defining them first when they do not lead back here
+        # keeps every container of them complete wherever a containing type is initialized.
+        for field in named[name].get('fields', []):
+            if field['type'] == 'array' and not reaches_active(field['ref'], set()):
+                visit(field['ref'])
         state[name] = 'done'
         order.append(name)
 
@@ -261,6 +274,14 @@ def cpp_type(field: dict) -> str:
     else:
         base = TYPES[field['type']]
     return f'std::optional<{base}>' if field.get('optional', False) else base
+
+
+def member_line(field: dict) -> str:
+    # An array may hold a type that is still incomplete here (defined later, or the enclosing union).
+    # A default member initializer would instantiate the vector's constexpr destructor too early, which
+    # Clang rejects; vectors and optionals default-construct empty without one.
+    initializer = '' if field['type'] == 'array' else '{}'
+    return f'    {cpp_type(field)} {member(field)}{initializer};'
 
 
 def decode_lines(field: dict, prefix: str, path: str, indent: str) -> list[str]:
@@ -452,7 +473,7 @@ def render_structured(operations: list[dict], types: dict) -> list[str]:
             lines.extend([f'struct {name} {{', f'    std::variant<{alternatives}> value{{}};', '};', ''])
         else:
             lines.append(f'struct {name} {{')
-            lines.extend(f'    {cpp_type(field)} {member(field)}{{}};' for field in spec['fields'])
+            lines.extend(member_line(field) for field in spec['fields'])
             lines.extend(['};', ''])
     for name in types:
         lines.extend([f'inline Result<{name}> structured_input(const Value& source, std::string_view where, std::type_identity<{name}>);',
@@ -616,7 +637,7 @@ def render(operations: list[dict]) -> str:
             descriptors = [f'{{1, {literal(spec["tag"])}, "enum", {{}}, true, false, {{' + ', '.join(literal(v['value']) for v in spec['variants']) + '}}']
         else:
             lines.append(f'struct {name} {{')
-            lines.extend(f'    {cpp_type(field)} {member(field)}{{}};' for field in fields)
+            lines.extend(member_line(field) for field in fields)
             lines.append('};')
             lines.append('')
             descriptors = []

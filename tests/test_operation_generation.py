@@ -285,7 +285,10 @@ qcae_warnings(typed_fields)
                     {"field_id": 1, "name": "range", "type": "object", "ref": "TestRange"}]},
                 {"value": "and", "type_name": "TestAnd", "fields": [
                     {"field_id": 1, "name": "children", "type": "array", "ref": "TestNode",
-                     "allow_empty": True}]}]},
+                     "allow_empty": True},
+                    {"field_id": 2, "name": "tags", "type": "array", "ref": "TestZoo", "optional": True}]}]},
+            {"type_name": "TestZoo", "kind": "object", "fields": [
+                {"field_id": 1, "name": "name", "type": "string"}]},
         ]
         schema["operations"][0]["fields"] = [
             {"field_id": 1, "name": "node", "type": "union", "ref": "TestNode"},
@@ -300,6 +303,10 @@ qcae_warnings(typed_fields)
         probe.write_text(json.dumps(schema))
         header = self.generate()
         self.assertIn("static constexpr std::string_view parameters_schema", header)
+        # Clang instantiates a vector's constexpr destructor wherever a containing type is initialized:
+        # a non-recursive element is defined before its container, and arrays carry no initializer.
+        self.assertLess(header.index("struct TestZoo {"), header.index("struct TestAnd {"))
+        self.assertIn("    std::vector<TestNode> children;", header)
         (self.source / "structured.cpp").write_text(STRUCTURED_PROGRAM, encoding="utf-8")
         with (self.source / "CMakeLists.txt").open("a", encoding="utf-8") as file:
             file.write("add_executable(structured structured.cpp)\n"
