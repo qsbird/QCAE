@@ -31,7 +31,9 @@ def engine_fact(call):
     return value
 
 
-class AppServer:
+class CodexAppServer:
+    data_destination = "OpenAI model service receives only synthetic prompts and QCAE schemas/results"
+
     def __init__(self, client, endpoint, cwd, output, model, effort):
         args = [str(client), "--disable", "plugins", "--disable", "apps", "--disable", "remote_plugin",
                 "--disable", "hooks", "app-server", "--stdio", "-c", "mcp_servers={}",
@@ -149,6 +151,14 @@ class AppServer:
         self.error_log.close()
 
 
+def AppServer(client, endpoint, cwd, output, model, effort):
+    """The Codex app-server client, or Claude Code (claude -p) when the client binary is Claude Code."""
+    import real_ai_claude_transport as claude
+    if claude.is_claude(client):
+        return claude.ClaudeSession(client, endpoint, cwd, output, model, effort, TOOLS, POLICY)
+    return CodexAppServer(client, endpoint, cwd, output, model, effort)
+
+
 def one(args, output):
     output.mkdir(parents=True, exist_ok=False)
     facts = {"schema_version": 1, "purpose": "real_same_session_unit_clarification_partial_TST_I01",
@@ -182,6 +192,7 @@ def one(args, output):
                 initial = cli_call(args.cli, endpoint, "project.current")["data"]
                 server = AppServer(args.client, endpoint, root, output, args.model, args.effort)
                 facts["thread_id"] = server.thread
+                facts["data_destination"] = server.data_destination
                 prompt = "请创建一个 Steel 材料，弹性模量为210，泊松比为0.3。先从现有项目读取上下文；如果必要物理事实不足，请列出缺项并停止，不能自行假定。最后仅输出JSON，包含status和missing数组。"
                 (output / "prompt-1.txt").write_text(prompt)
                 first_schema = {"type": "object", "additionalProperties": False,

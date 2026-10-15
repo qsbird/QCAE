@@ -229,6 +229,7 @@ def run_one(args, scenario):
                     facts["client_version"] = subprocess.check_output([args.client, "--version"], text=True).strip()
                     server = transport.AppServer(args.client, endpoint, temporary, output, args.model, args.effort)
                     facts["thread_id"] = server.thread
+                    facts["data_destination"] = server.data_destination
                     if scenario == "physics":
                         physics(client, server, fixture, facts, output, args.effort)
                     else:
@@ -260,8 +261,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("client", "engine", "cli", "evidence-dir"):
         parser.add_argument("--" + name, required=True)
-    parser.add_argument("--model", default="gpt-6.1-sol", choices=("gpt-6.1-sol",))
-    parser.add_argument("--effort", default="xhigh", choices=("xhigh",))
+    parser.add_argument("--model", default="gpt-6.1-sol", choices=("gpt-6.1-sol", "claude-haiku-4-5-20251001"))
+    parser.add_argument("--effort", default="xhigh", choices=("xhigh", "none"))
     parser.add_argument("--scenario", choices=(*SCENARIOS, "all"), default="all")
     parser.add_argument("--setup-only", action="store_true", help="CLI fixture verification only; never counts as an AI session")
     args = parser.parse_args()
