@@ -2502,8 +2502,10 @@ void entity_read_contracts_preserve_application() {
                    "Invalid pagination");
     for (const auto& [parameters, code, message] :
          std::vector<std::tuple<QJsonObject, const char*, const char*>>{
-             {{{"kind", "unknown"}}, "INVALID_INPUT", "Unknown entity kind"},
-             {{{"kind", "Local_geometry"}}, "INVALID_INPUT", "Unknown entity kind"},
+             {{{"kind", "unknown"}}, "INVALID_INPUT", "Unknown entity kind; registered kinds:"},
+             {{{"kind", "Local_geometry"}},
+              "INVALID_INPUT",
+              "Unknown entity kind; registered kinds:"},
              {{{"owner_id", "part"}}, "INVALID_INPUT", "owner_id requires an organization view"},
              {{{"view", "part"}},
               "INVALID_INPUT",
@@ -2519,8 +2521,14 @@ void entity_read_contracts_preserve_application() {
               "View owner kind does not match"}}) {
         const auto response = query(parameters);
         const auto error = response.value("error").toObject();
+        // An unknown kind's message goes on to name the registered kinds.
+        const auto text = error.value("message").toString();
+        const bool matches = text.endsWith(':') ? false
+                             : QString(message).endsWith(':')
+                                 ? text.startsWith(message) && text.contains(" node")
+                                 : text == message;
         require(response.value("status") == "failed" && error.value("code") == code &&
-                    error.value("field") == "query" && error.value("message") == message,
+                    error.value("field") == "query" && matches,
                 "registry and view/owner checks remain in the existing query service");
     }
     reject(request_for("entity.references", {{"entity_id", "unknown"}}),

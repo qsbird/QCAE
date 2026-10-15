@@ -8,6 +8,14 @@ namespace {
 template <class T> Result<T> fail(ErrorCode code, const char* message) {
     return {Status::failed, {}, Diagnostic{code, message, "query"}};
 }
+// Sorted, distinct query kinds of the view's record registry.
+std::vector<std::string> query_kinds(const DocumentView& view) {
+    std::set<std::string> kinds;
+    for (const auto type : view.registry()->types())
+        if (const auto& kind = view.registry()->find(type)->query_kind; !kind.empty())
+            kinds.insert(kind);
+    return {kinds.begin(), kinds.end()};
+}
 std::string reference_role(const Record& record, RecordFieldId id) {
     const auto& descriptor = record->descriptor();
     auto field = std::find_if(descriptor.fields.begin(),
@@ -135,8 +143,13 @@ Result<EntityPage> query_entities(const DocumentView& view,
                                   RecordStats* stats) {
     if (limit > 10000)
         return fail<EntityPage>(ErrorCode::resource_limit, "Entity page limit exceeded");
-    if (!filter.kind.empty() && !query_kind_registered(view, filter.kind))
-        return fail<EntityPage>(ErrorCode::invalid_input, "Unknown entity kind");
+    if (!filter.kind.empty() && !query_kind_registered(view, filter.kind)) {
+        // Name the valid kinds so a client corrects itself instead of guessing again.
+        std::string message = "Unknown entity kind; registered kinds:";
+        for (const auto& kind : query_kinds(view))
+            message += " " + kind;
+        return fail<EntityPage>(ErrorCode::invalid_input, message.c_str());
+    }
     const auto scope = organization_scope(view, filter);
     if (!scope.ok())
         return {scope.status, {}, scope.error};
