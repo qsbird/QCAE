@@ -307,6 +307,18 @@ int child(int argc, char** argv) {
             std::ofstream("extra-work.bin") << std::string(700000, 'x');
             std::ofstream(fs::path(temporary) / "extra-tmp.bin") << std::string(700000, 'x');
         }
+        if (mode == "mystran-churn") {
+            // Like MYSTRAN, create and remove scratch files while the runner measures the run
+            // directory; an entry that vanishes mid-scan is not an output violation.
+            const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(600);
+            for (unsigned i = 0; std::chrono::steady_clock::now() < until; ++i) {
+                const auto name = "scratch-" + std::to_string(i % 8) + ".L1T";
+                std::ofstream(name) << "scratch";
+                std::ofstream(fs::path(temporary) / name) << "scratch";
+                fs::remove(name);
+                fs::remove(fs::path(temporary) / name);
+            }
+        }
     } else {
         require(!std::getenv("TMPDIR") && fs::current_path().filename() != "work",
                 "Existing test-only/MSC child environment or cwd changed");
@@ -483,6 +495,13 @@ int main(int argc, char** argv) {
                   mystran_overflow.output_state == SolverOutputState::incomplete &&
                   mystran_overflow.detail.find("byte budget") != std::string::npos,
               "MYSTRAN work or tmp bytes escaped aggregate output budget enforcement");
+        auto churn = mystran_request("mystran-churn", "mystran-churn");
+        check(runner.start(churn).ok(), "MYSTRAN scratch-churn child did not start");
+        const auto churned = wait(runner, churn.run_id);
+        check(churned.execution == SolverExecutionState::exited && churned.exit_code == 0 &&
+                  !churned.termination_signal &&
+                  churned.output_state == SolverOutputState::collected,
+              "Scratch files vanishing during a live output scan terminated the solver");
         auto mystran_preflight = mystran_request("mystran-preflight", "mystran-success");
         mystran_preflight.configuration.max_output_bytes = 1;
         const auto preflight = runner.start(mystran_preflight);

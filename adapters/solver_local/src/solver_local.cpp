@@ -214,27 +214,51 @@ void make_gate(int (&fds)[2]) {
         throw std::runtime_error("Process admission socket setup failed");
     }
 }
-void check_output_budget(const SolverRunRecord& record) {
+// Measures the run directory once. Returns false when an entry vanished between listing and
+// inspection, which a running solver causes by removing its scratch files.
+bool measure_output_budget(const SolverRunRecord& record) {
     std::uint64_t total{};
     std::size_t entries{};
     const fs::path root(record.request.run_directory);
-    for (fs::recursive_directory_iterator it(root), end; it != end; ++it) {
+    std::error_code error;
+    fs::recursive_directory_iterator it(root, error);
+    for (const fs::recursive_directory_iterator end; !error && it != end; it.increment(error)) {
         require(++entries <= 256 && it.depth() <= 16, "Run output entry budget exceeded");
         const auto relative = it->path().lexically_relative(root);
-        require(!it->is_symlink(), "Run output contains a symlink");
+        const auto status = it->symlink_status(error);
+        if (error)
+            break;
+        require(!fs::is_symlink(status), "Run output contains a symlink");
         if (*relative.begin() == "input") {
-            if (it->is_directory())
+            if (fs::is_directory(status))
                 it.disable_recursion_pending();
             continue;
         }
-        require(it->is_directory() || it->is_regular_file(), "Run output type is invalid");
-        if (it->is_regular_file()) {
-            const auto bytes = it->file_size();
+        require(fs::is_directory(status) || fs::is_regular_file(status),
+                "Run output type is invalid");
+        if (fs::is_regular_file(status)) {
+            const auto bytes = it->file_size(error);
+            if (error)
+                break;
             require(bytes <= record.request.configuration.max_output_bytes - total,
                     "Run output byte budget exceeded");
             total += bytes;
         }
     }
+    if (!error)
+        return true;
+    if (error == std::errc::no_such_file_or_directory)
+        return false;
+    throw fs::filesystem_error("Run output could not be measured", root, error);
+}
+// While the solver runs, a vanished scratch entry holds no output: the scan is retried and, if
+// the directory keeps changing, left to the next poll. After exit every entry must measure.
+void check_output_budget(const SolverRunRecord& record, bool running = false) {
+    for (int attempt = 0; attempt < (running ? 8 : 1); ++attempt)
+        if (measure_output_budget(record))
+            return;
+    if (!running)
+        throw std::runtime_error("Run output changed after the solver exited");
 }
 [[noreturn]] void child_fail(int error_fd, int error) {
     // Only async-signal-safe operations are allowed between fork and exec in the engine.
@@ -394,7 +418,7 @@ struct LocalSolverRunner::State {
                 const auto now = Clock::now();
                 std::string budget_error;
                 try {
-                    check_output_budget(record);
+                    check_output_budget(record, true);
                 } catch (const std::exception& error) {
                     budget_error = error.what();
                 }
