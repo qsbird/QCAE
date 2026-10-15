@@ -13,6 +13,7 @@
    ```
 
    字段写法为 `名称:类型[:optional][:units=a,b]`，类型可用 `string`、`entity_id`、`entity_id_array`、`quantity`（必须给units）、`finite_number`、`vector3_mm`（units=mm）、`positive_uint32`。每个功能的操作写在与功能目录同名的 `schemas/operations/<功能>.json`（如 `materials.json`、`mesh_editing.json`），工具默认追加到该文件；工具追加schema条目，在功能头文件声明 `prepare_<操作>`，写入拒绝执行的桩函数，并以 `declare_unimplemented` 登记为不可用：实现前客户端和MCP都看不到它。
+   直接编写的schema条目还可用 `boolean`、`uint64_string`（十进制字符串，如修订号）、`unsigned_integer`、`enum`（必须给 `values`），以及引用文件顶层 `types` 中命名类型的结构化字段：`object`、`union`（按 `tag` 字段区分的变体）和 `array`（元素为object或union，可递归）。整个参数对象也可以是一个union：操作条目用 `tag` 和 `variants` 代替 `fields`。范例见 [selection_views.json](../../schemas/operations/selection_views.json) 和 [model_changes.json](../../schemas/operations/model_changes.json)；生成器为这类输入同时生成目录用的 `parameters_schema`，并检查它不超出MCP桥的深度和节点上限。
 2. 实现桩函数，范例是 [material_operations.cpp](../../features/materials/src/material_operations.cpp)：
    - `auto canonical = canonical_copy(input);`
    - 换算单位：`normalize(canonical.young_modulus, parameters::Dimension::pressure, "young_modulus")`，失败时 `return forward_failure<OperationPlan>(normalized);`

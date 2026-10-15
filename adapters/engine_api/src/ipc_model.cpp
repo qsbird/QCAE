@@ -4,6 +4,7 @@
 #include "qcae/query.hpp"
 #include "qcae/records.hpp"
 #include "qcae/records_model_bridge.hpp"
+#include "typed_json.hpp"
 #include <QJsonArray>
 #include <QUuid>
 #include <algorithm>
@@ -70,12 +71,20 @@ QJsonArray id_json(const std::vector<EntityId>& list) {
     }
     return out;
 }
-ProfileRef profile_ref(const QJsonObject& o, const char* key) {
-    if (!o.value(QLatin1String(key)).isObject())
-        throw BadInput(std::string("Expected profile reference: ") + key);
-    const auto p = o.value(QLatin1String(key)).toObject();
-    fields(p, {"profile_id", "profile_version", "definition_digest"});
-    return {str(p, "profile_id"), str(p, "profile_version"), str(p, "definition_digest")};
+// The generated string contract rejects only empty text; model names, references and paths also
+// reject whitespace-only text, as before.
+const std::string& nonblank(const std::string& text, const char* key) {
+    if (transport::json_ledger::trimmed_empty(QUtf8StringView(text)))
+        throw BadInput(std::string("Expected string: ") + key);
+    return text;
+}
+EntityId nonblank(const EntityId& id, const char* key) {
+    return EntityId{nonblank(id.value, key)};
+}
+ProfileRef profile_ref(const operations::ProfileReferenceInput& input) {
+    return {nonblank(input.profile_id, "profile_id"),
+            nonblank(input.profile_version, "profile_version"),
+            nonblank(input.definition_digest, "definition_digest")};
 }
 QJsonObject profile_ref_json(const ProfileRef& p) {
     return {{"profile_id", qs(p.profile_id)},
@@ -121,16 +130,6 @@ QJsonObject preview_json(const ChangePreview& p) {
             {"affected_entity_id", qs(p.affected_entity.value)},
             {"creates_entity", p.creates_entity},
             {"revision", QString::number(p.context.expected_revision)}};
-}
-Vec3 vec(const QJsonObject& o, const char* key) {
-    const auto v = o.value(QLatin1String(key));
-    if (!v.isArray() || v.toArray().size() != 3)
-        throw BadInput("Position must contain three finite numbers in mm");
-    const auto a = v.toArray();
-    for (const auto& item : a)
-        if (!item.isDouble() || !std::isfinite(item.toDouble()))
-            throw BadInput("Invalid position number");
-    return {a[0].toDouble(), a[1].toDouble(), a[2].toDouble()};
 }
 QJsonValue field_json(const RecordFieldInput& field) {
     switch (field.kind) {
@@ -508,18 +507,13 @@ QJsonObject profile_json(const ProfileDefinition& p) {
 
 std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
                                           const QJsonObject& r,
-                                          const Caller& caller,
+                                          const Caller&,
                                           const IModelCodec* codec,
-                                          const ProfileDefinition* profile) {
+                                          const ProfileDefinition*) {
     const auto id = r.value("request_id").toString();
     const auto op = r.value("operation").toString();
     const auto p = r.value("parameters").toObject();
-    const auto command = p.value("command").toString();
-    const bool edit =
-        op == "changes.preview" &&
-        (command == "model.import" || command == "part.upsert" || command == "assembly.upsert" ||
-         command == "set.upsert" || command == "node.move" || command == "entity.delete");
-    if (!edit && op != "entity.query" && op != "entity.references" && op != "model.export_preview")
+    if (op != "entity.query" && op != "entity.references" && op != "model.export_preview")
         return std::nullopt;
     try {
         if (op == "entity.query" || op == "entity.references") {
@@ -529,7 +523,10 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
             return op == "entity.query" ? entity_query(id, p, *snapshot.value)
                                         : entity_references(id, p, *snapshot.value);
         }
-        if (op == "model.export_preview") {
+        const auto input = detail::typed_input<operations::ModelExportPreviewInput>(p);
+        if (!input.ok())
+            return detail::typed_input_failure(id, input.status, *input.error);
+        {
             const auto records = app.record_application().snapshot(ref(r));
             if (!records.ok())
                 return error(id, records);
@@ -546,32 +543,72 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
         if (!snap.ok())
             return error(id, snap);
         const auto& m = *snap.value;
-        if (edit || op == "model.export_preview") {
-            if (ctx(r).expected_revision != m.info.revision)
-                return failure(
-                    id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
+        if (ctx(r).expected_revision != m.info.revision)
+            return failure(id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
+        if (!codec)
+            return failure(id, "UNSUPPORTED_CAPABILITY", "No model codec registered");
+        const auto encoded = codec->encode(m,
+                                           nonblank(input.value->analysis_id, "analysis_id"),
+                                           profile_ref(input.value->expected_profile_ref));
+        const QJsonObject report{{"complete", encoded.report.complete},
+                                 {"profile_ref", profile_ref_json(encoded.report.profile)},
+                                 {"issues", issues_json(encoded.report.issues)}};
+        if (!encoded.artifact) {
+            auto out =
+                failure(id, "EXPORT_REJECTED", "Model is not exportable to the selected target");
+            out.insert("report", report);
+            return out;
         }
-        if (edit && command == "model.import") {
-            fields(p,
-                   {"command", "root_resource", "resources", "source_profile_ref", "unit_system"});
+        QJsonArray resources, mapping;
+        for (const auto& resource : encoded.artifact->resources)
+            resources.append(QJsonObject{{"path", qs(resource.path)}, {"text", qs(resource.text)}});
+        for (const auto& item : encoded.artifact->identities)
+            mapping.append(QJsonObject{{"entity_id", qs(item.entity.value)},
+                                       {"namespace", qs(item.name_space)},
+                                       {"number", QString::number(item.number)}});
+        return ok(id,
+                  {{"root_resource", qs(encoded.artifact->root_resource)},
+                   {"resources", resources},
+                   {"identities", mapping},
+                   {"export_report", report},
+                   {"analysis_id", qs(encoded.artifact->analysis.value)},
+                   {"profile_ref", profile_ref_json(encoded.artifact->profile)},
+                   {"document_id", qs(m.info.document.id.value)},
+                   {"document_epoch", qs(m.info.document.epoch.value)},
+                   {"content_state", qs(m.info.content_state)},
+                   {"published", false}},
+                  m.info.revision);
+    } catch (const BadInput& e) {
+        return failure(id, "INVALID_INPUT", QString::fromUtf8(e.what()));
+    }
+}
+
+QJsonObject preview_model_change(MemoryApplication& app,
+                                 const QJsonObject& r,
+                                 const Caller& caller,
+                                 const IModelCodec* codec,
+                                 const ProfileDefinition* profile,
+                                 const operations::ChangesPreviewInput& input) {
+    const auto id = r.value("request_id").toString();
+    try {
+        const auto snap = app.snapshot(ref(r));
+        if (!snap.ok())
+            return error(id, snap);
+        const auto& m = *snap.value;
+        if (ctx(r).expected_revision != m.info.revision)
+            return failure(id, "REVISION_CONFLICT", "Document revision has changed", "conflict");
+        if (const auto* import = std::get_if<operations::ChangesPreviewModelImport>(&input.value)) {
             if (!codec || !profile)
                 return failure(id, "UNSUPPORTED_CAPABILITY", "No model codec registered");
-            ImportRequest input;
-            input.root_resource = str(p, "root_resource");
-            input.source_profile = profile_ref(p, "source_profile_ref");
-            input.unit_system = str(p, "unit_system");
-            input.source_model_id =
+            ImportRequest request;
+            request.root_resource = nonblank(import->root_resource, "root_resource");
+            request.source_profile = profile_ref(import->source_profile_ref);
+            request.unit_system = nonblank(import->unit_system, "unit_system");
+            request.source_model_id =
                 QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
-            if (!p.value("resources").isArray())
-                throw BadInput("resources must be an array");
-            for (const auto& resource : p.value("resources").toArray()) {
-                if (!resource.isObject())
-                    throw BadInput("Invalid resource");
-                const auto item = resource.toObject();
-                fields(item, {"path", "text"});
-                input.resources.push_back({str(item, "path"), str(item, "text", true)});
-            }
-            const auto imported = codec->decode(input);
+            for (const auto& resource : import->resources)
+                request.resources.push_back({nonblank(resource.path, "path"), resource.text});
+            const auto imported = codec->decode(request);
             const QJsonObject report{
                 {"complete", imported.report.complete},
                 {"profile_ref", profile_ref_json(imported.report.profile)},
@@ -592,75 +629,36 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication& app,
                         static_cast<qint64>(model_entities(*imported.candidate).size()));
             return ok(id, data, m.info.revision);
         }
-        if (edit) {
-            ModelEdit action;
-            const auto entity_id =
-                p.contains("entity_id") ? EntityId{str(p, "entity_id")} : EntityId{};
-            if (command == "part.upsert") {
-                fields(p, {"command", "entity_id", "name", "members"});
-                action = UpsertPart{{entity_id, str(p, "name"), ids(p, "members")}};
-            }
-            if (command == "assembly.upsert") {
-                fields(p, {"command", "entity_id", "name", "children"});
-                action = UpsertAssembly{{entity_id, str(p, "name"), ids(p, "children")}};
-            }
-            if (command == "set.upsert") {
-                fields(p, {"command", "entity_id", "name", "members"});
-                action = UpsertSet{{entity_id, str(p, "name"), ids(p, "members")}};
-            }
-            if (command == "node.move") {
-                fields(p, {"command", "entity_id", "position_mm"});
-                action = MoveNode{EntityId{str(p, "entity_id")}, vec(p, "position_mm")};
-            }
-            if (command == "entity.delete") {
-                fields(p, {"command", "entity_id"});
-                action = DeleteEntity{EntityId{str(p, "entity_id")}};
-            }
-            const auto preview = app.preview_edit(caller, ctx(r), action);
-            if (!preview.ok())
-                return error(id, preview);
-            auto data = preview_json(*preview.value);
-            data.insert("affected_analyses",
-                        id_json(affected_analyses(m, preview.value->affected_entity)));
-            return ok(id, data, m.info.revision);
-        }
-        if (op == "model.export_preview") {
-            fields(p, {"analysis_id", "expected_profile_ref"});
-            if (!codec)
-                return failure(id, "UNSUPPORTED_CAPABILITY", "No model codec registered");
-            const auto encoded = codec->encode(
-                m, EntityId{str(p, "analysis_id")}, profile_ref(p, "expected_profile_ref"));
-            const QJsonObject report{{"complete", encoded.report.complete},
-                                     {"profile_ref", profile_ref_json(encoded.report.profile)},
-                                     {"issues", issues_json(encoded.report.issues)}};
-            if (!encoded.artifact) {
-                auto out = failure(
-                    id, "EXPORT_REJECTED", "Model is not exportable to the selected target");
-                out.insert("report", report);
-                return out;
-            }
-            QJsonArray resources, mapping;
-            for (const auto& resource : encoded.artifact->resources)
-                resources.append(
-                    QJsonObject{{"path", qs(resource.path)}, {"text", qs(resource.text)}});
-            for (const auto& item : encoded.artifact->identities)
-                mapping.append(QJsonObject{{"entity_id", qs(item.entity.value)},
-                                           {"namespace", qs(item.name_space)},
-                                           {"number", QString::number(item.number)}});
-            return ok(id,
-                      {{"root_resource", qs(encoded.artifact->root_resource)},
-                       {"resources", resources},
-                       {"identities", mapping},
-                       {"export_report", report},
-                       {"analysis_id", qs(encoded.artifact->analysis.value)},
-                       {"profile_ref", profile_ref_json(encoded.artifact->profile)},
-                       {"document_id", qs(m.info.document.id.value)},
-                       {"document_epoch", qs(m.info.document.epoch.value)},
-                       {"content_state", qs(m.info.content_state)},
-                       {"published", false}},
-                      m.info.revision);
-        }
-        return std::nullopt;
+        const auto optional_id = [](const std::optional<EntityId>& entity) {
+            return entity ? nonblank(*entity, "entity_id") : EntityId{};
+        };
+        ModelEdit action;
+        if (const auto* part = std::get_if<operations::ChangesPreviewPartUpsert>(&input.value))
+            action = UpsertPart{
+                {optional_id(part->entity_id), nonblank(part->name, "name"), part->members}};
+        else if (const auto* assembly =
+                     std::get_if<operations::ChangesPreviewAssemblyUpsert>(&input.value))
+            action = UpsertAssembly{{optional_id(assembly->entity_id),
+                                     nonblank(assembly->name, "name"),
+                                     assembly->children}};
+        else if (const auto* set = std::get_if<operations::ChangesPreviewSetUpsert>(&input.value))
+            action =
+                UpsertSet{{optional_id(set->entity_id), nonblank(set->name, "name"), set->members}};
+        else if (const auto* move = std::get_if<operations::ChangesPreviewNodeMove>(&input.value))
+            action = MoveNode{nonblank(move->entity_id, "entity_id"),
+                              {move->position_mm[0], move->position_mm[1], move->position_mm[2]}};
+        else if (const auto* removal =
+                     std::get_if<operations::ChangesPreviewEntityDelete>(&input.value))
+            action = DeleteEntity{nonblank(removal->entity_id, "entity_id")};
+        else
+            return failure(id, "UNSUPPORTED_CAPABILITY", "Unsupported model change command");
+        const auto preview = app.preview_edit(caller, ctx(r), action);
+        if (!preview.ok())
+            return error(id, preview);
+        auto data = preview_json(*preview.value);
+        data.insert("affected_analyses",
+                    id_json(affected_analyses(m, preview.value->affected_entity)));
+        return ok(id, data, m.info.revision);
     } catch (const BadInput& e) {
         return failure(id, "INVALID_INPUT", QString::fromUtf8(e.what()));
     }

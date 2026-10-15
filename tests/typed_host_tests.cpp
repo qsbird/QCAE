@@ -313,13 +313,19 @@ void rejected_open_inputs_are_atomic(qcae::MemoryApplication& app,
              {{{"mode", "recover"}, {"path", "/open-contract.qcae"}}, "input.path"},
              {{{"mode", "recover"}, {"extra", "unknown"}}, "input.extra"}})
         reject(open_request(input, key), "INVALID_INPUT", field);
-    auto legacy = open_request({}, key);
-    legacy.insert("operation", "changes.preview");
-    legacy.insert("requested_version", 1);
-    const auto legacy_failure = qcae::ipc::dispatch(app, legacy, caller);
-    require(legacy_failure.value("error").toObject().value("code") == "INVALID_INPUT" &&
+    // changes.preview has a generated contract: it negotiates requested_version and asks for its
+    // command before touching the document.
+    auto preview = open_request({}, key);
+    preview.insert("operation", "changes.preview");
+    preview.insert("requested_version", 2);
+    const auto unsupported = qcae::ipc::dispatch(app, preview, caller);
+    preview.insert("requested_version", 1);
+    const auto incomplete = qcae::ipc::dispatch(app, preview, caller);
+    require(unsupported.value("error").toObject().value("code") == "SCHEMA_UNSUPPORTED" &&
+                incomplete.value("error").toObject().value("code") == "MISSING_INPUT" &&
+                incomplete.value("error").toObject().value("field") == "input.command" &&
                 open_contract_state(app, store, caller) == before,
-            "an unaffected legacy preview keeps its version-field rejection");
+            "a contract-typed preview negotiates its version and asks for its command");
     auto profile = open_request(normal, key);
     profile.insert("expected_profile", QJsonObject{});
     require(qcae::ipc::dispatch(app, profile, caller).value("error").toObject().value("code") ==

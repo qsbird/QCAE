@@ -7,6 +7,8 @@
 #include <cmath>
 #include <set>
 #include <stdexcept>
+#include <type_traits>
+#include <variant>
 
 namespace qcae::ipc {
 namespace {
@@ -18,14 +20,6 @@ QString text(const std::string& value) {
 }
 QString number(std::uint64_t value) {
     return QString::number(value);
-}
-void fields(const QJsonObject& object, std::initializer_list<const char*> allowed) {
-    for (auto it = object.begin(); it != object.end(); ++it) {
-        if (std::none_of(allowed.begin(), allowed.end(), [&](const auto name) {
-                return it.key() == QLatin1String(name);
-            }))
-            throw BadSelectionRequest("Unexpected field: " + it.key().toStdString());
-    }
 }
 std::string string(const QJsonObject& object, const char* key, bool allow_empty = false) {
     const auto value = object.value(QLatin1String(key));
@@ -41,104 +35,72 @@ std::uint64_t integer(const QJsonObject& object, const char* key) {
         throw BadSelectionRequest(std::string("Expected unsigned integer string: ") + key);
     return result;
 }
-bool boolean(const QJsonObject& object, const char* key, bool fallback = false) {
-    if (!object.contains(key))
-        return fallback;
-    if (!object.value(key).isBool())
-        throw BadSelectionRequest(std::string("Expected boolean: ") + key);
-    return object.value(key).toBool();
-}
-std::vector<EntityId> entity_ids(const QJsonObject& object, const char* key) {
-    if (!object.value(key).isArray())
-        throw BadSelectionRequest(std::string("Expected ID array: ") + key);
-    std::vector<EntityId> result;
-    for (const auto& value : object.value(key).toArray()) {
-        if (!value.isString() || value.toString().isEmpty())
-            throw BadSelectionRequest("Invalid entity ID");
-        result.emplace_back(value.toString().toStdString());
-    }
-    return result;
-}
 QJsonArray ids_json(const std::vector<EntityId>& ids) {
     QJsonArray result;
     for (const auto& id : ids)
         result.append(text(id.value));
     return result;
 }
-Vec3 vector(const QJsonObject& object, const char* key) {
-    if (!object.value(key).isArray() || object.value(key).toArray().size() != 3)
-        throw BadSelectionRequest("Expected coordinate triple");
-    const auto array = object.value(key).toArray();
-    for (const auto& value : array)
-        if (!value.isDouble() || !std::isfinite(value.toDouble()))
-            throw BadSelectionRequest("Invalid coordinate");
-    return {array[0].toDouble(), array[1].toDouble(), array[2].toDouble()};
-}
-QueryPredicate predicate(const QJsonObject& object, std::size_t depth, std::size_t& count) {
+// The generated contract has already checked the expression's shape; this bounds its size.
+QueryPredicate
+predicate(const operations::SelectionPredicate& input, std::size_t depth, std::size_t& count) {
     if (depth > 16 || ++count > 128)
         throw BadSelectionRequest("Query expression exceeds limits");
-    const auto op = string(object, "op");
     QueryPredicate result;
-    if (op == "all") {
-        fields(object, {"op"});
-        result.op = QueryOp::all;
-    } else if (op == "and" || op == "or" || op == "not") {
-        fields(object, {"op", "children"});
-        if (!object.value("children").isArray())
-            throw BadSelectionRequest("Logical query requires children");
-        result.op = op == "and" ? QueryOp::and_ : op == "or" ? QueryOp::or_ : QueryOp::not_;
-        for (const auto& child : object.value("children").toArray()) {
-            if (!child.isObject())
-                throw BadSelectionRequest("Query child must be an object");
-            result.children.push_back(predicate(child.toObject(), depth + 1, count));
-        }
-    } else if (op == "kind" || op == "name_contains") {
-        fields(object, {"op", "value"});
-        result.op = op == "kind" ? QueryOp::kind : QueryOp::name_contains;
-        result.text = string(object, "value");
-    } else if (op == "ids") {
-        fields(object, {"op", "ids"});
-        result.op = QueryOp::ids;
-        result.ids = entity_ids(object, "ids");
-    } else if (op == "member_of") {
-        fields(object, {"op", "kind", "entity_id"});
-        result.op = QueryOp::member_of;
-        result.related_entity = EntityId{string(object, "entity_id")};
-        const auto kind = string(object, "kind");
-        if (kind == "part")
-            result.membership_kind = MembershipKind::part;
-        else if (kind == "assembly")
-            result.membership_kind = MembershipKind::assembly;
-        else if (kind == "set")
-            result.membership_kind = MembershipKind::set;
-        else if (kind == "include")
-            result.membership_kind = MembershipKind::include;
-        else
-            throw BadSelectionRequest("Invalid membership kind");
-    } else if (op == "material" || op == "section") {
-        fields(object, {"op", "entity_id"});
-        result.op = op == "material" ? QueryOp::material : QueryOp::section;
-        result.related_entity = EntityId{string(object, "entity_id")};
-    } else if (op == "source_number_range") {
-        fields(object, {"op", "namespace", "first", "last"});
-        result.op = QueryOp::source_number_range;
-        result.text = string(object, "namespace");
-        result.first_number = integer(object, "first");
-        result.last_number = integer(object, "last");
-    } else if (op == "world_box") {
-        fields(object, {"op", "minimum", "maximum", "relation"});
-        result.op = QueryOp::world_box;
-        result.box.minimum = vector(object, "minimum");
-        result.box.maximum = vector(object, "maximum");
-        const auto relation = string(object, "relation");
-        if (relation == "contained")
-            result.box.relation = BoxRelation::contained;
-        else if (relation == "intersects")
-            result.box.relation = BoxRelation::intersects;
-        else
-            throw BadSelectionRequest("Invalid box relation");
-    } else
-        throw BadSelectionRequest("Unknown query operation");
+    const auto logical = [&](QueryOp op, const std::vector<operations::SelectionPredicate>& nodes) {
+        result.op = op;
+        for (const auto& child : nodes)
+            result.children.push_back(predicate(child, depth + 1, count));
+    };
+    std::visit(
+        [&](const auto& node) {
+            using Node = std::decay_t<decltype(node)>;
+            if constexpr (std::is_same_v<Node, operations::SelectionPredicateAll>) {
+                result.op = QueryOp::all;
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateAnd>) {
+                logical(QueryOp::and_, node.children);
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateOr>) {
+                logical(QueryOp::or_, node.children);
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateNot>) {
+                logical(QueryOp::not_, node.children);
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateKind>) {
+                result.op = QueryOp::kind;
+                result.text = node.value;
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateNameContains>) {
+                result.op = QueryOp::name_contains;
+                result.text = node.value;
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateIds>) {
+                result.op = QueryOp::ids;
+                result.ids = node.ids;
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateMemberOf>) {
+                result.op = QueryOp::member_of;
+                result.related_entity = node.entity_id;
+                result.membership_kind = node.kind == "part"       ? MembershipKind::part
+                                         : node.kind == "assembly" ? MembershipKind::assembly
+                                         : node.kind == "set"      ? MembershipKind::set
+                                                                   : MembershipKind::include;
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateMaterial>) {
+                result.op = QueryOp::material;
+                result.related_entity = node.entity_id;
+            } else if constexpr (std::is_same_v<Node, operations::SelectionPredicateSection>) {
+                result.op = QueryOp::section;
+                result.related_entity = node.entity_id;
+            } else if constexpr (std::is_same_v<Node,
+                                                operations::SelectionPredicateSourceNumberRange>) {
+                result.op = QueryOp::source_number_range;
+                result.text = node.namespace_;
+                result.first_number = node.first;
+                result.last_number = node.last;
+            } else {
+                static_assert(std::is_same_v<Node, operations::SelectionPredicateWorldBox>);
+                result.op = QueryOp::world_box;
+                result.box.minimum = {node.minimum[0], node.minimum[1], node.minimum[2]};
+                result.box.maximum = {node.maximum[0], node.maximum[1], node.maximum[2]};
+                result.box.relation =
+                    node.relation == "contained" ? BoxRelation::contained : BoxRelation::intersects;
+            }
+        },
+        input.value);
     return result;
 }
 QJsonObject view_json(const ViewSession& view) {
@@ -323,32 +285,25 @@ std::optional<QJsonObject> dispatch_selection(MemoryApplication& app,
                                                  : SetOperation::difference),
                           handle_json);
         }
-        // selection.evaluate takes a nested predicate and scope, which it still decodes by hand.
-        const auto view_id = string(p, "view_session_id");
-        if (auto rejected = checked_view(view_id, integer(p, "expected_view_revision"), false))
+        const auto input = detail::typed_input<operations::SelectionEvaluateInput>(p);
+        if (!input.ok())
+            return detail::typed_input_failure(id, input.status, *input.error);
+        const auto& view_id = input.value->view_session_id;
+        if (auto rejected = checked_view(view_id, input.value->expected_view_revision, false))
             return *rejected;
-        fields(p, {"view_session_id", "expected_view_revision", "predicate", "scope"});
-        if (!p.value("predicate").isObject() || !p.value("scope").isObject())
-            throw BadSelectionRequest("Predicate and scope must be objects");
         std::size_t count = 0;
         QuerySpec query;
-        query.predicate = predicate(p.value("predicate").toObject(), 0, count);
-        const auto scope = p.value("scope").toObject();
-        fields(scope, {"candidate_ids", "include_hidden", "invert", "visibility"});
-        if (scope.contains("candidate_ids"))
-            query.scope.candidate_ids = entity_ids(scope, "candidate_ids");
-        query.scope.include_hidden = boolean(scope, "include_hidden");
-        query.scope.invert = boolean(scope, "invert");
-        const auto visibility =
-            scope.contains("visibility") ? string(scope, "visibility") : "through";
-        if (visibility == "through")
-            query.scope.visibility = VisibilityMode::through;
-        else if (visibility == "visible_only")
-            query.scope.visibility = VisibilityMode::visible_only;
-        else if (visibility == "picker_candidates")
-            query.scope.visibility = VisibilityMode::picker_candidates;
-        else
-            throw BadSelectionRequest("Unknown visibility mode");
+        query.predicate = predicate(input.value->predicate, 0, count);
+        const auto& scope = input.value->scope;
+        if (scope.candidate_ids)
+            query.scope.candidate_ids = *scope.candidate_ids;
+        query.scope.include_hidden = scope.include_hidden.value_or(false);
+        query.scope.invert = scope.invert.value_or(false);
+        const auto visibility = scope.visibility.value_or("through");
+        query.scope.visibility = visibility == "visible_only" ? VisibilityMode::visible_only
+                                 : visibility == "picker_candidates"
+                                     ? VisibilityMode::picker_candidates
+                                     : VisibilityMode::through;
         return encode(id, selections.select(snapshot, caller, view_id, query), handle_json);
     } catch (const BadSelectionRequest& error) {
         return failure(id, "INVALID_INPUT", QString::fromUtf8(error.what()));

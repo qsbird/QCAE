@@ -1,6 +1,225 @@
 {
   "schema_version": 1,
   "status": "implemented_host_selection_and_view_operations",
+  "types": [
+    {
+      "type_name": "SelectionPredicate",
+      "kind": "union",
+      "tag": "op",
+      "variants": [
+        {
+          "value": "all",
+          "type_name": "SelectionPredicateAll",
+          "fields": []
+        },
+        {
+          "value": "and",
+          "type_name": "SelectionPredicateAnd",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "children",
+              "type": "array",
+              "ref": "SelectionPredicate",
+              "allow_empty": true
+            }
+          ]
+        },
+        {
+          "value": "or",
+          "type_name": "SelectionPredicateOr",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "children",
+              "type": "array",
+              "ref": "SelectionPredicate",
+              "allow_empty": true
+            }
+          ]
+        },
+        {
+          "value": "not",
+          "type_name": "SelectionPredicateNot",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "children",
+              "type": "array",
+              "ref": "SelectionPredicate",
+              "allow_empty": true
+            }
+          ]
+        },
+        {
+          "value": "kind",
+          "type_name": "SelectionPredicateKind",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "value",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "value": "name_contains",
+          "type_name": "SelectionPredicateNameContains",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "value",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "value": "ids",
+          "type_name": "SelectionPredicateIds",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "ids",
+              "type": "entity_id_array",
+              "allow_empty": true
+            }
+          ]
+        },
+        {
+          "value": "member_of",
+          "type_name": "SelectionPredicateMemberOf",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "kind",
+              "type": "enum",
+              "values": [
+                "part",
+                "assembly",
+                "set",
+                "include"
+              ]
+            },
+            {
+              "field_id": 2,
+              "name": "entity_id",
+              "type": "entity_id"
+            }
+          ]
+        },
+        {
+          "value": "material",
+          "type_name": "SelectionPredicateMaterial",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id"
+            }
+          ]
+        },
+        {
+          "value": "section",
+          "type_name": "SelectionPredicateSection",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id"
+            }
+          ]
+        },
+        {
+          "value": "source_number_range",
+          "type_name": "SelectionPredicateSourceNumberRange",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "namespace",
+              "type": "string"
+            },
+            {
+              "field_id": 2,
+              "name": "first",
+              "type": "uint64_string"
+            },
+            {
+              "field_id": 3,
+              "name": "last",
+              "type": "uint64_string"
+            }
+          ]
+        },
+        {
+          "value": "world_box",
+          "type_name": "SelectionPredicateWorldBox",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "minimum",
+              "type": "vector3_mm",
+              "units": [
+                "mm"
+              ]
+            },
+            {
+              "field_id": 2,
+              "name": "maximum",
+              "type": "vector3_mm",
+              "units": [
+                "mm"
+              ]
+            },
+            {
+              "field_id": 3,
+              "name": "relation",
+              "type": "enum",
+              "values": [
+                "contained",
+                "intersects"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type_name": "SelectionScope",
+      "kind": "object",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "candidate_ids",
+          "type": "entity_id_array",
+          "optional": true,
+          "allow_empty": true
+        },
+        {
+          "field_id": 2,
+          "name": "include_hidden",
+          "type": "boolean",
+          "optional": true
+        },
+        {
+          "field_id": 3,
+          "name": "invert",
+          "type": "boolean",
+          "optional": true
+        },
+        {
+          "field_id": 4,
+          "name": "visibility",
+          "type": "enum",
+          "optional": true,
+          "values": [
+            "through",
+            "visible_only",
+            "picker_candidates"
+          ]
+        }
+      ]
+    }
+  ],
   "operations": [
     {
       "operation_id": "view.create",
@@ -173,6 +392,44 @@
             "intersection",
             "difference"
           ]
+        }
+      ]
+    },
+    {
+      "operation_id": "selection.evaluate",
+      "version": 1,
+      "schema_id": "qcae.operation.selection.evaluate.v1",
+      "type_name": "SelectionEvaluateInput",
+      "effect": "auxiliary_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "view_session_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "expected_view_revision",
+          "type": "uint64_string"
+        },
+        {
+          "field_id": 3,
+          "name": "predicate",
+          "type": "union",
+          "ref": "SelectionPredicate"
+        },
+        {
+          "field_id": 4,
+          "name": "scope",
+          "type": "object",
+          "ref": "SelectionScope"
         }
       ]
     }

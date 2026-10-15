@@ -13,6 +13,50 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# A recursive union through an array, an optional object array and a union-typed input.
+STRUCTURED_PROGRAM = '''\
+#include "qcae/operation_inputs.hpp"
+using namespace qcae;
+using namespace qcae::operations;
+Value object(Value::Object fields) { return Value(std::move(fields)); }
+Value leaf(const char* first) {
+    return object({{"op", Value("leaf")}, {"range", object({{"first", Value(first)}})}});
+}
+int main() {
+    const auto nested = object({{"node", object({{"op", Value("and")}, {"children", Value(Value::Array{
+        leaf("1"), object({{"op", Value("and")}, {"children", Value(Value::Array{leaf("2")})}})})}})}});
+    const auto good = InputTraits<TestEmptyInput>::from_value(nested);
+    const auto& root = std::get<TestAnd>(good.value->node.value);
+    const auto& inner = std::get<TestAnd>(root.children[1].value);
+    const bool shape = good.ok() && root.children.size() == 2 &&
+        std::get<TestLeaf>(inner.children[0].value).range.first == 2 && !good.value->ranges &&
+        InputTraits<TestEmptyInput>::to_value(*good.value) == nested;
+    const auto bad_tag = InputTraits<TestEmptyInput>::from_value(object({{"node", object({{"op", Value("and")},
+        {"children", Value(Value::Array{object({{"op", Value("or")}})})}})}}));
+    const auto missing = InputTraits<TestEmptyInput>::from_value(object({{"node", object({{"op", Value("leaf")}})}}));
+    const auto extra = InputTraits<TestEmptyInput>::from_value(object({{"node", leaf("1")},
+        {"ranges", Value(Value::Array{object({{"first", Value("1")}, {"x", Value(true)}})})}}));
+    const auto empty_ranges = InputTraits<TestEmptyInput>::from_value(object({{"node", leaf("1")},
+        {"ranges", Value(Value::Array{})}}));
+    const auto rename = object({{"command", Value("rename")}, {"name", Value("beam")}});
+    const auto command = InputTraits<TestCommandInput>::from_value(rename);
+    const auto no_command = InputTraits<TestCommandInput>::from_value(object({{"name", Value("beam")}}));
+    const auto wrong_variant = InputTraits<TestCommandInput>::from_value(
+        object({{"command", Value("noop")}, {"name", Value("beam")}}));
+    const auto fields = InputTraits<TestCommandInput>::definition().fields;
+    return shape && bad_tag.error && bad_tag.error->field == "input.node.children[0].op" &&
+        missing.status == Status::needs_input && missing.error->field == "input.node.range" &&
+        extra.error && extra.error->field == "input.ranges[0].x" && !empty_ranges.ok() &&
+        command.ok() && std::get<TestRename>(command.value->value).name == "beam" &&
+        InputTraits<TestCommandInput>::to_value(*command.value) == rename &&
+        no_command.status == Status::needs_input && no_command.error->field == "input.command" &&
+        wrong_variant.error && wrong_variant.error->field == "input.name" &&
+        fields.size() == 1 && fields[0].name == "command" &&
+        fields[0].values == std::vector<std::string>{"rename", "noop"} ? 0 : 1;
+}
+'''
+
+
 class OperationGeneration(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="qcae-operation-generation-")
@@ -112,7 +156,7 @@ add_subdirectory(modules/operations)
                                          "qcae_generated_operation_inputs"],
                                         capture_output=True, text=True, check=False)
                 self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
-                self.assertIn("allow_empty must be a boolean on a string or entity ID array",
+                self.assertIn("allow_empty must be a boolean on a string, entity ID array or array",
                               result.stdout + result.stderr)
 
     def test_allow_empty_string_preserves_optional_presence_and_default_rejection(self):
@@ -226,6 +270,62 @@ qcae_warnings(typed_fields)
             result = subprocess.run(["cmake", "--build", str(self.build), "--target",
                                      "qcae_generated_operation_inputs"], capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0, bad)
+
+    def test_structured_objects_recursive_unions_and_union_inputs(self):
+        self.write_probe_schema()
+        probe = self.source / "schemas/operations/probe.json"
+        schema = json.loads(probe.read_text())
+        context = schema["operations"][0]["context"]
+        schema["types"] = [
+            {"type_name": "TestRange", "kind": "object", "fields": [
+                {"field_id": 1, "name": "first", "type": "uint64_string"},
+                {"field_id": 2, "name": "label", "type": "string", "optional": True}]},
+            {"type_name": "TestNode", "kind": "union", "tag": "op", "variants": [
+                {"value": "leaf", "type_name": "TestLeaf", "fields": [
+                    {"field_id": 1, "name": "range", "type": "object", "ref": "TestRange"}]},
+                {"value": "and", "type_name": "TestAnd", "fields": [
+                    {"field_id": 1, "name": "children", "type": "array", "ref": "TestNode",
+                     "allow_empty": True}]}]},
+        ]
+        schema["operations"][0]["fields"] = [
+            {"field_id": 1, "name": "node", "type": "union", "ref": "TestNode"},
+            {"field_id": 2, "name": "ranges", "type": "array", "ref": "TestRange", "optional": True}]
+        schema["operations"].append({
+            "operation_id": "test.command", "version": 1, "schema_id": "qcae.operation.test.command.v1",
+            "type_name": "TestCommandInput", "effect": "preview", "context": context, "tag": "command",
+            "variants": [
+                {"value": "rename", "type_name": "TestRename",
+                 "fields": [{"field_id": 1, "name": "name", "type": "string"}]},
+                {"value": "noop", "type_name": "TestNoop", "fields": []}]})
+        probe.write_text(json.dumps(schema))
+        header = self.generate()
+        self.assertIn("static constexpr std::string_view parameters_schema", header)
+        (self.source / "structured.cpp").write_text(STRUCTURED_PROGRAM, encoding="utf-8")
+        with (self.source / "CMakeLists.txt").open("a", encoding="utf-8") as file:
+            file.write("add_executable(structured structured.cpp)\n"
+                       "target_link_libraries(structured PRIVATE qcae_operations)\n"
+                       "qcae_warnings(structured)\n")
+        self.run_command("cmake", "-S", str(self.source), "-B", str(self.build))
+        self.run_command("cmake", "--build", str(self.build), "--target", "structured")
+        executable = self.build / ("structured.exe" if shutil.which("cl") else "structured")
+        if not executable.is_file():
+            executable = self.build / "Debug" / "structured.exe"
+        self.run_command(str(executable))
+        cycle = json.loads(json.dumps(schema))
+        cycle["types"][0]["fields"].append({"field_id": 3, "name": "node", "type": "union", "ref": "TestNode"})
+        mismatched = json.loads(json.dumps(schema))
+        mismatched["operations"][0]["fields"][0]["ref"] = "TestRange"
+        unbounded = json.loads(json.dumps(schema))
+        unbounded["operations"][1]["variants"] = [
+            {"value": f"v{index}", "type_name": f"TestWide{index}",
+             "fields": [{"field_id": 1, "name": "name", "type": "string"}]} for index in range(70)]
+        for bad, message in ((cycle, "contain each other by value"), (mismatched, "mismatched structured type"),
+                             (unbounded, "exceeds the MCP bridge bounds")):
+            probe.write_text(json.dumps(bad))
+            result = subprocess.run(["cmake", "--build", str(self.build), "--target",
+                                     "qcae_generated_operation_inputs"], capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0, message)
+            self.assertIn(message, result.stdout + result.stderr)
 
     def test_parameterless_input_compiles_and_checks_object_shape(self):
         self.write_probe_schema()

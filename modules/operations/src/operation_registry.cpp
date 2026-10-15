@@ -147,7 +147,7 @@ Result<bool> valid_definition(const OperationDefinition& definition) {
                                  "fields");
         }
         if (field.allow_empty && field.wire_type != "string" &&
-            field.wire_type != "entity_id_array")
+            field.wire_type != "entity_id_array" && field.wire_type != "array")
             return failure<bool>(
                 ErrorCode::invalid_input,
                 "Empty values are supported only for strings and entity ID arrays.",

@@ -6,6 +6,9 @@
 namespace qcae {
 struct EntitySummary;
 }
+namespace qcae::operations {
+struct ChangesPreviewInput;
+}
 namespace qcae::ipc {
 struct EntityRowsJson {
     QJsonArray rows;
@@ -23,4 +26,11 @@ std::optional<QJsonObject> dispatch_model(MemoryApplication&,
                                           const Caller&,
                                           const IModelCodec*,
                                           const ProfileDefinition*);
+// changes.preview for model edits and imports, once the generated contract has decoded the command.
+QJsonObject preview_model_change(MemoryApplication&,
+                                 const QJsonObject& request,
+                                 const Caller&,
+                                 const IModelCodec*,
+                                 const ProfileDefinition*,
+                                 const operations::ChangesPreviewInput&);
 } // namespace qcae::ipc

@@ -5,9 +5,11 @@
 #include "qcae/operations.hpp"
 #include "qcae/operation_inputs.hpp"
 #include "qcae/typed_host.hpp"
+#include "typed_json.hpp"
 #include "qcae/records.hpp"
 
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -211,7 +213,8 @@ QJsonObject field_property(const operations::InputFieldDescriptor& field) {
 void describe_string_input(QJsonObject& entry,
                            const operations::OperationDefinition& definition,
                            std::string_view input_type,
-                           std::string_view output_type = "DocumentInfo") {
+                           std::string_view output_type = "DocumentInfo",
+                           std::string_view parameters_schema = {}) {
     QJsonArray fields, required;
     QJsonObject properties;
     for (const auto& field : definition.fields) {
@@ -238,6 +241,15 @@ void describe_string_input(QJsonObject& entry,
     entry.insert("wire_input_type", qs(input_type));
     entry.insert("wire_output_type", qs(output_type));
     entry.insert("fields", fields);
+    if (!parameters_schema.empty()) {
+        // Nested inputs carry their generated schema; flat descriptors cannot express them.
+        entry.insert("parameters_schema",
+                     QJsonDocument::fromJson(
+                         QByteArray::fromRawData(parameters_schema.data(),
+                                                 static_cast<qsizetype>(parameters_schema.size())))
+                         .object());
+        return;
+    }
     entry.insert("parameters_schema",
                  QJsonObject{{"type", "object"},
                              {"properties", properties},
@@ -452,17 +464,6 @@ WriteContext context(const QJsonObject& request) {
         throw InvalidRequest("expected_revision must be an unsigned integer string");
     return {document_ref(request), revision};
 }
-Quantity quantity(const QJsonObject& params) {
-    if (!params.value("young_modulus").isObject())
-        throw InvalidRequest("young_modulus must be an object");
-    const auto object = params.value("young_modulus").toObject();
-    fields(object, {"value", "unit"});
-    if (!object.value("value").isDouble())
-        throw InvalidRequest("young_modulus.value must be numeric");
-    const auto unit =
-        object.contains("unit") ? string_field(object, "unit", true).toStdString() : std::string{};
-    return {object.value("value").toDouble(), unit};
-}
 } // namespace
 QJsonObject info_json(const DocumentInfo& info) {
     const QJsonObject output{{"document_id", qs(info.document.id.value)},
@@ -566,13 +567,13 @@ using LegacyHandler = LegacyReply (*)(const LegacyCall&);
 
 // Hand-decoded operations whose parameters are checked by a generated input type; only these
 // accept requested_version.
-constexpr std::array<std::string_view, 21> generated_input_operations{
-    "project.open",     "project.create", "project.save",      "project.save_as",
-    "project.close",    "changes.commit", "capabilities.list", "project.current",
-    "project.status",   "model.summary",  "history.list",      "history.undo",
-    "history.redo",     "operations.get", "entity.query",      "entity.references",
-    "view.create",      "view.update",    "view.render_data",  "selection.get",
-    "selection.combine"};
+constexpr std::array<std::string_view, 24> generated_input_operations{
+    "project.open",      "project.create",     "project.save",      "project.save_as",
+    "project.close",     "changes.commit",     "capabilities.list", "project.current",
+    "project.status",    "model.summary",      "history.list",      "history.undo",
+    "history.redo",      "operations.get",     "entity.query",      "entity.references",
+    "view.create",       "view.update",        "view.render_data",  "selection.get",
+    "selection.combine", "selection.evaluate", "changes.preview",   "model.export_preview"};
 bool has_generated_input(std::string_view operation) {
     return std::ranges::find(generated_input_operations, operation) !=
            generated_input_operations.end();
@@ -585,9 +586,11 @@ struct InputContract {
     operations::OperationDefinition (*definition)();
     std::string_view input_type;
     std::string_view output_type;
+    // Generated JSON schema for inputs with nested objects or unions; empty for flat inputs.
+    std::string_view parameters_schema{};
 };
 template <class Input> constexpr auto definition_of = &operations::InputTraits<Input>::definition;
-constexpr std::array<InputContract, 22> input_contracts{{
+constexpr std::array<InputContract, 25> input_contracts{{
     {"project.create",
      definition_of<operations::ProjectCreateInput>,
      "ProjectCreateInput",
@@ -667,6 +670,21 @@ constexpr std::array<InputContract, 22> input_contracts{{
      "EventsSubscribeInput",
      "EventSubscription"},
     {"events.read", definition_of<operations::EventsReadInput>, "EventsReadInput", "EventBatch"},
+    {"selection.evaluate",
+     definition_of<operations::SelectionEvaluateInput>,
+     "SelectionEvaluateInput",
+     "SelectionHandle",
+     operations::InputTraits<operations::SelectionEvaluateInput>::parameters_schema},
+    {"changes.preview",
+     definition_of<operations::ChangesPreviewInput>,
+     "ChangesPreviewInput",
+     "ChangePreview",
+     operations::InputTraits<operations::ChangesPreviewInput>::parameters_schema},
+    {"model.export_preview",
+     definition_of<operations::ModelExportPreviewInput>,
+     "ModelExportPreviewInput",
+     "ArtifactPlanPreview",
+     operations::InputTraits<operations::ModelExportPreviewInput>::parameters_schema},
 }};
 void describe_input_contract(QJsonObject& entry, std::string_view operation) {
     if (operation == "project.open")
@@ -677,8 +695,11 @@ void describe_input_contract(QJsonObject& entry, std::string_view operation) {
         return describe_operation_lookup(entry);
     const auto contract = std::ranges::find(input_contracts, operation, &InputContract::operation);
     if (contract != input_contracts.end())
-        describe_string_input(
-            entry, contract->definition(), contract->input_type, contract->output_type);
+        describe_string_input(entry,
+                              contract->definition(),
+                              contract->input_type,
+                              contract->output_type,
+                              contract->parameters_schema);
 }
 
 LegacyReply legacy_capabilities_list(const LegacyCall& call) {
@@ -914,18 +935,18 @@ LegacyReply legacy_model_summary(const LegacyCall& call) {
 LegacyReply legacy_changes_preview(const LegacyCall& call) {
     const auto& [app, request, params, caller, codec, profile, typed, display_services, id, op] =
         call;
-    const auto command = string_field(params, "command");
+    const auto input = detail::typed_input<operations::ChangesPreviewInput>(params);
+    if (!input.ok())
+        return {detail::typed_input_failure(id, input.status, *input.error), true};
     MaterialCommand material_command;
-    if (command == "material.create") {
-        fields(params, {"command", "name", "young_modulus"});
-        material_command =
-            CreateMaterial{string_field(params, "name").toStdString(), quantity(params)};
-    } else if (command == "material.set_young_modulus") {
-        fields(params, {"command", "entity_id", "young_modulus"});
-        material_command = SetYoungModulus{
-            EntityId{string_field(params, "entity_id").toStdString()}, quantity(params)};
-    } else
-        return {failure(id, "UNSUPPORTED_CAPABILITY", "Unsupported material command"), true};
+    if (const auto* create =
+            std::get_if<operations::ChangesPreviewMaterialCreate>(&input.value->value))
+        material_command = CreateMaterial{create->name, create->young_modulus};
+    else if (const auto* modulus = std::get_if<operations::ChangesPreviewMaterialSetYoungModulus>(
+                 &input.value->value))
+        material_command = SetYoungModulus{modulus->entity_id, modulus->young_modulus};
+    else
+        return {preview_model_change(app, request, caller, codec, profile, *input.value), true};
     return {result_json(id,
                         app.preview(caller, context(request), material_command),
                         [](const ChangePreview& preview) {
@@ -1115,12 +1136,11 @@ QJsonObject dispatch(MemoryApplication& app,
             if (const auto rejected = version_rejection(request, id, definition.version))
                 return *rejected;
         }
-        // Selection and view operations with generated contracts honour requested_version here,
-        // before the selection service decodes them.
+        // Hand-dispatched operations with generated contracts honour requested_version here,
+        // before their handlers decode the parameters.
         if (const auto contract =
                 std::ranges::find(input_contracts, std::string_view(op), &InputContract::operation);
-            selections && contract != input_contracts.end() &&
-            (op.starts_with("view.") || op.starts_with("selection."))) {
+            contract != input_contracts.end()) {
             if (const auto rejected =
                     version_rejection(request, id, contract->definition().version))
                 return *rejected;

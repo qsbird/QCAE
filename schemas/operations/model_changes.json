@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "status": "implemented_host_change_preview_and_export_preview",
+  "types": [
+    {
+      "type_name": "ProfileReferenceInput",
+      "kind": "object",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "profile_id",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "profile_version",
+          "type": "string"
+        },
+        {
+          "field_id": 3,
+          "name": "definition_digest",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "type_name": "ImportResourceInput",
+      "kind": "object",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "path",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "text",
+          "type": "string",
+          "allow_empty": true
+        }
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "operation_id": "changes.preview",
+      "version": 1,
+      "schema_id": "qcae.operation.changes.preview.v1",
+      "type_name": "ChangesPreviewInput",
+      "effect": "preview",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "tag": "command",
+      "variants": [
+        {
+          "value": "material.create",
+          "type_name": "ChangesPreviewMaterialCreate",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "field_id": 2,
+              "name": "young_modulus",
+              "type": "quantity",
+              "units": [
+                "Pa",
+                "kPa",
+                "MPa",
+                "GPa"
+              ]
+            }
+          ]
+        },
+        {
+          "value": "material.set_young_modulus",
+          "type_name": "ChangesPreviewMaterialSetYoungModulus",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id"
+            },
+            {
+              "field_id": 2,
+              "name": "young_modulus",
+              "type": "quantity",
+              "units": [
+                "Pa",
+                "kPa",
+                "MPa",
+                "GPa"
+              ]
+            }
+          ]
+        },
+        {
+          "value": "part.upsert",
+          "type_name": "ChangesPreviewPartUpsert",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id",
+              "optional": true
+            },
+            {
+              "field_id": 2,
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "field_id": 3,
+              "name": "members",
+              "type": "entity_id_array",
+              "allow_empty": true
+            }
+          ]
+        },
+        {
+          "value": "assembly.upsert",
+          "type_name": "ChangesPreviewAssemblyUpsert",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id",
+              "optional": true
+            },
+            {
+              "field_id": 2,
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "field_id": 3,
+              "name": "children",
+              "type": "entity_id_array",
+              "allow_empty": true
+            }
+          ]
+        },
+        {
+          "value": "set.upsert",
+          "type_name": "ChangesPreviewSetUpsert",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id",
+              "optional": true
+            },
+            {
+              "field_id": 2,
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "field_id": 3,
+              "name": "members",
+              "type": "entity_id_array",
+              "allow_empty": true
+            }
+          ]
+        },
+        {
+          "value": "node.move",
+          "type_name": "ChangesPreviewNodeMove",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id"
+            },
+            {
+              "field_id": 2,
+              "name": "position_mm",
+              "type": "vector3_mm",
+              "units": [
+                "mm"
+              ]
+            }
+          ]
+        },
+        {
+          "value": "entity.delete",
+          "type_name": "ChangesPreviewEntityDelete",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "entity_id",
+              "type": "entity_id"
+            }
+          ]
+        },
+        {
+          "value": "model.import",
+          "type_name": "ChangesPreviewModelImport",
+          "fields": [
+            {
+              "field_id": 1,
+              "name": "root_resource",
+              "type": "string"
+            },
+            {
+              "field_id": 2,
+              "name": "resources",
+              "type": "array",
+              "ref": "ImportResourceInput",
+              "allow_empty": true
+            },
+            {
+              "field_id": 3,
+              "name": "source_profile_ref",
+              "type": "object",
+              "ref": "ProfileReferenceInput"
+            },
+            {
+              "field_id": 4,
+              "name": "unit_system",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "model.export_preview",
+      "version": 1,
+      "schema_id": "qcae.operation.model.export_preview.v1",
+      "type_name": "ModelExportPreviewInput",
+      "effect": "read_only",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": false,
+        "expected_profile": false
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "analysis_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "expected_profile_ref",
+          "type": "object",
+          "ref": "ProfileReferenceInput"
+        }
+      ]
+    }
+  ]
+}
