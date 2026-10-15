@@ -5,6 +5,11 @@
 
 namespace qcae::ipc::detail {
 using operations::Value;
+// The solver run an analysis.start task owns; analysis.get_run, get_result and validate_result take
+// this identity, not the task id or the result artifact id.
+inline std::string analysis_run_id(const std::string& task_id) {
+    return "run-" + task_id;
+}
 inline Value task_value(const TaskRecord& task) {
     Value::Array events;
     for (const auto& event : task.events)
@@ -16,6 +21,8 @@ inline Value task_value(const TaskRecord& task) {
                          {"progress", Value(task.progress)},
                          {"input_revision", Value(std::to_string(task.input.revision))},
                          {"events", Value(std::move(events))}};
+    if (task.operation == "analysis.start")
+        object.emplace("run_id", Value(analysis_run_id(task.id)));
     if (task.receipt)
         object.emplace("receipt", operations::change_receipt_value(*task.receipt));
     if (task.artifact_receipt)

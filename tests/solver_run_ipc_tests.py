@@ -183,7 +183,11 @@ def admitted(host, parameters, context, profile, key="start"):
     task = host.client.call("analysis.start", parameters, context, key,
                             extra={"expected_profile": profile})
     check(task["state"] in {"queued", "running", "failed"}, task)
-    return task, "run-" + task["task_id"]
+    # The task names its solver run, so clients never confuse it with the result artifact id.
+    check(task.get("run_id") == "run-" + task["task_id"], task)
+    status = host.client.call("task.status", {"task_id": task["task_id"]}, context)
+    check(status.get("run_id") == task["run_id"], status)
+    return task, task["run_id"]
 
 
 def wait_started(root, run_id):

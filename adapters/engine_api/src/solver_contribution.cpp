@@ -832,7 +832,7 @@ TaskPublisher SolverCoordinator::wrap_publisher(RecordApplication& app, TaskPubl
             auto& fact = frozen->fact;
             auto& request = fact.run.request;
             request.task_id = task.id;
-            request.run_id = "run-" + task.id;
+            request.run_id = detail::analysis_run_id(task.id);
             request.run_directory = (state->config->run_root / request.run_id).string();
             request.configuration = expanded_configuration(
                 *state->config, request.run_directory, frozen->artifact.root_resource);
@@ -856,7 +856,8 @@ TaskPublisher SolverCoordinator::wrap_publisher(RecordApplication& app, TaskPubl
             const auto session = base.validate_session(previous.input.document);
             if (!session.ok())
                 return {session.status, {}, session.error};
-            const auto run = state->find(previous.input.document, "run-" + previous.id);
+            const auto run =
+                state->find(previous.input.document, detail::analysis_run_id(previous.id));
             if (!run.ok())
                 return {run.status, {}, run.error};
             auto fact = run.value->first;
@@ -1484,7 +1485,7 @@ Result<Value> SolverCoordinator::State::start(const std::shared_ptr<State>& stat
                     task.input.profile != task_input.profile)
                     return bad<Value>(ErrorCode::idempotency_key_conflict,
                                       "Analysis key belongs to a different input");
-                const auto run = state->find(*context.document, "run-" + task.id);
+                const auto run = state->find(*context.document, detail::analysis_run_id(task.id));
                 if (!run.ok())
                     return {run.status, {}, run.error};
                 validate_solver_task(run.value->first, task);
