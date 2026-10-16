@@ -214,6 +214,8 @@ void make_gate(int (&fds)[2]) {
         throw std::runtime_error("Process admission socket setup failed");
     }
 }
+// How long a signalled group may outlive its leader before the outcome is left unknown.
+constexpr auto group_drain_limit = std::chrono::seconds(5);
 // Measures the run directory once. Returns false when an entry vanished between listing and
 // inspection, which a running solver causes by removing its scratch files.
 bool measure_output_budget(const SolverRunRecord& record) {
@@ -333,6 +335,9 @@ struct LocalSolverRunner::State {
         Clock::time_point deadline, cancel_time{};
         bool cancel_sent{}, killed{};
         std::optional<SolverRunRecord> observed;
+        // The leader's exit while our termination signal is still reaching the rest of its group.
+        std::optional<SolverRunRecord> leader_exit{};
+        Clock::time_point leader_exit_time{};
     };
     LocalSolverHost host;
     LocalSolverLimits limits;
@@ -363,8 +368,9 @@ struct LocalSolverRunner::State {
                 auto next = record;
                 ++next.sequence;
                 next.execution = SolverExecutionState::outcome_unknown;
-                next.detail =
-                    "No owned child handle after restart; execution requires reconciliation";
+                next.detail = "No owned child handle after restart; the process may still be "
+                              "running and its outcome cannot be verified. Starting a new run is a "
+                              "separate decision";
                 if (!persist(next, record))
                     return failure<SolverRunRecord>(ErrorCode::storage_uncertain,
                                                     "Recovery fact could not persist");
@@ -377,7 +383,31 @@ struct LocalSolverRunner::State {
             record.request != child.persisted.request || record.process != child.persisted.process)
             return failure<SolverRunRecord>(ErrorCode::storage_uncertain,
                                             "Owned process facts changed unexpectedly");
-        if (!child.observed) {
+        if (!child.observed && child.leader_exit) {
+            // Cancellation or a budget stop signalled the whole group and the leader has gone.
+            // Helpers get the grace period, then SIGKILL; the run concludes once the group is
+            // empty. A group that outlives the drain limit still leaves the outcome unknown.
+            const auto now = Clock::now();
+            if (::kill(-child.pid, 0) == 0 || errno == EPERM) {
+                if (!child.killed &&
+                    now - child.cancel_time >=
+                        std::chrono::milliseconds(record.request.configuration.cancel_grace_ms)) {
+                    require(::kill(-child.pid, SIGKILL) == 0 || errno == ESRCH,
+                            "Owned process group forced termination failed");
+                    child.killed = true;
+                }
+                if (now - child.leader_exit_time < group_drain_limit)
+                    return success(std::move(record));
+                auto next = *child.leader_exit;
+                next.execution = SolverExecutionState::outcome_unknown;
+                next.detail = "Leader exited while process group remains; outputs are not frozen";
+                child.observed = std::move(next);
+            } else {
+                auto next = *child.leader_exit;
+                collect_outputs(next, child.input_copy);
+                child.observed = std::move(next);
+            }
+        } else if (!child.observed) {
             int status{};
             pid_t waited;
             do {
@@ -395,6 +425,12 @@ struct LocalSolverRunner::State {
                     if (record.cancellation_requested && child.cancel_sent &&
                         (WTERMSIG(status) == SIGTERM || WTERMSIG(status) == SIGKILL))
                         next.execution = SolverExecutionState::cancelled;
+                }
+                if ((::kill(-child.pid, 0) == 0 || errno == EPERM) && child.cancel_sent) {
+                    // Our signal reached the group; let its helpers exit before concluding.
+                    child.leader_exit = std::move(next);
+                    child.leader_exit_time = Clock::now();
+                    return success(std::move(record));
                 }
                 if (::kill(-child.pid, 0) == 0 || errno == EPERM) {
                     next.execution = SolverExecutionState::outcome_unknown;

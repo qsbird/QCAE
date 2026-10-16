@@ -531,7 +531,9 @@ OwnedRowHandler solver_run_row_handler() {
                 ++fact.run.sequence;
                 fact.run.execution = SolverExecutionState::outcome_unknown;
                 fact.run.detail =
-                    "External execution requires reconciliation after host restart; not rerun";
+                    "The engine restarted and no longer owns this solver process; it may "
+                    "still be running and its outcome cannot be verified. It was not "
+                    "rerun; starting a new run is a separate decision";
                 return solver_owned_row(fact);
             },
             [](const OwnedRowImage& image) {

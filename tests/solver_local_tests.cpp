@@ -255,6 +255,35 @@ void await_child(const SolverRunRequest& request) {
     }
     throw std::runtime_error("Test child did not install its signal behavior");
 }
+volatile std::sig_atomic_t helper_terminating = 0;
+void helper_on_term(int) {
+    helper_terminating = 1;
+}
+// A helper in the leader's process group, like a vendor driver's worker: it takes a moment to
+// exit after SIGTERM, or ignores SIGTERM until the runner's SIGKILL.
+void start_group_helper(bool ignore_term) {
+    int ready[2];
+    require(::pipe(ready) == 0, "Group helper pipe failed");
+    const pid_t helper = ::fork();
+    require(helper >= 0, "Group helper fork failed");
+    if (helper == 0) {
+        ::close(ready[0]);
+        std::signal(SIGTERM, ignore_term ? SIG_IGN : helper_on_term);
+        const char byte = 'r';
+        if (::write(ready[1], &byte, 1) != 1)
+            std::_Exit(1);
+        ::close(ready[1]);
+        for (unsigned i = 0; i < 1000 && !helper_terminating; ++i)
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (helper_terminating)
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        std::_Exit(0);
+    }
+    ::close(ready[1]);
+    char byte{};
+    require(::read(ready[0], &byte, 1) == 1, "Group helper did not start");
+    ::close(ready[0]);
+}
 void crash_on_term(int) {
     // ASan owns SIGSEGV and may convert it to SIGABRT. Request the precise OS signal
     // under test directly, so the expected waitpid fact is identical in both builds.
@@ -325,6 +354,8 @@ int child(int argc, char** argv) {
     }
     if (mode == "ignore-term")
         std::signal(SIGTERM, SIG_IGN);
+    if (mode == "helper-slow-term" || mode == "helper-ignore-term")
+        start_group_helper(mode == "helper-ignore-term");
     if (mode == "crash-on-term")
         std::signal(SIGTERM, crash_on_term);
     if (mode == "exit-on-term")
@@ -351,7 +382,8 @@ int child(int argc, char** argv) {
             std::ofstream("extra-" + std::to_string(i)) << std::string(700000, 'x');
     std::cout << "test-only execution; no Nastran solver or engineering result\n";
     if (mode == "sleep" || mode == "ignore-term" || mode == "many-files" ||
-        mode == "crash-on-term" || mode == "exit-on-term" || mode == "mystran-many-files")
+        mode == "helper-slow-term" || mode == "helper-ignore-term" || mode == "crash-on-term" ||
+        mode == "exit-on-term" || mode == "mystran-many-files")
         for (unsigned i = 0; i < 1000; ++i)
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
     return 0;
@@ -628,6 +660,20 @@ int main(int argc, char** argv) {
                   stopped.termination_signal == SIGKILL && stopped.cancellation_requested &&
                   stopped.parsing == SolverParsingState::not_run,
               "Verified process group cancellation did not converge");
+        // The leader dies on SIGTERM before its helper; the runner waits for the group to drain
+        // (SIGKILL after the grace period) and then reports the cancellation.
+        for (const auto& mode : {"helper-slow-term", "helper-ignore-term"}) {
+            auto value = request(mode, mode);
+            check(runner.start(value).ok(), "Group helper child did not start");
+            await_child(value);
+            check(runner.cancel(value.run_id).value->accepted,
+                  "Group cancellation was not accepted");
+            const auto observed = wait(runner, value.run_id);
+            check(observed.execution == SolverExecutionState::cancelled &&
+                      observed.termination_signal == SIGTERM && observed.cancellation_requested &&
+                      observed.process && ::kill(-observed.process->pid, 0) != 0 && errno == ESRCH,
+                  "A cancelled leader's helper made the outcome unknown or outlived the run");
+        }
         for (const auto& mode : {"crash-on-term", "exit-on-term"}) {
             auto value = request(mode, mode);
             check(runner.start(value).ok(), "Cancellation race child did not start");

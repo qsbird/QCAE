@@ -66,7 +66,9 @@ OwnedRowHandler task_row_handler() {
         task.events.push_back({sequence->fetch_add(1) + 1, task.state, task.progress});
         task.diagnostic =
             Diagnostic{ErrorCode::storage_failure,
-                       "Task interrupted by process/session restart; it was not rerun",
+                       "Task interrupted by process/session restart. A process it started may "
+                       "still be running; the task was not rerun, and starting it again is a "
+                       "separate decision",
                        task.id};
         return row(task);
     };

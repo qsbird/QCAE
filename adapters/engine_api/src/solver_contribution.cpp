@@ -1433,7 +1433,9 @@ SolverCoordinator::State::run_task(const std::shared_ptr<State>& state,
             if (run.execution == SolverExecutionState::outcome_unknown)
                 return completion(TaskState::outcome_unknown,
                                   ErrorCode::storage_uncertain,
-                                  "External process outcome requires reconciliation");
+                                  "The solver process outcome cannot be verified and it may "
+                                  "still be running; it was not repeated, and starting a new run "
+                                  "is a separate decision");
             if (run.execution == SolverExecutionState::cancelled)
                 return completion(TaskState::cancelled,
                                   ErrorCode::invalid_input,
