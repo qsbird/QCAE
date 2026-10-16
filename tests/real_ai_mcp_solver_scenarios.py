@@ -14,6 +14,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -69,9 +70,13 @@ def solver_config(root, executable):
 
 
 def delayed_solver(root, solver):
+    # One process that later becomes the real solver, so a cancel's group signal ends it at once. A
+    # shell wrapper left its sleep child alive for a moment, which the runner rightly reported as an
+    # unknown outcome.
     wrapper = root / "delayed-mystran"
-    wrapper.write_text(f'#!/bin/sh\nif [ "$1" = "--version" ]; then exec {solver} --version; fi\n'
-                       f'/bin/sleep {DELAY_SECONDS}\nexec {solver} "$@"\n')
+    wrapper.write_text(f"#!{sys.executable}\nimport os, sys, time\nSOLVER = {str(solver)!r}\n"
+                       f"if sys.argv[1:] != ['--version']:\n    time.sleep({DELAY_SECONDS})\n"
+                       "os.execv(SOLVER, [SOLVER, *sys.argv[1:]])\n")
     wrapper.chmod(0o755)
     return wrapper
 
