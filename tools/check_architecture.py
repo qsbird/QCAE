@@ -19,7 +19,7 @@ PRODUCTION_DIRS = ("modules", "features", "profiles", "adapters", "ui", "apps")
 SOURCE_SUFFIXES = {".cpp", ".cc", ".cxx", ".c"}
 HEADER_SUFFIXES = {".hpp", ".h", ".hh", ".hxx"}
 RUNTIME_SUFFIXES = {".py"}
-FRAMEWORK = re.compile(r"(?:^|[/ :])(?:Qt[0-9]*(?:::|/)|Q[A-Z][a-z][A-Za-z0-9_]*(?:[/.]|$)|vtk|VTK|sqlite|SQLite|MCP)")
+FRAMEWORK = re.compile(r"(?:^|[/ :])(?:Qt[0-9]*(?:::|/)|Q[A-Z][a-z][A-Za-z0-9_]*(?:[/.]|$)|vtk|VTK|sqlite|SQLite|MCP|gmsh|Gmsh)")
 INCLUDE = re.compile(r'^\s*#\s*include\s*[<"]([^">]+)[">]', re.MULTILINE)
 SCOPE = {"PUBLIC", "PRIVATE", "INTERFACE"}
 

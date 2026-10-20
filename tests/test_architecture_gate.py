@@ -93,6 +93,9 @@ class ArchitectureMutations(unittest.TestCase):
     def test_03_domain_vtk(self):
         self.inject_domain_header("vtkRenderer.h")
 
+    def test_domain_gmsh(self):
+        self.inject_domain_header("gmsh.h")
+
     def test_04_gui_links_application(self):
         deps = self.row("qcae_desktop_ui")["private_dependencies"]
         deps.append("qcae_application")

@@ -52,6 +52,18 @@
 
 [打开源码](../../../modules/contracts/include/qcae/view_session.hpp)。`ViewSession` 保存隐藏实体、相机摘要和独立视图版本，让选择结果可以同时绑定模型与视图。它是可重建的交互状态，不是模型实体，也不应把旋转视图写进工程修改历史。
 
+### modules/contracts/include/qcae/planar_mesher.hpp
+
+[打开源码](../../../modules/contracts/include/qcae/planar_mesher.hpp)。平面网格端口 `IPlanarMesher`：直边外环加孔的平面区域、单元尺寸和三角形上限进，节点、绕区域法向逆时针的三角形和每条输入边上的边界线段出。端口只有纯数据，不含 Gmsh 类型；实现要保证同一输入得到同一网格，`identity()` 报告网格器与版本，供以后记录网格来源。
+
+### modules/planar_geometry/include/qcae/planar_geometry.hpp
+
+[打开源码](../../../modules/planar_geometry/include/qcae/planar_geometry.hpp)。`measure_planar_region` 是端口的前置条件：区域合法才返回法向与面积，否则以 `outer` 或 `holes[i]` 指出出错的环。放在核心而不是适配器里，是因为平面几何实体的规则也要用同一检查。
+
+### modules/planar_geometry/src/planar_geometry.cpp
+
+[打开源码](../../../modules/planar_geometry/src/planar_geometry.cpp)。检查按从简到繁排列：每个环的角点、外环确定的平面和法向、投影到平面坐标、角点处不能折回、任意两条边不相交也不相触（相邻边在公共角点除外）、孔在外环内且互不包含。边相交用两次“转向”符号判断，接触用点到线段距离判断；孔的位置在边都不相交之后只需看一个角点。Gmsh 4.15.2 遇到自交外环、与外环共边的孔和两个相同的孔会挂起，这些形状都在这里被拒绝。
+
 ## engine：进程组装入口
 
 ### apps/engine/main.cpp
@@ -120,6 +132,7 @@
 |---|---|
 | [modules/foundation/CMakeLists.txt](../../../modules/foundation/CMakeLists.txt) | INTERFACE 目标只传播 foundation 头文件和 C++20 要求，不生成实体持久化实现。 |
 | [modules/contracts/CMakeLists.txt](../../../modules/contracts/CMakeLists.txt) | INTERFACE 目标依赖 foundation，依据旧 `docs/contracts/operations.json` 生成能力目录 `operations.hpp`；与新 typed 输入生成分开。 |
+| [modules/planar_geometry/CMakeLists.txt](../../../modules/planar_geometry/CMakeLists.txt) | 纯 C++ 的 `qcae_planar_geometry` 只依赖契约，登记 `planar_geometry` 核心测试；不需要 Gmsh。 |
 | [adapters/engine_api/CMakeLists.txt](../../../adapters/engine_api/CMakeLists.txt) | 将分派与静态贡献装配编为 `qcae_engine_api`，依赖 legacy/query/typed 特性和 QtCore，不链接 Widgets 或 VTK。 |
 | [apps/engine/CMakeLists.txt](../../../apps/engine/CMakeLists.txt) | `qcae_engine_host` 承担共享宿主实现并链接 engine API、传输和 Nastran；存储启用时才链接 SQLite/定义 `QCAE_HAS_SQLITE`。薄 executable `qcae-engine` 链接这个宿主目标。 |
 

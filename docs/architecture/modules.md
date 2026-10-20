@@ -99,7 +99,7 @@ jobs 不直接写领域模型。任务完成后应用层同时校验DocumentId�
 
 ### ports
 
-只为实际外部边界定义接口：IProfileProvider、IWorkspaceStore、IProjectSnapshotStore、IModelCodec、ISolverRunner、IResultReader、IArtifactStore、IExecutorPort、IVisibilityQueryPort、ISnapshotRenderer。
+只为实际外部边界定义接口：IProfileProvider、IWorkspaceStore、IProjectSnapshotStore、IModelCodec、ISolverRunner、IPlanarMesher、IResultReader、IArtifactStore、IExecutorPort、IVisibilityQueryPort、ISnapshotRenderer。
 
 方法形状以实际用例决定。不要为每个函数新增抽象。适配器依赖 ports 及相关类型，核心不 include 适配器；运行宿主负责注入。
 
@@ -110,6 +110,7 @@ jobs 不直接写领域模型。任务完成后应用层同时校验DocumentId�
 | IProfileProvider | 不可变ProfileDefinition、能力/扩展schema与目标校验；P0为静态Nastran提供者 |
 | IModelCodec | 输入资源＋来源目标→候选模型/来源映射/报告；冻结分析＋ProfileRef→目标格式ArtifactPlan/导出映射/报告；P0为BDF/INCLUDE |
 | ISolverRunner | 已核验目标产物＋兼容RunConfiguration→进程运行句柄；查询/取消/核实→真实状态 |
+| IPlanarMesher | 有效平面区域（直边外环与孔）＋单元尺寸/三角形上限→节点、逆时针三角形与边界线段；同输入同网格。区域有效性由核心 `measure_planar_region` 先行检查 |
 | IResultReader | 固定运行/编号映射与结果资源→带量纲、位置、坐标基、工况/采样及来源的ResultBundle；P0只读位移/反力 |
 | IArtifactStore | 临时资源→发布清单；资源ID→受控读取及可用性 |
 | IVisibilityQueryPort | RenderPacket与ViewSpec/候选范围→精确可见实体ID及版本 |
@@ -126,6 +127,7 @@ PreparedCommit包括模型差量、历史、幂等、修订和相关任务结果
 | profiles/nastran | 提供一个版本化能力包、字段/规则/映射描述，由宿主静态注册 | 不改核心公共类型，不直接提交模型 |
 | adapters/nastran_codec | 支持子集读写、INCLUDE解析、编号映射、文件/行诊断 | 不在解析中直接改活动模型 |
 | adapters/solver_local | 固定可执行配置、进程启动/取消、日志与退出信息 | 不执行AI给出的任意shell串 |
+| adapters/mesher_gmsh | 在engine进程内用Gmsh为有效平面区域划分三角形；串行调用、清理Gmsh模型、复原环境与locale | 不写文档、不分配实体身份 |
 | adapters/result_reader | 位移/反力读取及输入运行关联 | 不输出无依据的工程结论 |
 | adapters/runtime_local | 任务执行、进程能力、时间/配额观测 | 不再建一套任务状态权威 |
 | adapters/graphics_local | 转发离屏出图/可见性请求到图像辅助进程 | 不在engine创建VTK图形上下文 |
@@ -172,7 +174,7 @@ src/
   profiles/nastran/
   adapters/
     storage_sqlite/  artifacts_local/  nastran_codec/
-    solver_local/  result_reader/  runtime_local/  ipc_local/  graphics_local/
+    solver_local/  result_reader/  runtime_local/  ipc_local/  graphics_local/  mesher_gmsh/
   visualization/
     render_data/  vtk/
   clients/

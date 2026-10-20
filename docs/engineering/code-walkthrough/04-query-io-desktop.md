@@ -84,6 +84,16 @@
 
 [打开源码](../../../apps/desktop/main.cpp)。`main` 唯一工作是转调 `qcae::run_desktop`，实际启动参数、窗口及客户端由 UI 层组装。这样的薄入口把 executable 与显示组件分开，也便于确认桌面启动没有嵌入另一份业务 engine。
 
+## Gmsh：平面区域的三角形网格
+
+### adapters/mesher_gmsh/include/qcae/gmsh_planar_mesher.hpp
+
+[打开源码](../../../adapters/mesher_gmsh/include/qcae/gmsh_planar_mesher.hpp)。`GmshPlanarMesher` 实现 `IPlanarMesher`，在调用进程内使用 Gmsh 库。构造函数启动 Gmsh，所以宿主要在启动阶段、其他线程运行之前构造它。
+
+### adapters/mesher_gmsh/src/gmsh_planar_mesher.cpp
+
+[打开源码](../../../adapters/mesher_gmsh/src/gmsh_planar_mesher.cpp)。读的顺序就是一次调用的顺序：先查选项，再用 `measure_planar_region` 查区域，按面积估算拒绝过大的请求；然后持锁在 `ScopedModel` 里建点、线、环和平面，生成二维网格，只取面及其边界上的节点，把三角形和每条边上的线段换成节点下标；最后把三角形统一转为逆时针并核对面积。`start_gmsh_once` 说明了嵌入第三方库时的一个代价：Gmsh 启动会改 `PATH`、`PYTHONPATH` 和 locale，而 4.15.2 本应关闭这些改动的命令行选项反而会让进程退出，所以由这里事后复原。构建 Gmsh 的步骤见 [适配器说明](../../../adapters/mesher_gmsh/README.md)，取舍见 [ADR-10](../../architecture/gmsh-mesher.md)。
+
 ## 本章 CMake 文件
 
 这些文件只定义目标与依赖，实际能否装配取决于根构建选项和已配置的 Qt/VTK/SQLite 环境。
@@ -93,6 +103,7 @@
 | [modules/query/CMakeLists.txt](../../../modules/query/CMakeLists.txt) | `qcae_query` 编入三份查询实现，公开依赖 document/contracts；记录原生路径与兼容桥进入同一静态库。 |
 | [modules/clients/CMakeLists.txt](../../../modules/clients/CMakeLists.txt) | `qcae_desktop_client` 依赖 transport/contracts，启用 AUTOMOC 处理 QObject；不链接应用核心。 |
 | [adapters/storage_sqlite/CMakeLists.txt](../../../adapters/storage_sqlite/CMakeLists.txt) | `qcae_sqlite` 公开契约、私有链接所选 SQLite target，数据库依赖停在适配器内。 |
+| [adapters/mesher_gmsh/CMakeLists.txt](../../../adapters/mesher_gmsh/CMakeLists.txt) | 仅在 `QCAE_WITH_GMSH=ON` 时由根构建加入：`qcae_mesher_gmsh` 公开契约，私有链接平面几何检查和导入目标 `Gmsh::Gmsh`，登记 `gmsh_planar_mesher` 测试。 |
 | [adapters/rendering_vtk/CMakeLists.txt](../../../adapters/rendering_vtk/CMakeLists.txt) | `qcae_vtk_view` 依赖契约、Qt Widgets/OpenGLWidgets 和 VTK，启用 AUTOMOC 与 VTK 模块初始化。 |
 | [adapters/transport_local/CMakeLists.txt](../../../adapters/transport_local/CMakeLists.txt) | header-only `qcae_transport_local` 用 INTERFACE 传播 include、C++20、QtCore/Network 与契约依赖。 |
 | [profiles/nastran/CMakeLists.txt](../../../profiles/nastran/CMakeLists.txt) | `qcae_nastran` 链接 document/contracts，并由 `generate_profile.py` 根据源码、支持矩阵等生成定义摘要头；摘要生成不等于求解环境验证。 |

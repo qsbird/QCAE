@@ -6,15 +6,16 @@
 
 | 组件 | 已确定职责 | 边界 |
 |---|---|---|
-| C++20标准库 | 领域、应用服务、类型、容器与必要并发契约 | 核心不暴露Qt/VTK/SQLite/MCP类型 |
+| C++20标准库 | 领域、应用服务、类型、容器与必要并发契约 | 核心不暴露Qt/VTK/SQLite/MCP/Gmsh类型 |
 | Qt 6 Core / Network | engine宿主、本地IPC、进程等适配 | 不进入领域及应用公共契约 |
 | Qt 6 Widgets / 所需图形集成 | 必要桌面工作区、树表、表单、视口容器 | GUI不直接改文档或工程库 |
 | VTK | 显示、拾取及必要图形辅助 | 消费RenderPacket；不作为物理模型 |
 | SQLite 3 | 工作恢复库、历史/幂等持久化、工程快照 | 数据库外产物使用独立发布规则 |
 | MCP工具桥 | 外部AI入口，采用stdio对接客户端，再连接本地IPC | SDK语言不改变核心契约；M5进入前固定实现与打包方式 |
+| Gmsh 4.15.2（可选） | 平面区域的三角形网格（平板网格轨道） | 进程内适配器经核心端口 `IPlanarMesher` 使用；源码构建，只开网格模块；`QCAE_WITH_GMSH` 默认关闭（[ADR-10](../architecture/gmsh-mesher.md)） |
 | 已有Nastran求解器 | 受控SOL 101悬臂梁的真实计算与验证 | 不自研或偷偷替换为CalculiX；实际方言/二进制由M1/M4门禁记录 |
 
-Qt模块许可按构建清单核验；VTK为BSD-3-Clause，SQLite核心代码公共领域。此处不作未选构建包的整体许可保证。[Qt许可](https://doc.qt.io/qt-6/licensing.html)、[VTK](https://vtk.org/about/)、[SQLite](https://sqlite.org/copyright.html)
+Qt模块许可按构建清单核验；VTK为BSD-3-Clause，SQLite核心代码公共领域；Gmsh为GPL-2.0-or-later（含链接例外），分发链接它的二进制属于GPL下的组合作品，QCAE源码仍按WTFPL。此处不作未选构建包的整体许可保证。[Qt许可](https://doc.qt.io/qt-6/licensing.html)、[VTK](https://vtk.org/about/)、[SQLite](https://sqlite.org/copyright.html)
 
 ## 开发验证工具
 
@@ -24,7 +25,7 @@ CMake/CTest负责构建与测试；Catch2负责核心测试；Qt Test负责必�
 
 ## 暂不引入
 
-OCCT、Netgen/Gmsh在首次实际CAD/网格用例时接入；ParaView/trame、Qt ADS、HDF5、CGAL/SMESH、用户脚本运行时和插件系统不进入当前依赖集。不会因架构参考研究而复制其他项目或增加其许可证依赖。
+OCCT、Netgen在首次实际CAD用例时接入（Gmsh已按平板网格轨道接入）；ParaView/trame、Qt ADS、HDF5、CGAL/SMESH、用户脚本运行时和插件系统不进入当前依赖集。不会因架构参考研究而复制其他项目或增加其许可证依赖。
 
 ## 门禁记录
 

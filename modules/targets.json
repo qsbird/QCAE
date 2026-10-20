@@ -38,7 +38,8 @@
         "modules/contracts/include/qcae/record_store.hpp",
         "modules/contracts/include/qcae/view_session.hpp",
         "modules/contracts/include/qcae/resource.hpp",
-        "modules/contracts/include/qcae/solver_runner.hpp"
+        "modules/contracts/include/qcae/solver_runner.hpp",
+        "modules/contracts/include/qcae/planar_mesher.hpp"
       ],
       "sources": [],
       "public_dependencies": [
@@ -49,6 +50,28 @@
       "generated_public_include_dirs": [
         "generated"
       ]
+    },
+    {
+      "target": "qcae_planar_geometry",
+      "path": "modules/planar_geometry",
+      "kind": "STATIC",
+      "option": null,
+      "public_include_dirs": [
+        "modules/planar_geometry/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "modules/planar_geometry/include/qcae/planar_geometry.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "modules/planar_geometry/src/planar_geometry.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_contracts"
+      ],
+      "private_dependencies": [],
+      "external_dependencies": []
     },
     {
       "target": "qcae_document",
@@ -904,6 +927,33 @@
       ],
       "external_dependencies": [
         "Threads::Threads"
+      ]
+    },
+    {
+      "target": "qcae_mesher_gmsh",
+      "path": "adapters/mesher_gmsh",
+      "kind": "STATIC",
+      "option": "QCAE_WITH_GMSH",
+      "public_include_dirs": [
+        "adapters/mesher_gmsh/include"
+      ],
+      "private_include_dirs": [],
+      "public_headers": [
+        "adapters/mesher_gmsh/include/qcae/gmsh_planar_mesher.hpp"
+      ],
+      "private_headers": [],
+      "sources": [
+        "adapters/mesher_gmsh/src/gmsh_planar_mesher.cpp"
+      ],
+      "public_dependencies": [
+        "qcae_contracts"
+      ],
+      "private_dependencies": [
+        "qcae_planar_geometry",
+        "Gmsh::Gmsh"
+      ],
+      "external_dependencies": [
+        "Gmsh::Gmsh"
       ]
     }
   ]

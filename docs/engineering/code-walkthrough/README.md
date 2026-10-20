@@ -56,11 +56,12 @@ flowchart TB
 | `modules/document` | 强类型记录、只读视图、候选编辑、校验和旧格式桥 | GUI 菜单、socket 分派 |
 | `modules/application` | 活动文档、提交、幂等、历史、保存/打开/恢复 | 具体网格生成算法、具体数据库操作 |
 | `modules/operations`、`parameters` | typed 契约机制与纯参数工具 | 第二个事务管理器、任意实体字典 |
+| `modules/planar_geometry` | 平面区域的有效性检查与面积、法向 | 网格算法、文档记录 |
 | `modules/runtime` | 后台队列、状态、取消、恢复及应用桥 | worker 直接发布文档 |
 | `modules/query` | 当前记录/字段/引用查询、选择与显示数据生产 | VTK/OpenGL 图形上下文 |
 | `features/` | 具体工程操作与旧 API 兼容 | 自行追加历史或直接写 SQLite |
 | `profiles/nastran` | 受控格式编解码与能力定义 | 一般文档/历史机制 |
-| `adapters/` | JSON IPC、SQLite、VTK、本地 endpoint | 绕过应用的业务写入 |
+| `adapters/` | JSON IPC、SQLite、VTK、Gmsh 网格、本地 endpoint | 绕过应用的业务写入 |
 | `modules/clients`、`ui/desktop` | engine 客户端、窗口与交互 | 权威文档实例 |
 | `schemas/` | 实体结构与 typed 输入的生成源 | 几何/网格算法本身 |
 

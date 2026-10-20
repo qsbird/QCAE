@@ -36,7 +36,7 @@ cmake --build build-core
 ctest --test-dir build-core --output-on-failure
 ```
 
-本地engine/CLI启用`QCAE_BUILD_IPC=ON`，SQLite持久化启用`QCAE_BUILD_STORAGE=ON`，桌面另启用`QCAE_BUILD_DESKTOP=ON`并配置带Qt支持的VTK。运行`./build-desktop/qcae-desktop`启动工作区，详见[M2/M3构建与运行](docs/implementation/m2-m3.md)。不传`--workspace`的独立engine仍为内存模式。
+本地engine/CLI启用`QCAE_BUILD_IPC=ON`，SQLite持久化启用`QCAE_BUILD_STORAGE=ON`，桌面另启用`QCAE_BUILD_DESKTOP=ON`并配置带Qt支持的VTK。运行`./build-desktop/qcae-desktop`启动工作区，详见[M2/M3构建与运行](docs/implementation/m2-m3.md)。Gmsh平面网格适配器另启用`QCAE_WITH_GMSH=ON`，并以`QCAE_GMSH_ROOT`指向源码构建的Gmsh，见[适配器说明](adapters/mesher_gmsh/README.md)。不传`--workspace`的独立engine仍为内存模式。
 
 ## 仓库内容
 

@@ -6,6 +6,9 @@
 本机版本/输入/结果适配，复用共享 BDF 与单一运行链；实际门禁和未关闭范围见
 [开发计划](../baseline/development-plan.md#当前状态)。
 
+2026-10-20 接续决策 [ADR-10：Gmsh 平面网格适配器](gmsh-mesher.md) 为平板网格轨道
+引入源码构建的Gmsh，经核心端口在engine进程内调用，区域有效性由核心先行检查。
+
 ## ADR-01：单一本地engine宿主
 
 决定：采用独立qcae-engine，GUI、CLI、MCP连接同一业务宿主。
