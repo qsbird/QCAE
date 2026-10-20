@@ -11,5 +11,9 @@ primary entity ID. `move_line_endpoint_handler` increments geometry revision and
 marks every bound mesh stale in the same prepared change. It does not silently
 retarget existing mesh or analysis references.
 
+`register_handlers` in `geometry_operations.cpp` exposes these handlers as the typed
+operations `geometry.create_line`, `geometry.evaluate_line` and `geometry.move_endpoint`; the
+engine host calls it while composing its operations.
+
 The handler depends only on application/document contracts. It never writes a
 database or owns another model. Test with `geometry_mesh` and `record_document`.

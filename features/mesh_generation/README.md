@@ -23,6 +23,11 @@ analysis inputs remain necessary for Nastran readiness/export. The strict legacy
 Beam model is unchanged; its explicit bridge uses an empty section ID for an
 unassigned element, which strict legacy validation/export rejects.
 
+`register_handlers` in `mesh_generation_operations.cpp` registers `mesh.generate_line` and
+`mesh.regenerate_line`. The feature builds the `TaskRequest`; the host passes a `StartTask`
+callback that starts it on `TaskService` and reports status in the format its other
+background operations share.
+
 This feature currently creates a new mesh. It does not claim mapped replacement or
 remeshing of a previously referenced mesh. Those operations must implement the
 frozen `reject_unmapped` policy before they can be advertised. `geometry_mesh` tests

@@ -70,11 +70,19 @@
 
 ### features/geometry/include/qcae/geometry_features.hpp
 
-[打开源码](../../../features/geometry/include/qcae/geometry_features.hpp)。`LineGeometryInput` 只有 mm 单位的起止点，公开创建线、修改终点及对应签名函数，返回统一 `RecordPrepare`。创建已接到 typed IPC；终点修改已有核心函数，但尚无对应的七项 typed 公共操作或 GUI 工具。
+[打开源码](../../../features/geometry/include/qcae/geometry_features.hpp)。`LineGeometryInput` 只有 mm 单位的起止点，公开创建线、修改终点及对应签名函数，返回统一 `RecordPrepare`。创建、求值和终点修改都已登记为 typed 操作（见下面的 `geometry_operations.cpp`）；终点修改尚无 GUI 工具。
 
 ### features/geometry/src/geometry_features.cpp
 
 [打开源码](../../../features/geometry/src/geometry_features.cpp)。创建函数在应用提供的 allocator 下取得身份，把 `GeometryLine` 放进私有编辑会话；修改终点则同时增加 geometry revision，并把引用该几何的 Mesh 标为 stale。这个复合变更示范了几何变化如何影响派生网格，全部一起提交/撤销；它没有 CAD 内核，也没有提供曲面或一般几何拓扑。
+
+### features/geometry/include/qcae/geometry_operations.hpp
+
+[打开源码](../../../features/geometry/include/qcae/geometry_operations.hpp)。只声明 `register_handlers`：把上面的候选处理器登记为 `geometry.create_line`、`geometry.evaluate_line` 和 `geometry.move_endpoint` 三项 typed 操作。
+
+### features/geometry/src/geometry_operations.cpp
+
+[打开源码](../../../features/geometry/src/geometry_operations.cpp)。每项操作一个小函数。两个写操作把 typed 输入换成线或终点，用各自的签名函数经 `RecordApplication::execute` 提交，返回变更回执；求值在当前快照上算出点位，并带回所读的修订。几何沿用自己的签名函数而不是 `record_plan`，因此登记位置迁移前已提交的重试仍得到原回执。
 
 ## mesh_generation：真正的后台任务
 
@@ -88,6 +96,14 @@
 
 typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—100000，还要受到应用实体及文档总记录配额限制，不能理解为默认配置能实际生成 100000 段。它是内置均匀一维生成器，尚未接 Gmsh/Netgen，也不是通用自动网格引擎。
 
+### features/mesh_generation/include/qcae/mesh_generation_operations.hpp
+
+[打开源码](../../../features/mesh_generation/include/qcae/mesh_generation_operations.hpp)。声明 `register_handlers` 与 `StartTask` 回调。功能只构造 `TaskRequest`；任务服务和任务状态的 wire 格式属于宿主，由宿主以回调传入，所以功能不依赖 IPC 适配层。
+
+### features/mesh_generation/src/mesh_generation_operations.cpp
+
+[打开源码](../../../features/mesh_generation/src/mesh_generation_operations.cpp)。`mesh.generate_line` 与 `mesh.regenerate_line` 共用 `start_from_snapshot`：读当前快照、构造任务请求、写入调用方的期望修订，再交给 `StartTask`。任务去重比较原始提交上下文，所以请求带调用方的期望修订，而不是快照修订。
+
 ## 本章构建文件
 
 | 文件 | 作用与依赖 |
@@ -96,8 +112,8 @@ typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—10
 | [modules/parameters/CMakeLists.txt](../../../modules/parameters/CMakeLists.txt) | 构建纯参数工具，链接 foundation/contracts，不依赖应用、Qt 或具体求解器。 |
 | [features/materials/CMakeLists.txt](../../../features/materials/CMakeLists.txt) | 构建材料特性，链接 application/operations/parameters，定义三项业务处理器。 |
 | [features/mesh_editing/CMakeLists.txt](../../../features/mesh_editing/CMakeLists.txt) | 构建局部网格编辑特性，依赖结构与材料特性一致，通用提交留在 application。 |
-| [features/geometry/CMakeLists.txt](../../../features/geometry/CMakeLists.txt) | 构建纯几何候选处理器，只公开依赖 application；typed 注册目前由宿主完成。 |
-| [features/mesh_generation/CMakeLists.txt](../../../features/mesh_generation/CMakeLists.txt) | 构建线网格任务，依赖独立 task/application 桥，并登记 geometry_mesh 测试；不让通用应用反向依赖网格生成。 |
+| [features/geometry/CMakeLists.txt](../../../features/geometry/CMakeLists.txt) | 构建几何候选处理器及其 typed 登记，公开依赖 application 与 feature_support。 |
+| [features/mesh_generation/CMakeLists.txt](../../../features/mesh_generation/CMakeLists.txt) | 构建线网格任务及其 typed 登记，依赖独立 task/application 桥与 feature_support，并登记 geometry_mesh 测试；不让通用应用反向依赖网格生成。 |
 
 可以沿 `geometry.create_line → mesh.generate_line → beam.assign_section → node.move` 阅读一次完整功能链。新增已有类型上的操作复用候选/提交模式，并从静态贡献注册；新增面/体单元仍须补拓扑、查询/显示和格式语义。
 

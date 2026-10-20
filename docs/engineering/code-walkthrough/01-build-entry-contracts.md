@@ -92,7 +92,7 @@
 
 ### adapters/engine_api/src/engine_contributions.cpp
 
-[打开源码](../../../adapters/engine_api/src/engine_contributions.cpp)。`default_engine_contributions()` 提供生产记录/规则，`default_operations()` 注册材料、网格编辑、几何创建和后台线网格。`assemble_engine` 拒绝空或重复贡献 ID，先收集记录与规则再 freeze；组合操作回调随后在同一个应用上执行。新增测试贡献无需修改通用提交、历史或存储算法。
+[打开源码](../../../adapters/engine_api/src/engine_contributions.cpp)。`default_engine_contributions()` 提供生产记录/规则，`default_operations()` 依次调用材料、网格编辑、分析、几何和网格生成功能各自的 `register_handlers`；网格生成拿到的任务启动回调由宿主提供，所以网格任务与其他后台操作返回同一种任务状态。`assemble_engine` 拒绝空或重复贡献 ID，先收集记录与规则再 freeze；组合操作回调随后在同一个应用上执行。新增测试贡献无需修改通用提交、历史或存储算法。
 
 ### adapters/engine_api/src/typed_values.hpp
 

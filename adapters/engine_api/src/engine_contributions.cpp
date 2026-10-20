@@ -2,10 +2,10 @@
 #include "qcae/json_ledger.hpp"
 #include "qcae/analysis_features.hpp"
 #include "qcae/records.hpp"
-#include "qcae/geometry_features.hpp"
-#include "qcae/line_mesh_task.hpp"
+#include "qcae/geometry_operations.hpp"
 #include "qcae/material_operations.hpp"
 #include "qcae/mesh_editing_operations.hpp"
+#include "qcae/mesh_generation_operations.hpp"
 #include "qcae/nastran_contribution.hpp"
 #ifdef QCAE_HAS_SOLVER_LOCAL
 #include "qcae/solver_contribution.hpp"
@@ -31,107 +31,13 @@ TypedHost::OperationContributor TypedHost::default_operations() {
         const auto analysis = features::analysis::register_handlers(registry, app);
         if (!analysis.ok())
             return analysis;
-        const auto geometry = registry.register_typed<GeometryCreateLineInput>(
-            InputTraits<GeometryCreateLineInput>::definition(),
-            [&app](const OperationContext& ctx, const GeometryCreateLineInput& input) {
-                const LineGeometryInput line{input.start_mm, input.end_mm};
-                return converted(app.execute(ctx.caller,
-                                             {*ctx.document, *ctx.expected_revision},
-                                             "geometry.create_line",
-                                             line_geometry_signature(line),
-                                             create_line_handler(line),
-                                             ctx.idempotency_key),
-                                 change_receipt_value);
-            });
+        const auto geometry = features::geometry::register_handlers(registry, app);
         if (!geometry.ok())
             return geometry;
-        const auto evaluate = registry.register_typed<GeometryEvaluateLineInput>(
-            InputTraits<GeometryEvaluateLineInput>::definition(),
-            [&app](const OperationContext& ctx,
-                   const GeometryEvaluateLineInput& input) -> Result<Value> {
-                const auto snapshot = app.snapshot(*ctx.document);
-                if (!snapshot.ok())
-                    return {snapshot.status, {}, snapshot.error};
-                try {
-                    const auto position =
-                        evaluate_line(snapshot.value->records,
-                                      records::GeometryId(input.geometry_id.value),
-                                      input.u);
-                    return {
-                        Status::success,
-                        Value(Value::Object{
-                            {"geometry_id", Value(input.geometry_id.value)},
-                            {"position_mm",
-                             Value(Value::Array{
-                                 Value(position[0]), Value(position[1]), Value(position[2])})},
-                            {"revision", Value(std::to_string(snapshot.value->info.revision))}}),
-                        {}};
-                } catch (const RecordError& error) {
-                    return {
-                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
-                }
-            });
-        if (!evaluate.ok())
-            return evaluate;
-        const auto endpoint = registry.register_typed<GeometryMoveEndpointInput>(
-            InputTraits<GeometryMoveEndpointInput>::definition(),
-            [&app](const OperationContext& ctx, const GeometryMoveEndpointInput& input) {
-                const records::GeometryId geometry(input.geometry_id.value);
-                return converted(app.execute(ctx.caller,
-                                             {*ctx.document, *ctx.expected_revision},
-                                             "geometry.move_endpoint",
-                                             line_endpoint_signature(geometry, input.end_mm),
-                                             move_line_endpoint_handler(geometry, input.end_mm),
-                                             ctx.idempotency_key),
-                                 change_receipt_value);
-            });
-        if (!endpoint.ok())
-            return endpoint;
-        const auto regenerate = registry.register_typed<MeshRegenerateLineInput>(
-            InputTraits<MeshRegenerateLineInput>::definition(),
-            [&app, task_service](const OperationContext& ctx,
-                                 const MeshRegenerateLineInput& input) {
-                const auto snapshot = app.snapshot(*ctx.document);
-                if (!snapshot.ok())
-                    return Result<Value>{snapshot.status, {}, snapshot.error};
-                try {
-                    auto request = regenerate_line_mesh_task(*snapshot.value,
-                                                             ctx.caller,
-                                                             records::MeshId(input.mesh_id.value),
-                                                             input.segments,
-                                                             input.replacement_policy,
-                                                             ctx.idempotency_key);
-                    request.input.revision = *ctx.expected_revision;
-                    return converted(task_service().start(std::move(request)), task_value);
-                } catch (const RecordError& error) {
-                    return Result<Value>{
-                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
-                }
-            });
-        if (!regenerate.ok())
-            return regenerate;
-        return registry.register_typed<MeshGenerateLineInput>(
-            InputTraits<MeshGenerateLineInput>::definition(),
-            [&app, task_service = std::move(task_service)](
-                const OperationContext& ctx, const MeshGenerateLineInput& input) -> Result<Value> {
-                const auto snapshot = app.snapshot(*ctx.document);
-                if (!snapshot.ok())
-                    return {snapshot.status, {}, snapshot.error};
-                try {
-                    auto request = line_mesh_task(
-                        *snapshot.value,
-                        ctx.caller,
-                        {},
-                        {records::GeometryId(input.geometry_id.value), input.segments, {}},
-                        ctx.idempotency_key);
-                    // Deduplication compares the original submitted context before freshness
-                    // checks.
-                    request.input.revision = *ctx.expected_revision;
-                    return converted(task_service().start(std::move(request)), task_value);
-                } catch (const RecordError& error) {
-                    return {
-                        Status::failed, {}, Diagnostic{error.code(), error.what(), error.field()}};
-                }
+        // Mesh tasks report status in the same wire format as this host's other tasks.
+        return features::mesh_generation::register_handlers(
+            registry, app, [task_service = std::move(task_service)](TaskRequest request) {
+                return converted(task_service().start(std::move(request)), task_value);
             });
     };
 }

@@ -642,14 +642,17 @@
       ],
       "private_include_dirs": [],
       "public_headers": [
-        "features/geometry/include/qcae/geometry_features.hpp"
+        "features/geometry/include/qcae/geometry_features.hpp",
+        "features/geometry/include/qcae/geometry_operations.hpp"
       ],
       "private_headers": [],
       "sources": [
-        "features/geometry/src/geometry_features.cpp"
+        "features/geometry/src/geometry_features.cpp",
+        "features/geometry/src/geometry_operations.cpp"
       ],
       "public_dependencies": [
-        "qcae_application"
+        "qcae_application",
+        "qcae_feature_support"
       ],
       "private_dependencies": [],
       "external_dependencies": []
@@ -664,14 +667,17 @@
       ],
       "private_include_dirs": [],
       "public_headers": [
-        "features/mesh_generation/include/qcae/line_mesh_task.hpp"
+        "features/mesh_generation/include/qcae/line_mesh_task.hpp",
+        "features/mesh_generation/include/qcae/mesh_generation_operations.hpp"
       ],
       "private_headers": [],
       "sources": [
-        "features/mesh_generation/src/line_mesh_task.cpp"
+        "features/mesh_generation/src/line_mesh_task.cpp",
+        "features/mesh_generation/src/mesh_generation_operations.cpp"
       ],
       "public_dependencies": [
-        "qcae_task_application"
+        "qcae_task_application",
+        "qcae_feature_support"
       ],
       "private_dependencies": [],
       "external_dependencies": []

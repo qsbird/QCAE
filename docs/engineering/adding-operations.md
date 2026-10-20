@@ -24,7 +24,7 @@
 4. 在 [model_operation_tests.cpp](../../tests/model_operation_tests.cpp) 或功能已有的测试中经 `registry.invoke` 覆盖：成功、非法输入不提交、同键重试返回原事务、undo/redo。
 5. 检查：`cmake --build build-core && ctest --test-dir build-core`、`python3 tools/check_design.py`、`python3 tools/check_cpp_format.py`、`git diff --check`。
 
-由此自动获得：类型化解码与版本检查、`capabilities.list` 与MCP工具、文档/epoch/修订校验、幂等重试、undo/redo、SQLite持久化与恢复、复制计量。只读查询、后台任务或需要额外上下文的写操作（如 `analysis.create` 绑定profile）不适用骨架，参照 [analysis_operations.cpp](../../features/analysis/src/analysis_operations.cpp) 手工登记。
+由此自动获得：类型化解码与版本检查、`capabilities.list` 与MCP工具、文档/epoch/修订校验、幂等重试、undo/redo、SQLite持久化与恢复、复制计量。只读查询、后台任务或需要额外上下文的写操作（如 `analysis.create` 绑定profile）不适用骨架，需手工登记：写操作和查询参照 [analysis_operations.cpp](../../features/analysis/src/analysis_operations.cpp)；后台任务参照 [mesh_generation_operations.cpp](../../features/mesh_generation/src/mesh_generation_operations.cpp)，功能构造 `TaskRequest`，由宿主传入的 `StartTask` 启动。
 
 ## 给已有实体加可选字段
 
