@@ -1,5 +1,6 @@
 #include "qcae/records.hpp"
 #include "qcae/planar_geometry.hpp"
+#include "qcae/region_geometry.hpp"
 
 #include <map>
 #include <tuple>
@@ -153,12 +154,15 @@ void validate_record(const GeometryLoop& value, const DocumentView&) {
     if (value.corners.size() < 3)
         invalid("A geometry loop needs at least three corners", value.id.value);
 }
-// A region must be a simple polygon with holes; measure_planar_region names the loop at fault.
-void validate_record(const GeometryRegion& value, const DocumentView& view) {
+PlanarRegion planar_region(const DocumentView& view, const GeometryRegion& value) {
     PlanarRegion region{planar_loop(view, value.outer, value.id.value), {}};
     for (const auto& hole : value.holes)
         region.holes.push_back(planar_loop(view, hole, value.id.value));
-    const auto shape = measure_planar_region(region);
+    return region;
+}
+// A region must be a simple polygon with holes; measure_planar_region names the loop at fault.
+void validate_record(const GeometryRegion& value, const DocumentView& view) {
+    const auto shape = measure_planar_region(planar_region(view, value));
     if (!shape.ok())
         invalid(shape.error->field + ": " + shape.error->message, value.id.value);
 }

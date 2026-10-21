@@ -10,6 +10,9 @@
 #ifdef QCAE_HAS_SOLVER_LOCAL
 #include "qcae/solver_contribution.hpp"
 #endif
+#ifdef QCAE_HAS_GMSH
+#include "qcae/gmsh_planar_mesher.hpp"
+#endif
 #include "typed_values.hpp"
 #include <algorithm>
 #include <iterator>
@@ -18,6 +21,14 @@
 namespace qcae::ipc {
 using namespace operations;
 using namespace detail;
+namespace {
+// Mesh tasks report status in the same wire format as this host's other tasks.
+features::mesh_generation::StartTask host_task_starter(std::function<TaskService&()> task_service) {
+    return [task_service = std::move(task_service)](TaskRequest request) {
+        return converted(task_service().start(std::move(request)), task_value);
+    };
+}
+} // namespace
 TypedHost::OperationContributor TypedHost::default_operations() {
     return [](OperationRegistry& registry,
               RecordApplication& app,
@@ -34,15 +45,33 @@ TypedHost::OperationContributor TypedHost::default_operations() {
         const auto geometry = features::geometry::register_handlers(registry, app);
         if (!geometry.ok())
             return geometry;
-        // Mesh tasks report status in the same wire format as this host's other tasks.
         return features::mesh_generation::register_handlers(
-            registry, app, [task_service = std::move(task_service)](TaskRequest request) {
-                return converted(task_service().start(std::move(request)), task_value);
-            });
+            registry, app, host_task_starter(std::move(task_service)));
     };
 }
 
 namespace {
+// The engine's planar mesher, created once per process. The engine builds its contributions while
+// it starts, before other threads run, which starting Gmsh requires.
+std::shared_ptr<const IPlanarMesher> planar_mesher() {
+#ifdef QCAE_HAS_GMSH
+    static const auto mesher = std::make_shared<const GmshPlanarMesher>();
+    return mesher;
+#else
+    return nullptr;
+#endif
+}
+EngineContribution region_mesh_contribution(std::shared_ptr<const IPlanarMesher> mesher) {
+    return {"qcae.mesh.region",
+            {},
+            [mesher](OperationRegistry& registry,
+                     RecordApplication& app,
+                     std::function<TaskService&()> task_service) -> Result<bool> {
+                return features::mesh_generation::register_region_mesh(
+                    registry, app, host_task_starter(std::move(task_service)), mesher);
+            },
+            {}};
+}
 EngineContribution disabled_solver_contribution() {
     return {"qcae.solver.disabled",
             {},
@@ -106,6 +135,7 @@ std::vector<EngineContribution> default_contributions(const LocalSolverConfigura
     } else {
         result.push_back(disabled_solver_contribution());
     }
+    result.push_back(region_mesh_contribution(planar_mesher()));
     return result;
 }
 } // namespace

@@ -4,7 +4,7 @@ target_sources(qcae_document PRIVATE
   src/record_model_bridge.cpp src/records_rules.cpp
   include/qcae/record_registry.hpp include/qcae/document_view.hpp
   include/qcae/edit_session.hpp include/qcae/records.hpp
-  include/qcae/records_model_bridge.hpp)
+  include/qcae/records_model_bridge.hpp include/qcae/region_geometry.hpp)
 target_include_directories(qcae_document PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(qcae_document PUBLIC cxx_std_20)
 target_link_libraries(qcae_document PUBLIC qcae_foundation qcae_contracts)

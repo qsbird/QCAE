@@ -76,6 +76,7 @@ retained committed write facts through `operations.get` without rerunning that v
 | `geometry.create_line` | `start_mm`, `end_mm`: three-number arrays | change receipt with `entity_id` |
 | `geometry.create_region` | `outer`: `{corners: [{position_mm}]}`; optional `holes`: array of the same | change receipt with `entity_id` of the region |
 | `mesh.generate_line` | `geometry_id`: string; `segments`: positive integer, up to 100000 | `task_id`, `state`, `progress`, `events`, `input_revision` |
+| `mesh.generate_region` | `geometry_id`: region; `element_size_mm`: positive number | `task_id`, `state`, `progress`, `events`, `input_revision`; unavailable without Gmsh |
 | `material.create` | `name`, `young_modulus: {value, unit}`, optional `poisson_ratio` | change receipt with `entity_id` |
 | `material.set_young_modulus` | `entity_id`, `young_modulus: {value, unit}` | change receipt |
 | `section.create` | `name`, `material_id`, `area_mm2`, `i1_mm4`, `i2_mm4`, `torsion_mm4` | change receipt with `entity_id` |

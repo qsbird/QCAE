@@ -56,6 +56,34 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "operation_id": "mesh.generate_region",
+      "version": 1,
+      "schema_id": "qcae.operation.mesh.generate_region.v1",
+      "type_name": "MeshGenerateRegionInput",
+      "effect": "background_task",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "geometry_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "element_size_mm",
+          "type": "finite_number",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
     }
   ]
 }

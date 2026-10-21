@@ -94,7 +94,7 @@
 
 [打开源码](../../../features/mesh_generation/src/line_mesh_task.cpp)。work 回调在捕获的不可变视图上解析几何，生成 task ID 派生的 Mesh、节点和 Line2 梁，循环中报告进度并检查取消。N 段产生 N+1 个节点、N 个梁和 1 个 Mesh，候选差量总数为 `2*N+2`；10 段即 22 条记录。最终返回 `RecordTaskPayload`，worker 不发布模型；原提交修订是否仍有效、成功任务事实与模型是否同批持久化，由运行时桥和应用处理。
 
-typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—100000，还要受到应用实体及文档总记录配额限制，不能理解为默认配置能实际生成 100000 段。它是内置均匀一维生成器，尚未接 Gmsh/Netgen，也不是通用自动网格引擎。
+typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—100000，还要受到应用实体及文档总记录配额限制，不能理解为默认配置能实际生成 100000 段。它是内置均匀一维生成器，不经过 Gmsh；平面区域的三角形网格由下面的区域网格任务经 `IPlanarMesher` 交给 Gmsh。
 
 ### features/mesh_generation/include/qcae/mesh_generation_operations.hpp
 
@@ -102,7 +102,15 @@ typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—10
 
 ### features/mesh_generation/src/mesh_generation_operations.cpp
 
-[打开源码](../../../features/mesh_generation/src/mesh_generation_operations.cpp)。`mesh.generate_line` 与 `mesh.regenerate_line` 共用 `start_from_snapshot`：读当前快照、构造任务请求、写入调用方的期望修订，再交给 `StartTask`。任务去重比较原始提交上下文，所以请求带调用方的期望修订，而不是快照修订。
+[打开源码](../../../features/mesh_generation/src/mesh_generation_operations.cpp)。`mesh.generate_line` 与 `mesh.regenerate_line` 共用 `start_from_snapshot`：读当前快照、构造任务请求、写入调用方的期望修订，再交给 `StartTask`。任务去重比较原始提交上下文，所以请求带调用方的期望修订，而不是快照修订。`register_region_mesh` 用宿主给的网格器登记 `mesh.generate_region`；没有网格器（不带 Gmsh 构建）时把它登记为不可用并写明原因。
+
+### features/mesh_generation/include/qcae/region_mesh_task.hpp
+
+[打开源码](../../../features/mesh_generation/include/qcae/region_mesh_task.hpp)。区域网格任务的输入（区域、单元尺寸）、单次三角形上限 `region_mesh_max_triangles`（2 万：Gmsh 网格运行中不能中断，取消要等它返回；2 万个三角形约半秒、约 3 万条记录，远低于每个文档 10 万实体的默认上限）以及任务工厂。签名里含网格器的 `identity()`，换了网格器版本的重试是另一个请求。
+
+### features/mesh_generation/src/region_mesh_task.cpp
+
+[打开源码](../../../features/mesh_generation/src/region_mesh_task.cpp)。结构与线网格任务一一对应：单元尺寸在任务开始前就检查（纯输入，重试同样通过）；区域只在新工作里解析，已完成任务的重放不受之后撤销的影响；调用 `IPlanarMesher` 后立刻检查取消——网格器运行中到达的取消在这里生效，什么都不发布；然后建一个绑定区域修订的 Mesh、每个网格节点一个 Node、每个三角形一个 Tri3，标识都由任务标识派生。任务里的失败经任务服务统一报告为该任务的无效输入，原因写在消息里（例如三角形数超限）。
 
 ## 本章构建文件
 
@@ -113,7 +121,7 @@ typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—10
 | [features/materials/CMakeLists.txt](../../../features/materials/CMakeLists.txt) | 构建材料特性，链接 application/operations/parameters，定义三项业务处理器。 |
 | [features/mesh_editing/CMakeLists.txt](../../../features/mesh_editing/CMakeLists.txt) | 构建局部网格编辑特性，依赖结构与材料特性一致，通用提交留在 application。 |
 | [features/geometry/CMakeLists.txt](../../../features/geometry/CMakeLists.txt) | 构建几何候选处理器及其 typed 登记，公开依赖 application 与 feature_support。 |
-| [features/mesh_generation/CMakeLists.txt](../../../features/mesh_generation/CMakeLists.txt) | 构建线网格任务及其 typed 登记，依赖独立 task/application 桥与 feature_support，并登记 geometry_mesh 测试；不让通用应用反向依赖网格生成。 |
+| [features/mesh_generation/CMakeLists.txt](../../../features/mesh_generation/CMakeLists.txt) | 构建线网格与区域网格任务及其 typed 登记，依赖独立 task/application 桥与 feature_support，并登记 geometry_mesh、region_mesh 测试；不让通用应用反向依赖网格生成。 |
 
 可以沿 `geometry.create_line → mesh.generate_line → beam.assign_section → node.move` 阅读一次完整功能链。新增已有类型上的操作复用候选/提交模式，并从静态贡献注册；新增面/体单元仍须补拓扑、查询/显示和格式语义。
 

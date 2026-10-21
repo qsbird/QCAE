@@ -22,6 +22,10 @@
 
 [打开源码](../../../modules/document/src/records_rules.cpp)。补充需要跨记录查询的领域规则：梁长度与方向、梁和节点的网格归属、约束自由度、直线端点、平面区域（由环和点组装后交给 `measure_planar_region` 检查）、派生网格的来源（直线或区域）与过期标记。`validate_relations()` 检查部件归属、装配/INCLUDE 无环、集合类型一致和来源编号唯一性；`make_record_registry()` 将生成描述符与关系规则注册后冻结。文档校验调用这些权威记录规则，界面不应另建一套同名业务规则。
 
+### modules/document/include/qcae/region_geometry.hpp
+
+[打开源码](../../../modules/document/include/qcae/region_geometry.hpp)。`planar_region` 从视图里读出一个平面区域的外环和孔的角点坐标，缺环或缺角点时抛 `RecordError`。区域的记录规则和区域网格任务都用它读区域，所以“记录怎样变成纯几何”只写一处。
+
 ### modules/document/include/qcae/document_view.hpp
 
 [打开源码](../../../modules/document/include/qcae/document_view.hpp)。`DocumentView` 是共享不可变状态的只读句柄，提供 `find`、`visit`、`count`、版本与校验；它不向调用方暴露可写实体容器。`RecordChangeSet` 保存稳定键与 before/after 图像，`apply_record_changes()` 支持正向/反向应用，差量还可单独编码。应用层持有当前视图，业务读者取得视图副本，候选编辑不会自动改动当前状态。

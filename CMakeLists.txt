@@ -197,6 +197,11 @@ if(QCAE_BUILD_STORAGE)
     target_compile_definitions(qcae_tri3_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
     qcae_warnings(qcae_tri3_sqlite_tests)
     add_test(NAME tri3_sqlite COMMAND qcae_tri3_sqlite_tests)
+    add_executable(qcae_region_mesh_sqlite_tests tests/region_mesh_tests.cpp)
+    target_link_libraries(qcae_region_mesh_sqlite_tests PRIVATE qcae_geometry_features qcae_mesh_generation qcae_sqlite)
+    target_compile_definitions(qcae_region_mesh_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
+    qcae_warnings(qcae_region_mesh_sqlite_tests)
+    add_test(NAME region_mesh_sqlite COMMAND qcae_region_mesh_sqlite_tests)
     add_executable(qcae_geometry_mesh_sqlite_tests tests/geometry_mesh_tests.cpp)
     target_link_libraries(qcae_geometry_mesh_sqlite_tests PRIVATE qcae_geometry_features qcae_mesh_generation qcae_sqlite)
     target_compile_definitions(qcae_geometry_mesh_sqlite_tests PRIVATE QCAE_TEST_SQLITE=1)
@@ -367,6 +372,12 @@ if(QCAE_BUILD_IPC)
           "${CMAKE_CURRENT_SOURCE_DIR}/tests/result_fixture_ipc_tests.py"
           --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
         set_tests_properties(result_fixture_ipc PROPERTIES TIMEOUT 120)
+        if(QCAE_WITH_GMSH)
+          add_test(NAME region_mesh_ipc COMMAND Python3::Interpreter
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/region_mesh_ipc_tests.py"
+            --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+          set_tests_properties(region_mesh_ipc PROPERTIES TIMEOUT 120)
+        endif()
         if(QCAE_BUILD_SOLVER_LOCAL)
           add_test(NAME solver_run_ipc COMMAND Python3::Interpreter
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/solver_run_ipc_tests.py"

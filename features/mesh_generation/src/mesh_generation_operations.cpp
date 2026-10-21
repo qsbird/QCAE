@@ -2,10 +2,12 @@
 #include "qcae/feature_operation.hpp"
 #include "qcae/line_mesh_task.hpp"
 #include "qcae/operation_inputs.hpp"
+#include "qcae/region_mesh_task.hpp"
 
 namespace qcae::features::mesh_generation {
 using operations::InputTraits;
 using operations::MeshGenerateLineInput;
+using operations::MeshGenerateRegionInput;
 using operations::MeshRegenerateLineInput;
 using operations::OperationContext;
 using operations::Value;
@@ -62,5 +64,28 @@ Result<bool> register_handlers(operations::OperationRegistry& registry,
                 });
             });
     return registered;
+}
+
+Result<bool> register_region_mesh(operations::OperationRegistry& registry,
+                                  RecordApplication& app,
+                                  StartTask start,
+                                  std::shared_ptr<const IPlanarMesher> mesher) {
+    if (!mesher)
+        return registry.declare_unavailable(InputTraits<MeshGenerateRegionInput>::definition(),
+                                            "This engine was built without a planar mesher "
+                                            "(QCAE_WITH_GMSH=OFF)");
+    return registry.register_typed<MeshGenerateRegionInput>(
+        InputTraits<MeshGenerateRegionInput>::definition(),
+        [&app, start = std::move(start), mesher = std::move(mesher)](
+            const OperationContext& ctx, const MeshGenerateRegionInput& input) {
+            return start_from_snapshot(app, ctx, start, [&](const RecordSnapshot& snapshot) {
+                return region_mesh_task(
+                    snapshot,
+                    ctx.caller,
+                    {records::GeometryId(input.geometry_id.value), input.element_size_mm},
+                    ctx.idempotency_key,
+                    mesher);
+            });
+        });
 }
 } // namespace qcae::features::mesh_generation

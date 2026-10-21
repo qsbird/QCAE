@@ -94,7 +94,8 @@
         "modules/document/include/qcae/document_view.hpp",
         "modules/document/include/qcae/edit_session.hpp",
         "modules/document/include/qcae/records.hpp",
-        "modules/document/include/qcae/records_model_bridge.hpp"
+        "modules/document/include/qcae/records_model_bridge.hpp",
+        "modules/document/include/qcae/region_geometry.hpp"
       ],
       "sources": [
         "modules/document/src/model.cpp",
@@ -342,6 +343,11 @@
       "conditional_public_dependencies": {
         "QCAE_BUILD_SOLVER_LOCAL": [
           "qcae_solver_local"
+        ]
+      },
+      "conditional_dependencies": {
+        "QCAE_WITH_GMSH": [
+          "qcae_mesher_gmsh"
         ]
       }
     },
@@ -695,12 +701,14 @@
       "private_include_dirs": [],
       "public_headers": [
         "features/mesh_generation/include/qcae/line_mesh_task.hpp",
-        "features/mesh_generation/include/qcae/mesh_generation_operations.hpp"
+        "features/mesh_generation/include/qcae/mesh_generation_operations.hpp",
+        "features/mesh_generation/include/qcae/region_mesh_task.hpp"
       ],
       "private_headers": [],
       "sources": [
         "features/mesh_generation/src/line_mesh_task.cpp",
-        "features/mesh_generation/src/mesh_generation_operations.cpp"
+        "features/mesh_generation/src/mesh_generation_operations.cpp",
+        "features/mesh_generation/src/region_mesh_task.cpp"
       ],
       "public_dependencies": [
         "qcae_task_application",
