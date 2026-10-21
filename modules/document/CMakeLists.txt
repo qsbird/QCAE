@@ -8,6 +8,7 @@ target_sources(qcae_document PRIVATE
 target_include_directories(qcae_document PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_features(qcae_document PUBLIC cxx_std_20)
 target_link_libraries(qcae_document PUBLIC qcae_foundation qcae_contracts)
+target_link_libraries(qcae_document PRIVATE qcae_planar_geometry)
 qcae_warnings(qcae_document)
 if(BUILD_TESTING)
   add_executable(qcae_record_document_tests "${PROJECT_SOURCE_DIR}/tests/record_document_tests.cpp")

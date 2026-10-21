@@ -65,6 +65,9 @@ std::span<const RecordTypeId> analysis_record_types() noexcept {
                                       RecordTraits<records::IncludeDocument>::type_id,
                                       RecordTraits<records::SourceIdentifier>::type_id,
                                       RecordTraits<records::GeometryLine>::type_id,
+                                      RecordTraits<records::GeometryPoint>::type_id,
+                                      RecordTraits<records::GeometryLoop>::type_id,
+                                      RecordTraits<records::GeometryRegion>::type_id,
                                       RecordTraits<records::Mesh>::type_id};
     return types;
 }

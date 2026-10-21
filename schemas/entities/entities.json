@@ -532,7 +532,8 @@
           "name": "geometry",
           "kind": "reference",
           "targets": [
-            "GeometryLine"
+            "GeometryLine",
+            "GeometryRegion"
           ],
           "id_type": "GeometryId",
           "optional": true
@@ -553,7 +554,7 @@
       "reserved_field_ids": [
         1
       ],
-      "rule_version": 1,
+      "rule_version": 2,
       "query_kind": "mesh",
       "display_field": "name"
     },
@@ -622,6 +623,81 @@
       ],
       "rule_version": 1,
       "query_kind": "tri3"
+    },
+    {
+      "id": 4113,
+      "name": "GeometryPoint",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "position",
+          "kind": "vector3",
+          "unit": "mm"
+        }
+      ],
+      "maximum_encoded_bytes": 256,
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "geometry_point"
+    },
+    {
+      "id": 4114,
+      "name": "GeometryLoop",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "corners",
+          "kind": "references",
+          "targets": [
+            "GeometryPoint"
+          ]
+        }
+      ],
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "geometry_loop"
+    },
+    {
+      "id": 4115,
+      "name": "GeometryRegion",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "outer",
+          "kind": "reference",
+          "targets": [
+            "GeometryLoop"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "holes",
+          "kind": "references",
+          "targets": [
+            "GeometryLoop"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "geometry_revision",
+          "kind": "unsigned_integer",
+          "minimum": 1
+        }
+      ],
+      "identity_type": "GeometryId",
+      "custom_rule": true,
+      "reserved_field_ids": [
+        1
+      ],
+      "rule_version": 1,
+      "query_kind": "geometry_region"
     }
   ],
   "relation_rules_version": 1

@@ -74,6 +74,7 @@ retained committed write facts through `operations.get` without rerunning that v
 | Operation | Parameters | Success data |
 | --- | --- | --- |
 | `geometry.create_line` | `start_mm`, `end_mm`: three-number arrays | change receipt with `entity_id` |
+| `geometry.create_region` | `outer`: `{corners: [{position_mm}]}`; optional `holes`: array of the same | change receipt with `entity_id` of the region |
 | `mesh.generate_line` | `geometry_id`: string; `segments`: positive integer, up to 100000 | `task_id`, `state`, `progress`, `events`, `input_revision` |
 | `material.create` | `name`, `young_modulus: {value, unit}`, optional `poisson_ratio` | change receipt with `entity_id` |
 | `material.set_young_modulus` | `entity_id`, `young_modulus: {value, unit}` | change receipt |

@@ -15,5 +15,16 @@ retarget existing mesh or analysis references.
 operations `geometry.create_line`, `geometry.evaluate_line` and `geometry.move_endpoint`; the
 engine host calls it while composing its operations.
 
+## Flat regions
+
+`geometry.create_region` describes a flat plate: an outer loop of straight edges and optional
+holes, each loop a list of corners in millimetres. `prepare_create_region` follows the standard
+operation recipe. It checks the input with `measure_planar_region` first, so a bad loop is reported
+against `outer` or `holes[i]`, then creates everything in one change: a `GeometryPoint` per corner,
+a `GeometryLoop` per outline and the `GeometryRegion` joining them. This mirrors the points, curve
+loops and plane surfaces of Gmsh's built-in geometry kernel. The `GeometryRegion` record rule
+repeats the check on every commit. Regions cannot be edited yet; a mesh may name a region as its
+source geometry.
+
 The handler depends only on application/document contracts. It never writes a
 database or owns another model. Test with `geometry_mesh` and `record_document`.

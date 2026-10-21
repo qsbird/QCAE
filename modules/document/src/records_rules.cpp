@@ -1,4 +1,5 @@
 #include "qcae/records.hpp"
+#include "qcae/planar_geometry.hpp"
 
 #include <map>
 #include <tuple>
@@ -11,8 +12,33 @@ template <class T, class Visitor> void visit(const DocumentView& view, Visitor v
 [[noreturn]] void invalid(const char* message, std::string_view field) {
     throw RecordError(ErrorCode::invalid_input, message, std::string(field));
 }
+[[noreturn]] void invalid(const std::string& message, std::string_view field) {
+    throw RecordError(ErrorCode::invalid_input, message, std::string(field));
+}
 double length_squared(const std::array<double, 3>& value) {
     return value[0] * value[0] + value[1] * value[1] + value[2] * value[2];
+}
+// The revision of the line or region a mesh was derived from; nothing when it is missing.
+std::optional<std::uint64_t> geometry_revision(const DocumentView& view, const GeometryId& id) {
+    if (const auto line = view.find<GeometryLine>(id))
+        return line->get<GeometryLine>().geometry_revision;
+    if (const auto region = view.find<GeometryRegion>(id))
+        return region->get<GeometryRegion>().geometry_revision;
+    return std::nullopt;
+}
+// The corner positions of one loop; a missing loop or corner makes the region invalid.
+PlanarLoop planar_loop(const DocumentView& view, const EntityId& id, std::string_view region) {
+    const auto loop = view.find<GeometryLoop>(id);
+    if (!loop)
+        invalid("Region loop is missing", region);
+    PlanarLoop result;
+    for (const auto& corner : loop->get<GeometryLoop>().corners) {
+        const auto point = view.find<GeometryPoint>(corner);
+        if (!point)
+            invalid("Region corner is missing", region);
+        result.corners_mm.push_back(point->get<GeometryPoint>().position);
+    }
+    return result;
 }
 using Graph = std::map<std::string_view, std::vector<std::string_view>, std::less<>>;
 void require_acyclic(const Graph& graph, const char* field) {
@@ -114,15 +140,27 @@ void validate_record(const Mesh& value, const DocumentView& view) {
     if (value.origin == "geometry") {
         if (!value.geometry || !value.geometry_revision)
             invalid("Derived mesh requires geometry provenance", value.id.value);
-        const auto geometry = view.find<GeometryLine>(*value.geometry);
-        if (!geometry)
+        const auto revision = geometry_revision(view, *value.geometry);
+        if (!revision)
             invalid("Mesh geometry is missing", value.id.value);
-        if (!value.stale &&
-            geometry->get<GeometryLine>().geometry_revision != value.geometry_revision)
+        if (!value.stale && *revision != value.geometry_revision)
             invalid("Outdated geometry binding must be marked stale", value.id.value);
     } else if (value.geometry || value.geometry_revision || value.stale) {
         invalid("Non-derived mesh cannot claim geometry provenance", value.id.value);
     }
+}
+void validate_record(const GeometryLoop& value, const DocumentView&) {
+    if (value.corners.size() < 3)
+        invalid("A geometry loop needs at least three corners", value.id.value);
+}
+// A region must be a simple polygon with holes; measure_planar_region names the loop at fault.
+void validate_record(const GeometryRegion& value, const DocumentView& view) {
+    PlanarRegion region{planar_loop(view, value.outer, value.id.value), {}};
+    for (const auto& hole : value.holes)
+        region.holes.push_back(planar_loop(view, hole, value.id.value));
+    const auto shape = measure_planar_region(region);
+    if (!shape.ok())
+        invalid(shape.error->field + ": " + shape.error->message, value.id.value);
 }
 
 void validate_relations(const DocumentView& view) {

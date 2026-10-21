@@ -20,7 +20,7 @@
 
 ### modules/document/src/records_rules.cpp
 
-[打开源码](../../../modules/document/src/records_rules.cpp)。补充需要跨记录查询的领域规则：梁长度与方向、梁和节点的网格归属、约束自由度、直线端点、派生网格来源与过期标记。`validate_relations()` 检查部件归属、装配/INCLUDE 无环、集合类型一致和来源编号唯一性；`make_record_registry()` 将生成描述符与关系规则注册后冻结。文档校验调用这些权威记录规则，界面不应另建一套同名业务规则。
+[打开源码](../../../modules/document/src/records_rules.cpp)。补充需要跨记录查询的领域规则：梁长度与方向、梁和节点的网格归属、约束自由度、直线端点、平面区域（由环和点组装后交给 `measure_planar_region` 检查）、派生网格的来源（直线或区域）与过期标记。`validate_relations()` 检查部件归属、装配/INCLUDE 无环、集合类型一致和来源编号唯一性；`make_record_registry()` 将生成描述符与关系规则注册后冻结。文档校验调用这些权威记录规则，界面不应另建一套同名业务规则。
 
 ### modules/document/include/qcae/document_view.hpp
 

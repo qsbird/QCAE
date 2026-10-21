@@ -2,10 +2,13 @@
 #include "qcae/feature_operation.hpp"
 #include "qcae/geometry_features.hpp"
 #include "qcae/operation_inputs.hpp"
+#include "qcae/planar_geometry.hpp"
 
 namespace qcae::features::geometry {
 using operations::GeometryCreateLineInput;
+using operations::GeometryCreateRegionInput;
 using operations::GeometryEvaluateLineInput;
+using operations::GeometryLoopInput;
 using operations::GeometryMoveEndpointInput;
 using operations::InputTraits;
 using operations::OperationContext;
@@ -62,7 +65,54 @@ Result<Value> move_endpoint(RecordApplication& app,
                                      move_line_endpoint_handler(geometry, input.end_mm),
                                      ctx.idempotency_key));
 }
+
+// The region an input describes, as plain geometry.
+PlanarRegion planar_region(const GeometryCreateRegionInput& input) {
+    auto loop = [](const GeometryLoopInput& outline) {
+        PlanarLoop result;
+        for (const auto& corner : outline.corners)
+            result.corners_mm.push_back(corner.position_mm);
+        return result;
+    };
+    PlanarRegion region{loop(input.outer), {}};
+    if (input.holes)
+        for (const auto& hole : *input.holes)
+            region.holes.push_back(loop(hole));
+    return region;
+}
+
+// Adds one point per corner and the loop that joins them; returns the loop's identity.
+EntityId add_loop(const GeometryLoopInput& outline, PlanEdit& edit) {
+    records::GeometryLoop loop{edit.allocate(), {}};
+    for (const auto& corner : outline.corners) {
+        const EntityId point = edit.allocate();
+        edit.put(records::GeometryPoint{point, corner.position_mm});
+        loop.corners.push_back(point);
+    }
+    const EntityId id = loop.id;
+    edit.put(std::move(loop));
+    return id;
+}
 } // namespace
+
+Result<OperationPlan> prepare_create_region(const GeometryCreateRegionInput& input) {
+    auto canonical = canonical_copy(input);
+    // The record rule checks the region again; checking the input first names the input field.
+    const auto shape = measure_planar_region(planar_region(canonical));
+    if (!shape.ok())
+        return forward_failure<OperationPlan>(shape);
+    return record_plan(
+        std::move(canonical), [](const GeometryCreateRegionInput& region, PlanEdit& edit) {
+            records::GeometryRegion record{
+                records::GeometryId(edit.allocate().value), add_loop(region.outer, edit), {}, 1};
+            if (region.holes)
+                for (const auto& hole : *region.holes)
+                    record.holes.push_back(add_loop(hole, edit));
+            const EntityId id(record.id.value);
+            edit.put(std::move(record));
+            return ChangeSummary{"Create region", id, 0, true};
+        });
+}
 
 Result<bool> register_handlers(operations::OperationRegistry& registry, RecordApplication& app) {
     auto registered = registry.register_typed<GeometryCreateLineInput>(
@@ -82,6 +132,8 @@ Result<bool> register_handlers(operations::OperationRegistry& registry, RecordAp
             [&app](const OperationContext& ctx, const GeometryMoveEndpointInput& input) {
                 return move_endpoint(app, ctx, input);
             });
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_create_region);
     return registered;
 }
 } // namespace qcae::features::geometry

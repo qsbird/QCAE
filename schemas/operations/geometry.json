@@ -1,6 +1,34 @@
 {
   "schema_version": 1,
   "status": "implemented_typed_feature_operations",
+  "types": [
+    {
+      "type_name": "GeometryCornerInput",
+      "kind": "object",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "position_mm",
+          "type": "vector3_mm",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
+    },
+    {
+      "type_name": "GeometryLoopInput",
+      "kind": "object",
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "corners",
+          "type": "array",
+          "ref": "GeometryCornerInput"
+        }
+      ]
+    }
+  ],
   "operations": [
     {
       "operation_id": "geometry.create_line",
@@ -86,6 +114,35 @@
           "units": [
             "1"
           ]
+        }
+      ]
+    },
+    {
+      "operation_id": "geometry.create_region",
+      "version": 1,
+      "schema_id": "qcae.operation.geometry.create_region.v1",
+      "type_name": "GeometryCreateRegionInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "outer",
+          "type": "object",
+          "ref": "GeometryLoopInput"
+        },
+        {
+          "field_id": 2,
+          "name": "holes",
+          "type": "array",
+          "ref": "GeometryLoopInput",
+          "optional": true,
+          "allow_empty": true
         }
       ]
     }

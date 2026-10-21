@@ -6,7 +6,7 @@
 
 ### schemas/entities/entities.json
 
-[打开配置](../../../schemas/entities/entities.json)。定义当前 14 类强类型记录的稳定 type ID、field ID、版本、字段形式、单位、引用允许目标和局部规则，生成 `modules/document/include/qcae/records.hpp`。它定义持久化实体结构，不能任意重用既有 ID；跨记录规则仍在 `records_rules.cpp`。新增类型能复用记录提交/历史/存储，但复杂拓扑、查询、显示和 profile 的语义不会凭 schema 自动生成。
+[打开配置](../../../schemas/entities/entities.json)。定义当前 19 类强类型记录的稳定 type ID、field ID、版本、字段形式、单位、引用允许目标和局部规则，生成 `modules/document/include/qcae/records.hpp`。它定义持久化实体结构，不能任意重用既有 ID；跨记录规则仍在 `records_rules.cpp`。新增类型能复用记录提交/历史/存储，但复杂拓扑、查询、显示和 profile 的语义不会凭 schema 自动生成。
 
 ### schemas/operations/*.json
 
@@ -82,7 +82,7 @@
 
 ### features/geometry/src/geometry_operations.cpp
 
-[打开源码](../../../features/geometry/src/geometry_operations.cpp)。每项操作一个小函数。两个写操作把 typed 输入换成线或终点，用各自的签名函数经 `RecordApplication::execute` 提交，返回变更回执；求值在当前快照上算出点位，并带回所读的修订。几何沿用自己的签名函数而不是 `record_plan`，因此登记位置迁移前已提交的重试仍得到原回执。
+[打开源码](../../../features/geometry/src/geometry_operations.cpp)。每项操作一个小函数。两个写操作把 typed 输入换成线或终点，用各自的签名函数经 `RecordApplication::execute` 提交，返回变更回执；求值在当前快照上算出点位，并带回所读的修订。几何沿用自己的签名函数而不是 `record_plan`，因此登记位置迁移前已提交的重试仍得到原回执。`geometry.create_region` 则按标准配方实现：`prepare_create_region` 先用 `measure_planar_region` 检查输入，错误指向输入字段 `outer` 或 `holes[i]`；再在同一变更里为每个角点建 `GeometryPoint`、每条轮廓建 `GeometryLoop`，最后建 `GeometryRegion`。点、环和区域对应 Gmsh 内置几何核中的点、曲线环和平面；区域的记录规则会在每次提交时再检查一次。
 
 ## mesh_generation：真正的后台任务
 
