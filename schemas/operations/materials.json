@@ -155,6 +155,39 @@
           ]
         }
       ]
+    },
+    {
+      "operation_id": "shell_section.create",
+      "version": 1,
+      "schema_id": "qcae.operation.shell_section.create.v1",
+      "type_name": "ShellSectionCreateInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "field_id": 2,
+          "name": "material_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 3,
+          "name": "thickness_mm",
+          "type": "finite_number",
+          "units": [
+            "mm"
+          ]
+        }
+      ]
     }
   ]
 }

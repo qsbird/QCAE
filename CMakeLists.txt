@@ -377,6 +377,10 @@ if(QCAE_BUILD_IPC)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/region_mesh_ipc_tests.py"
             --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
           set_tests_properties(region_mesh_ipc PROPERTIES TIMEOUT 120)
+          add_test(NAME plate_workflow_ipc COMMAND Python3::Interpreter
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/plate_workflow_ipc_tests.py"
+            --engine $<TARGET_FILE:qcae-engine> --cli $<TARGET_FILE:qcae-cli>)
+          set_tests_properties(plate_workflow_ipc PROPERTIES TIMEOUT 180)
         endif()
         if(QCAE_BUILD_SOLVER_LOCAL)
           add_test(NAME solver_run_ipc COMMAND Python3::Interpreter

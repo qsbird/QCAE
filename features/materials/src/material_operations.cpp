@@ -83,6 +83,27 @@ Result<OperationPlan> prepare_create_section(const SectionCreateInput& input) {
                        });
 }
 
+// A shell section gives Tri3 elements a thickness and a material (Nastran PSHELL).
+Result<OperationPlan> prepare_create_shell_section(const ShellSectionCreateInput& input) {
+    auto canonical = canonical_copy(input);
+    if (auto normalized =
+            normalize(canonical.thickness_mm, "mm", parameters::Dimension::length, "thickness_mm");
+        !normalized.ok())
+        return forward_failure<OperationPlan>(normalized);
+    if (const auto error = check_record_fields(records::ShellSection{EntityId{"shell-field-check"},
+                                                                     canonical.name,
+                                                                     canonical.material_id,
+                                                                     canonical.thickness_mm}))
+        return failed<OperationPlan>(*error);
+    return record_plan(
+        std::move(canonical), [](const ShellSectionCreateInput& canonical, PlanEdit& edit) {
+            const auto identity = edit.allocate();
+            edit.put(records::ShellSection{
+                identity, canonical.name, canonical.material_id, canonical.thickness_mm});
+            return ChangeSummary{"Create shell section", identity, 0, true};
+        });
+}
+
 Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& app) {
     auto registered = register_plan(registry, app, prepare_create_material);
     if (registered.ok())
@@ -91,6 +112,8 @@ Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& a
         registered = register_plan(registry, app, prepare_set_description);
     if (registered.ok())
         registered = register_plan(registry, app, prepare_create_section);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_create_shell_section);
     return registered;
 }
 } // namespace qcae::features::materials

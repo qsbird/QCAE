@@ -40,6 +40,31 @@ Result<OperationPlan> prepare_assign_section(const BeamAssignSectionInput& input
         });
 }
 
+// A plate is meshed as one region mesh, so its shell section is assigned to the whole mesh.
+Result<OperationPlan> prepare_assign_shell_section(const MeshAssignShellSectionInput& input) {
+    return record_plan(
+        canonical_copy(input), [](const MeshAssignShellSectionInput& canonical, PlanEdit& edit) {
+            const records::MeshId mesh(canonical.mesh_id.value);
+            if (!edit.view().find<records::Mesh>(mesh))
+                throw RecordError(ErrorCode::entity_not_found, "Mesh does not exist", "mesh_id");
+            if (!edit.view().find<records::ShellSection>(canonical.section_id))
+                throw RecordError(
+                    ErrorCode::entity_not_found, "Shell section does not exist", "section_id");
+            std::vector<EntityId> triangles;
+            edit.view().visit(RecordTraits<records::Tri3>::type_id, [&](const Record& record) {
+                const auto& triangle = record->get<records::Tri3>();
+                if (triangle.mesh == mesh)
+                    triangles.push_back(triangle.id);
+            });
+            if (triangles.empty())
+                throw RecordError(ErrorCode::invalid_input, "The mesh has no triangles", "mesh_id");
+            for (const auto& triangle : triangles)
+                edit.update<records::Tri3>(
+                    triangle, [&](auto& record) { record.section = canonical.section_id; });
+            return ChangeSummary{"Assign shell section", EntityId(mesh.value), 0, false};
+        });
+}
+
 Result<OperationPlan> prepare_translate_nodes(const NodeTranslateBatchInput& input) {
     const auto identities = wire::entity_id_array(wire::to_value(input.node_ids), "node_ids");
     if (!identities.ok())
@@ -105,6 +130,8 @@ Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& a
     auto registered = register_plan(registry, app, prepare_move_node);
     if (registered.ok())
         registered = register_plan(registry, app, prepare_assign_section);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_assign_shell_section);
     if (registered.ok())
         registered = register_plan(registry, app, prepare_translate_nodes);
     if (registered.ok())

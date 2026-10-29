@@ -83,7 +83,8 @@ struct Consumer {
     std::set<RecordTypeId> refused;
 };
 std::vector<Consumer> consumers() {
-    const std::set<RecordTypeId> shells{RecordTraits<records::Tri3>::type_id};
+    const std::set<RecordTypeId> shells{RecordTraits<records::Tri3>::type_id,
+                                        RecordTraits<records::ShellSection>::type_id};
     return {{"Cantilever analysis input and checks",
              features::analysis::analysis_record_types(),
              shells},

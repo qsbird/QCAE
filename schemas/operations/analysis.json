@@ -298,6 +298,108 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "operation_id": "load_case.add_edge_force",
+      "version": 1,
+      "schema_id": "qcae.operation.load_case.add_edge_force.v1",
+      "type_name": "LoadCaseAddEdgeForceInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "load_case_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "mesh_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 3,
+          "name": "loop",
+          "type": "unsigned_integer"
+        },
+        {
+          "field_id": 4,
+          "name": "edge",
+          "type": "unsigned_integer"
+        },
+        {
+          "field_id": 5,
+          "name": "x",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 6,
+          "name": "y",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        },
+        {
+          "field_id": 7,
+          "name": "z",
+          "type": "quantity",
+          "units": [
+            "N",
+            "kN"
+          ]
+        }
+      ]
+    },
+    {
+      "operation_id": "load_case.add_edge_constraint",
+      "version": 1,
+      "schema_id": "qcae.operation.load_case.add_edge_constraint.v1",
+      "type_name": "LoadCaseAddEdgeConstraintInput",
+      "effect": "document_write",
+      "context": {
+        "document": true,
+        "epoch": true,
+        "expected_revision": true,
+        "idempotency_key": true
+      },
+      "fields": [
+        {
+          "field_id": 1,
+          "name": "load_case_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 2,
+          "name": "mesh_id",
+          "type": "entity_id"
+        },
+        {
+          "field_id": 3,
+          "name": "loop",
+          "type": "unsigned_integer"
+        },
+        {
+          "field_id": 4,
+          "name": "edge",
+          "type": "unsigned_integer"
+        },
+        {
+          "field_id": 5,
+          "name": "dofs",
+          "type": "string"
+        }
+      ]
     }
   ]
 }

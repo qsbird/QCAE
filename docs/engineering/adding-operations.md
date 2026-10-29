@@ -19,7 +19,7 @@
    - 换算单位：`normalize(canonical.young_modulus, parameters::Dimension::pressure, "young_modulus")`，失败时 `return forward_failure<OperationPlan>(normalized);`
    - 新建记录先用 `check_record_fields(records::X{...})` 复用生成的字段规则。
    - `return record_plan(std::move(canonical), [](const Input& canonical, PlanEdit& edit) { ... });`，回调返回 `ChangeSummary{"撤销标签", 受影响实体, 0, 是否新建}`。
-   - 在 `PlanEdit` 中用 `put`（新建，ID来自 `edit.allocate()`）或 `update<records::X>(id, ...)`。把字符串等堆数据复制进记录时用 `copy_into`，标量直接赋值。非法修改抛 `RecordError`，整批不提交。
+   - 在 `PlanEdit` 中用 `put`（新建，ID来自 `edit.allocate()`）或 `update<records::X>(id, ...)`；需要读取当前文档时用 `edit.view()`（范例 `mesh.assign_shell_section`）。把字符串等堆数据复制进记录时用 `copy_into`，标量直接赋值。非法修改抛 `RecordError`，整批不提交。
 3. 把登记行 `declare_unimplemented<Input>(registry)` 换成 `register_plan(registry, app, prepare_<操作>)`，删除TODO。
 4. 在 [model_operation_tests.cpp](../../tests/model_operation_tests.cpp) 或功能已有的测试中经 `registry.invoke` 覆盖：成功、非法输入不提交、同键重试返回原事务、undo/redo。
 5. 检查：`cmake --build build-core && ctest --test-dir build-core`、`python3 tools/check_design.py`、`python3 tools/check_cpp_format.py`、`git diff --check`。

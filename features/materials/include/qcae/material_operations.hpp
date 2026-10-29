@@ -10,5 +10,7 @@ prepare_set_young_modulus(const operations::MaterialSetYoungModulusInput&);
 [[nodiscard]] Result<OperationPlan>
 prepare_set_description(const operations::MaterialSetDescriptionInput&);
 [[nodiscard]] Result<OperationPlan> prepare_create_section(const operations::SectionCreateInput&);
+[[nodiscard]] Result<OperationPlan>
+prepare_create_shell_section(const operations::ShellSectionCreateInput&);
 [[nodiscard]] Result<bool> register_handlers(operations::OperationRegistry&, RecordApplication&);
 } // namespace qcae::features::materials

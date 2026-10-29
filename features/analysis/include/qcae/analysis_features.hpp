@@ -12,6 +12,12 @@ prepare_create_constraint(const operations::ConstraintCreateInput&);
 prepare_create_load_case(const operations::LoadCaseCreateInput&);
 [[nodiscard]] Result<OperationPlan>
 prepare_set_references(const operations::LoadCaseSetReferencesInput&);
+// Spreads a force over the mesh nodes of one region edge and adds the forces to a load case.
+[[nodiscard]] Result<OperationPlan>
+prepare_add_edge_force(const operations::LoadCaseAddEdgeForceInput&);
+// Adds a constraint over the mesh nodes of one region edge to a load case.
+[[nodiscard]] Result<OperationPlan>
+prepare_add_edge_constraint(const operations::LoadCaseAddEdgeConstraintInput&);
 [[nodiscard]] Result<OperationPlan> prepare_create_analysis(const operations::AnalysisCreateInput&,
                                                             const ProfileRef&);
 

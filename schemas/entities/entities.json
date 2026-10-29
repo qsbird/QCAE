@@ -595,7 +595,7 @@
     {
       "id": 4112,
       "name": "Tri3",
-      "version": 1,
+      "version": 2,
       "fields": [
         {
           "id": 2,
@@ -614,6 +614,17 @@
             "Mesh"
           ],
           "id_type": "MeshId"
+        },
+        {
+          "id": 4,
+          "name": "section",
+          "kind": "reference",
+          "targets": [
+            "ShellSection"
+          ],
+          "optional": true,
+          "introduced_version": 2,
+          "default": null
         }
       ],
       "maximum_encoded_bytes": 4096,
@@ -698,6 +709,39 @@
       ],
       "rule_version": 1,
       "query_kind": "geometry_region"
+    },
+    {
+      "id": 4116,
+      "name": "ShellSection",
+      "version": 1,
+      "fields": [
+        {
+          "id": 2,
+          "name": "name",
+          "kind": "text",
+          "nonempty": true
+        },
+        {
+          "id": 3,
+          "name": "material",
+          "kind": "reference",
+          "targets": [
+            "Material"
+          ]
+        },
+        {
+          "id": 4,
+          "name": "thickness_mm",
+          "kind": "real",
+          "unit": "mm",
+          "exclusive_min": 0
+        }
+      ],
+      "reserved_field_ids": [
+        1
+      ],
+      "query_kind": "shell_section",
+      "display_field": "name"
     }
   ],
   "relation_rules_version": 1

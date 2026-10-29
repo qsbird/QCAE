@@ -79,7 +79,11 @@ template <class T> void copy_into(T& target, const T& source) {
 class PlanEdit {
   public:
     PlanEdit(const DocumentView& view, const RecordIdentityAllocator& allocate)
-        : session_(view), allocate_(allocate) {}
+        : view_(view), session_(view), allocate_(allocate) {}
+    // The committed state the plan edits, for reading; pending edits are not visible in it.
+    const DocumentView& view() const {
+        return view_;
+    }
     EntityId allocate() const {
         return allocate_();
     }
@@ -96,6 +100,7 @@ class PlanEdit {
     }
 
   private:
+    const DocumentView& view_;
     EditSession session_;
     const RecordIdentityAllocator& allocate_;
 };

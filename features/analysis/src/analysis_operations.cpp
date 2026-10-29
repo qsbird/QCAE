@@ -107,6 +107,10 @@ Result<bool> register_handlers(OperationRegistry& registry, RecordApplication& a
     if (registered.ok())
         registered = register_plan(registry, app, prepare_create_constraint);
     if (registered.ok())
+        registered = register_plan(registry, app, prepare_add_edge_force);
+    if (registered.ok())
+        registered = register_plan(registry, app, prepare_add_edge_constraint);
+    if (registered.ok())
         registered = register_plan(registry, app, prepare_create_load_case);
     if (registered.ok())
         registered = register_plan(registry, app, prepare_set_references);

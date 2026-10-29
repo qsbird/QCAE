@@ -44,7 +44,7 @@
 
 ### modules/feature_support/include/qcae/feature_operation.hpp
 
-[打开源码](../../../modules/feature_support/include/qcae/feature_operation.hpp)。新增写操作按固定步骤编写：`canonical_copy` 复制输入，`normalize` 换算单位，`check_record_fields` 复用生成的字段规则，`record_plan` 计算签名并在 `PlanEdit` 中描述记录修改、返回 `ChangeSummary`，`register_plan` 把plan接到唯一的 `RecordApplication.execute`。复制计量全部在这些步骤和按schema生成的 `InputTraits::observe_copy/moved_bytes` 中完成，功能代码不写ledger；向记录字段复制字符串等堆数据时用 `copy_into`，标量直接赋值。完整步骤与脚手架见[新增操作、字段与实体](../adding-operations.md)。
+[打开源码](../../../modules/feature_support/include/qcae/feature_operation.hpp)。新增写操作按固定步骤编写：`canonical_copy` 复制输入，`normalize` 换算单位，`check_record_fields` 复用生成的字段规则，`record_plan` 计算签名并在 `PlanEdit` 中描述记录修改、返回 `ChangeSummary`，`register_plan` 把plan接到唯一的 `RecordApplication.execute`。复制计量全部在这些步骤和按schema生成的 `InputTraits::observe_copy/moved_bytes` 中完成，功能代码不写ledger；向记录字段复制字符串等堆数据时用 `copy_into`，标量直接赋值。完整步骤与脚手架见[新增操作、字段与实体](../adding-operations.md)。需要读取文档的计划用 `edit.view()` 读已提交状态，例如找出某个网格的全部三角形。
 
 ## materials：材料与截面
 
@@ -54,7 +54,7 @@
 
 ### features/materials/src/material_operations.cpp
 
-[打开源码](../../../features/materials/src/material_operations.cpp)。完全由上述共享步骤组成，是新增写操作的范例：先转换压力、面积和惯性矩单位，再在 `PlanEdit` 中构造强类型 Material/BeamSection 候选；截面引用材料的合法性由记录规则核验。注册函数将三项操作接到同一个 `RecordApplication.execute`，得到共享回执；材料取值检查不由 GUI 或 JSON 层各做一遍。
+[打开源码](../../../features/materials/src/material_operations.cpp)。完全由上述共享步骤组成，是新增写操作的范例：先转换压力、面积和惯性矩单位，再在 `PlanEdit` 中构造强类型 Material/BeamSection 候选；截面引用材料的合法性由记录规则核验。注册函数将三项操作接到同一个 `RecordApplication.execute`，得到共享回执；材料取值检查不由 GUI 或 JSON 层各做一遍。`shell_section.create` 同样只用这些步骤：厚度按长度单位归一化后构造 `ShellSection`（导出时对应 Nastran PSHELL）。
 
 ## mesh_editing：已有实体的局部编辑
 
@@ -64,7 +64,7 @@
 
 ### features/mesh_editing/src/mesh_editing_operations.cpp
 
-[打开源码](../../../features/mesh_editing/src/mesh_editing_operations.cpp)。节点位置归一化后仅更新指定 Node，梁 ID 列表先拒绝重复项，再排序形成稳定签名并准备整批截面引用修改。候选需要满足长度、方向、引用等记录不变量，失败时不发布半批修改；两项操作都通过共享应用执行，所以 undo/redo 不需要各功能再写一套恢复算法。
+[打开源码](../../../features/mesh_editing/src/mesh_editing_operations.cpp)。节点位置归一化后仅更新指定 Node，梁 ID 列表先拒绝重复项，再排序形成稳定签名并准备整批截面引用修改。候选需要满足长度、方向、引用等记录不变量，失败时不发布半批修改；两项操作都通过共享应用执行，所以 undo/redo 不需要各功能再写一套恢复算法。`mesh.assign_shell_section` 按网格整体分配壳截面：平板由一个区域网格构成，所以用 `edit.view()` 找出该网格的全部 Tri3 再逐个更新；网格或截面不存在、网格没有三角形时拒绝。
 
 ## geometry：最小几何与派生失效
 
@@ -111,6 +111,12 @@ typed 输入要求段数为正 uint32，线网格任务另将其限制为 1—10
 ### features/mesh_generation/src/region_mesh_task.cpp
 
 [打开源码](../../../features/mesh_generation/src/region_mesh_task.cpp)。结构与线网格任务一一对应：单元尺寸在任务开始前就检查（纯输入，重试同样通过）；区域只在新工作里解析，已完成任务的重放不受之后撤销的影响；调用 `IPlanarMesher` 后立刻检查取消——网格器运行中到达的取消在这里生效，什么都不发布；然后建一个绑定区域修订的 Mesh、每个网格节点一个 Node、每个三角形一个 Tri3，标识都由任务标识派生。任务里的失败经任务服务统一报告为该任务的无效输入，原因写在消息里（例如三角形数超限）。
+
+## analysis：沿区域边的载荷与约束
+
+### features/analysis/src/edge_loads.cpp
+
+[打开源码](../../../features/analysis/src/edge_loads.cpp)。`edge_nodes` 找出位于区域某条直边上的网格节点（距边不超过 1e-6 mm），从边的第一个角点排到第二个，并给每个节点一个份额：两侧相邻线段长度的一半除以边长，一条边上的份额之和为 1。`load_case.add_edge_force` 把总力按份额分给这些节点，正是均匀边载荷在直边单元上的一致节点载荷，所以 G5 的均匀拉伸平板能得到精确解；`load_case.add_edge_constraint` 用这些节点建一个约束。两者都把新记录追加到指定工况，网格必须由区域派生且未过期。
 
 ## 本章构建文件
 

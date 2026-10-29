@@ -149,7 +149,7 @@ void run() {
                             std::array<EntityId, 3>{EntityId("a"), EntityId("b"), EntityId("c")},
               "Tri3 must persist ordered connectivity");
         auto encoded = RecordTraits<records::Tri3>::descriptor().encode(record->object());
-        encoded.version = 2;
+        encoded.version = RecordTraits<records::Tri3>::descriptor().current_version + 1;
         try {
             options.registry->from_input(encoded);
             check(false, "Future Tri3 schema must be rejected");
